@@ -1289,5 +1289,9 @@
     "solveWithButler": "집사에게 문의"
   },
   "providerIdConflict": "Provider ID가 이미 있습니다. 다시 시도하세요.",
-  "autoInjectedSkillsHint": "모든 대화에 자동으로 로드됩니다. 활성화할 필요가 없으며, 에이전트가 사용 시점을 결정합니다."
+  "autoInjectedSkillsHint": "모든 대화에 자동으로 로드됩니다. 활성화할 필요가 없으며, 에이전트가 사용 시점을 결정합니다.",
+  "localModels": {
+    "loadedOnly": "로컬 호스트에 현재 로드된 모델만 나열할 수 있었습니다. 설치된 모든 모델을 보려면 호스트를 시작하거나 명령줄 도구를 설치하세요.",
+    "unavailable": "로컬 호스트에서 설치된 모델 목록을 읽지 못했습니다. API가 반환한 내용을 표시합니다."
+  }
 }

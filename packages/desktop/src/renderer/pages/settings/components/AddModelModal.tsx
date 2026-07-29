@@ -7,7 +7,7 @@ import {
 } from '@/common/utils/modelCapabilities';
 import ModalHOC from '@/renderer/utils/ui/ModalHOC';
 import AionModal from '@/renderer/components/base/AionModal';
-import { Select } from '@arco-design/web-react';
+import { Alert, Select } from '@arco-design/web-react';
 import { PreviewOpen } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -38,6 +38,15 @@ const AddModelModal = ModalHOC<{ data?: IProvider; model?: string; onSubmit: (mo
         return { ...item, disabled: data.models.includes(item.value) };
       });
     }, [modelList, data?.models]);
+
+    // A local host may only be able to report the models it currently has
+    // loaded. Say so rather than presenting a short list as the complete set.
+    const incompleteListKey =
+      !Array.isArray(modelList) && modelList?.tier === 'loaded-only'
+        ? 'settings.localModels.loadedOnly'
+        : !Array.isArray(modelList) && modelList?.tier === 'unavailable'
+          ? 'settings.localModels.unavailable'
+          : null;
 
     useEffect(() => {
       if (!modalProps.visible) return;
@@ -99,6 +108,7 @@ const AddModelModal = ModalHOC<{ data?: IProvider; model?: string; onSubmit: (mo
         okButtonProps={{ disabled: !isEditing && !models.length }}
       >
         <div className='flex flex-col gap-16px'>
+          {incompleteListKey && !isEditing && <Alert type='warning' content={t(incompleteListKey)} />}
           {isEditing ? (
             <div className='space-y-8px'>
               <div className='text-13px font-500 text-t-secondary'>{t('settings.modelName')}</div>

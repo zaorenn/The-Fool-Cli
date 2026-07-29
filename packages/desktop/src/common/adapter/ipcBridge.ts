@@ -69,6 +69,7 @@ import type {
   ProviderHealthCheckResponse,
   UpdateProviderRequest,
 } from '../types/provider/providerApi';
+import type { LocalModelListResult } from '../types/provider/localModels';
 import type {
   ITeamAgentRemovedEvent,
   ITeamAgentRenamedEvent,
@@ -183,6 +184,20 @@ export const foolVoice = {
     'fool.voice.cancel'
   ),
   downloadProgress: bridge.buildEmitter<VoiceEventEnvelope<VoiceDownloadProgress>>('fool.voice.download.progress'),
+};
+
+// ---------------------------------------------------------------------------
+// Local models — main-process discovery of locally installed inference models
+// ---------------------------------------------------------------------------
+
+/**
+ * LM Studio's OpenAI-compatible `/v1/models` reports only loaded models, so the
+ * backend's model fetch cannot see the full set. This bridge exposes the
+ * main-process discovery result so both the stored provider list and the
+ * settings dropdown can show every installed model.
+ */
+export const localModels = {
+  listLmStudioModels: bridge.buildProvider<LocalModelListResult, void>('local-models.list-lmstudio'),
 };
 
 // ---------------------------------------------------------------------------

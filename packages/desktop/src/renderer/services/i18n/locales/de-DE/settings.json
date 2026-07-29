@@ -1287,5 +1287,9 @@
     "emptyOverridesError": "Enter a launch path or at least one environment variable before saving."
   },
   "providerIdConflict": "Provider-ID existiert bereits. Bitte erneut versuchen.",
-  "autoInjectedSkillsHint": "Werden automatisch in jede Unterhaltung geladen – kein Aktivieren nötig; der Agent entscheidet, wann er sie nutzt."
+  "autoInjectedSkillsHint": "Werden automatisch in jede Unterhaltung geladen – kein Aktivieren nötig; der Agent entscheidet, wann er sie nutzt.",
+  "localModels": {
+    "loadedOnly": "Es konnten nur die aktuell geladenen Modelle des lokalen Hosts aufgelistet werden. Starten Sie den Host oder installieren Sie sein Kommandozeilenwerkzeug, um alle installierten Modelle zu sehen.",
+    "unavailable": "Die Liste der installierten Modelle konnte nicht vom lokalen Host gelesen werden. Es wird angezeigt, was die API zurückgegeben hat."
+  }
 }

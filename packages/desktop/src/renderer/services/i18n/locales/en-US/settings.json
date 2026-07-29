@@ -1287,5 +1287,9 @@
     "solveWithButler": "Ask the Butler"
   },
   "providerIdConflict": "Provider ID already exists. Please try again.",
-  "autoInjectedSkillsHint": "Loaded automatically into every conversation — no need to enable them; the agent decides when to use them."
+  "autoInjectedSkillsHint": "Loaded automatically into every conversation — no need to enable them; the agent decides when to use them.",
+  "localModels": {
+    "loadedOnly": "Only the models currently loaded in the local host could be listed. Start the host or install its command-line tool to see every installed model.",
+    "unavailable": "The installed model list could not be read from the local host. Showing what the API returned."
+  }
 }

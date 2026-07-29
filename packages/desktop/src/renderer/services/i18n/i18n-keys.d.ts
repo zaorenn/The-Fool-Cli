@@ -1773,6 +1773,8 @@ export type I18nKey =
   | 'settings.lark.waitingConnection'
   | 'settings.latency'
   | 'settings.lightMode'
+  | 'settings.localModels.loadedOnly'
+  | 'settings.localModels.unavailable'
   | 'settings.logDir'
   | 'settings.mcp'
   | 'settings.mcpAddServer'

@@ -1287,5 +1287,9 @@
     "solveWithButler": "Kâhya'ya sor"
   },
   "providerIdConflict": "Provider ID zaten var. Lütfen tekrar deneyin.",
-  "autoInjectedSkillsHint": "Her sohbete otomatik olarak yüklenir — etkinleştirmeye gerek yoktur; aracı bunları ne zaman kullanacağına karar verir."
+  "autoInjectedSkillsHint": "Her sohbete otomatik olarak yüklenir — etkinleştirmeye gerek yoktur; aracı bunları ne zaman kullanacağına karar verir.",
+  "localModels": {
+    "loadedOnly": "Yerel sunucuda yalnızca şu anda yüklü modeller listelenebildi. Kurulu tüm modelleri görmek için sunucuyu başlatın veya komut satırı aracını kurun.",
+    "unavailable": "Kurulu model listesi yerel sunucudan okunamadı. API’nin döndürdüğü liste gösteriliyor."
+  }
 }

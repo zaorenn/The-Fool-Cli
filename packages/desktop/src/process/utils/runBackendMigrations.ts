@@ -8,6 +8,7 @@ import { execFile } from 'node:child_process';
 import { migrateConfigStorage, migrateLegacyMcpConfigToDb, migrateProviders } from '@/common/config/configMigration';
 import { httpRequest } from '@/common/adapter/httpBridge';
 import { mcpService } from '@/common/adapter/ipcBridge';
+import { discoverAndRegisterLocalProviders, refreshLmStudioModels } from '../services/local-models';
 import type { ImageGenerationModelSetting } from '@/common/config/clientSettings';
 import {
   removeImageGenerationEnvKeys,
@@ -373,6 +374,14 @@ const MIGRATION_STEPS: Array<{
   {
     name: 'ensureBootstrapMcpServersInDb',
     run: async (configFile) => (await ensureBootstrapMcpServersInDb(configFile), true),
+  },
+  {
+    name: 'discoverAndRegisterLocalProviders',
+    run: async () => (await discoverAndRegisterLocalProviders(), true),
+  },
+  {
+    name: 'refreshLmStudioModels',
+    run: async () => (await refreshLmStudioModels(), true),
   },
   { name: 'migrateAssistantsToBackend', run: async (configFile) => migrateAssistantsToBackend(configFile) },
 ];

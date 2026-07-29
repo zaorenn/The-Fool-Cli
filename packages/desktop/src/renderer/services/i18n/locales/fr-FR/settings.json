@@ -1287,5 +1287,9 @@
     "solveWithButler": "Demander au majordome"
   },
   "providerIdConflict": "L'ID du fournisseur existe déjà. Veuillez réessayer.",
-  "autoInjectedSkillsHint": "Chargé automatiquement dans chaque conversation – pas besoin de les activer ; l'agent décide quand les utiliser."
+  "autoInjectedSkillsHint": "Chargé automatiquement dans chaque conversation – pas besoin de les activer ; l'agent décide quand les utiliser.",
+  "localModels": {
+    "loadedOnly": "Seuls les modèles actuellement chargés sur l'hôte local ont pu être listés. Démarrez l'hôte ou installez son outil en ligne de commande pour voir tous les modèles installés.",
+    "unavailable": "La liste des modèles installés n'a pas pu être lue depuis l'hôte local. Affichage de ce que l'API a renvoyé."
+  }
 }

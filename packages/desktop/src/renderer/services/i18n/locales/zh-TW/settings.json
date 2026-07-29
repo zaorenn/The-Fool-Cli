@@ -1289,5 +1289,9 @@
     "solveWithButler": "找管家排查"
   },
   "providerIdConflict": "Provider ID 已存在，請重試。",
-  "autoInjectedSkillsHint": "每次對話都會自動載入，無需手動啟用；由智能體自行決定何時呼叫。"
+  "autoInjectedSkillsHint": "每次對話都會自動載入，無需手動啟用；由智能體自行決定何時呼叫。",
+  "localModels": {
+    "loadedOnly": "只能列出本機主機目前已載入的模型。請啟動主機或安裝其命令列工具，以查看全部已安裝的模型。",
+    "unavailable": "無法從本機主機讀取已安裝模型清單。目前顯示的是 API 回傳的結果。"
+  }
 }

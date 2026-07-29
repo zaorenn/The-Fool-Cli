@@ -1,5 +1,42 @@
 import { ipcBridge } from '@/common';
+import type { ModelListTier } from '@/common/types/provider/localModels';
 import useSWR from 'swr';
+
+const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
+
+const isLoopbackUrl = (baseUrl?: string): boolean => {
+  if (!baseUrl) return false;
+  try {
+    return LOOPBACK_HOSTS.has(new URL(baseUrl).hostname);
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * LM Studio's OpenAI-compatible `/v1/models` — which is what the backend fetch
+ * calls — reports only the models it currently has loaded. Merge in the
+ * main-process discovery result so the dropdown offers every installed model,
+ * and report the tier so an incomplete list can be labelled as such.
+ */
+const mergeLocallyInstalledModels = async (
+  baseUrl: string | undefined,
+  models: { label: string; value: string }[]
+): Promise<{ models: { label: string; value: string }[]; tier?: ModelListTier }> => {
+  if (!isLoopbackUrl(baseUrl)) return { models };
+
+  try {
+    const discovered = await ipcBridge.localModels.listLmStudioModels.invoke();
+    if (discovered.models.length === 0) return { models, tier: discovered.tier };
+
+    const known = new Set(models.map((model) => model.value));
+    const added = discovered.models.filter((id) => !known.has(id)).map((id) => ({ label: id, value: id }));
+
+    return { models: [...models, ...added], tier: discovered.tier };
+  } catch {
+    return { models };
+  }
+};
 
 // Gemini 模型排序函数：Pro 优先，版本号降序
 const sortGeminiModels = (models: { label: string; value: string }[]) => {
@@ -48,6 +85,8 @@ const useModeModeList = (
     async ([_url, { platform, base_url, api_key, try_fix, bedrock_config }]): Promise<{
       models: { label: string; value: string }[];
       fix_base_url?: string;
+      /** Present only for local hosts; labels an incomplete list in the UI. */
+      tier?: ModelListTier;
     }> => {
       // Only call the backend when we have credentials it can actually use:
       // - bedrock: bedrock_config carries the credentials (api_key not required)
@@ -75,15 +114,18 @@ const useModeModeList = (
           modelList = sortGeminiModels(modelList);
         }
 
+        const merged = await mergeLocallyInstalledModels(base_url, modelList);
+
         // 如果返回了修复的 base_url，将其添加到结果中
         if (res.fixed_base_url) {
           return {
-            models: modelList,
+            models: merged.models,
             fix_base_url: res.fixed_base_url,
+            tier: merged.tier,
           };
         }
 
-        return { models: modelList };
+        return { models: merged.models, tier: merged.tier };
       }
 
       // 既没有 API key 也没有 base_url 也没有 bedrock_config 时，返回空列表

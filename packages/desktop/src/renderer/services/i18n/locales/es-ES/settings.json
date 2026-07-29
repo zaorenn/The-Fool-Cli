@@ -1287,5 +1287,9 @@
     "solveWithButler": "Preguntar al Mayordomo"
   },
   "providerIdConflict": "El ID del proveedor ya existe. Inténtalo de nuevo.",
-  "autoInjectedSkillsHint": "Se cargan automáticamente en cada conversación: no hace falta activarlas; el agente decide cuándo usarlas."
+  "autoInjectedSkillsHint": "Se cargan automáticamente en cada conversación: no hace falta activarlas; el agente decide cuándo usarlas.",
+  "localModels": {
+    "loadedOnly": "Solo se pudieron listar los modelos cargados actualmente en el host local. Inicie el host o instale su herramienta de línea de comandos para ver todos los modelos instalados.",
+    "unavailable": "No se pudo leer la lista de modelos instalados desde el host local. Se muestra lo que devolvió la API."
+  }
 }
