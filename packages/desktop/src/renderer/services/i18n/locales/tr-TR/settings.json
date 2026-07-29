@@ -1291,5 +1291,25 @@
   "localModels": {
     "loadedOnly": "Yerel sunucuda yalnızca şu anda yüklü modeller listelenebildi. Kurulu tüm modelleri görmek için sunucuyu başlatın veya komut satırı aracını kurun.",
     "unavailable": "Kurulu model listesi yerel sunucudan okunamadı. API’nin döndürdüğü liste gösteriliyor."
+  },
+  "voice": {
+    "title": "Ses",
+    "devices": "Cihazlar",
+    "microphone": "Mikrofon",
+    "speaker": "Hoparlör",
+    "systemDefault": "Sistem varsayılanı",
+    "conversation": "Konuşma",
+    "bargeIn": "Konuşurken sözünü kesebileyim",
+    "silenceTimeout": "Sözümün bittiğini anlaması için sessizlik (ms)",
+    "speechToText": "Sesi yazıya çevirme",
+    "textToSpeech": "Ses",
+    "notInstalled": "kurulu değil",
+    "install": "Kur",
+    "installStarted": "İndirme başladı",
+    "installFailed": "İndirme başlatılamadı",
+    "preview": "Dinle",
+    "previewFailed": "Önizleme çalınamadı",
+    "local": "Yerel",
+    "catalogUnavailable": "Ses modeli listesi yüklenemedi."
   }
 }

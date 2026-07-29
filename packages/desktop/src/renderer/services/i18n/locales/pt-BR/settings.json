@@ -1294,5 +1294,25 @@
   "localModels": {
     "loadedOnly": "Só foi possível listar os modelos atualmente carregados no host local. Inicie o host ou instale sua ferramenta de linha de comando para ver todos os modelos instalados.",
     "unavailable": "Não foi possível ler a lista de modelos instalados do host local. Exibindo o que a API retornou."
+  },
+  "voice": {
+    "title": "Voz",
+    "devices": "Dispositivos",
+    "microphone": "Microfone",
+    "speaker": "Alto-falante",
+    "systemDefault": "Padrão do sistema",
+    "conversation": "Conversa",
+    "bargeIn": "Permitir interromper enquanto fala",
+    "silenceTimeout": "Silêncio para encerrar minha vez (ms)",
+    "speechToText": "Voz para texto",
+    "textToSpeech": "Voz",
+    "notInstalled": "não instalado",
+    "install": "Instalar",
+    "installStarted": "Download iniciado",
+    "installFailed": "Não foi possível iniciar o download",
+    "preview": "Ouvir",
+    "previewFailed": "Não foi possível reproduzir a prévia",
+    "local": "Local",
+    "catalogUnavailable": "Não foi possível carregar a lista de modelos de voz."
   }
 }

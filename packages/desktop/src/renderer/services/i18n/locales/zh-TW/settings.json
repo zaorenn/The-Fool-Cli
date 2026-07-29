@@ -1293,5 +1293,25 @@
   "localModels": {
     "loadedOnly": "只能列出本機主機目前已載入的模型。請啟動主機或安裝其命令列工具，以查看全部已安裝的模型。",
     "unavailable": "無法從本機主機讀取已安裝模型清單。目前顯示的是 API 回傳的結果。"
+  },
+  "voice": {
+    "title": "語音",
+    "devices": "裝置",
+    "microphone": "麥克風",
+    "speaker": "喇叭",
+    "systemDefault": "系統預設",
+    "conversation": "對話",
+    "bargeIn": "允許在朗讀時打斷",
+    "silenceTimeout": "判定我說完的靜音時長（毫秒）",
+    "speechToText": "語音轉文字",
+    "textToSpeech": "音色",
+    "notInstalled": "未安裝",
+    "install": "安裝",
+    "installStarted": "已開始下載",
+    "installFailed": "無法開始下載",
+    "preview": "試聽",
+    "previewFailed": "無法播放試聽",
+    "local": "本機",
+    "catalogUnavailable": "無法載入語音模型清單。"
   }
 }

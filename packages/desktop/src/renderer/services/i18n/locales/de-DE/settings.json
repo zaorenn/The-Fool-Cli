@@ -1291,5 +1291,25 @@
   "localModels": {
     "loadedOnly": "Es konnten nur die aktuell geladenen Modelle des lokalen Hosts aufgelistet werden. Starten Sie den Host oder installieren Sie sein Kommandozeilenwerkzeug, um alle installierten Modelle zu sehen.",
     "unavailable": "Die Liste der installierten Modelle konnte nicht vom lokalen Host gelesen werden. Es wird angezeigt, was die API zurückgegeben hat."
+  },
+  "voice": {
+    "title": "Stimme",
+    "devices": "Geräte",
+    "microphone": "Mikrofon",
+    "speaker": "Lautsprecher",
+    "systemDefault": "Systemstandard",
+    "conversation": "Unterhaltung",
+    "bargeIn": "Unterbrechen während gesprochen wird",
+    "silenceTimeout": "Stille bis mein Beitrag endet (ms)",
+    "speechToText": "Sprache zu Text",
+    "textToSpeech": "Stimme",
+    "notInstalled": "nicht installiert",
+    "install": "Installieren",
+    "installStarted": "Download gestartet",
+    "installFailed": "Download konnte nicht gestartet werden",
+    "preview": "Anhören",
+    "previewFailed": "Vorschau nicht abspielbar",
+    "local": "Lokal",
+    "catalogUnavailable": "Die Liste der Sprachmodelle konnte nicht geladen werden."
   }
 }

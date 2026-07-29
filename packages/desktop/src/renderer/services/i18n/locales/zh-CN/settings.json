@@ -1292,5 +1292,25 @@
   "localModels": {
     "loadedOnly": "只能列出本地主机当前已加载的模型。请启动主机或安装其命令行工具，以查看全部已安装的模型。",
     "unavailable": "无法从本地主机读取已安装模型列表。当前显示的是 API 返回的结果。"
+  },
+  "voice": {
+    "title": "语音",
+    "devices": "设备",
+    "microphone": "麦克风",
+    "speaker": "扬声器",
+    "systemDefault": "系统默认",
+    "conversation": "对话",
+    "bargeIn": "允许在朗读时打断",
+    "silenceTimeout": "判定我说完的静音时长（毫秒）",
+    "speechToText": "语音转文字",
+    "textToSpeech": "音色",
+    "notInstalled": "未安装",
+    "install": "安装",
+    "installStarted": "已开始下载",
+    "installFailed": "无法开始下载",
+    "preview": "试听",
+    "previewFailed": "无法播放试听",
+    "local": "本地",
+    "catalogUnavailable": "无法加载语音模型列表。"
   }
 }

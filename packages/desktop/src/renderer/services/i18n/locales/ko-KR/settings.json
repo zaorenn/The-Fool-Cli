@@ -1293,5 +1293,25 @@
   "localModels": {
     "loadedOnly": "로컬 호스트에 현재 로드된 모델만 나열할 수 있었습니다. 설치된 모든 모델을 보려면 호스트를 시작하거나 명령줄 도구를 설치하세요.",
     "unavailable": "로컬 호스트에서 설치된 모델 목록을 읽지 못했습니다. API가 반환한 내용을 표시합니다."
+  },
+  "voice": {
+    "title": "음성",
+    "devices": "장치",
+    "microphone": "마이크",
+    "speaker": "스피커",
+    "systemDefault": "시스템 기본값",
+    "conversation": "대화",
+    "bargeIn": "말하는 중에 끼어들 수 있도록 허용",
+    "silenceTimeout": "내 차례가 끝났다고 판단할 침묵 (ms)",
+    "speechToText": "음성 인식",
+    "textToSpeech": "음성",
+    "notInstalled": "설치되지 않음",
+    "install": "설치",
+    "installStarted": "다운로드를 시작했습니다",
+    "installFailed": "다운로드를 시작하지 못했습니다",
+    "preview": "미리 듣기",
+    "previewFailed": "미리 듣기를 재생하지 못했습니다",
+    "local": "로컬",
+    "catalogUnavailable": "음성 모델 목록을 불러오지 못했습니다."
   }
 }

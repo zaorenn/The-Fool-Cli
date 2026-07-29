@@ -1291,5 +1291,25 @@
   "localModels": {
     "loadedOnly": "Seuls les modèles actuellement chargés sur l'hôte local ont pu être listés. Démarrez l'hôte ou installez son outil en ligne de commande pour voir tous les modèles installés.",
     "unavailable": "La liste des modèles installés n'a pas pu être lue depuis l'hôte local. Affichage de ce que l'API a renvoyé."
+  },
+  "voice": {
+    "title": "Voix",
+    "devices": "Périphériques",
+    "microphone": "Microphone",
+    "speaker": "Haut-parleur",
+    "systemDefault": "Valeur système par défaut",
+    "conversation": "Conversation",
+    "bargeIn": "Permettre d'interrompre pendant la parole",
+    "silenceTimeout": "Silence avant la fin de mon tour (ms)",
+    "speechToText": "Parole vers texte",
+    "textToSpeech": "Voix",
+    "notInstalled": "non installé",
+    "install": "Installer",
+    "installStarted": "Téléchargement lancé",
+    "installFailed": "Impossible de lancer le téléchargement",
+    "preview": "Écouter",
+    "previewFailed": "Aperçu impossible à lire",
+    "local": "Local",
+    "catalogUnavailable": "La liste des modèles vocaux n’a pas pu être chargée."
   }
 }

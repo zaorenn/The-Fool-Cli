@@ -1293,5 +1293,25 @@
   "localModels": {
     "loadedOnly": "ローカルホストに現在読み込まれているモデルのみを一覧表示できました。インストール済みのすべてのモデルを表示するには、ホストを起動するかコマンドラインツールをインストールしてください。",
     "unavailable": "インストール済みモデルの一覧をローカルホストから読み取れませんでした。API が返した内容を表示しています。"
+  },
+  "voice": {
+    "title": "音声",
+    "devices": "デバイス",
+    "microphone": "マイク",
+    "speaker": "スピーカー",
+    "systemDefault": "システム既定",
+    "conversation": "会話",
+    "bargeIn": "発話中に割り込めるようにする",
+    "silenceTimeout": "発話終了と判断する無音時間 (ms)",
+    "speechToText": "音声認識",
+    "textToSpeech": "音声",
+    "notInstalled": "未インストール",
+    "install": "インストール",
+    "installStarted": "ダウンロードを開始しました",
+    "installFailed": "ダウンロードを開始できませんでした",
+    "preview": "試聴",
+    "previewFailed": "試聴を再生できませんでした",
+    "local": "ローカル",
+    "catalogUnavailable": "音声モデル一覧を読み込めませんでした。"
   }
 }

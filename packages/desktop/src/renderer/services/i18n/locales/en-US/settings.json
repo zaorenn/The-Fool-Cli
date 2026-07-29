@@ -1291,5 +1291,25 @@
   "localModels": {
     "loadedOnly": "Only the models currently loaded in the local host could be listed. Start the host or install its command-line tool to see every installed model.",
     "unavailable": "The installed model list could not be read from the local host. Showing what the API returned."
+  },
+  "voice": {
+    "title": "Voice",
+    "devices": "Devices",
+    "microphone": "Microphone",
+    "speaker": "Speaker",
+    "systemDefault": "System default",
+    "conversation": "Conversation",
+    "bargeIn": "Let me interrupt while it speaks",
+    "silenceTimeout": "Silence before my turn ends (ms)",
+    "speechToText": "Speech to text",
+    "textToSpeech": "Voice",
+    "notInstalled": "not installed",
+    "install": "Install",
+    "installStarted": "Download started",
+    "installFailed": "Could not start the download",
+    "preview": "Preview",
+    "previewFailed": "Could not play a preview",
+    "local": "Local",
+    "catalogUnavailable": "The voice model list could not be loaded."
   }
 }
