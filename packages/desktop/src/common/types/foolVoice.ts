@@ -297,14 +297,14 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
   },
   tts: {
     providerId: 'local-sherpa',
-    modelId: 'tts-supertonic-3-int8-2026-05-11',
-    profileId: 'supertonic-speaker-0',
-    language: 'tr',
+    modelId: 'tts-kokoro-en-v0_19-int8',
+    profileId: 'af_bella',
+    language: 'en',
     speed: 1,
   },
   narrator: {
     mode: 'deterministic',
-    language: 'tr',
+    language: 'en',
     maxSpokenCharacters: 600,
   },
   playback: {
@@ -427,9 +427,9 @@ const settingsSchema = z
     tts: z
       .object({
         providerId: z.enum(['local-sherpa', 'openai-compatible']).default('local-sherpa'),
-        modelId: identifierSchema.default('tts-supertonic-3-int8-2026-05-11'),
-        profileId: identifierSchema.default('supertonic-speaker-0'),
-        language: languageSchema.default('tr'),
+        modelId: identifierSchema.default('tts-kokoro-en-v0_19-int8'),
+        profileId: identifierSchema.default('af_bella'),
+        language: languageSchema.default('en'),
         speed: z.number().min(0.5).max(2).default(1),
       })
       .strict()
@@ -439,14 +439,14 @@ const settingsSchema = z
         z
           .object({
             mode: z.literal('deterministic'),
-            language: z.enum(['tr', 'en']).default('tr'),
+            language: z.enum(['tr', 'en']).default('en'),
             maxSpokenCharacters: z.number().int().min(120).max(1200).default(600),
           })
           .strict(),
         z
           .object({
             mode: z.literal('openai-compatible'),
-            language: z.enum(['tr', 'en']).default('tr'),
+            language: z.enum(['tr', 'en']).default('en'),
             modelId: identifierSchema,
             timeoutMs: z.number().int().min(1000).max(30000),
             maxSpokenCharacters: z.number().int().min(120).max(1200).default(600),
@@ -455,7 +455,7 @@ const settingsSchema = z
       ])
       .default({
         mode: 'deterministic',
-        language: 'tr',
+        language: 'en',
         maxSpokenCharacters: 600,
       }),
     playback: z

@@ -33,7 +33,7 @@ const state = (
   }) as VoiceTurnState;
 
 describe('Fool voice settings contract', () => {
-  it('defaults to an inactive Turkish local configuration without loading models', () => {
+  it('defaults to an inactive local configuration that speaks English and listens in Turkish', () => {
     expect(DEFAULT_FOOL_VOICE_SETTINGS).toMatchObject({
       schemaVersion: 1,
       enabled: false,
@@ -45,11 +45,12 @@ describe('Fool voice settings contract', () => {
       stt: { providerId: 'local-sherpa', modelId: 'stt-whisper-tiny-int8-v1', language: 'tr' },
       tts: {
         providerId: 'local-sherpa',
-        modelId: 'tts-supertonic-3-int8-2026-05-11',
-        language: 'tr',
+        modelId: 'tts-kokoro-en-v0_19-int8',
+        profileId: 'af_bella',
+        language: 'en',
         speed: 1,
       },
-      narrator: { mode: 'deterministic', language: 'tr', maxSpokenCharacters: 600 },
+      narrator: { mode: 'deterministic', language: 'en', maxSpokenCharacters: 600 },
       playback: { volume: 0.85, interruptible: true, fallbackToDefaultDevice: true },
       agentOverrides: {},
     });

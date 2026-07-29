@@ -46,10 +46,10 @@ const voiceService = new FoolVoiceService(modelManager, sherpaProvider, openaiPr
 
 initAllBridges({
   foolVoice: {
-    catalog: () => ({
+    catalog: (req) => ({
       providers: ['local-sherpa', 'openai-compatible', 'transcript-wake-word'] as any,
       models: VoiceModelCatalog.getModels() as any,
-      profiles: [],
+      profiles: req.includeProfiles ? VoiceModelCatalog.getPresetProfiles() : [],
     }),
     health: (req) =>
       voiceService.getHealth(req.providerId, req.capability, req.modelId).then(
