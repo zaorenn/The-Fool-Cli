@@ -15,11 +15,21 @@ import {
 import { AdaptiveVad } from '@renderer/services/voice/AdaptiveVad';
 import { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybackService';
 import { MicrophoneCapture } from '@renderer/services/voice/MicrophoneCapture';
+import { EMPTY_EVIDENCE, narrate, type RunEvidence } from '@renderer/services/voice/FoolNarrator';
+import { selectTtsTarget } from '@renderer/services/voice/selectTtsTarget';
 
 /** Dispatched with the transcript so the mounted SendBox owns submission. */
 export const VOICE_SUBMIT_EVENT = 'fool:voice-submit';
 
+/**
+ * Dispatched by the conversation when a turn finishes, carrying the answer and
+ * the run evidence the spoken brief is built from.
+ */
+export const VOICE_REPLY_EVENT = 'fool:voice-reply';
+
 export type VoiceSubmitDetail = { text: string };
+
+export type VoiceReplyDetail = { answer: string; evidence?: RunEvidence };
 
 export type FoolVoiceSession = {
   state: VoiceTurnState;
@@ -66,6 +76,8 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
   const vad = useRef<AdaptiveVad | null>(null);
   const activeRef = useRef(false);
   const busyRef = useRef(false);
+  /** Which TTS models are installed, so a Turkish reply can pick a Turkish voice. */
+  const installedModelIdsRef = useRef<string[]>([]);
 
   const sessionId = useMemo(() => crypto.randomUUID(), []);
 
@@ -155,6 +167,68 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     [enter, handleUtterance, sessionId]
   );
 
+  const speak = useCallback(
+    async (answer: string, evidence: RunEvidence): Promise<void> => {
+      const narration = narrate(answer, evidence, {
+        language: settings.narrator.language,
+        maxSpokenCharacters: settings.narrator.maxSpokenCharacters,
+      });
+      if (narration.spokenText.length === 0) return;
+
+      const installed = installedModelIdsRef.current;
+      const target = selectTtsTarget(narration.spokenText, settings, installed);
+      const operationId = newOperationId();
+
+      enter({
+        phase: 'speaking',
+        sessionId,
+        conversationId: sessionId,
+        turnId: operationId,
+        operationId,
+        condition: { status: 'normal' },
+      });
+
+      const synthesis = unwrap(
+        await ipcBridge.foolVoice.synthesize.invoke({
+          version: 1,
+          requestId: operationId,
+          payload: {
+            operationId,
+            providerId: settings.tts.providerId,
+            modelId: target.modelId,
+            profileId: target.profileId,
+            language: target.language,
+            speed: settings.tts.speed,
+            text: narration.spokenText,
+          },
+        })
+      );
+
+      await playback.current?.play(synthesis.audio);
+    },
+    [enter, sessionId, settings]
+  );
+
+  // The conversation reports its finished turn here; the brief is spoken and
+  // the loop returns to listening.
+  useEffect(() => {
+    const handleReply = (event: Event) => {
+      if (!activeRef.current) return;
+      const { answer, evidence } = (event as CustomEvent<VoiceReplyDetail>).detail;
+
+      void speak(answer, evidence ?? EMPTY_EVIDENCE)
+        .catch((): void => {
+          // A synthesis failure must not end the session; keep listening.
+        })
+        .finally((): void => {
+          if (activeRef.current) listen();
+        });
+    };
+
+    window.addEventListener(VOICE_REPLY_EVENT, handleReply);
+    return () => window.removeEventListener(VOICE_REPLY_EVENT, handleReply);
+  }, [listen, speak]);
+
   const stop = useCallback(() => {
     activeRef.current = false;
     busyRef.current = false;
@@ -186,6 +260,17 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
       }
     }
     setMissingModelId(null);
+
+    const catalog = unwrap(
+      await ipcBridge.foolVoice.catalog.invoke({
+        version: 1,
+        requestId: newOperationId(),
+        payload: { includeProfiles: false },
+      })
+    );
+    installedModelIdsRef.current = catalog.models
+      .filter((model) => model.state.status === 'ready')
+      .map((model) => model.id);
 
     capture.current = new MicrophoneCapture();
     playback.current ??= new AudioPlaybackService();
