@@ -2,6 +2,16 @@
   <img src="./resources/aionui-banner-1.png" alt="AionUi - Cowork with AI Agents" width="100%">
 </p>
 
+> [!IMPORTANT]
+> **The Fool Windows alpha is under active development on `feat/the-fool-windows-alpha`.**
+> This fork keeps AionUi's Apache-2.0 attribution while replacing the product
+> identity and adding agent-independent voice, memory, and LAN phone control.
+> Windows development requires Node 22–24, Bun, Rust, and Git. Use
+> `bun install`, `bun run test`, `bunx tsc --noEmit`, `bun run package`, and
+> `bun run build-win:x64:fast` for the current validation sequence. Baseline
+> evidence is recorded in
+> [`docs/testing/the-fool-alpha-baseline.md`](docs/testing/the-fool-alpha-baseline.md).
+
 <p align="center">
   <img src="https://img.shields.io/github/v/release/iOfficeAI/AionUi?style=flat-square&color=32CD32" alt="Version">
   &nbsp;

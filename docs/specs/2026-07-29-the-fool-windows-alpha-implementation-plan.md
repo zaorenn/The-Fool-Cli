@@ -32,12 +32,12 @@
 - Verify: `package.json`
 - Verify: `bun.lock`
 
-- [ ] Install Bun on the workstation, then record `node --version`, `bun --version`, `rustc --version`, `openclaw --version`, and `hermes --version` in `docs/testing/the-fool-alpha-baseline.md`.
-- [ ] Run `bun install` and verify that the lockfile is unchanged before feature dependencies are added.
-- [ ] Run `bun run test`, `bunx tsc --noEmit`, and `bun run package`; record command, exit code, duration, and any upstream-only failures.
-- [ ] Run `bun run build-win:x64:fast` and record the unmodified AionUi artifact path and whether Windows Defender or file locking affects the build.
-- [ ] Add a concise "The Fool alpha development" section to `README.md` with the branch, Windows prerequisites, and exact validation commands.
-- [ ] Commit with `docs(build): record The Fool alpha baseline`.
+- [x] Install Bun on the workstation, then record `node --version`, `bun --version`, `rustc --version`, `openclaw --version`, and `hermes --version` in `docs/testing/the-fool-alpha-baseline.md`.
+- [x] Run `bun install` and verify that the lockfile is unchanged before feature dependencies are added.
+- [x] Run `bun run test`, `bunx tsc --noEmit`, and `bun run package`; record command, exit code, duration, and any upstream-only failures.
+- [x] Run `bun run build-win:x64:fast` and record the unmodified AionUi artifact path and whether Windows Defender or file locking affects the build.
+- [x] Add a concise "The Fool alpha development" section to `README.md` with the branch, Windows prerequisites, and exact validation commands.
+- [x] Commit with `docs(build): record The Fool alpha baseline`.
 
 ## Task 2: Centralize Product Identity and Generate Production Assets
 
