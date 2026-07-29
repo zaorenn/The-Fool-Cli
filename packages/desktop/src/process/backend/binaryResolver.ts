@@ -66,7 +66,14 @@ function trimLookupText(text: string): string {
  * Resolve the aioncore binary path.
  * Returns the absolute path to the binary, or throws if not found.
  */
-export function resolveBinaryPath(): string {
+export type BackendBinaryResolvePolicy = {
+  isPackaged: boolean;
+  isE2ETest: boolean;
+};
+
+export function resolveBinaryPath(
+  policy: BackendBinaryResolvePolicy = { isPackaged: false, isE2ETest: false }
+): string {
   const runtimeKey = getRuntimeKey();
   const binaryName = getBinaryName();
   const diagnostics: BackendBinaryResolveDiagnostics = {
@@ -75,7 +82,8 @@ export function resolveBinaryPath(): string {
     pathLookupCommand: process.platform === 'win32' ? `where ${BINARY_NAME}` : `which ${BINARY_NAME}`,
   };
 
-  const configured = configuredBundledPath(runtimeKey, binaryName, diagnostics);
+  const allowConfiguredBundledPath = !policy.isPackaged || policy.isE2ETest;
+  const configured = allowConfiguredBundledPath ? configuredBundledPath(runtimeKey, binaryName, diagnostics) : null;
   if (configured) return configured;
 
   const bundled = bundledPath(runtimeKey, binaryName, diagnostics);
