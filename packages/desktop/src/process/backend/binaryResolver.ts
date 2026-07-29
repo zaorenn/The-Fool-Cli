@@ -124,13 +124,19 @@ function bundledPath(
   binaryName: string,
   diagnostics: BackendBinaryResolveDiagnostics
 ): string | null {
-  const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
+  const { app } = require('electron');
+  console.log('[binaryResolver] app.getAppPath() =', app.getAppPath());
+  const resourcesPath = app.isPackaged 
+    ? (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath
+    : join(app.getAppPath(), 'resources');
+  console.log('[binaryResolver] resourcesPath:', resourcesPath);
   if (!resourcesPath) return null;
   diagnostics.resourcesPath = resourcesPath;
 
   const bundledDir = join(resourcesPath, 'bundled-aioncore');
   const runtimeDir = join(bundledDir, runtimeKey);
   const candidate = join(runtimeDir, binaryName);
+  console.log('[binaryResolver] checking candidate:', candidate);
   diagnostics.checkedBundledPath = candidate;
   diagnostics.bundledDirExists = existsSync(bundledDir);
   diagnostics.runtimeDirExists = existsSync(runtimeDir);
