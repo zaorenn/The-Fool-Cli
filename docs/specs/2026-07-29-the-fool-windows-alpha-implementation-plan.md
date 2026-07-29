@@ -59,14 +59,14 @@
 - Test: `tests/unit/process/trayToggle.test.ts`
 - Test: `tests/integration/branding-metadata.test.ts`
 
-- [ ] Write failing tests asserting `PRODUCT_NAME === 'The Fool'`, `PRODUCT_SLUG === 'the-fool'`, installer metadata uses The Fool, and primary UI files import centralized brand values instead of hard-coding AionUi.
-- [ ] Use the approved jester-mask JPEG as an image-generation reference to create a transparent, simplified crimson/white/onyx master mark and a single-color tray mark; visually inspect both at full size and 24 px.
-- [ ] Add `png-to-ico` as a development dependency and implement `scripts/generate-fool-brand-assets.ts` using `sharp` to emit deterministic 16, 24, 32, 48, 64, 128, 192, 256, and 512 px PNGs plus `resources/app.ico`.
-- [ ] Add `packages/desktop/src/common/brand.ts` with product name, short name, slug, protocol label, legal attribution, and neutral support/update states; do not invent a The Fool website or repository URL.
-- [ ] Change package, Electron builder, NSIS, executable, shortcut, protocol, browser title, tray tooltip, visible layout wordmark, and About identity to The Fool.
-- [ ] Keep "Based on AionUi — Apache-2.0" in About/legal notices and disable upstream auto-update actions for this private alpha.
-- [ ] Run the brand asset generator, the three targeted tests, `bun run format`, and `bunx tsc --noEmit`.
-- [ ] Commit with `feat(brand): establish The Fool product identity`.
+- [x] Write failing tests asserting `PRODUCT_NAME === 'The Fool'`, `PRODUCT_SLUG === 'the-fool'`, installer metadata uses The Fool, and primary UI files import centralized brand values instead of hard-coding AionUi.
+- [x] Use the approved jester-mask JPEG as an image-generation reference to create a transparent, simplified crimson/white/onyx master mark and a single-color tray mark; visually inspect both at full size and 24 px.
+- [x] Add `png-to-ico` as a development dependency and implement `scripts/generate-fool-brand-assets.ts` using `sharp` to emit deterministic 16, 24, 32, 48, 64, 128, 192, 256, and 512 px PNGs plus `resources/app.ico`.
+- [x] Add `packages/desktop/src/common/brand.ts` with product name, short name, slug, protocol label, legal attribution, and neutral support/update states; do not invent a The Fool website or repository URL.
+- [x] Change package, Electron builder, NSIS, executable, shortcut, protocol, browser title, tray tooltip, visible layout wordmark, and About identity to The Fool.
+- [x] Keep "Based on AionUi — Apache-2.0" in About/legal notices and disable upstream auto-update actions for this private alpha.
+- [x] Run the brand asset generator, the three targeted tests, `bun run format`, and `bunx tsc --noEmit`.
+- [x] Commit with `feat(brand): establish The Fool product identity`.
 
 ## Task 3: Make the Fool Dark Theme the Default
 

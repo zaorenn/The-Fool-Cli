@@ -5,6 +5,7 @@
  */
 
 import { ipcBridge } from '@/common';
+import { PRODUCT_NAME } from '@/common/brand';
 import { TEAM_MODE_ENABLED } from '@/common/config/constants';
 import PwaPullToRefresh from '@/renderer/components/layout/PwaPullToRefresh';
 import Titlebar from '@/renderer/components/layout/Titlebar';
@@ -474,11 +475,11 @@ const Layout: React.FC<{
                         }
                       }}
                     >
-                      AionUi
+                      {PRODUCT_NAME}
                     </div>
                   </Tooltip>
                 ) : (
-                  <div className='text-16px text-t-primary collapsed-hidden font-semibold'>AionUi</div>
+                  <div className='text-16px text-t-primary collapsed-hidden font-semibold'>{PRODUCT_NAME}</div>
                 )}
                 {isMobile && !collapsed && (
                   <button

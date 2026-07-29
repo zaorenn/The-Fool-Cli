@@ -1,4 +1,5 @@
 import path from 'path';
+import { PRODUCT_EXECUTABLE_NAME } from '../brand';
 import type { IPlatformServices } from './IPlatformServices';
 import { NodePlatformServices } from './NodePlatformServices';
 
@@ -10,7 +11,8 @@ let _services: IPlatformServices | null = null;
  */
 export function getDevAppName(): string {
   const isMultiInstance = process.env.AIONUI_MULTI_INSTANCE === '1';
-  return isMultiInstance ? 'AionUi-Dev-2' : 'AionUi-Dev';
+  const devAppName = `${PRODUCT_EXECUTABLE_NAME}-Dev`;
+  return isMultiInstance ? `${devAppName}-2` : devAppName;
 }
 
 export function registerPlatformServices(services: IPlatformServices): void {

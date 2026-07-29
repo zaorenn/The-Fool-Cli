@@ -6,8 +6,9 @@
 
 import type { BrowserWindow } from 'electron';
 import { ipcBridge } from '@/common';
+import { PRODUCT_PROTOCOL } from '@/common/brand';
 
-export const PROTOCOL_SCHEME = 'aionui';
+export const PROTOCOL_SCHEME = PRODUCT_PROTOCOL;
 
 /**
  * Parse an aionui:// URL into action and params.

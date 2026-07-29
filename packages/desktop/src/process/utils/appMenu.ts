@@ -5,6 +5,7 @@
  */
 
 import { ipcBridge } from '@/common';
+import { AUTO_UPDATE_ENABLED } from '@/common/brand';
 import type { MenuItemConstructorOptions } from 'electron';
 import { Menu, app } from 'electron';
 
@@ -60,17 +61,19 @@ export function setupApplicationMenu(): void {
     ],
   });
 
-  template.push({
-    label: 'Help',
-    submenu: [
-      {
-        label: 'Check for Updates...',
-        click: () => {
-          ipcBridge.update.open.emit({ source: 'menu' });
+  if (AUTO_UPDATE_ENABLED) {
+    template.push({
+      label: 'Help',
+      submenu: [
+        {
+          label: 'Check for Updates...',
+          click: () => {
+            ipcBridge.update.open.emit({ source: 'menu' });
+          },
         },
-      },
-    ],
-  });
+      ],
+    });
+  }
 
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);

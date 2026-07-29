@@ -13,6 +13,7 @@ import { useSettingsViewMode } from '../settingsViewContext';
 import { isElectronDesktop, openExternalUrl } from '@/renderer/utils/platform';
 import FeedbackReportModal from './FeedbackReportModal';
 import { ipcBridge } from '@/common';
+import { AUTO_UPDATE_ENABLED, LEGAL_ATTRIBUTION, PRODUCT_NAME, UPSTREAM_SOURCE_URL } from '@/common/brand';
 import { getIncludePrerelease, runUpdateCheck } from '@/renderer/components/settings/checkForUpdatesShared';
 import { UPDATE_AVAILABLE_EVENT } from '@/renderer/components/settings/useUpdateNotificationController';
 import {
@@ -102,28 +103,8 @@ const AboutModalContent: React.FC = () => {
 
   const linkItems: LinkItem[] = [
     {
-      title: t('settings.helpDocumentation'),
-      url: 'https://github.com/iOfficeAI/AionUi/wiki',
-      icon: <Right theme='outline' size='16' />,
-    },
-    {
-      title: t('settings.updateLog'),
-      url: 'https://github.com/iOfficeAI/AionUi/releases',
-      icon: <Right theme='outline' size='16' />,
-    },
-    {
-      title: t('settings.bugReport'),
-      onClick: () => setShowFeedbackModal(true),
-      icon: <Right theme='outline' size='16' />,
-    },
-    {
-      title: t('settings.contactMe'),
-      url: 'https://x.com/WailiVery',
-      icon: <Right theme='outline' size='16' />,
-    },
-    {
-      title: t('settings.officialWebsite'),
-      url: 'https://www.aionui.com',
+      title: LEGAL_ATTRIBUTION,
+      url: UPSTREAM_SOURCE_URL,
       icon: <Right theme='outline' size='16' />,
     },
   ];
@@ -141,7 +122,7 @@ const AboutModalContent: React.FC = () => {
           {/* App Info Section */}
           <div className='flex flex-col items-center pb-24px'>
             <Typography.Title heading={3} className='text-24px font-bold text-t-primary mb-8px'>
-              AionUi
+              {PRODUCT_NAME}
             </Typography.Title>
             <Typography.Text className='text-14px text-t-secondary mb-12px text-center'>
               {t('settings.appDescription')}
@@ -153,17 +134,18 @@ const AboutModalContent: React.FC = () => {
               <div
                 className='text-t-primary cursor-pointer hover:text-t-secondary transition-colors p-4px'
                 onClick={() =>
-                  openLink('https://github.com/iOfficeAI/AionUi').catch((error) =>
-                    console.error('Failed to open link:', error)
-                  )
+                  openLink(UPSTREAM_SOURCE_URL).catch((error) => console.error('Failed to open link:', error))
                 }
               >
                 <Github theme='outline' size='20' />
               </div>
             </div>
+            <Typography.Text className='text-12px text-t-secondary mb-16px text-center'>
+              {LEGAL_ATTRIBUTION}
+            </Typography.Text>
 
             {/* Check Update Section */}
-            {isElectron && (
+            {AUTO_UPDATE_ENABLED && isElectron && (
               <div className='flex flex-col items-center gap-12px w-full max-w-300px bg-fill-2 p-16px rounded-lg'>
                 <Button
                   type='primary'

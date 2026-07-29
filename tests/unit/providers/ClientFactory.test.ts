@@ -157,13 +157,12 @@ describe('ClientFactory', () => {
       expect(rotatingOpts.retryDelay).toBe(2000);
     });
 
-    it('adds default HTTP-Referer and X-Title headers for OpenAI', async () => {
+    it('adds The Fool X-Title without inventing a product referer', async () => {
       await ClientFactory.createRotatingClient(mockProvider);
       const calls = (OpenAIRotatingClient as any).mock.calls;
       const config = calls[0][1];
       expect(config.defaultHeaders).toEqual({
-        'HTTP-Referer': 'https://aionui.com',
-        'X-Title': 'AionUi',
+        'X-Title': 'The Fool',
       });
     });
 

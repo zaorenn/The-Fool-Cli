@@ -5,53 +5,30 @@
  */
 
 import React from 'react';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  quitAndInstallMock: vi.fn(),
-  autoUpdateCheckMock: vi.fn(),
-  updateCheckMock: vi.fn(),
-  messageInfoMock: vi.fn(),
-  messageErrorMock: vi.fn(),
+  openExternalUrl: vi.fn(),
+  quitAndInstall: vi.fn(),
+  updateCheck: vi.fn(),
 }));
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string, params?: Record<string, string>) =>
-      key === 'update.preparingInstall'
-        ? '准备安装...'
-        : key === 'settings.updateReadyInstall'
-          ? `${params?.version} 已就绪, 立即安装`
-          : key,
-  }),
+  useTranslation: () => ({ t: (key: string) => key }),
 }));
-
-vi.mock('@arco-design/web-react', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@arco-design/web-react')>();
-  return {
-    ...actual,
-    Message: { ...actual.Message, info: mocks.messageInfoMock, error: mocks.messageErrorMock },
-  };
-});
 
 vi.mock('@/common', () => ({
   ipcBridge: {
-    autoUpdate: {
-      quitAndInstall: {
-        invoke: mocks.quitAndInstallMock,
-      },
-      check: { invoke: mocks.autoUpdateCheckMock },
-    },
-    update: {
-      check: { invoke: mocks.updateCheckMock },
-    },
+    autoUpdate: { quitAndInstall: { invoke: mocks.quitAndInstall } },
+    shell: { openFile: { invoke: vi.fn() } },
+    update: { check: { invoke: mocks.updateCheck } },
   },
 }));
 
 vi.mock('@/renderer/utils/platform', () => ({
   isElectronDesktop: () => true,
-  openExternalUrl: vi.fn(),
+  openExternalUrl: mocks.openExternalUrl,
 }));
 
 vi.mock('@/renderer/components/settings/SettingsModal/settingsViewContext', () => ({
@@ -63,128 +40,38 @@ vi.mock('@/renderer/components/settings/SettingsModal/contents/FeedbackReportMod
 }));
 
 import AboutModalContent from '@/renderer/components/settings/SettingsModal/contents/AboutModalContent';
-import { setUpdateReadyState } from '@/renderer/components/settings/updateReadyState';
 
-describe('AboutModalContent update ready state', () => {
+const LEGAL_ATTRIBUTION = 'Based on AionUi — Apache-2.0';
+const UPSTREAM_SOURCE_URL = 'https://github.com/iOfficeAI/AionUi';
+
+describe('AboutModalContent private alpha identity', () => {
   beforeEach(() => {
-    vi.stubGlobal('__APP_VERSION__', '2.1.13');
-    mocks.quitAndInstallMock.mockResolvedValue(undefined);
-    mocks.autoUpdateCheckMock.mockResolvedValue({ success: true });
-    mocks.updateCheckMock.mockResolvedValue({
-      success: true,
-      data: { currentVersion: '2.1.13', updateAvailable: false, latest: null },
-    });
+    vi.stubGlobal('__APP_VERSION__', '2.1.43');
+    mocks.openExternalUrl.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
-    setUpdateReadyState({ ready: false, version: '' });
     cleanup();
     vi.clearAllMocks();
     vi.unstubAllGlobals();
   });
 
-  it('replaces check update with ready-to-install when an update package is ready', async () => {
+  it('shows The Fool attribution without exposing upstream update actions', () => {
     render(<AboutModalContent />);
 
-    expect(screen.getByRole('button', { name: 'settings.checkForUpdates' })).toBeInTheDocument();
-
-    await act(async () => {
-      window.dispatchEvent(
-        new CustomEvent('aionui-update-ready-state-changed', {
-          detail: {
-            ready: true,
-            version: '2.1.14',
-          },
-        })
-      );
-    });
-
-    fireEvent.click(await screen.findByRole('button', { name: '2.1.14 已就绪, 立即安装' }));
-
-    expect(mocks.quitAndInstallMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('heading', { name: 'The Fool' })).toBeInTheDocument();
+    expect(screen.getAllByText(LEGAL_ATTRIBUTION)).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: 'settings.checkForUpdates' })).toBeNull();
+    expect(mocks.updateCheck).not.toHaveBeenCalled();
+    expect(mocks.quitAndInstall).not.toHaveBeenCalled();
   });
 
-  it('shows preparing loading state for ready auto-update install from About', async () => {
-    let rejectInstall!: (error: Error) => void;
-    mocks.quitAndInstallMock.mockImplementation(
-      () =>
-        new Promise<void>((_resolve, reject) => {
-          rejectInstall = reject;
-        })
-    );
-
+  it('opens the attributed upstream source without presenting it as The Fool support', () => {
     render(<AboutModalContent />);
 
-    await act(async () => {
-      window.dispatchEvent(
-        new CustomEvent('aionui-update-ready-state-changed', {
-          detail: {
-            ready: true,
-            version: '2.1.14',
-          },
-        })
-      );
-    });
+    const attributionLinks = screen.getAllByText(LEGAL_ATTRIBUTION);
+    fireEvent.click(attributionLinks[attributionLinks.length - 1]);
 
-    fireEvent.click(await screen.findByRole('button', { name: '2.1.14 已就绪, 立即安装' }));
-
-    expect(await screen.findByRole('button', { name: '准备安装...' })).toBeDisabled();
-    expect(mocks.quitAndInstallMock).toHaveBeenCalledTimes(1);
-
-    await act(async () => {
-      rejectInstall(new Error('prepare failed'));
-    });
-
-    expect(await screen.findByRole('button', { name: '2.1.14 已就绪, 立即安装' })).not.toBeDisabled();
-  });
-
-  it('reveals the notification card only when an update is available, with no toast', async () => {
-    mocks.updateCheckMock.mockResolvedValue({
-      success: true,
-      data: {
-        currentVersion: '2.1.13',
-        updateAvailable: true,
-        latest: {
-          tagName: 'v2.1.14',
-          version: '2.1.14',
-          name: 'v2.1.14',
-          body: 'notes',
-          htmlUrl: 'https://example.com/r',
-          prerelease: false,
-          draft: false,
-          assets: [],
-        },
-      },
-    });
-    const availableListener = vi.fn();
-    window.addEventListener('aionui-update-available', availableListener);
-
-    render(<AboutModalContent />);
-    fireEvent.click(screen.getByRole('button', { name: 'settings.checkForUpdates' }));
-
-    await waitFor(() => {
-      expect(availableListener).toHaveBeenCalledTimes(1);
-    });
-    const detail = (availableListener.mock.calls[0][0] as CustomEvent).detail;
-    expect(detail.kind).toBe('available');
-    expect(detail.updateInfo.version).toBe('2.1.14');
-    expect(mocks.messageInfoMock).not.toHaveBeenCalled();
-
-    window.removeEventListener('aionui-update-available', availableListener);
-  });
-
-  it('shows an up-to-date toast and no card when there is no update', async () => {
-    const availableListener = vi.fn();
-    window.addEventListener('aionui-update-available', availableListener);
-
-    render(<AboutModalContent />);
-    fireEvent.click(screen.getByRole('button', { name: 'settings.checkForUpdates' }));
-
-    await waitFor(() => {
-      expect(mocks.messageInfoMock).toHaveBeenCalledWith('update.alreadyLatest');
-    });
-    expect(availableListener).not.toHaveBeenCalled();
-
-    window.removeEventListener('aionui-update-available', availableListener);
+    expect(mocks.openExternalUrl).toHaveBeenCalledWith(UPSTREAM_SOURCE_URL);
   });
 });

@@ -1,13 +1,13 @@
 {
-  "name": "AionUi",
-  "short_name": "AionUi",
-  "description": "AionUi WebUI for mobile and desktop browsers.",
+  "name": "The Fool",
+  "short_name": "Fool",
+  "description": "The Fool voice-first desktop agent for trusted mobile and desktop browsers.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#4E5969",
+  "background_color": "#0B0D10",
+  "theme_color": "#C4123F",
   "icons": [
     {
       "src": "./pwa/icon-192.png",
