@@ -1,6 +1,7 @@
 import { ipcBridge } from '@/common';
 import { httpRequest } from '@/common/adapter/httpBridge';
 import { assistantRuntimeKey, type AssistantAgent } from '@/common/types/agent/assistantTypes';
+import { DEFAULT_FOOL_VOICE_SETTINGS, parseFoolVoiceSettings } from '@/common/types/foolVoice';
 import type { CreateProviderRequest } from '@/common/types/provider/providerApi';
 
 import type { ConfigKey } from './configKeys';
@@ -139,7 +140,101 @@ export async function migrateConfigStorage(configFile: ConfigFile): Promise<void
     }
   }
 
+  await migrateLegacyFoolVoiceSettings(legacyConfigFile);
   await migrateLegacyChannelSettings(legacyConfigFile);
+}
+
+const isSafeOpenAIBaseUrl = (value: string): boolean => {
+  if (value.length > 2048) return false;
+  try {
+    const url = new URL(value);
+    return (
+      (url.protocol === 'http:' || url.protocol === 'https:') &&
+      !url.username &&
+      !url.password &&
+      !url.search &&
+      !url.hash
+    );
+  } catch {
+    return false;
+  }
+};
+
+const importLegacyOpenAIVoiceMetadata = (value: unknown) => {
+  if (!value || typeof value !== 'object') return undefined;
+  const legacy = value as Record<string, unknown>;
+  if (legacy.provider !== 'openai') return undefined;
+  if (!legacy.openai || typeof legacy.openai !== 'object') return null;
+  const openai = legacy.openai as Record<string, unknown>;
+  const model = typeof openai.model === 'string' ? openai.model.trim() : '';
+  const language = typeof openai.language === 'string' ? openai.language.trim() : 'tr';
+  const configuredBaseUrl = typeof openai.base_url === 'string' ? openai.base_url.trim() : '';
+  const baseUrl = configuredBaseUrl || DEFAULT_FOOL_VOICE_SETTINGS.connections.openAICompatible.baseUrl;
+  if (
+    model.length === 0 ||
+    model.length > 128 ||
+    language.length === 0 ||
+    language.length > 32 ||
+    !isSafeOpenAIBaseUrl(baseUrl)
+  ) {
+    return null;
+  }
+
+  return parseFoolVoiceSettings({
+    ...structuredClone(DEFAULT_FOOL_VOICE_SETTINGS),
+    enabled: false,
+    activation: {
+      ...DEFAULT_FOOL_VOICE_SETTINGS.activation,
+      talkModeEnabled: false,
+      wakePhrase: {
+        ...DEFAULT_FOOL_VOICE_SETTINGS.activation.wakePhrase,
+        enabled: false,
+      },
+    },
+    connections: {
+      openAICompatible: {
+        baseUrl,
+        credentialId: null,
+      },
+    },
+    stt: {
+      providerId: 'openai-compatible',
+      modelId: model,
+      language,
+    },
+  });
+};
+
+async function migrateLegacyFoolVoiceSettings(configFile: LegacyChannelConfigFile): Promise<void> {
+  const backendPreferences = await fetchExistingClientKeys();
+  const storedVoice = backendPreferences['fool.voice'];
+  if (storedVoice !== undefined && storedVoice !== null) {
+    try {
+      parseFoolVoiceSettings(storedVoice);
+    } catch {
+      console.warn('[Migration] fool.voice stored value invalid');
+      await setBackendClientPreferences({
+        'fool.voice': structuredClone(DEFAULT_FOOL_VOICE_SETTINGS),
+      });
+    }
+    return;
+  }
+
+  const backendLegacy = backendPreferences['tools.speechToText'];
+  const fileLegacy =
+    backendLegacy === undefined || backendLegacy === null
+      ? await Promise.resolve()
+          .then(() => configFile.get('tools.speechToText'))
+          .catch((): undefined => undefined)
+      : undefined;
+  const migrated = importLegacyOpenAIVoiceMetadata(backendLegacy ?? fileLegacy);
+  if (migrated === null) {
+    console.warn('[Migration] fool.voice legacy metadata invalid');
+    return;
+  }
+  if (migrated) {
+    await setBackendClientPreferences({ 'fool.voice': migrated });
+  }
 }
 
 export async function migrateLegacyMcpConfigToDb(configFile: ConfigFile): Promise<void> {

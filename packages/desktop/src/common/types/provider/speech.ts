@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export type SpeechToTextProvider = 'openai' | 'deepgram';
+export type SpeechToTextProvider = 'openai' | 'deepgram' | 'local-sherpa';
 
 export type OpenAISpeechToTextConfig = {
   api_key: string;
@@ -25,11 +25,17 @@ export type DeepgramSpeechToTextConfig = {
   smartFormat?: boolean;
 };
 
+export type LocalSherpaSpeechToTextConfig = {
+  language?: string;
+  model: string;
+};
+
 export type SpeechToTextConfig = {
   autoSend?: boolean;
   enabled: boolean;
   provider: SpeechToTextProvider;
   deepgram?: DeepgramSpeechToTextConfig;
+  localSherpa?: LocalSherpaSpeechToTextConfig;
   openai?: OpenAISpeechToTextConfig;
 };
 

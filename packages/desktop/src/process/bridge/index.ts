@@ -12,10 +12,13 @@ import { initWindowControlsBridge } from './windowControlsBridge';
 import { initNotificationBridge } from './notificationBridge';
 import { initWebuiBridge } from './webuiBridge';
 import { initThemeBridge } from './themeBridge';
+import { initFoolVoiceBridge, type FoolVoiceBridgeHandlers } from './foolVoiceBridge';
 
-export type BridgeDependencies = Record<string, never>;
+export type BridgeDependencies = {
+  foolVoice?: Partial<FoolVoiceBridgeHandlers>;
+};
 
-export function initAllBridges(_deps: BridgeDependencies = {}): void {
+export function initAllBridges(deps: BridgeDependencies = {}): void {
   initDialogBridge();
   initApplicationBridge();
   initWindowControlsBridge();
@@ -24,6 +27,7 @@ export function initAllBridges(_deps: BridgeDependencies = {}): void {
   initNotificationBridge();
   initWebuiBridge();
   initThemeBridge();
+  initFoolVoiceBridge(deps.foolVoice);
 }
 
 export {
@@ -35,6 +39,7 @@ export {
   initUpdateBridge,
   initWindowControlsBridge,
   initWebuiBridge,
+  initFoolVoiceBridge,
 };
 export { registerWindowMaximizeListeners } from './windowControlsBridge';
 export const disposeAllTeamSessions = (): Promise<void> => Promise.resolve();

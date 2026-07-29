@@ -67,14 +67,17 @@ export const getModelStreamCapability = (source: 'openai' | 'deepgram' | 'custom
  * - openai with a custom base_url → unknown (custom endpoint behaviour varies)
  */
 export const getStreamCapability = (config: SpeechToTextConfig): StreamCapability => {
-  if (config.provider === 'deepgram') {
-    return getModelStreamCapability('deepgram', config.deepgram?.model ?? '');
+  switch (config.provider) {
+    case 'deepgram':
+      return getModelStreamCapability('deepgram', config.deepgram?.model ?? '');
+    case 'local-sherpa':
+      return 'unsupported';
+    case 'openai': {
+      const baseUrl = config.openai?.base_url?.trim() ?? '';
+      const source = baseUrl ? 'custom' : 'openai';
+      return getModelStreamCapability(source, config.openai?.model ?? '');
+    }
   }
-
-  // openai provider
-  const baseUrl = config.openai?.base_url?.trim() ?? '';
-  const source = baseUrl ? 'custom' : 'openai';
-  return getModelStreamCapability(source, config.openai?.model ?? '');
 };
 
 // ---------------------------------------------------------------------------
@@ -83,10 +86,14 @@ export const getStreamCapability = (config: SpeechToTextConfig): StreamCapabilit
 
 /** Derive a stable string key for the active provider sub-config. */
 const streamMemoryEntry = (config: SpeechToTextConfig): string => {
-  if (config.provider === 'deepgram') {
-    return `deepgram||${config.deepgram?.model ?? ''}`;
+  switch (config.provider) {
+    case 'deepgram':
+      return `deepgram||${config.deepgram?.model ?? ''}`;
+    case 'local-sherpa':
+      return `local-sherpa||${config.localSherpa?.model ?? ''}`;
+    case 'openai':
+      return `openai|${config.openai?.base_url ?? ''}|${config.openai?.model ?? ''}`;
   }
-  return `openai|${config.openai?.base_url ?? ''}|${config.openai?.model ?? ''}`;
 };
 
 const readMemory = (): string[] => {

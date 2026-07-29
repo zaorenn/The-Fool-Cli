@@ -104,7 +104,10 @@ export interface ILegacyConfigStorageRefer extends IConfigStorageRefer {
     /** @deprecated Image generation is now controlled via built-in MCP server toggle */
     switch?: boolean;
   };
+  /** Preserved for legacy microphone and streaming behavior; Fool voice uses backend key `fool.voice`. */
   'tools.speechToText'?: SpeechToTextConfig;
+  // `fool.voice` is deliberately absent: new voice business truth must never
+  // be written through legacy ConfigStorage.
   'model.config'?: unknown;
 }
 

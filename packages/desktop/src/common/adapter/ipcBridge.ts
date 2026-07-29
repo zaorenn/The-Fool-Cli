@@ -15,6 +15,26 @@
 import type { IConfirmation } from '@/common/chat/chatLib';
 import type { AcpSlashCommandApiItem } from '@/common/chat/slash/types';
 import { bridge } from '@/common/platform/bridge';
+import type {
+  VoiceCancelRequest,
+  VoiceCancelResponse,
+  VoiceCatalogRequest,
+  VoiceCatalogResponse,
+  VoiceDownloadProgress,
+  VoiceDownloadRequest,
+  VoiceDownloadResponse,
+  VoiceEventEnvelope,
+  VoiceHealth,
+  VoiceHealthRequest,
+  VoiceRemoveRequest,
+  VoiceRemoveResponse,
+  VoiceRequestEnvelope,
+  VoiceResponseEnvelope,
+  VoiceSynthesizeRequest,
+  VoiceSynthesizeResponse,
+  VoiceTranscribeRequest,
+  VoiceTranscribeResponse,
+} from '@/common/types/foolVoice';
 import type { OpenDialogOptions } from 'electron';
 import type {
   ICssTheme,
@@ -136,6 +156,34 @@ const httpGetClientSetting = <T>(key: string) => ({
     return data?.[key];
   }) as () => Promise<T | undefined>,
 });
+
+export const foolVoice = {
+  catalog: bridge.buildProvider<VoiceResponseEnvelope<VoiceCatalogResponse>, VoiceRequestEnvelope<VoiceCatalogRequest>>(
+    'fool.voice.catalog'
+  ),
+  download: bridge.buildProvider<
+    VoiceResponseEnvelope<VoiceDownloadResponse>,
+    VoiceRequestEnvelope<VoiceDownloadRequest>
+  >('fool.voice.download'),
+  remove: bridge.buildProvider<VoiceResponseEnvelope<VoiceRemoveResponse>, VoiceRequestEnvelope<VoiceRemoveRequest>>(
+    'fool.voice.remove'
+  ),
+  health: bridge.buildProvider<VoiceResponseEnvelope<VoiceHealth>, VoiceRequestEnvelope<VoiceHealthRequest>>(
+    'fool.voice.health'
+  ),
+  transcribe: bridge.buildProvider<
+    VoiceResponseEnvelope<VoiceTranscribeResponse>,
+    VoiceRequestEnvelope<VoiceTranscribeRequest>
+  >('fool.voice.transcribe'),
+  synthesize: bridge.buildProvider<
+    VoiceResponseEnvelope<VoiceSynthesizeResponse>,
+    VoiceRequestEnvelope<VoiceSynthesizeRequest>
+  >('fool.voice.synthesize'),
+  cancel: bridge.buildProvider<VoiceResponseEnvelope<VoiceCancelResponse>, VoiceRequestEnvelope<VoiceCancelRequest>>(
+    'fool.voice.cancel'
+  ),
+  downloadProgress: bridge.buildEmitter<VoiceEventEnvelope<VoiceDownloadProgress>>('fool.voice.download.progress'),
+};
 
 // ---------------------------------------------------------------------------
 // Shell — routed to POST /api/shell/*
