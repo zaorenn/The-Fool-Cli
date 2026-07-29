@@ -124,19 +124,27 @@ function bundledPath(
   binaryName: string,
   diagnostics: BackendBinaryResolveDiagnostics
 ): string | null {
-  const { app } = require('electron');
-  console.log('[binaryResolver] app.getAppPath() =', app.getAppPath());
-  const resourcesPath = app.isPackaged 
-    ? (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath
-    : join(app.getAppPath(), 'resources');
-  console.log('[binaryResolver] resourcesPath:', resourcesPath);
+  // In a development Electron run the bundled binary sits beside the app
+  // sources, not in Electron's own resources directory. Outside Electron
+  // entirely (unit tests, tooling) `app` is undefined, so fall back to
+  // `process.resourcesPath` instead of throwing.
+  let app: { isPackaged: boolean; getAppPath: () => string } | undefined;
+  try {
+    ({ app } = require('electron') as { app?: { isPackaged: boolean; getAppPath: () => string } });
+  } catch {
+    app = undefined;
+  }
+
+  const resourcesPath =
+    app && !app.isPackaged
+      ? join(app.getAppPath(), 'resources')
+      : (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
   if (!resourcesPath) return null;
   diagnostics.resourcesPath = resourcesPath;
 
   const bundledDir = join(resourcesPath, 'bundled-aioncore');
   const runtimeDir = join(bundledDir, runtimeKey);
   const candidate = join(runtimeDir, binaryName);
-  console.log('[binaryResolver] checking candidate:', candidate);
   diagnostics.checkedBundledPath = candidate;
   diagnostics.bundledDirExists = existsSync(bundledDir);
   diagnostics.runtimeDirExists = existsSync(runtimeDir);

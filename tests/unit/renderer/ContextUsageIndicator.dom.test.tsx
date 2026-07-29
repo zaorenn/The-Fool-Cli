@@ -77,7 +77,11 @@ describe('ContextUsageIndicator', () => {
 
     const popover = getByTestId('popover-content').textContent ?? '';
     expect(popover).toContain('Session cost');
-    expect(popover).toContain('0.42');
+    // The decimal separator follows the host locale, so build the expected
+    // string the same way rather than hard-coding a dot.
+    expect(popover).toContain(
+      new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 4 }).format(0.42)
+    );
     expect(popover).toContain('Input 14.1K');
     expect(popover).toContain('Output 30');
     expect(popover).toContain('Cache read 14.1K');

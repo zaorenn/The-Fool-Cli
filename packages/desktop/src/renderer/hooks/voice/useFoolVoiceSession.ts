@@ -16,6 +16,7 @@ import { AdaptiveVad } from '@renderer/services/voice/AdaptiveVad';
 import { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybackService';
 import { MicrophoneCapture } from '@renderer/services/voice/MicrophoneCapture';
 import { EMPTY_EVIDENCE, narrate, type RunEvidence } from '@renderer/services/voice/FoolNarrator';
+import { createRunEvidenceCollector } from '@renderer/services/voice/RunEvidenceCollector';
 import { selectTtsTarget } from '@renderer/services/voice/selectTtsTarget';
 
 /** Dispatched with the transcript so the mounted SendBox owns submission. */
@@ -209,25 +210,42 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     [enter, sessionId, settings]
   );
 
-  // The conversation reports its finished turn here; the brief is spoken and
-  // the loop returns to listening.
-  useEffect(() => {
-    const handleReply = (event: Event) => {
+  const speakThenListen = useCallback(
+    (answer: string, evidence: RunEvidence): void => {
       if (!activeRef.current) return;
-      const { answer, evidence } = (event as CustomEvent<VoiceReplyDetail>).detail;
 
-      void speak(answer, evidence ?? EMPTY_EVIDENCE)
+      void speak(answer, evidence)
         .catch((): void => {
           // A synthesis failure must not end the session; keep listening.
         })
         .finally((): void => {
           if (activeRef.current) listen();
         });
-    };
+    },
+    [listen, speak]
+  );
 
+  // Turn completion arrives on the conversation's existing response stream.
+  // Subscribing here — rather than adding a second detection path — keeps the
+  // spoken brief in step with what the screen already shows.
+  useEffect(() => {
+    const collector = createRunEvidenceCollector(({ answer, evidence }) => speakThenListen(answer, evidence));
+    const disposeStream = ipcBridge.conversation?.responseStream?.on(collector.onStreamMessage);
+
+    // Also honoured directly, so a caller can drive speech in tests or from a
+    // surface that is not the conversation stream.
+    const handleReply = (event: Event) => {
+      const { answer, evidence } = (event as CustomEvent<VoiceReplyDetail>).detail;
+      speakThenListen(answer, evidence ?? EMPTY_EVIDENCE);
+    };
     window.addEventListener(VOICE_REPLY_EVENT, handleReply);
-    return () => window.removeEventListener(VOICE_REPLY_EVENT, handleReply);
-  }, [listen, speak]);
+
+    return () => {
+      disposeStream?.();
+      collector.reset();
+      window.removeEventListener(VOICE_REPLY_EVENT, handleReply);
+    };
+  }, [speakThenListen]);
 
   const stop = useCallback(() => {
     activeRef.current = false;
