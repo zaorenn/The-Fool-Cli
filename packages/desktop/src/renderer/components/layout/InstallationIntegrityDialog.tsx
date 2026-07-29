@@ -3,8 +3,8 @@ import type { TFunction } from 'i18next';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type FeedbackEventTags, submitFeedbackReport } from '@/renderer/services/feedback/submitFeedbackReport';
+import { PRODUCT_UPDATE_URL } from '@/common/brand';
 
-const AIONUI_DOWNLOAD_URL = 'https://www.aionui.com/';
 const INSTALLATION_INTEGRITY_REPORT_FLUSH_TIMEOUT_MS = 2000;
 
 type InstallationIntegrityDialogKind =
@@ -31,7 +31,8 @@ export type InstallationIntegrityDiagnostics = {
 };
 
 export function openDownloadLatest(): void {
-  window.open(AIONUI_DOWNLOAD_URL, '_blank', 'noopener,noreferrer');
+  if (!PRODUCT_UPDATE_URL) return;
+  window.open(PRODUCT_UPDATE_URL, '_blank', 'noopener,noreferrer');
 }
 
 export function getInstallationIntegrityTitle(
@@ -160,7 +161,10 @@ export function getInstallationIntegrityModalActions(
 } {
   const diagnosticsKind = options.diagnosticsKind ?? 'incomplete_installation';
   return {
-    downloadText: diagnosticsKind === 'incomplete_installation' ? getInstallationIntegrityDownloadText(t) : undefined,
+    downloadText:
+      diagnosticsKind === 'incomplete_installation' && PRODUCT_UPDATE_URL
+        ? getInstallationIntegrityDownloadText(t)
+        : undefined,
     onDownloadLatest: options.onDownloadLatest ?? openDownloadLatest,
     onRecoverCorruptedDatabase: options.onRecoverCorruptedDatabase ?? (() => Promise.resolve()),
     onReportDiagnostics: options.onReportDiagnostics ?? (() => Promise.resolve()),
@@ -183,15 +187,8 @@ export function getInstallationIntegrityModalActions(
   };
 }
 
-export function getDownloadLatestModalActionProps(t: TFunction): {
-  cancelButtonProps: {
-    style: {
-      display: 'none';
-    };
-  };
-  okText: string;
-  onOk: () => void;
-} {
+export function getDownloadLatestModalActionProps(t: TFunction): React.ComponentProps<typeof Modal> {
+  if (!PRODUCT_UPDATE_URL) return { footer: null };
   return {
     okText: getInstallationIntegrityDownloadText(t),
     onOk: openDownloadLatest,

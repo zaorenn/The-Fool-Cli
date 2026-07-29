@@ -368,13 +368,13 @@ describe('detectStartupArchitectureMismatch', () => {
 });
 
 describe('getInstallationIntegrityModalActions', () => {
-  it('exposes diagnostics reporting next to download-latest for blocking dialogs', () => {
+  it('exposes diagnostics without an upstream download action for blocking dialogs', () => {
     const t = (key: string) => key;
     const onReportDiagnostics = vi.fn();
 
     const actions = getInstallationIntegrityModalActions(t, { onReportDiagnostics });
 
-    expect(actions.downloadText).toBe('common.backendStartup.incompleteInstallation.downloadLatest');
+    expect(actions.downloadText).toBeUndefined();
     expect(actions.reportText).toBe('common.backendStartup.incompleteInstallation.sendDiagnostics');
 
     actions.onReportDiagnostics();
