@@ -458,6 +458,11 @@
       "recordingUnsupported": "ضبط زنده در اینجا پشتیبانی نمی‌شود. لطفاً به‌جای آن فایل صوتی آپلود کنید",
       "transcriptionFailed": "رونویسی صوت ناموفق بود",
       "genericError": "ورودی صوتی ناموفق بود. لطفاً دوباره تلاش کنید"
+    },
+    "voice": {
+      "startTalk": "شروع گفتگو",
+      "stopTalk": "توقف گفتگو",
+      "installNeeded": "ابتدا یک مدل گفتار نصب کنید"
     }
   },
   "sideQuestion": {

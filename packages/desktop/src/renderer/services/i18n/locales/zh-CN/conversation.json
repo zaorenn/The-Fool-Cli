@@ -458,6 +458,11 @@
       "recordingUnsupported": "当前环境不支持直接录音，请改为上传音频文件",
       "transcriptionFailed": "音频转写失败",
       "genericError": "语音输入失败，请重试"
+    },
+    "voice": {
+      "startTalk": "开始语音对话",
+      "stopTalk": "停止语音对话",
+      "installNeeded": "请先安装语音模型"
     }
   },
   "sideQuestion": {

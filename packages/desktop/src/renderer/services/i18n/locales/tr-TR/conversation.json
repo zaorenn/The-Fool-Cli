@@ -443,6 +443,11 @@
       "recordingUnsupported": "Bu ortamda doğrudan kayıt desteklenmiyor. Lütfen bir ses dosyası yükleyin",
       "transcriptionFailed": "Ses yazıya dönüştürülemedi",
       "genericError": "Sesli giriş başarısız oldu. Lütfen tekrar deneyin"
+    },
+    "voice": {
+      "startTalk": "Konuşmayı başlat",
+      "stopTalk": "Konuşmayı durdur",
+      "installNeeded": "Önce bir konuşma modeli kurun"
     }
   },
   "sideQuestion": {

@@ -458,6 +458,11 @@
       "recordingUnsupported": "L'enregistrement en direct n'est pas pris en charge ici. Veuillez téléverser un fichier audio à la place",
       "transcriptionFailed": "Échec de la transcription audio",
       "genericError": "Échec de la saisie vocale. Veuillez réessayer"
+    },
+    "voice": {
+      "startTalk": "Commencer à parler",
+      "stopTalk": "Arrêter de parler",
+      "installNeeded": "Installez d'abord un modèle vocal"
     }
   },
   "sideQuestion": {

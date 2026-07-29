@@ -458,6 +458,11 @@
       "recordingUnsupported": "目前環境不支援直接錄音，請改為上傳音訊檔案",
       "transcriptionFailed": "音訊轉寫失敗",
       "genericError": "語音輸入失敗，請再試一次"
+    },
+    "voice": {
+      "startTalk": "開始語音對話",
+      "stopTalk": "停止語音對話",
+      "installNeeded": "請先安裝語音模型"
     }
   },
   "sideQuestion": {

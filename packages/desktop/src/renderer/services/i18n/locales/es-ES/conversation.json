@@ -459,6 +459,11 @@
       "recordingUnsupported": "La grabación en vivo no está disponible aquí. Por favor sube un archivo de audio",
       "transcriptionFailed": "Error en la transcripción de audio",
       "genericError": "Error en la entrada de voz. Por favor intenta de nuevo"
+    },
+    "voice": {
+      "startTalk": "Empezar a hablar",
+      "stopTalk": "Dejar de hablar",
+      "installNeeded": "Instale primero un modelo de voz"
     }
   },
   "sideQuestion": {

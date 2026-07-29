@@ -458,6 +458,11 @@
       "recordingUnsupported": "Live recording is not supported here. Please upload an audio file instead",
       "transcriptionFailed": "Audio transcription failed",
       "genericError": "Voice input failed. Please try again"
+    },
+    "voice": {
+      "startTalk": "Start talking",
+      "stopTalk": "Stop talking",
+      "installNeeded": "Install a speech model first"
     }
   },
   "sideQuestion": {

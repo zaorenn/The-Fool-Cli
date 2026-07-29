@@ -459,6 +459,11 @@
       "recordingUnsupported": "Live-Aufnahme wird hier nicht unterstützt. Bitte lade stattdessen eine Audiodatei hoch",
       "transcriptionFailed": "Audio-Transkription fehlgeschlagen",
       "genericError": "Spracheingabe fehlgeschlagen. Bitte erneut versuchen"
+    },
+    "voice": {
+      "startTalk": "Sprechen starten",
+      "stopTalk": "Sprechen beenden",
+      "installNeeded": "Installieren Sie zuerst ein Sprachmodell"
     }
   },
   "sideQuestion": {

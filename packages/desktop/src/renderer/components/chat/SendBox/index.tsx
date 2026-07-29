@@ -42,6 +42,8 @@ import { useAbortUploadsOnConversationChange } from '@renderer/hooks/file/useAbo
 import UploadProgressBar from '@renderer/components/media/UploadProgressBar';
 import { allSupportedExts } from '@renderer/services/FileService';
 import SpeechInputButton from '@/renderer/components/chat/SpeechInputButton';
+import VoiceTalkButton from '@/renderer/components/chat/VoiceTalkButton';
+import { VOICE_SUBMIT_EVENT, type VoiceSubmitDetail } from '@/renderer/hooks/voice/useFoolVoiceSession';
 import { appendSpeechTranscript } from '@/renderer/hooks/system/useSpeechInput';
 import { createChainedDispatch, useLiveTranscriptInsertion } from '@/renderer/hooks/system/useLiveTranscriptInsertion';
 import { getConversationInputHistory, isCaretOnFirstLine } from '@/renderer/utils/chat/messageHistory';
@@ -1277,6 +1279,25 @@ const SendBox: React.FC<{
   );
   const { handleLiveTranscript } = useLiveTranscriptInsertion(speechDispatch.dispatch);
 
+  // Kept in a ref so the voice listener below never needs to resubscribe.
+  const sendMessageHandlerRef = useRef(sendMessageHandler);
+  sendMessageHandlerRef.current = sendMessageHandler;
+
+  // Hands-free conversation hands its transcript here so submission keeps using
+  // the normal send path, preserving all ACP/Aionrs routing and permissions.
+  useEffect(() => {
+    const handleVoiceSubmit = (event: Event) => {
+      const { text } = (event as CustomEvent<VoiceSubmitDetail>).detail;
+      if (!text.trim()) return;
+      setInputRef.current(text);
+      // Let the controlled input commit before the send handler reads it.
+      requestAnimationFrame(() => sendMessageHandlerRef.current());
+    };
+
+    window.addEventListener(VOICE_SUBMIT_EVENT, handleVoiceSubmit);
+    return () => window.removeEventListener(VOICE_SUBMIT_EVENT, handleVoiceSubmit);
+  }, [setInputRef]);
+
   const hasDraftToSend = input.trim().length > 0 || domSnippets.length > 0;
 
   // Calculate button disabled state
@@ -1343,11 +1364,14 @@ const SendBox: React.FC<{
   const renderedTools = isMobileCompact ? mobilePlusButton : tools;
   const renderedRightTools = isMobileCompact ? null : rightTools;
   const renderedSpeechButton = isMobileCompact ? null : (
-    <SpeechInputButton
-      disabled={disabled || isLoading || loading || isUploading}
-      onLiveTranscript={handleLiveTranscript}
-      onTranscript={handleSpeechTranscript}
-    />
+    <>
+      <SpeechInputButton
+        disabled={disabled || isLoading || loading || isUploading}
+        onLiveTranscript={handleLiveTranscript}
+        onTranscript={handleSpeechTranscript}
+      />
+      <VoiceTalkButton disabled={disabled || isLoading || loading || isUploading} />
+    </>
   );
 
   const renderHighlightedInputValue = useCallback(() => {

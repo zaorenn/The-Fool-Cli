@@ -458,6 +458,11 @@
       "transcriptionFailed": "Не вдалося транскрибувати аудіо",
       "genericError": "Помилка голосового введення. Спробуйте ще раз",
       "emptyTranscript": "No speech was detected"
+    },
+    "voice": {
+      "startTalk": "Почати розмову",
+      "stopTalk": "Зупинити розмову",
+      "installNeeded": "Спершу встановіть мовну модель"
     }
   },
   "sideQuestion": {
