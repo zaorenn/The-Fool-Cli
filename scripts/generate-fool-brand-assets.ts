@@ -86,6 +86,19 @@ async function createTrayAsset(source: Buffer): Promise<Buffer> {
     .png({ adaptiveFiltering: false, compressionLevel: 9 })
     .toBuffer();
 }
+async function createThemeCover(source: Buffer): Promise<Buffer> {
+  const mark = await sharp(source)
+    .resize(260, 260, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 }, kernel: 'lanczos3' })
+    .png()
+    .toBuffer();
+
+  return sharp({
+    create: { width: 960, height: 540, channels: 4, background: { r: 11, g: 13, b: 16, alpha: 1 } },
+  })
+    .composite([{ input: mark, left: 350, top: 116 }])
+    .png({ adaptiveFiltering: false, compressionLevel: 9 })
+    .toBuffer();
+}
 
 export async function generateBrandAssets(options: BrandGenerationOptions = {}): Promise<void> {
   const rootDir = resolve(options.rootDir ?? DEFAULT_ROOT);
@@ -93,8 +106,13 @@ export async function generateBrandAssets(options: BrandGenerationOptions = {}):
   const iconsDir = resolve(rootDir, 'resources/branding/icons');
   const resourcesDir = resolve(rootDir, 'resources');
   const pwaDir = resolve(rootDir, 'public/pwa');
+  const themeAssetsDir = resolve(rootDir, 'packages/desktop/src/renderer/assets/themes');
 
-  await Promise.all([mkdir(iconsDir, { recursive: true }), mkdir(pwaDir, { recursive: true })]);
+  await Promise.all([
+    mkdir(iconsDir, { recursive: true }),
+    mkdir(pwaDir, { recursive: true }),
+    mkdir(themeAssetsDir, { recursive: true }),
+  ]);
 
   const normalizedMaster = await applyBrandPalette(sourcePath);
   const sizedAssets = new Map<number, Buffer>();
@@ -116,6 +134,7 @@ export async function generateBrandAssets(options: BrandGenerationOptions = {}):
     writeFile(resolve(pwaDir, 'icon-180.png'), sizedAssets.get(180)!),
     writeFile(resolve(pwaDir, 'icon-192.png'), sizedAssets.get(192)!),
     writeFile(resolve(pwaDir, 'icon-512.png'), appIcon),
+    writeFile(resolve(themeAssetsDir, 'the-fool-theme.png'), await createThemeCover(normalizedMaster)),
   ]);
 
   const icoPaths = ICO_SIZES.map((size) => resolve(iconsDir, `icon-${size}.png`));

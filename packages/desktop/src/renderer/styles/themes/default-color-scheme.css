@@ -142,3 +142,62 @@
   --fill-white-to-black: #000000; /* 白到黑填充色（暗色模式下为黑色） */
   --border-special: #60677e; /* 特殊边框色 */
 }
+
+/* The Fool dark prepaint: matches the default theme before persisted CSS hydrates. */
+[data-color-scheme='default'][data-theme='dark'] {
+  --aou-1: #12151a;
+  --aou-2: #1a1e24;
+  --aou-3: #242932;
+  --aou-4: #303741;
+  --aou-5: #5b3440;
+  --aou-6: #c4123f;
+  --aou-7: #d72b55;
+  --aou-8: #e8a6b7;
+  --aou-9: #eadfd8;
+  --aou-10: #f5f1e8;
+
+  --bg-base: #0b0d10;
+  --bg-1: #12151a;
+  --bg-2: #1a1e24;
+  --bg-3: #242932;
+  --bg-4: #303741;
+  --bg-5: #3d444f;
+  --bg-6: #555d69;
+  --bg-8: #827b73;
+  --bg-9: #c7c1b7;
+  --bg-10: #f5f1e8;
+  --bg-hover: #20252c;
+  --bg-active: #2a3039;
+
+  --text-primary: #f5f1e8;
+  --color-text-1: #f5f1e8;
+  --text-secondary: #c7c1b7;
+  --text-disabled: #827b73;
+
+  --primary: #c4123f;
+  --success: #45b97c;
+  --warning: #e3a53f;
+  --danger: #e05262;
+  --info: #69a7d8;
+
+  --border-base: #303741;
+  --border-light: #242932;
+  --border-special: #5b3440;
+
+  --brand: #c4123f;
+  --brand-light: #35121d;
+  --brand-hover: #d72b55;
+
+  --message-user-bg: #29131b;
+  --message-tips-bg: #151a20;
+  --workspace-btn-bg: #1a1e24;
+  --color-guid-agent-bar: #1a1e24;
+
+  --fill: #12151a;
+  --inverse: #f5f1e8;
+  --dialog-fill-0: #1a1e24;
+  --text-0: #f5f1e8;
+  --text-white: #f5f1e8;
+  --fill-0: rgba(245, 241, 232, 0.08);
+  --fill-white-to-black: #0b0d10;
+}

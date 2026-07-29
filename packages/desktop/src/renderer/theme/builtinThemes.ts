@@ -5,9 +5,10 @@
  */
 
 import type { Theme } from '@/common/theme/types';
-import { LIGHT_THEME_ID, DARK_THEME_ID } from '@/common/theme/constants';
+import { DARK_THEME_ID, LIGHT_THEME_ID, THE_FOOL_THEME_ID } from '@/common/theme/constants';
 
 import {
+  theFoolThemeCover,
   defaultThemeCover,
   misakaMikotoCover,
   helloKittyCover,
@@ -16,6 +17,7 @@ import {
   retromaObsidianBookCover,
 } from '@renderer/pages/settings/AppearanceSettings/themeCovers';
 
+import theFoolCss from '@renderer/pages/settings/AppearanceSettings/presets/the-fool.css?raw';
 import misakaMikotoCss from '@renderer/pages/settings/AppearanceSettings/presets/misaka-mikoto.css?raw';
 import helloKittyCss from '@renderer/pages/settings/AppearanceSettings/presets/hello-kitty.css?raw';
 import retroWindowsCss from '@renderer/pages/settings/AppearanceSettings/presets/retro-windows.css?raw';
@@ -38,6 +40,7 @@ const decorative = (id: string, name: string, appearance: Theme['appearance'], c
 });
 
 export const BUILTIN_THEMES: Theme[] = [
+  decorative(THE_FOOL_THEME_ID, 'The Fool', 'dark', theFoolCss, theFoolThemeCover),
   {
     id: LIGHT_THEME_ID,
     name: 'Light',

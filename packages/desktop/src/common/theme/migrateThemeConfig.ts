@@ -5,7 +5,7 @@
  */
 
 import type { Theme } from './types';
-import { LIGHT_THEME_ID, DARK_THEME_ID } from './constants';
+import { DARK_THEME_ID, DEFAULT_THEME_ID, LIGHT_THEME_ID } from './constants';
 
 type OldCssTheme = {
   id: string;
@@ -32,12 +32,20 @@ export type NewThemeConfig = {
 const OLD_DEFAULT_ID = 'default-theme';
 
 export function migrateThemeConfig(old: OldThemeConfig): NewThemeConfig {
+  const isFreshProfile =
+    old.theme === undefined &&
+    old['css.activeThemeId'] === undefined &&
+    old['css.themes'] === undefined &&
+    old.customCss === undefined;
+
   const appearance = old.theme === 'dark' ? 'dark' : 'light';
 
   let activeId: string;
   const oldActive = old['css.activeThemeId'] || '';
   if (oldActive && oldActive !== OLD_DEFAULT_ID) {
     activeId = oldActive;
+  } else if (isFreshProfile) {
+    activeId = DEFAULT_THEME_ID;
   } else {
     activeId = appearance === 'dark' ? DARK_THEME_ID : LIGHT_THEME_ID;
   }

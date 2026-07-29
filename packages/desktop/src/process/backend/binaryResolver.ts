@@ -2,8 +2,9 @@
  * Resolve the aioncore binary path.
  *
  * Search order:
- *  1. Bundled with app (production)
- *  2. System PATH
+ *  1. Explicit bundled directory override (development and tests)
+ *  2. Bundled with app (production)
+ *  3. System PATH
  */
 
 import { existsSync, readdirSync } from 'node:fs';
@@ -16,6 +17,7 @@ const MAX_LOOKUP_TEXT_LENGTH = 1000;
 
 type BackendBinaryResolveDiagnostics = {
   resourcesPath?: string;
+  bundledDirOverride?: string;
   runtimeKey: string;
   binaryName: string;
   checkedBundledPath?: string;
@@ -73,6 +75,9 @@ export function resolveBinaryPath(): string {
     pathLookupCommand: process.platform === 'win32' ? `where ${BINARY_NAME}` : `which ${BINARY_NAME}`,
   };
 
+  const configured = configuredBundledPath(runtimeKey, binaryName, diagnostics);
+  if (configured) return configured;
+
   const bundled = bundledPath(runtimeKey, binaryName, diagnostics);
   if (bundled) return bundled;
 
@@ -85,6 +90,23 @@ export function resolveBinaryPath(): string {
   );
 }
 
+function configuredBundledPath(
+  runtimeKey: string,
+  binaryName: string,
+  diagnostics: BackendBinaryResolveDiagnostics
+): string | null {
+  const bundledDir = process.env.AIONUI_BACKEND_BUNDLED_DIR?.trim();
+  if (!bundledDir) return null;
+
+  const runtimeDir = join(bundledDir, runtimeKey);
+  const candidate = join(runtimeDir, binaryName);
+  diagnostics.bundledDirOverride = bundledDir;
+  diagnostics.checkedBundledPath = candidate;
+  diagnostics.bundledDirExists = existsSync(bundledDir);
+  diagnostics.runtimeDirExists = existsSync(runtimeDir);
+  diagnostics.runtimeDirEntries = listDirEntries(runtimeDir);
+  return existsSync(candidate) ? candidate : null;
+}
 /**
  * Check bundled binary in resources directory.
  * Layout: bundled-aioncore/{platform}-{arch}/aioncore[.exe]

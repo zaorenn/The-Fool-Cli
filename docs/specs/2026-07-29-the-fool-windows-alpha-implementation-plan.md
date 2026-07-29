@@ -82,13 +82,13 @@
 - Test: `tests/unit/renderer/theme/theFoolTheme.test.ts`
 - Test: `tests/e2e/cases/branding/the-fool-theme.e2e.ts`
 
-- [ ] Write a failing unit test asserting the default theme ID is `the-fool`, appearance is dark, and required semantic tokens exist.
-- [ ] Define onyx backgrounds, graphite surfaces, restrained crimson primary/brand colors, warm-white text, accessible success green, and warning amber in `the-fool.css`.
-- [ ] Register The Fool first in `BUILTIN_THEMES`, make it `DEFAULT_THEME_ID`, and preserve existing themes as opt-in choices.
-- [ ] Add a theme cover generated from the master mark without decorative glow or noisy patterns.
-- [ ] Add an E2E assertion for `data-theme="dark"`, the The Fool wordmark, primary token application, and readable chat/send-box surfaces.
-- [ ] Run targeted theme tests, `bun run lint:fix`, `bun run format`, and `bunx tsc --noEmit`.
-- [ ] Commit with `feat(theme): add The Fool default appearance`.
+- [x] Write a failing unit test asserting the default theme ID is `the-fool`, appearance is dark, and required semantic tokens exist.
+- [x] Define onyx backgrounds, graphite surfaces, restrained crimson primary/brand colors, warm-white text, accessible success green, and warning amber in `the-fool.css`.
+- [x] Register The Fool first in `BUILTIN_THEMES`, make it `DEFAULT_THEME_ID`, and preserve existing themes as opt-in choices.
+- [x] Add a theme cover generated from the master mark without decorative glow or noisy patterns.
+- [x] Add an E2E assertion for `data-theme="dark"`, the The Fool wordmark, primary token application, and readable chat/send-box surfaces.
+- [x] Run targeted theme tests, `bun run lint:fix`, `bun run format`, and `bunx tsc --noEmit`.
+- [x] Commit with `feat(theme): add The Fool default appearance`.
 
 ## Task 4: Define Voice Contracts, Settings, and Typed Bridges
 

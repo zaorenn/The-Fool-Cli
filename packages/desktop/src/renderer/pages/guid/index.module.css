@@ -38,8 +38,8 @@
 }
 
 :global([data-theme='dark']) .guidInputInner {
-  background: #262626;
-  border-color: #3a3a3a;
+  background: var(--dialog-fill-0);
+  border-color: var(--color-border-3, var(--border-base));
 }
 
 .actionRow {
