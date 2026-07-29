@@ -7,26 +7,26 @@
 
 ## Toolchain
 
-| Tool | Version |
-| --- | --- |
-| Node.js | `v24.18.0` |
-| npm | `12.0.1` |
-| Bun | `1.3.14` |
-| Rust | `rustc 1.97.1` |
-| Cargo | `cargo 1.97.1` |
-| OpenClaw | `2026.7.1-2 (0790d9f)` |
+| Tool         | Version                     |
+| ------------ | --------------------------- |
+| Node.js      | `v24.18.0`                  |
+| npm          | `12.0.1`                    |
+| Bun          | `1.3.14`                    |
+| Rust         | `rustc 1.97.1`              |
+| Cargo        | `cargo 1.97.1`              |
+| OpenClaw     | `2026.7.1-2 (0790d9f)`      |
 | Hermes Agent | `v0.19.0`, Python `3.11.15` |
 
 The existing `bun.lock` remained unchanged after `bun install`.
 
 ## Validation results
 
-| Command | Result | Notes |
-| --- | --- | --- |
-| `bun run test` | Baseline has 2 environment-specific failures | 2,813 passed, 6 skipped; 342 files passed, 1 skipped, 2 failed; about 60 seconds |
-| `bunx --no-install tsc --noEmit` | Passed | About 9 seconds |
-| `bun run package` | Passed | About 24 seconds |
-| `bun run build-win:x64:fast` | Passed | About 160 seconds; no Defender or file-lock interruption |
+| Command                          | Result                                       | Notes                                                                            |
+| -------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------- |
+| `bun run test`                   | Baseline has 2 environment-specific failures | 2,813 passed, 6 skipped; 342 files passed, 1 skipped, 2 failed; about 60 seconds |
+| `bunx --no-install tsc --noEmit` | Passed                                       | About 9 seconds                                                                  |
+| `bun run package`                | Passed                                       | About 24 seconds                                                                 |
+| `bun run build-win:x64:fast`     | Passed                                       | About 160 seconds; no Defender or file-lock interruption                         |
 
 The two inherited test failures are recorded rather than hidden:
 

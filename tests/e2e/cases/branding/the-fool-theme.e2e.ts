@@ -35,7 +35,7 @@ function contrastRatio(foreground: string, background: string): number {
     return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
   };
 
-  const [lighter, darker] = [toLuminance(foreground), toLuminance(background)].sort((a, b) => b - a);
+  const [lighter, darker] = [toLuminance(foreground), toLuminance(background)].toSorted((a, b) => b - a);
   return (lighter + 0.05) / (darker + 0.05);
 }
 
