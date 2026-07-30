@@ -1362,7 +1362,9 @@
     "shortcutHint": "Appuyez dessus avec n'importe quelle fenêtre au premier plan pour commencer un tour. C'est envoyé quand vous arrêtez de parler, ou quand vous appuyez de nouveau.",
     "shortcutRegistered": "La touche est à vous.",
     "shortcutTaken": "Autre chose sur ce bureau utilise déjà cette touche.",
-    "shortcutInvalid": "Ce n'est pas une combinaison de touches utilisable."
+    "shortcutInvalid": "Ce n'est pas une combinaison de touches utilisable.",
+    "attachScreenshot": "Envoyer l'écran avec ce que je dis",
+    "attachScreenshotHint": "Un modèle capable de regarder des images reçoit une image de cette fenêtre à chaque tour parlé, pour que vous n'ayez pas à décrire ce qui s'y trouve. Les modèles texte seul ne reçoivent rien."
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

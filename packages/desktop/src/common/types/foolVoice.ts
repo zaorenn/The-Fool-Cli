@@ -288,6 +288,13 @@ export type FoolVoiceSettings = {
     /** Provider holding the model. Empty leaves the model to the assistant. */
     providerId: string;
     modelId: string;
+    /**
+     * Send the app's screen with a spoken turn, when the model can look at it.
+     *
+     * Talking to something across the room and then having to describe what is on
+     * screen defeats the point. Skipped in silence for a text-only model.
+     */
+    attachScreenshot: boolean;
   };
   playback: {
     volume: number;
@@ -382,6 +389,7 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     assistantId: '',
     providerId: '',
     modelId: '',
+    attachScreenshot: true,
   },
   playback: {
     volume: 0.85,
@@ -549,6 +557,7 @@ const settingsSchema = z
         assistantId: z.string().max(128).default(''),
         providerId: z.string().max(128).default(''),
         modelId: z.string().max(256).default(''),
+        attachScreenshot: z.boolean().default(true),
       })
       .strict()
       .default({}),

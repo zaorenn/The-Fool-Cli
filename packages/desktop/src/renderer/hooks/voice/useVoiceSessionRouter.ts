@@ -18,6 +18,7 @@ import {
   resolveBoundConversation,
 } from '@renderer/services/voice/session/voiceSessionBinding';
 import { startVoiceConversation } from '@renderer/services/voice/session/startVoiceConversation';
+import { captureVoiceScreenshot } from '@renderer/services/voice/session/wakeScreenshot';
 import { readVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 
 /**
@@ -68,13 +69,23 @@ export const useVoiceSessionRouter = (): void => {
     };
 
     const handleTurn = async (text: string): Promise<void> => {
+      const settings = await readVoiceSettings();
       // Every wake continues the same chat. A new one only happens when the user
       // asked for it, or when the bound chat no longer exists.
       const bound = await resolveBoundConversation();
 
+      // The screen goes with the turn when the model can look at it. Null for
+      // every reason it should not — off, text-only, capture failed — and the
+      // turn goes ahead regardless.
+      const shot = await captureVoiceScreenshot(settings);
+      const files = shot ? [shot] : undefined;
+
       if (!bound) {
-        const settings = await readVoiceSettings();
-        const started = await startVoiceConversation({ text, settings });
+        const started = await startVoiceConversation({
+          text,
+          settings,
+          files: shot ? [{ kind: 'upload', path: shot.path }] : undefined,
+        });
         if (started.ok) {
           // The conversation page picks the message up as it mounts, so there is
           // nothing to hand over and nothing to type.
@@ -89,7 +100,7 @@ export const useVoiceSessionRouter = (): void => {
         awaitingNewConversation.current = true;
         const alreadyAtHome = currentPath() === '/guid';
         goTo('/guid');
-        handOver(VOICE_HOME_SUBMIT_EVENT, { text }, alreadyAtHome);
+        handOver(VOICE_HOME_SUBMIT_EVENT, { text, files }, alreadyAtHome);
         return;
       }
 
@@ -97,7 +108,7 @@ export const useVoiceSessionRouter = (): void => {
       const alreadyThere = currentPath() === target;
       awaitingNewConversation.current = false;
       goTo(target);
-      handOver(VOICE_SUBMIT_EVENT, { text }, alreadyThere);
+      handOver(VOICE_SUBMIT_EVENT, { text, files }, alreadyThere);
     };
 
     const onTurn = (event: Event) => {

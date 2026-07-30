@@ -324,12 +324,17 @@ const GuidPage: React.FC = () => {
   sendRef.current = send.sendMessageHandler;
   const setInputRef = useRef(guidInput.setInput);
   setInputRef.current = guidInput.setInput;
+  const uploadedRef = useRef(guidInput.handleFilesUploaded);
+  uploadedRef.current = guidInput.handleFilesUploaded;
 
   useEffect(() => {
     const handleVoiceSubmit = (event: Event) => {
-      const { text } = (event as CustomEvent<VoiceSubmitDetail>).detail;
+      const { text, files } = (event as CustomEvent<VoiceSubmitDetail>).detail;
       if (!text.trim()) return;
       setInputRef.current(text);
+      // A screenshot for a model that can look at it, added through the same path
+      // as a device upload so it lands in the page's own attachment list.
+      if (files?.length) uploadedRef.current(files.map((file) => file.path));
       // Let the controlled input commit before the send handler reads it. A
       // timeout, not an animation frame: a minimised window paints no frames, and
       // a hands-free turn that waits for one never gets sent.

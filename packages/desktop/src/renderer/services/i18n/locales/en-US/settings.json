@@ -1362,7 +1362,9 @@
     "shortcutHint": "Press it with any window in front to start a turn. Say what you want; it is sent when you stop speaking, or when you press the key again.",
     "shortcutRegistered": "The key is yours.",
     "shortcutTaken": "Something else on this desktop already holds that key.",
-    "shortcutInvalid": "That is not a key combination this can use."
+    "shortcutInvalid": "That is not a key combination this can use.",
+    "attachScreenshot": "Send the screen with what I say",
+    "attachScreenshotHint": "A model that can look at images gets a picture of this window with each spoken turn, so you do not have to describe what is on it. Text-only models get nothing and are told nothing."
   },
   "themeCustomizer": {
     "title": "Customize theme",

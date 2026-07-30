@@ -54,6 +54,14 @@ const constVoid = (): void => undefined;
 // Threshold: switch to multi-line mode directly when character count exceeds this value to avoid heavy layout work
 const MAX_SINGLE_LINE_CHARACTERS = 800;
 const BTW_COMMAND_RE = /^\/btw(?:\s+([\s\S]*))?$/i;
+/**
+ * How long an attachment needs before the send handler can see it.
+ *
+ * Files go into the parent composer's draft store rather than into this
+ * component's state, so a single tick is not enough — the store round-trips
+ * through SWR before the send handler reads it back.
+ */
+const ATTACHMENT_COMMIT_MS = 150;
 const AT_FILE_HIGHLIGHT_COLOR = 'var(--primary)';
 
 const getSelectedItemMatchKeys = (item: FileSelectionItem): string[] => {
@@ -1282,18 +1290,27 @@ const SendBox: React.FC<{
   // Kept in a ref so the voice listener below never needs to resubscribe.
   const sendMessageHandlerRef = useRef(sendMessageHandler);
   sendMessageHandlerRef.current = sendMessageHandler;
+  const onFilesAddedRef = useLatestRef(onFilesAdded);
 
   // Hands-free conversation hands its transcript here so submission keeps using
   // the normal send path, preserving all ACP/Aionrs routing and permissions.
   useEffect(() => {
     const handleVoiceSubmit = (event: Event) => {
-      const { text } = (event as CustomEvent<VoiceSubmitDetail>).detail;
+      const { text, files } = (event as CustomEvent<VoiceSubmitDetail>).detail;
       if (!text.trim()) return;
       setInputRef.current(text);
+
+      // A screenshot for a model that can look at it, added through the same path
+      // as a pasted image so it lands in the composer's own attachment list.
+      const attaching = Boolean(files?.length);
+      if (files?.length) onFilesAddedRef.current?.(files as FileMetadata[]);
+
       // Let the controlled input commit before the send handler reads it. A
       // timeout, not an animation frame: a minimised window paints no frames, and
-      // a hands-free turn that waits for one never gets sent.
-      setTimeout(() => sendMessageHandlerRef.current(), 0);
+      // a hands-free turn that waits for one never gets sent. An attachment goes
+      // through the parent's draft store, which needs a beat longer than a state
+      // update to land.
+      setTimeout(() => sendMessageHandlerRef.current(), attaching ? ATTACHMENT_COMMIT_MS : 0);
     };
 
     window.addEventListener(VOICE_SUBMIT_EVENT, handleVoiceSubmit);

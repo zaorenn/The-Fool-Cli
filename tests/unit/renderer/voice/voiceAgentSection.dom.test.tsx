@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IProvider } from '@/common/config/storage';
@@ -38,6 +38,13 @@ vi.mock('@arco-design/web-react', () => ({
         </option>
       ))}
     </select>
+  ),
+  Switch: ({
+    checked,
+    onChange,
+    ...props
+  }: { checked?: boolean; onChange?: (value: boolean) => void } & React.ComponentProps<'input'>) => (
+    <input type='checkbox' checked={checked} onChange={(event) => onChange?.(event.target.checked)} {...props} />
   ),
 }));
 
@@ -143,6 +150,19 @@ describe('VoiceAgentSection', () => {
     render(<VoiceAgentSection settings={settings({ assistantId: 'someone-else' })} onChange={vi.fn()} />);
 
     await waitFor(() => expect(screen.getByTestId('voice-agent-missing')).toBeTruthy());
+  });
+
+  it('sends the screen by default, and lets that be switched off', async () => {
+    const onChange = vi.fn();
+    render(<VoiceAgentSection settings={settings()} onChange={onChange} />);
+
+    const toggle = screen.getByTestId('voice-attach-screenshot') as HTMLInputElement;
+    expect(toggle.checked).toBe(true);
+
+    fireEvent.click(toggle);
+
+    const change = onChange.mock.calls[0][0] as (previous: FoolVoiceSettings) => FoolVoiceSettings;
+    expect(change(settings()).session.attachScreenshot).toBe(false);
   });
 
   it('stores the provider alongside the model, since a model name alone is ambiguous', async () => {

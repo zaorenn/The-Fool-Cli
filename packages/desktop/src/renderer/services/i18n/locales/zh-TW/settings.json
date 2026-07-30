@@ -1364,7 +1364,9 @@
     "shortcutHint": "無論哪個視窗在前景，按下即可開始說話。停止說話或再次按鍵時送出。",
     "shortcutRegistered": "快速鍵已註冊。",
     "shortcutTaken": "該快速鍵已被此桌面上的其他程式佔用。",
-    "shortcutInvalid": "這不是可用的按鍵組合。"
+    "shortcutInvalid": "這不是可用的按鍵組合。",
+    "attachScreenshot": "說話時同時傳送畫面",
+    "attachScreenshotHint": "支援影像的模型會在每次語音對話時收到此視窗的截圖，你不必再描述畫面上的內容。純文字模型不會收到任何內容。"
   },
   "themeCustomizer": {
     "title": "自訂主題",

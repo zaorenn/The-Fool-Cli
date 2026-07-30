@@ -1362,7 +1362,9 @@
     "shortcutHint": "Hangi pencere önde olursa olsun bas ve konuş. Konuşmayı bıraktığında ya da tuşa tekrar bastığında gönderilir.",
     "shortcutRegistered": "Tuş senin.",
     "shortcutTaken": "Bu masaüstünde başka bir şey o tuşu tutuyor.",
-    "shortcutInvalid": "Bu, kullanılabilecek bir tuş birleşimi değil."
+    "shortcutInvalid": "Bu, kullanılabilecek bir tuş birleşimi değil.",
+    "attachScreenshot": "Söylediklerimle birlikte ekranı da gönder",
+    "attachScreenshotHint": "Görsel işleyebilen bir model, her sesli turda bu pencerenin görüntüsünü de alır; ekranda ne olduğunu anlatmak zorunda kalmazsın. Yalnızca metin işleyen modellere hiçbir şey gönderilmez."
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

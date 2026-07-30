@@ -1363,7 +1363,9 @@
     "shortcutHint": "无论哪个窗口在前台，按下即可开始说话。停止说话或再次按键时发送。",
     "shortcutRegistered": "快捷键已注册。",
     "shortcutTaken": "该快捷键已被此桌面上的其他程序占用。",
-    "shortcutInvalid": "这不是可用的按键组合。"
+    "shortcutInvalid": "这不是可用的按键组合。",
+    "attachScreenshot": "说话时同时发送屏幕",
+    "attachScreenshotHint": "支持图像的模型会在每次语音对话时收到此窗口的截图，你不必再描述屏幕上的内容。纯文本模型不会收到任何内容。"
   },
   "themeCustomizer": {
     "title": "自定义主题",

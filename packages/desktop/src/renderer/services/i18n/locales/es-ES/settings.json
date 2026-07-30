@@ -1362,7 +1362,9 @@
     "shortcutHint": "Púlsalo con cualquier ventana delante para empezar un turno. Se envía cuando dejas de hablar, o cuando vuelves a pulsar la tecla.",
     "shortcutRegistered": "La tecla es tuya.",
     "shortcutTaken": "Otra cosa en este escritorio ya usa esa tecla.",
-    "shortcutInvalid": "Esa no es una combinación de teclas utilizable."
+    "shortcutInvalid": "Esa no es una combinación de teclas utilizable.",
+    "attachScreenshot": "Enviar la pantalla con lo que digo",
+    "attachScreenshotHint": "Un modelo que puede mirar imágenes recibe una foto de esta ventana en cada turno hablado, para que no tengas que describir lo que hay en ella. Los modelos de solo texto no reciben nada."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

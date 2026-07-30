@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Select } from '@arco-design/web-react';
+import { Select, Switch } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
 import type { IProvider } from '@/common/config/storage';
@@ -131,6 +131,21 @@ const VoiceAgentSection: React.FC<VoiceAgentSectionProps> = ({ settings, onChang
       </label>
 
       <span className='text-12px text-t-secondary'>{t('settings.voice.agentHint')}</span>
+
+      <label className='flex items-center justify-between gap-12px'>
+        <span className='text-13px text-t-secondary'>{t('settings.voice.attachScreenshot')}</span>
+        <Switch
+          data-testid='voice-attach-screenshot'
+          checked={settings.session.attachScreenshot}
+          onChange={(checked: boolean) =>
+            onChange((previous) => ({
+              ...previous,
+              session: { ...previous.session, attachScreenshot: checked },
+            }))
+          }
+        />
+      </label>
+      <span className='text-12px text-t-secondary'>{t('settings.voice.attachScreenshotHint')}</span>
 
       {modelMissing && (
         <span className='text-12px text-warning' data-testid='voice-agent-needs-model'>

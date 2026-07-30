@@ -1362,7 +1362,9 @@
     "shortcutHint": "Drücken Sie es mit einem beliebigen Fenster im Vordergrund, um einen Zug zu beginnen. Gesendet wird, wenn Sie aufhören zu sprechen oder die Taste erneut drücken.",
     "shortcutRegistered": "Die Taste gehört Ihnen.",
     "shortcutTaken": "Etwas anderes auf diesem Desktop belegt diese Taste bereits.",
-    "shortcutInvalid": "Das ist keine verwendbare Tastenkombination."
+    "shortcutInvalid": "Das ist keine verwendbare Tastenkombination.",
+    "attachScreenshot": "Den Bildschirm mitschicken",
+    "attachScreenshotHint": "Ein Modell, das Bilder ansehen kann, bekommt bei jedem gesprochenen Zug ein Bild dieses Fensters, damit Sie nicht beschreiben müssen, was darauf zu sehen ist. Reine Textmodelle bekommen nichts."
   },
   "themeCustomizer": {
     "title": "Design anpassen",

@@ -2282,6 +2282,8 @@ export type I18nKey =
   | 'settings.voice.agentSection'
   | 'settings.voice.allVoicesDescription'
   | 'settings.voice.allVoicesTitle'
+  | 'settings.voice.attachScreenshot'
+  | 'settings.voice.attachScreenshotHint'
   | 'settings.voice.bargeIn'
   | 'settings.voice.browseAllVoices'
   | 'settings.voice.catalogUnavailable'

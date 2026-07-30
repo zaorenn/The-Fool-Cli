@@ -26,6 +26,21 @@ export const VOICE_HOME_SUBMIT_EVENT = 'fool:voice-home-submit';
 /** Raised when a turn finishes, carrying the answer to be spoken. */
 export const VOICE_REPLY_EVENT = 'fool:voice-reply';
 
-export type VoiceSubmitDetail = { text: string };
+/**
+ * A file to send with a spoken turn.
+ *
+ * Structurally the composers' `FileMetadata`, restated here so this module keeps
+ * no imports of its own: the point of it is that a composer can listen for these
+ * events without pulling in the voice stack.
+ */
+export type VoiceAttachment = {
+  name: string;
+  path: string;
+  size: number;
+  type: string;
+  lastModified: number;
+};
+
+export type VoiceSubmitDetail = { text: string; files?: readonly VoiceAttachment[] };
 
 export type VoiceReplyDetail = { answer: string; evidence?: RunEvidence };
