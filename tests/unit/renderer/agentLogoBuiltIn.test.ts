@@ -20,26 +20,26 @@ const { resolveAgentAvatar, resolveAgentLogo } = await import('@renderer/utils/m
  */
 describe('the built-in agent logo', () => {
   it('uses the app mark rather than whatever the backend catalog carries', () => {
-    const catalog = { aionrs: 'https://example.com/upstream-logo.png' };
+    const catalog = { foolrs: 'https://example.com/upstream-logo.png' };
 
-    expect(resolveAgentLogo(catalog, { backend: 'aionrs' })).toBe('/assets/brand-app.png');
+    expect(resolveAgentLogo(catalog, { backend: 'foolrs' })).toBe('/assets/brand-app.png');
   });
 
   it('does the same for the avatar shape', () => {
-    expect(resolveAgentAvatar({}, { backend: 'aionrs' })).toEqual({
+    expect(resolveAgentAvatar({}, { backend: 'foolrs' })).toEqual({
       kind: 'image',
       value: '/assets/brand-app.png',
     });
   });
 
   it('matches however the backend cases the identifier', () => {
-    expect(resolveAgentLogo({}, { backend: 'AionRs' })).toBe('/assets/brand-app.png');
-    expect(resolveAgentLogo({}, { backend: ' aionrs ' })).toBe('/assets/brand-app.png');
+    expect(resolveAgentLogo({}, { backend: 'FoolRs' })).toBe('/assets/brand-app.png');
+    expect(resolveAgentLogo({}, { backend: ' foolrs ' })).toBe('/assets/brand-app.png');
   });
 
   // A logo the user set on their own assistant is theirs, not ours to override.
   it('still lets an explicit icon win', () => {
-    expect(resolveAgentLogo({}, { backend: 'aionrs', icon: 'https://example.com/mine.png' })).toBe(
+    expect(resolveAgentLogo({}, { backend: 'foolrs', icon: 'https://example.com/mine.png' })).toBe(
       'https://example.com/mine.png'
     );
   });

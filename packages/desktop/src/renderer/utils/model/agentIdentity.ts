@@ -7,17 +7,18 @@
 /**
  * What the agent that ships inside the app is called, and what it is called by.
  *
- * The two are not the same thing. The identifier belongs to the backend: it
- * travels in every conversation record and in the agent catalog, and the binary
- * that serves them is built from a different repository. The name belongs here,
- * because it is the only half a user ever reads.
+ * The two are not the same thing. The identifier is the wire value: it travels
+ * in every conversation record and in the agent catalog, and the backend and this
+ * app have to agree on it exactly. The name is what a user reads, and nothing
+ * depends on it.
  *
- * The backend also supplies a name, and that name carries the upstream project's
- * branding — so it is replaced rather than displayed.
+ * The backend seeds a name of its own, and a migration corrects it there — this
+ * resolver is the second layer, so the right name shows even before the catalog
+ * has loaded.
  */
 
 /** The backend's identifier for the built-in agent. Never shown to anyone. */
-export const BUILT_IN_AGENT_BACKEND = 'aionrs';
+export const BUILT_IN_AGENT_BACKEND = 'foolrs';
 
 /** What the user reads instead. */
 export const BUILT_IN_AGENT_NAME = 'The Fool CLI';

@@ -151,7 +151,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
       mcp_ids: assistantOverrideMcpIds,
     };
 
-    if (assistantBackend === 'aionrs') {
+    if (assistantBackend === 'foolrs') {
       if (!current_model) {
         Message.warning(t('conversation.noModelConfigured'));
         return;
@@ -196,7 +196,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
           input,
           files: files.length > 0 ? files : undefined,
         };
-        sessionStorage.setItem(`aionrs_initial_message_${conversation.id}`, JSON.stringify(initialMessage));
+        sessionStorage.setItem(`foolrs_initial_message_${conversation.id}`, JSON.stringify(initialMessage));
 
         await navigate(`/conversation/${conversation.id}`);
       } catch (error: unknown) {

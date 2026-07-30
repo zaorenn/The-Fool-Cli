@@ -9,7 +9,7 @@ import { ipcBridge } from '@/common';
 import type { IProvider, TProviderWithModel } from '@/common/config/storage';
 import type { ChatFileRef } from '@/common/types/chatFile';
 import { chatFileRefPath } from '@/common/types/chatFile';
-import { isAionrsAssistant, type Assistant } from '@/common/types/agent/assistantTypes';
+import { isFoolrsAssistant, type Assistant } from '@/common/types/agent/assistantTypes';
 import type { FoolVoiceSettings } from '@/common/types/foolVoice';
 
 /**
@@ -40,7 +40,7 @@ export type VoiceConversationResult =
   | { ok: false; reason: 'agent-missing' | 'no-model' | 'create-failed' };
 
 /** Where the conversation page looks for the message that opened it. */
-const initialMessageKey = (backend: 'aionrs' | 'acp', conversationId: string): string =>
+const initialMessageKey = (backend: 'foolrs' | 'acp', conversationId: string): string =>
   `${backend}_initial_message_${conversationId}`;
 
 const readAssistants = async (): Promise<Assistant[]> => {
@@ -105,10 +105,10 @@ export const startVoiceConversation = async (request: VoiceConversationRequest):
 
   const model = findPinnedModel(providers, providerId, modelId);
   const files = request.files ?? [];
-  const aionrs = isAionrsAssistant(assistant);
+  const foolrs = isFoolrsAssistant(assistant);
   // The Aion CLI backend is handed the provider record itself, so without one
   // there is nothing to create the conversation with.
-  if (aionrs && !model) return { ok: false, reason: 'no-model' };
+  if (foolrs && !model) return { ok: false, reason: 'no-model' };
 
   // An ACP agent names models in a namespace of its own: Hermes calls the LM
   // Studio model `lmstudio:qwen/qwen3.5-9b` where the AionUi provider calls the
@@ -138,7 +138,7 @@ export const startVoiceConversation = async (request: VoiceConversationRequest):
     if (!conversation?.id) return { ok: false, reason: 'create-failed' };
 
     sessionStorage.setItem(
-      initialMessageKey(aionrs ? 'aionrs' : 'acp', conversation.id),
+      initialMessageKey(foolrs ? 'foolrs' : 'acp', conversation.id),
       JSON.stringify({ input: request.text, files: files.length > 0 ? files : undefined })
     );
 

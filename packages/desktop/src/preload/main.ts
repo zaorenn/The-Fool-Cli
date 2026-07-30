@@ -51,7 +51,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   recoverCorruptedDatabase: () => ipcRenderer.invoke('backend:recover-corrupted-database'),
 });
 
-// Synchronously fetch the aioncore port and expose it to the renderer
+// Synchronously fetch the foolcore port and expose it to the renderer
 // via contextBridge (direct window assignment is invisible under contextIsolation).
 const backendPort = ipcRenderer.sendSync('get-backend-port') as number;
 const initialLanguage = ipcRenderer.sendSync('get-initial-language') as string | null;

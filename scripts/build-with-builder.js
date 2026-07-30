@@ -763,16 +763,14 @@ try {
     return;
   }
 
-  // 5. Prepare aioncore binary (for packaged runtime usage)
-  const { prepareAioncore } = require('../packages/shared-scripts/src/prepare-aioncore.js');
-  const { resolveAioncoreVersion } = require('./resolveAioncoreVersion.js');
+  // 5. Build the backend from source and stage it for the packaged runtime.
+  // It used to be downloaded as a release artefact from another organisation's
+  // GitHub; the source lives in `backend/` now, so the build produces it.
   const projectRoot = path.resolve(__dirname, '..');
   writeGeneratedSentryDsnInclude(projectRoot);
-  prepareAioncore({
-    projectRoot,
-    platform: process.platform,
-    arch: targetArch,
-    version: resolveAioncoreVersion(projectRoot),
+  execSync('node scripts/buildFoolcore.js', {
+    stdio: 'inherit',
+    env: { ...process.env, FOOL_BACKEND_ARCH: targetArch },
   });
 
   // 6. Prepare hub resources (index.json + extension zips for offline fallback)

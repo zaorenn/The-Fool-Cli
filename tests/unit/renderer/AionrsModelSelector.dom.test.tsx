@@ -7,10 +7,10 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import AionrsModelSelector from '@/renderer/pages/conversation/platforms/aionrs/AionrsModelSelector';
+import FoolrsModelSelector from '@/renderer/pages/conversation/platforms/foolrs/FoolrsModelSelector';
 import type { IProvider, TProviderWithModel } from '@/common/config/storage';
 import type { AcpDerivedOption } from '@/renderer/hooks/agent/useAcpConfigOptions';
-import type { AionrsModelSelection } from '@/renderer/pages/conversation/platforms/aionrs/useAionrsModelSelection';
+import type { FoolrsModelSelection } from '@/renderer/pages/conversation/platforms/foolrs/useFoolrsModelSelection';
 
 const provider: IProvider = {
   id: 'openai',
@@ -30,7 +30,7 @@ const thoughtLevel: AcpDerivedOption = {
   ],
 };
 
-const makeSelection = (overrides: Partial<AionrsModelSelection> = {}): AionrsModelSelection => ({
+const makeSelection = (overrides: Partial<FoolrsModelSelection> = {}): FoolrsModelSelection => ({
   current_model: {
     ...provider,
     use_model: 'gpt-5.2',
@@ -143,14 +143,14 @@ vi.mock('@arco-design/web-react', () => {
   };
 });
 
-describe('AionrsModelSelector runtime options', () => {
+describe('FoolrsModelSelector runtime options', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('shows the current model and thought level in the header pill', () => {
     render(
-      <AionrsModelSelector
+      <FoolrsModelSelector
         selection={makeSelection()}
         thoughtLevel={thoughtLevel}
         setStatus={{ state: 'idle' }}
@@ -158,12 +158,12 @@ describe('AionrsModelSelector runtime options', () => {
       />
     );
 
-    expect(screen.getByTestId('aionrs-model-selector')).toHaveTextContent('gpt-5.2 · High');
+    expect(screen.getByTestId('foolrs-model-selector')).toHaveTextContent('gpt-5.2 · High');
   });
 
   it('shows the model submenu before the thought level submenu, each with its current value', () => {
     render(
-      <AionrsModelSelector
+      <FoolrsModelSelector
         selection={makeSelection()}
         thoughtLevel={thoughtLevel}
         setStatus={{ state: 'idle' }}
@@ -180,7 +180,7 @@ describe('AionrsModelSelector runtime options', () => {
 
   it('keeps provider grouping inside the model submenu', () => {
     render(
-      <AionrsModelSelector
+      <FoolrsModelSelector
         selection={makeSelection()}
         thoughtLevel={thoughtLevel}
         setStatus={{ state: 'idle' }}
@@ -194,7 +194,7 @@ describe('AionrsModelSelector runtime options', () => {
 
   it('marks the current model with the leading check indicator', () => {
     render(
-      <AionrsModelSelector
+      <FoolrsModelSelector
         selection={makeSelection()}
         thoughtLevel={thoughtLevel}
         setStatus={{ state: 'idle' }}
@@ -213,7 +213,7 @@ describe('AionrsModelSelector runtime options', () => {
   it('selects a model through the selection callback', () => {
     const handleSelectModel = vi.fn().mockResolvedValue(undefined);
     render(
-      <AionrsModelSelector
+      <FoolrsModelSelector
         selection={makeSelection({ handleSelectModel })}
         thoughtLevel={thoughtLevel}
         setStatus={{ state: 'idle' }}
@@ -227,9 +227,9 @@ describe('AionrsModelSelector runtime options', () => {
   });
 
   it('renders the model list directly (no submenu) when thought level is unavailable', () => {
-    render(<AionrsModelSelector selection={makeSelection()} />);
+    render(<FoolrsModelSelector selection={makeSelection()} />);
 
-    expect(screen.getByTestId('aionrs-model-selector')).toHaveTextContent('gpt-5.2');
+    expect(screen.getByTestId('foolrs-model-selector')).toHaveTextContent('gpt-5.2');
     expect(screen.queryAllByTestId('submenu-title')).toHaveLength(0);
     // Still grouped by provider even without a submenu wrapper.
     expect(screen.getByRole('group', { name: 'OpenAI' })).toBeInTheDocument();
@@ -239,7 +239,7 @@ describe('AionrsModelSelector runtime options', () => {
     const onSetThoughtLevel = vi.fn().mockResolvedValue(undefined);
 
     render(
-      <AionrsModelSelector
+      <FoolrsModelSelector
         selection={makeSelection()}
         thoughtLevel={thoughtLevel}
         setStatus={{ state: 'idle' }}

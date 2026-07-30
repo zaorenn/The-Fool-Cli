@@ -21,8 +21,8 @@ export function assistantRuntimeKey(assistant?: Pick<Assistant, 'agent'> | null)
   return assistant?.agent?.acp_backend || assistant?.agent?.type || '';
 }
 
-export function isAionrsAssistant(assistant?: Pick<Assistant, 'agent'> | null): boolean {
-  return assistant?.agent?.type === 'aionrs';
+export function isFoolrsAssistant(assistant?: Pick<Assistant, 'agent'> | null): boolean {
+  return assistant?.agent?.type === 'foolrs';
 }
 
 export interface Assistant {

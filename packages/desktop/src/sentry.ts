@@ -295,13 +295,13 @@ export async function captureBackendStartupFailure(error: unknown): Promise<void
       if (value) scope.setTag(tag, value);
     }
     if (details) {
-      scope.setContext('aioncore_startup', details);
-      scope.setExtra('aioncore_startup', details);
+      scope.setContext('foolcore_startup', details);
+      scope.setExtra('foolcore_startup', details);
     }
-    scope.setContext('aioncore_startup_classification', { ...failureInfo });
-    scope.setExtra('aioncore_startup_classification', failureInfo);
-    scope.setContext('aioncore_install_diagnostics', installDiagnostics);
-    scope.setExtra('aioncore_install_diagnostics', installDiagnostics);
+    scope.setContext('foolcore_startup_classification', { ...failureInfo });
+    scope.setExtra('foolcore_startup_classification', failureInfo);
+    scope.setContext('foolcore_install_diagnostics', installDiagnostics);
+    scope.setExtra('foolcore_install_diagnostics', installDiagnostics);
     if (autoUpdateDiagnostics) {
       scope.setContext('auto_update_diagnostics', autoUpdateDiagnostics);
       scope.setExtra('auto_update_diagnostics', autoUpdateDiagnostics);

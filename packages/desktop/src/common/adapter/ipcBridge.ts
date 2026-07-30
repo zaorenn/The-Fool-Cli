@@ -8,7 +8,7 @@
  * IPC Bridge → HTTP/WS adapter.
  *
  * This file replaces the original IPC bridge calls with HTTP REST and WebSocket
- * calls routed to aioncore. Electron-native operations (window controls,
+ * calls routed to foolcore. Electron-native operations (window controls,
  * native dialogs, auto-update, devtools, zoom, CDP, deep links) remain as IPC.
  */
 
@@ -295,12 +295,12 @@ export const conversation = {
   ),
   createWithConversation: withResponseMap(
     httpPost<TChatConversation, { conversation: TChatConversation }>('/api/conversations/clone', (p) => {
-      const isAionrs = p.conversation.type === 'aionrs';
+      const isFoolrs = p.conversation.type === 'foolrs';
       const { model: _rawModel, ...rest } = p.conversation as TChatConversation & {
         model?: TProviderWithModel;
       };
       const clonedConversation: Record<string, unknown> = { ...rest };
-      if (isAionrs) {
+      if (isFoolrs) {
         const model = toApiModelOptional(_rawModel);
         if (model) clonedConversation.model = model;
       }
@@ -887,7 +887,7 @@ export const googleAuth = {
 };
 
 // ---------------------------------------------------------------------------
-// Google subscription status (Google OAuth provider path, used by aionrs)
+// Google subscription status (Google OAuth provider path, used by foolrs)
 // ---------------------------------------------------------------------------
 
 export const google = {
@@ -1630,7 +1630,7 @@ export interface IConfirmMessageParams {
 }
 
 export interface ICreateConversationParams {
-  type?: 'acp' | 'aionrs';
+  type?: 'acp' | 'foolrs';
   id?: string;
   name?: string;
   model?: TProviderWithModel;

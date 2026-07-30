@@ -226,7 +226,7 @@ const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
             <div
               className='flex items-center gap-8px'
               data-mode-value={mode.value}
-              data-testid={`aionrs-mode-option-${mode.value}`}
+              data-testid={`foolrs-mode-option-${mode.value}`}
             >
               <span aria-hidden='true' className='w-16px shrink-0 text-primary'>
                 {current_mode === mode.value ? '✓' : ''}

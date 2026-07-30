@@ -977,17 +977,17 @@ const migration_v20: IMigration = {
 };
 
 /**
- * Migration v20 -> v21: Add 'aionrs' to conversations type CHECK constraint
+ * Migration v20 -> v21: Add 'foolrs' to conversations type CHECK constraint
  */
 const migration_v21: IMigration = {
   version: 21,
-  name: "Add 'aionrs' to conversations type CHECK",
+  name: "Add 'foolrs' to conversations type CHECK",
   up: (db) => {
     db.exec(`CREATE TABLE IF NOT EXISTS conversations_new (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         name TEXT NOT NULL,
-        type TEXT NOT NULL CHECK(type IN ('gemini', 'acp', 'codex', 'openclaw-gateway', 'nanobot', 'remote', 'aionrs')),
+        type TEXT NOT NULL CHECK(type IN ('gemini', 'acp', 'codex', 'openclaw-gateway', 'nanobot', 'remote', 'foolrs')),
         extra TEXT NOT NULL,
         model TEXT,
         status TEXT CHECK(status IN ('pending', 'running', 'finished')),
@@ -1010,12 +1010,12 @@ const migration_v21: IMigration = {
     db.exec(
       'CREATE INDEX IF NOT EXISTS idx_conversations_source_chat ON conversations(source, channel_chat_id, updated_at DESC)'
     );
-    console.log("[Migration v21] Added 'aionrs' to conversations type CHECK");
+    console.log("[Migration v21] Added 'foolrs' to conversations type CHECK");
   },
   down: (db) => {
-    // Remove aionrs conversations before copying to table with stricter constraint
-    db.exec(`DELETE FROM messages WHERE conversation_id IN (SELECT id FROM conversations WHERE type = 'aionrs')`);
-    db.exec(`DELETE FROM conversations WHERE type = 'aionrs'`);
+    // Remove foolrs conversations before copying to table with stricter constraint
+    db.exec(`DELETE FROM messages WHERE conversation_id IN (SELECT id FROM conversations WHERE type = 'foolrs')`);
+    db.exec(`DELETE FROM conversations WHERE type = 'foolrs'`);
 
     db.exec(`CREATE TABLE IF NOT EXISTS conversations_rollback (
         id TEXT PRIMARY KEY,
@@ -1045,7 +1045,7 @@ const migration_v21: IMigration = {
       'CREATE INDEX IF NOT EXISTS idx_conversations_source_chat ON conversations(source, channel_chat_id, updated_at DESC)'
     );
 
-    console.log("[Migration v21] Rolled back: Removed 'aionrs' from conversations type CHECK");
+    console.log("[Migration v21] Rolled back: Removed 'foolrs' from conversations type CHECK");
   },
 };
 

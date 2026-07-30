@@ -8,7 +8,7 @@ const {
   verifyModuleBinary,
   getModulesToRebuild,
 } = require('./rebuildNativeModules');
-const { verifyBundledAioncoreResources } = require('../packages/shared-scripts/src/verify-bundled-aioncore-resources');
+const { verifyBundledAioncoreResources } = require('../packages/shared-scripts/src/verify-bundled-foolcore-resources');
 
 /**
  * afterPack hook for electron-builder

@@ -53,7 +53,7 @@ describe('TeamWarmupOverlay failure states', () => {
         assistants={[assistant('l', 'leader', 'Codex'), assistant('m', 'teammate', 'Aion CLI')]}
         runtimeStatus={runtime([
           ['l', 'ready'],
-          ['m', 'failed', "Invalid request: Bad request: Provider 'aionrs' not found"],
+          ['m', 'failed', "Invalid request: Bad request: Provider 'foolrs' not found"],
         ])}
         colorOf={colorOf}
         onRetry={() => {}}
@@ -62,7 +62,7 @@ describe('TeamWarmupOverlay failure states', () => {
     // single failure → title names the member
     expect(screen.getByText('Member Aion CLI failed to start')).toBeInTheDocument();
     // error is simplified (wrapper prefixes stripped)
-    expect(screen.getByTestId('team-warmup-error')).toHaveTextContent("Provider 'aionrs' not found");
+    expect(screen.getByTestId('team-warmup-error')).toHaveTextContent("Provider 'foolrs' not found");
     // teammate is removable → hint mentions removal
     expect(screen.getByText(/remove the member/i)).toBeInTheDocument();
   });
@@ -78,7 +78,7 @@ describe('TeamWarmupOverlay failure states', () => {
         ]}
         runtimeStatus={runtime([
           ['l', 'failed', 'ACP error'],
-          ['a', 'failed', "Bad request: Provider 'aionrs' not found"],
+          ['a', 'failed', "Bad request: Provider 'foolrs' not found"],
           ['c', 'ready'],
         ])}
         colorOf={colorOf}
@@ -92,7 +92,7 @@ describe('TeamWarmupOverlay failure states', () => {
     expect(box).toHaveTextContent('Gemini');
     expect(box).toHaveTextContent('ACP error');
     expect(box).toHaveTextContent('Aion CLI');
-    expect(box).toHaveTextContent("Provider 'aionrs' not found");
+    expect(box).toHaveTextContent("Provider 'foolrs' not found");
     // a teammate is among the failures → removal is offered
     expect(screen.getByText(/remove the member/i)).toBeInTheDocument();
   });

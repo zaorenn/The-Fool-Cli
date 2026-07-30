@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { isAionrsAssistant, type Assistant } from '@/common/types/agent/assistantTypes';
+import { isFoolrsAssistant, type Assistant } from '@/common/types/agent/assistantTypes';
 import type { IChannelAssistantBindingRead, IChannelAssistantBindingWrite } from '@/common/types/channel/channel';
 
 /**
@@ -22,8 +22,8 @@ export type ResolvedChannelAssistantSelection = {
 
 export function getDefaultChannelAssistant(assistants: Assistant[]): Assistant | undefined {
   return (
-    assistants.find((assistant) => assistant.source === 'generated' && isAionrsAssistant(assistant)) ||
-    assistants.find((assistant) => isAionrsAssistant(assistant)) ||
+    assistants.find((assistant) => assistant.source === 'generated' && isFoolrsAssistant(assistant)) ||
+    assistants.find((assistant) => isFoolrsAssistant(assistant)) ||
     assistants[0]
   );
 }

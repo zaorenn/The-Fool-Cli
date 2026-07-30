@@ -84,7 +84,7 @@ try {
     $knownRelative = @(
       'resources\app.asar',
       'resources\app-update.yml',
-      'resources\bundled-aioncore\win32-x64\aioncore.exe'
+      'resources\bundled-foolcore\win32-x64\foolcore.exe'
     )
     $known = @(
       $knownRelative |

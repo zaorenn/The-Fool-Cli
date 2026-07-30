@@ -184,20 +184,20 @@ Var /GLOBAL AionUiActiveMarkerResult
 
 !macro AIONUI_VERIFY_BUNDLED_AIONCORE_RESOURCES _RUNTIME_KEY
   InitPluginsDir
-  File "/oname=$PLUGINSDIR\verify-bundled-aioncore-install.ps1" "${PROJECT_DIR}\resources\windows\support\verify-bundled-aioncore-install.ps1"
-  nsExec::Exec `"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\verify-bundled-aioncore-install.ps1" -InstallDir "$INSTDIR" -RuntimeKey "${_RUNTIME_KEY}" -LogPath "$AionUiSessionLogPath"`
+  File "/oname=$PLUGINSDIR\verify-bundled-foolcore-install.ps1" "${PROJECT_DIR}\resources\windows\support\verify-bundled-foolcore-install.ps1"
+  nsExec::Exec `"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\verify-bundled-foolcore-install.ps1" -InstallDir "$INSTDIR" -RuntimeKey "${_RUNTIME_KEY}" -LogPath "$AionUiSessionLogPath"`
   Pop $AionUiVerifyResourceResult
 
   ${If} $AionUiVerifyResourceResult != 0
     !insertmacro AIONUI_FAIL_UX \
-      "${AIONUI_E_BUNDLED_AIONCORE_INCOMPLETE}" \
-      "event=session-end result=fail code=${AIONUI_E_BUNDLED_AIONCORE_INCOMPLETE} detail=bundled-aioncore-incomplete runtime=${_RUNTIME_KEY} result=$AionUiVerifyResourceResult" \
-      "${AIONUI_MSG_BUNDLED_AIONCORE_INCOMPLETE_ZH}" \
-      "${AIONUI_MSG_BUNDLED_AIONCORE_INCOMPLETE_EN}" \
-      "${AIONUI_MSG_BUNDLED_AIONCORE_INCOMPLETE_ACTION_ZH}" \
-      "${AIONUI_MSG_BUNDLED_AIONCORE_INCOMPLETE_ACTION_EN}" \
-      "bundled-aioncore-incomplete runtime=${_RUNTIME_KEY} result=$AionUiVerifyResourceResult instDir=$INSTDIR" \
-      "bundled-aioncore-incomplete runtime=${_RUNTIME_KEY} result=$AionUiVerifyResourceResult instDir=$INSTDIR"
+      "${AIONUI_E_BUNDLED_FOOLCORE_INCOMPLETE}" \
+      "event=session-end result=fail code=${AIONUI_E_BUNDLED_FOOLCORE_INCOMPLETE} detail=bundled-foolcore-incomplete runtime=${_RUNTIME_KEY} result=$AionUiVerifyResourceResult" \
+      "${AIONUI_MSG_BUNDLED_FOOLCORE_INCOMPLETE_ZH}" \
+      "${AIONUI_MSG_BUNDLED_FOOLCORE_INCOMPLETE_EN}" \
+      "${AIONUI_MSG_BUNDLED_FOOLCORE_INCOMPLETE_ACTION_ZH}" \
+      "${AIONUI_MSG_BUNDLED_FOOLCORE_INCOMPLETE_ACTION_EN}" \
+      "bundled-foolcore-incomplete runtime=${_RUNTIME_KEY} result=$AionUiVerifyResourceResult instDir=$INSTDIR" \
+      "bundled-foolcore-incomplete runtime=${_RUNTIME_KEY} result=$AionUiVerifyResourceResult instDir=$INSTDIR"
   ${EndIf}
 !macroend
 

@@ -5,7 +5,7 @@
  */
 
 /**
- * A file reference sent with a chat message. Mirrors the aioncore `ChatFileRef`
+ * A file reference sent with a chat message. Mirrors the foolcore `ChatFileRef`
  * serde shape (internally-tagged on `kind`) — the backend is the source of
  * truth; this must stay aligned with it.
  *

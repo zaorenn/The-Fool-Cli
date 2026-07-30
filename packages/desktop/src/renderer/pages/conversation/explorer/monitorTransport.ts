@@ -8,7 +8,7 @@
  * Binds the MonitorClient + explorer store to the shared WS singleton
  * (`httpBridge`). This is the thin production wiring — the pairing/store logic
  * it connects is covered by unit tests; the live socket path is exercised by
- * end-to-end integration against a running aioncore backend.
+ * end-to-end integration against a running foolcore backend.
  */
 
 import { wsEmitter, wsSend } from '@/common/adapter/httpBridge';

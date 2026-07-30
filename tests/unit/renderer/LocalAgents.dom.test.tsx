@@ -102,11 +102,11 @@ import type { Assistant } from '@/common/types/agent/assistantTypes';
 
 const makeAgents = () => [
   {
-    id: 'aionrs',
+    id: 'foolrs',
     name: 'Aion CLI',
-    agent_type: 'aionrs',
+    agent_type: 'foolrs',
     agent_source: 'internal',
-    backend: 'aionrs',
+    backend: 'foolrs',
     enabled: true,
     available: true,
     installed: true,
@@ -161,7 +161,7 @@ describe('LocalAgents', () => {
     fireEvent.click(screen.getAllByText('settings.agentManagement.testConnection')[0]);
 
     await waitFor(() => {
-      expect(ipcBridge.acpConversation.checkManagedAgentHealthById.invoke).toHaveBeenCalledWith({ id: 'aionrs' });
+      expect(ipcBridge.acpConversation.checkManagedAgentHealthById.invoke).toHaveBeenCalledWith({ id: 'foolrs' });
     });
     await waitFor(() => {
       expect(refreshCatalog).toHaveBeenCalled();
@@ -294,7 +294,7 @@ describe('LocalAgents', () => {
   });
 
   it('binds assistants to managed agents by agent_id instead of runtime backend', () => {
-    const [aionrsAgent, claudeAgent] = makeAgents();
+    const [foolrsAgent, claudeAgent] = makeAgents();
     const assistants: Assistant[] = [
       {
         id: 'assistant-on-claude-runtime',
@@ -343,10 +343,10 @@ describe('LocalAgents', () => {
     expect(getBoundAssistants(claudeAgent, assistants).map((assistant) => assistant.id)).toEqual([
       'assistant-on-claude-agent',
     ]);
-    expect(getBoundAssistants(aionrsAgent, assistants)).toEqual([]);
+    expect(getBoundAssistants(foolrsAgent, assistants)).toEqual([]);
   });
 
-  it('pins Kimi right after the aionrs agent in the official list', () => {
+  it('pins Kimi right after the foolrs agent in the official list', () => {
     useManagedAgents.mockReturnValue({
       agents: [
         ...makeAgents(),
@@ -369,7 +369,7 @@ describe('LocalAgents', () => {
     render(<LocalAgents />);
 
     // Alphabetically Claude Code < Kimi, so this order proves the pin rule:
-    // aionrs stays first, Kimi jumps ahead of the localeCompare ordering.
+    // foolrs stays first, Kimi jumps ahead of the localeCompare ordering.
     const aion = screen.getByText('Aion CLI');
     const kimi = screen.getByText('Kimi');
     const claude = screen.getByText('Claude Code');

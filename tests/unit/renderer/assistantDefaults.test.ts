@@ -27,7 +27,7 @@ const buildDetail = (
       sort_order: 1,
     },
     engine: {
-      agent_backend: 'aionrs',
+      agent_backend: 'foolrs',
     },
     rules: {
       content: '',

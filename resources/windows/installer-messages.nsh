@@ -30,10 +30,10 @@
 !define AIONUI_MSG_EXTRACT_FAILED_ACTION_EN "Download a fresh installer and run it again. If it still fails, send the installer report to the AionUi team."
 !define AIONUI_MSG_EXTRACT_FAILED_ACTION_ZH "请重新下载安装器后再次运行。如果仍然失败，请将安装失败报告发送给 AionUi 团队。"
 
-!define AIONUI_MSG_BUNDLED_AIONCORE_INCOMPLETE_EN "AionUi installed, but the bundled AionCore resources are incomplete."
-!define AIONUI_MSG_BUNDLED_AIONCORE_INCOMPLETE_ZH "AionUi 已安装部分文件，但内置 AionCore 资源不完整。"
-!define AIONUI_MSG_BUNDLED_AIONCORE_INCOMPLETE_ACTION_EN "Download a fresh installer and run it again. If it still fails, send the installer report to the AionUi team."
-!define AIONUI_MSG_BUNDLED_AIONCORE_INCOMPLETE_ACTION_ZH "请重新下载安装器后再次运行。如果仍然失败，请将安装失败报告发送给 AionUi 团队。"
+!define AIONUI_MSG_BUNDLED_FOOLCORE_INCOMPLETE_EN "The Fool installed, but the bundled The Fool Core resources are incomplete."
+!define AIONUI_MSG_BUNDLED_FOOLCORE_INCOMPLETE_ZH "The Fool 已安装部分文件，但内置 The Fool Core 资源不完整。"
+!define AIONUI_MSG_BUNDLED_FOOLCORE_INCOMPLETE_ACTION_EN "Download a fresh installer and run it again. If it still fails, send the installer report to the AionUi team."
+!define AIONUI_MSG_BUNDLED_FOOLCORE_INCOMPLETE_ACTION_ZH "请重新下载安装器后再次运行。如果仍然失败，请将安装失败报告发送给 AionUi 团队。"
 
 !define AIONUI_MSG_ARCH_MISMATCH_EN "Installation package architecture mismatch."
 !define AIONUI_MSG_ARCH_MISMATCH_ZH "安装包架构不匹配。"

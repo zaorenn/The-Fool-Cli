@@ -3,8 +3,8 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Message } from '@arco-design/web-react';
 import { BackendHttpError } from '@/common/adapter/httpBridge';
-import AionrsSendBox from '@/renderer/pages/conversation/platforms/aionrs/AionrsSendBox';
-import type { AionrsModelSelection } from '@/renderer/pages/conversation/platforms/aionrs/useAionrsModelSelection';
+import FoolrsSendBox from '@/renderer/pages/conversation/platforms/foolrs/FoolrsSendBox';
+import type { FoolrsModelSelection } from '@/renderer/pages/conversation/platforms/foolrs/useFoolrsModelSelection';
 
 const {
   ensureConversationRuntimeMock,
@@ -206,8 +206,8 @@ vi.mock('@icon-park/react', () => ({
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: translateMock }),
 }));
-vi.mock('@/renderer/pages/conversation/platforms/aionrs/useAionrsMessage', () => ({
-  useAionrsMessage: () => ({
+vi.mock('@/renderer/pages/conversation/platforms/foolrs/useFoolrsMessage', () => ({
+  useFoolrsMessage: () => ({
     thought: { subject: '', description: '' },
     running: false,
     setActiveMsgId: vi.fn(),
@@ -222,9 +222,9 @@ const modelSelection = {
     model: 'gpt-4.1',
     use_model: 'openai/gpt-4.1',
   },
-} as AionrsModelSelection;
+} as FoolrsModelSelection;
 
-describe('AionrsSendBox', () => {
+describe('FoolrsSendBox', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     ensureConversationRuntimeMock.mockResolvedValue({ recovered: false, config_options: [], runtime: null });
@@ -242,7 +242,7 @@ describe('AionrsSendBox', () => {
       warmupSession,
     });
 
-    render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+    render(<FoolrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
     await waitFor(() => {
       expect(warmupSession).toHaveBeenCalled();
     });
@@ -266,7 +266,7 @@ describe('AionrsSendBox', () => {
       warmupSession,
     });
 
-    render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+    render(<FoolrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
     await waitFor(() => {
       expect(warmupSession).toHaveBeenCalled();
     });
@@ -292,7 +292,7 @@ describe('AionrsSendBox', () => {
       warmupSession,
     });
 
-    render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+    render(<FoolrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
 
     await waitFor(() => {
       expect(warmupSession).toHaveBeenCalled();
@@ -301,7 +301,7 @@ describe('AionrsSendBox', () => {
   });
 
   it('uses runtime ensure instead of legacy warmup for standalone runtime preparation', async () => {
-    render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+    render(<FoolrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
 
     await waitFor(() => {
       expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1');
@@ -318,7 +318,7 @@ describe('AionrsSendBox', () => {
       })
     );
 
-    render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+    render(<FoolrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
     await waitFor(() => expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1'));
 
     await act(async () => {

@@ -52,7 +52,7 @@ export type BackendInstallDiagnostics = {
 };
 
 const MANIFEST_FILE_NAME = 'manifest.json';
-const BUNDLED_AIONCORE_DIR = 'bundled-aioncore';
+const BUNDLED_AIONCORE_DIR = 'bundled-foolcore';
 
 function getString(value: unknown): string | undefined {
   return typeof value === 'string' && value.length > 0 ? value : undefined;

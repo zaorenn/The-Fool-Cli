@@ -25,7 +25,7 @@ import {
 } from '../helpers';
 import { CHAT_INPUT } from '../helpers/selectors';
 import { goToNewChat, waitForAiReply } from '../helpers/conversation';
-import { getAionrsTestModels, type TProviderWithModel } from '../helpers/chatAionrs';
+import { getFoolrsTestModels, type TProviderWithModel } from '../helpers/chatFoolrs';
 
 type AssistantDetail = {
   id: string;
@@ -94,7 +94,7 @@ type ConversationCreatePayload = {
   };
 };
 
-type EnsuredAionrsModels = {
+type EnsuredFoolrsModels = {
   cleanupProviderId: string | null;
   modelA: TProviderWithModel;
   modelB: TProviderWithModel | null;
@@ -118,8 +118,8 @@ async function findAssistantIdByName(page: Page, name: string): Promise<string |
   return null;
 }
 
-async function ensureAionrsTestModels(page: Page): Promise<EnsuredAionrsModels> {
-  const existing = await getAionrsTestModels(page);
+async function ensureFoolrsTestModels(page: Page): Promise<EnsuredFoolrsModels> {
+  const existing = await getFoolrsTestModels(page);
   if (existing?.modelA) {
     return {
       cleanupProviderId: null,
@@ -404,7 +404,7 @@ function normalizeUiText(value: string | null | undefined): string {
 
 function locateConversationModelButton(page: Page) {
   return page
-    .locator('[data-testid="aionrs-model-selector"], [data-testid="chat-model-selector"], .header-model-btn')
+    .locator('[data-testid="foolrs-model-selector"], [data-testid="chat-model-selector"], .header-model-btn')
     .first();
 }
 
@@ -780,7 +780,7 @@ test.describe('Assistant Settings Conversation Defaults', () => {
     electronApp,
   }) => {
     const assistantName = `Auto Fixed Switch ${Date.now()}`;
-    const aionrsModels = await ensureAionrsTestModels(page);
+    const foolrsModels = await ensureFoolrsTestModels(page);
 
     await goToAssistantSettings(page);
     const skills = await httpGet<SkillRecord[]>(page, '/api/skills');
@@ -806,11 +806,11 @@ test.describe('Assistant Settings Conversation Defaults', () => {
     try {
       await httpInvoke(page, 'PUT', `/api/assistants/${assistantId}`, {
         id: assistantId,
-        preset_agent_type: 'aionrs',
+        preset_agent_type: 'foolrs',
         defaults: {
           model: {
             mode: 'fixed',
-            value: aionrsModels.modelA.useModel,
+            value: foolrsModels.modelA.useModel,
           },
           permission: {
             mode: 'fixed',
@@ -853,8 +853,8 @@ test.describe('Assistant Settings Conversation Defaults', () => {
       await httpDelete(page, `/api/conversations/${fixedConversationId}`).catch(() => {});
     } finally {
       await httpDelete(page, `/api/assistants/${assistantId}`).catch(() => {});
-      if (aionrsModels.cleanupProviderId) {
-        await httpDelete(page, `/api/providers/${aionrsModels.cleanupProviderId}`).catch(() => {});
+      if (foolrsModels.cleanupProviderId) {
+        await httpDelete(page, `/api/providers/${foolrsModels.cleanupProviderId}`).catch(() => {});
       }
     }
   });
@@ -864,7 +864,7 @@ test.describe('Assistant Settings Conversation Defaults', () => {
     electronApp,
   }) => {
     const assistantName = `Fixed Auto Switch ${Date.now()}`;
-    const aionrsModels = await ensureAionrsTestModels(page);
+    const foolrsModels = await ensureFoolrsTestModels(page);
 
     await goToAssistantSettings(page);
     const skills = await httpGet<SkillRecord[]>(page, '/api/skills');
@@ -891,11 +891,11 @@ test.describe('Assistant Settings Conversation Defaults', () => {
     try {
       await httpInvoke(page, 'PUT', `/api/assistants/${assistantId}`, {
         id: assistantId,
-        preset_agent_type: 'aionrs',
+        preset_agent_type: 'foolrs',
         defaults: {
           model: {
             mode: 'fixed',
-            value: aionrsModels.modelA.useModel,
+            value: foolrsModels.modelA.useModel,
           },
           permission: {
             mode: 'fixed',
@@ -971,8 +971,8 @@ test.describe('Assistant Settings Conversation Defaults', () => {
       await httpDelete(page, `/api/conversations/${autoConversationId}`).catch(() => {});
     } finally {
       await httpDelete(page, `/api/assistants/${assistantId}`).catch(() => {});
-      if (aionrsModels.cleanupProviderId) {
-        await httpDelete(page, `/api/providers/${aionrsModels.cleanupProviderId}`).catch(() => {});
+      if (foolrsModels.cleanupProviderId) {
+        await httpDelete(page, `/api/providers/${foolrsModels.cleanupProviderId}`).catch(() => {});
       }
     }
   });

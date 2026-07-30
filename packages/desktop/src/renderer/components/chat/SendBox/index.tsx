@@ -875,9 +875,9 @@ const SendBox: React.FC<{
     targetConversationId === undefined || targetConversationId === conversationContext?.conversation_id;
 
   useAddEventListener(
-    'aionrs.selected.file.append',
+    'foolrs.selected.file.append',
     (items: FileSelectionItem[], targetConversationId: string | undefined) => {
-      if (conversationContext?.type === 'aionrs' && acceptsTarget(targetConversationId)) {
+      if (conversationContext?.type === 'foolrs' && acceptsTarget(targetConversationId)) {
         handleExternalSelectionAppend(items);
       }
     },
@@ -908,8 +908,8 @@ const SendBox: React.FC<{
       // here, not to same-type peers on the team route.
       const targetId = conversationContext?.conversation_id;
       switch (conversationContext?.type) {
-        case 'aionrs':
-          emitter.emit('aionrs.selected.file.append', [item], targetId);
+        case 'foolrs':
+          emitter.emit('foolrs.selected.file.append', [item], targetId);
           break;
         case 'acp':
           emitter.emit('acp.selected.file.append', [item], targetId);
@@ -1296,7 +1296,7 @@ const SendBox: React.FC<{
   const onFilesAddedRef = useLatestRef(onFilesAdded);
 
   // Hands-free conversation hands its transcript here so submission keeps using
-  // the normal send path, preserving all ACP/Aionrs routing and permissions.
+  // the normal send path, preserving all ACP/Foolrs routing and permissions.
   useEffect(() => {
     const handleVoiceSubmit = (event: Event) => {
       const { text, files } = (event as CustomEvent<VoiceSubmitDetail>).detail;

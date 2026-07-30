@@ -1,5 +1,5 @@
 /**
- * Resolve the aioncore binary path.
+ * Resolve the foolcore binary path.
  *
  * Search order:
  *  1. Explicit bundled directory override (development and tests)
@@ -11,7 +11,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { execSync } from 'node:child_process';
 
-const BINARY_NAME = 'aioncore';
+const BINARY_NAME = 'foolcore';
 const MAX_DIR_ENTRIES = 20;
 const MAX_LOOKUP_TEXT_LENGTH = 1000;
 
@@ -63,7 +63,7 @@ function trimLookupText(text: string): string {
 }
 
 /**
- * Resolve the aioncore binary path.
+ * Resolve the foolcore binary path.
  * Returns the absolute path to the binary, or throws if not found.
  */
 export type BackendBinaryResolvePolicy = {
@@ -103,7 +103,7 @@ function configuredBundledPath(
   binaryName: string,
   diagnostics: BackendBinaryResolveDiagnostics
 ): string | null {
-  const bundledDir = process.env.AIONUI_BACKEND_BUNDLED_DIR?.trim();
+  const bundledDir = process.env.FOOL_BACKEND_BUNDLED_DIR?.trim();
   if (!bundledDir) return null;
 
   const runtimeDir = join(bundledDir, runtimeKey);
@@ -117,7 +117,7 @@ function configuredBundledPath(
 }
 /**
  * Check bundled binary in resources directory.
- * Layout: bundled-aioncore/{platform}-{arch}/aioncore[.exe]
+ * Layout: bundled-foolcore/{platform}-{arch}/foolcore[.exe]
  */
 function bundledPath(
   runtimeKey: string,
@@ -142,7 +142,7 @@ function bundledPath(
   if (!resourcesPath) return null;
   diagnostics.resourcesPath = resourcesPath;
 
-  const bundledDir = join(resourcesPath, 'bundled-aioncore');
+  const bundledDir = join(resourcesPath, 'bundled-foolcore');
   const runtimeDir = join(bundledDir, runtimeKey);
   const candidate = join(runtimeDir, binaryName);
   diagnostics.checkedBundledPath = candidate;

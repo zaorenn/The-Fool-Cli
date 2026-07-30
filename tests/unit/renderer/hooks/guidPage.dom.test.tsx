@@ -30,16 +30,16 @@ const {
     resetCurrentModel: vi.fn(),
   },
   agentSelectionMock: {
-    selectedAssistantId: 'bare-aionrs',
+    selectedAssistantId: 'bare-foolrs',
     selectedAssistant: {
-      id: 'bare-aionrs',
+      id: 'bare-foolrs',
       source: 'generated',
       name: 'Aion CLI',
       name_i18n: {},
       description_i18n: {},
       enabled: true,
       sort_order: 10,
-      preset_agent_type: 'aionrs',
+      preset_agent_type: 'foolrs',
       enabled_skills: [],
       custom_skill_names: [],
       disabled_builtin_skills: [],
@@ -53,14 +53,14 @@ const {
     },
     assistants: [
       {
-        id: 'bare-aionrs',
+        id: 'bare-foolrs',
         source: 'generated',
         name: 'Aion CLI',
         name_i18n: {},
         description_i18n: {},
         enabled: true,
         sort_order: 10,
-        preset_agent_type: 'aionrs',
+        preset_agent_type: 'foolrs',
         enabled_skills: [],
         custom_skill_names: [],
         disabled_builtin_skills: [],
@@ -73,14 +73,14 @@ const {
         deletable: false,
       },
     ],
-    selectedAssistantBackend: 'aionrs',
+    selectedAssistantBackend: 'foolrs',
     selectedAssistantAvailable: true,
     selectedMode: 'default',
     setSelectedMode: vi.fn(),
     selectedAcpModel: null,
     setSelectedAcpModel: vi.fn(),
     currentAcpCachedModelInfo: null,
-    defaultAssistantId: 'bare-aionrs',
+    defaultAssistantId: 'bare-foolrs',
     setSelectedAssistantId: vi.fn(),
   },
   guidInputMock: {
@@ -321,19 +321,19 @@ describe('GuidPage', () => {
     modelSelectionMock.resetCurrentModel.mockReset();
     agentSelectionMock.currentAgentModeOptions = [];
     agentSelectionMock.currentAcpCachedModelInfo = null;
-    agentSelectionMock.selectedAssistantBackend = 'aionrs';
+    agentSelectionMock.selectedAssistantBackend = 'foolrs';
     agentSelectionMock.setSelectedAcpModel.mockReset();
     agentSelectionMock.setSelectedMode.mockReset();
     agentSelectionMock.assistants = [
       {
-        id: 'bare-aionrs',
+        id: 'bare-foolrs',
         source: 'generated',
         name: 'Aion CLI',
         name_i18n: {},
         description_i18n: {},
         enabled: true,
         sort_order: 10,
-        preset_agent_type: 'aionrs',
+        preset_agent_type: 'foolrs',
         enabled_skills: [],
         custom_skill_names: [],
         disabled_builtin_skills: [],
@@ -470,14 +470,14 @@ describe('GuidPage', () => {
   it('renders example prompts with wrapping text for long assistant suggestions', () => {
     agentSelectionMock.assistants = [
       {
-        id: 'bare-aionrs',
+        id: 'bare-foolrs',
         source: 'generated',
         name: 'Aion CLI',
         name_i18n: {},
         description_i18n: {},
         enabled: true,
         sort_order: 10,
-        preset_agent_type: 'aionrs',
+        preset_agent_type: 'foolrs',
         enabled_skills: [],
         custom_skill_names: [],
         disabled_builtin_skills: [],
@@ -525,14 +525,14 @@ describe('GuidPage', () => {
   it('does not seed skill defaults from the assistant list while detail is loading', async () => {
     agentSelectionMock.assistants = [
       {
-        id: 'bare-aionrs',
+        id: 'bare-foolrs',
         source: 'generated',
         name: 'Aion CLI',
         name_i18n: {},
         description_i18n: {},
         enabled: true,
         sort_order: 10,
-        preset_agent_type: 'aionrs',
+        preset_agent_type: 'foolrs',
         enabled_skills: ['stale-list-skill'],
         custom_skill_names: [],
         disabled_builtin_skills: ['stale-disabled-builtin'],
@@ -558,7 +558,7 @@ describe('GuidPage', () => {
     });
   });
 
-  it('applies an aionrs assistant default model after provider models load', async () => {
+  it('applies an foolrs assistant default model after provider models load', async () => {
     swrMock.useSWRMock.mockReturnValue({ data: assistantDetailFixture });
     resolveGuidAssistantDefaultsMock.mockReturnValue({
       modelId: 'gpt-4.1',

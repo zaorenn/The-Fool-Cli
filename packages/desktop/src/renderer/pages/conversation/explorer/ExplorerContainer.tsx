@@ -202,7 +202,7 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
     const payload: FileOrFolderItem[] = [item];
     emitter.emit('acp.selected.file.append', payload, activeConversationId);
     emitter.emit('codex.selected.file.append', payload, activeConversationId);
-    emitter.emit('aionrs.selected.file.append', payload, activeConversationId);
+    emitter.emit('foolrs.selected.file.append', payload, activeConversationId);
     Message.success(t('conversation.explorer.addedToChat', { name }));
   };
 

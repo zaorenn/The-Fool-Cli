@@ -17,7 +17,7 @@ import type { TFunction } from 'i18next';
 export const MANAGED_AGENTS_SWR_KEY = 'agents.managed';
 
 /** Type of an agent. */
-export type AgentType = 'acp' | 'remote' | 'aionrs' | 'openclaw-gateway' | 'nanobot';
+export type AgentType = 'acp' | 'remote' | 'foolrs' | 'openclaw-gateway' | 'nanobot';
 
 /** Source tier of an agent row, mirroring backend `agent_source` enum. */
 export type AgentSource = 'internal' | 'builtin' | 'extension' | 'custom';
@@ -94,7 +94,7 @@ export type AgentMetadata = {
 
   /** Vendor label (e.g. "claude"). Absent for agents without vendor grouping. */
   backend?: string;
-  /** Top-level runtime discriminant: "acp" | "remote" | "nanobot" | "aionrs" | … */
+  /** Top-level runtime discriminant: "acp" | "remote" | "nanobot" | "foolrs" | … */
   agent_type: AgentType;
   agent_source: AgentSource;
   agent_source_info?: AgentSourceInfo;

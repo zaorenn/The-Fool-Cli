@@ -120,8 +120,8 @@
       "selectFolder": "Klasör Seç",
       "clearFolder": "Temizle",
       "model": "Model",
-      "aionrsModelRequired": "The Fool CLI için bir model seçin",
-      "aionrsNoProvider": "Kullanılabilir model yok",
+      "foolrsModelRequired": "The Fool CLI için bir model seçin",
+      "foolrsNoProvider": "Kullanılabilir model yok",
       "assistantLockedExistingConversation": "Aynı konuşma görevleri özgün yürütme asistanını korumalıdır. Başka bir asistan kullanmak için yeni bir görev oluşturun.",
       "teamTaskExecutionModeLockedReason": "Team zamanlanmış görevleri ait oldukları Team konuşmasında çalışmaya devam etmelidir, bu nedenle yürütme modu değiştirilemez."
     },

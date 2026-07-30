@@ -1,5 +1,5 @@
 /**
- * Aionrs Chat E2E Tests - Edge Cases (P2 Priority)
+ * Foolrs Chat E2E Tests - Edge Cases (P2 Priority)
  *
  * Test Cases Covered:
  * - TC-A-13: Binary不可达时跳过
@@ -7,36 +7,36 @@
  * - TC-A-15: 关联不存在的文件夹
  *
  * Prerequisites:
- * - aionrs binary available (via ipcBridge.fs.findAionrsBinary)
+ * - foolrs binary available (via ipcBridge.fs.findFoolrsBinary)
  * - User logged in
  * - At least 1 ACP model available
  */
 
 import { test, expect } from '../../../fixtures';
 import {
-  resolveAionrsPreconditions,
-  cleanupE2EAionrsConversations,
-  createAionrsConversationViaBridge,
-  sendAionrsMessage,
-  getAionrsMessages,
-  waitForAionrsReply,
-  getAionrsConversationDB,
+  resolveFoolrsPreconditions,
+  cleanupE2EFoolrsConversations,
+  createFoolrsConversationViaBridge,
+  sendFoolrsMessage,
+  getFoolrsMessages,
+  waitForFoolrsReply,
+  getFoolrsConversationDB,
   createTempWorkspace,
-  type AionrsTestModels,
+  type FoolrsTestModels,
 } from '../../../helpers';
 import { takeScreenshot } from '../../../helpers/screenshots';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-test.describe('Aionrs Chat - Edge Cases (P2)', () => {
+test.describe('Foolrs Chat - Edge Cases (P2)', () => {
   test.setTimeout(240_000); // 4 minutes for edge case tests
 
-  let preconditions: { binary: string | null; models: AionrsTestModels | null };
+  let preconditions: { binary: string | null; models: FoolrsTestModels | null };
 
   test.beforeAll(async ({ page }) => {
-    preconditions = await resolveAionrsPreconditions(page);
+    preconditions = await resolveFoolrsPreconditions(page);
     if (!preconditions.binary || !preconditions.models) {
-      test.skip(true, 'No aionrs-compatible provider found, skipping E2E tests');
+      test.skip(true, 'No foolrs-compatible provider found, skipping E2E tests');
     }
   });
 
@@ -48,14 +48,14 @@ test.describe('Aionrs Chat - Edge Cases (P2)', () => {
     }
 
     // 2. Delete E2E conversations from DB (cascades to messages)
-    await cleanupE2EAionrsConversations(page);
+    await cleanupE2EFoolrsConversations(page);
 
     // 3. Clear sessionStorage
     await page.evaluate(() => {
       const keysToRemove: string[] = [];
       for (let i = 0; i < sessionStorage.length; i++) {
         const key = sessionStorage.key(i);
-        if (key && (key.startsWith('aionrs_initial_message_') || key.startsWith('aionrs_initial_processed_'))) {
+        if (key && (key.startsWith('foolrs_initial_message_') || key.startsWith('foolrs_initial_processed_'))) {
           keysToRemove.push(key);
         }
       }
@@ -67,8 +67,8 @@ test.describe('Aionrs Chat - Edge Cases (P2)', () => {
   // TC-A-13: Binary不可达时跳过 (Binary unreachable skip)
   // ============================================================================
 
-  test('TC-A-13: should skip when aionrs binary is not reachable', async ({ page }) => {
-    // This test verifies the skip logic in beforeAll when resolveAionrsBinary() returns null
+  test('TC-A-13: should skip when foolrs binary is not reachable', async ({ page }) => {
+    // This test verifies the skip logic in beforeAll when resolveFoolrsBinary() returns null
     // In normal test environment, this test will pass because binary IS available
     // The actual skip behavior is tested by the beforeAll hook above
 
@@ -78,7 +78,7 @@ test.describe('Aionrs Chat - Edge Cases (P2)', () => {
 
     // Screenshot for documentation (shows test skipping verification)
     await page.goto(`${page.url().split('#')[0]}#/guid`);
-    await takeScreenshot(page, `chat-aionrs/tc-a-13/01-binary-available.png`);
+    await takeScreenshot(page, `chat-foolrs/tc-a-13/01-binary-available.png`);
   });
 
   // ============================================================================
@@ -87,7 +87,7 @@ test.describe('Aionrs Chat - Edge Cases (P2)', () => {
 
   test('TC-A-14: should show error when uploading file exceeding 100MB limit', async ({ page }) => {
     const timestamp = Date.now();
-    const conversationName = `E2E-aionrs-${timestamp}-large-file`;
+    const conversationName = `E2E-foolrs-${timestamp}-large-file`;
     const tempWorkspace = createTempWorkspace(`tc-a-14-${timestamp}`);
 
     try {
@@ -107,16 +107,16 @@ test.describe('Aionrs Chat - Edge Cases (P2)', () => {
 
       // Screenshot 01: before upload attempt
       await page.goto(`${page.url().split('#')[0]}#/guid`);
-      await takeScreenshot(page, `chat-aionrs/tc-a-14/01-before-upload.png`);
+      await takeScreenshot(page, `chat-foolrs/tc-a-14/01-before-upload.png`);
 
       // Step 2: Try to create conversation with 100MB file in workspace
-      // Note: aionrs binary may reject large files or UI may block upload
+      // Note: foolrs binary may reject large files or UI may block upload
       // We expect either bridge error or UI error message
       let errorOccurred = false;
       let conversationId = '';
 
       try {
-        conversationId = await createAionrsConversationViaBridge(page, {
+        conversationId = await createFoolrsConversationViaBridge(page, {
           name: conversationName,
           workspace: tempWorkspace.path,
           provider: preconditions.models!.modelA,
@@ -124,7 +124,7 @@ test.describe('Aionrs Chat - Edge Cases (P2)', () => {
         });
 
         // If conversation created, try to trigger file access
-        await sendAionrsMessage(page, conversationId, `Read the file: ${largeFilePath}`);
+        await sendFoolrsMessage(page, conversationId, `Read the file: ${largeFilePath}`);
         await page.waitForTimeout(2000); // Wait for potential error
       } catch (error) {
         errorOccurred = true;
@@ -132,7 +132,7 @@ test.describe('Aionrs Chat - Edge Cases (P2)', () => {
       }
 
       // Screenshot 02: after upload attempt (error or warning should be visible)
-      await takeScreenshot(page, `chat-aionrs/tc-a-14/02-after-upload-attempt.png`);
+      await takeScreenshot(page, `chat-foolrs/tc-a-14/02-after-upload-attempt.png`);
 
       // ============================================================================
       // DB Assertions
@@ -140,7 +140,7 @@ test.describe('Aionrs Chat - Edge Cases (P2)', () => {
 
       // For now, we document the behavior:
       // - If error thrown: test passes (file size limit enforced)
-      // - If no error: file may be accessible (aionrs handles large files)
+      // - If no error: file may be accessible (foolrs handles large files)
       // This test primarily documents the 100MB boundary behavior
 
       console.log(`[TC-A-14] Error occurred: ${errorOccurred}`);
@@ -155,7 +155,7 @@ test.describe('Aionrs Chat - Edge Cases (P2)', () => {
 
   test('TC-A-15: should show error when associating deleted folder path', async ({ page }) => {
     const timestamp = Date.now();
-    const conversationName = `E2E-aionrs-${timestamp}-deleted-folder`;
+    const conversationName = `E2E-foolrs-${timestamp}-deleted-folder`;
     const tempWorkspace = createTempWorkspace(`tc-a-15-${timestamp}`);
 
     try {
@@ -175,7 +175,7 @@ test.describe('Aionrs Chat - Edge Cases (P2)', () => {
 
       // Screenshot 01: before attempting to associate deleted folder
       await page.goto(`${page.url().split('#')[0]}#/guid`);
-      await takeScreenshot(page, `chat-aionrs/tc-a-15/01-before-association.png`);
+      await takeScreenshot(page, `chat-foolrs/tc-a-15/01-before-association.png`);
 
       // Step 2: Try to create conversation with deleted folder path
       // We expect bridge to throw error or UI to show error message
@@ -183,7 +183,7 @@ test.describe('Aionrs Chat - Edge Cases (P2)', () => {
       let errorMessage = '';
 
       try {
-        const conversationId = await createAionrsConversationViaBridge(page, {
+        const conversationId = await createFoolrsConversationViaBridge(page, {
           name: conversationName,
           workspace: deletedFolderPath,
           provider: preconditions.models!.modelA,
@@ -199,7 +199,7 @@ test.describe('Aionrs Chat - Edge Cases (P2)', () => {
       }
 
       // Screenshot 02: after association attempt (error message should be visible)
-      await takeScreenshot(page, `chat-aionrs/tc-a-15/02-after-association-attempt.png`);
+      await takeScreenshot(page, `chat-foolrs/tc-a-15/02-after-association-attempt.png`);
 
       // ============================================================================
       // DB Assertions
@@ -207,7 +207,7 @@ test.describe('Aionrs Chat - Edge Cases (P2)', () => {
 
       // Verify error handling:
       // - If error thrown: path validation enforced (preferred behavior)
-      // - If no error: aionrs may accept path but fail on access (deferred validation)
+      // - If no error: foolrs may accept path but fail on access (deferred validation)
       // This test documents the non-existent folder error handling behavior
 
       console.log(`[TC-A-15] Error occurred: ${errorOccurred}, message: ${errorMessage}`);

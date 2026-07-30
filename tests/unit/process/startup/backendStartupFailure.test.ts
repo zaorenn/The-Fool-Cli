@@ -16,9 +16,9 @@ describe('classifyBackendStartupFailure — transient concurrent startup', () =>
       details: {
         backendBoundaryCode: 'BOOTSTRAP_PEER_ALREADY_RUNNING',
         backendBoundaryStage: 'instance_guard.acquire',
-        causeMessage: 'another aioncore already owns this data directory',
+        causeMessage: 'another foolcore already owns this data directory',
       },
-      message: 'aioncore exited before health check passed',
+      message: 'foolcore exited before health check passed',
       name: 'BackendStartupError',
     });
 
@@ -36,7 +36,7 @@ describe('classifyBackendStartupFailure — transient concurrent startup', () =>
         backendBoundaryStage: 'router.assistant.bootstrap.concurrency_contended',
         causeMessage: 'assistant storage bootstrap contended under concurrent startup',
       },
-      message: 'aioncore exited before health check passed',
+      message: 'foolcore exited before health check passed',
       name: 'BackendStartupError',
     });
 
@@ -59,7 +59,7 @@ describe('classifyBackendStartupFailure — transient concurrent startup', () =>
         backendBoundaryStage: 'router.assistant.bootstrap',
         causeMessage: 'failed to bootstrap assistant storage',
       },
-      message: 'aioncore exited before health check passed',
+      message: 'foolcore exited before health check passed',
       name: 'BackendStartupError',
     });
 
@@ -83,7 +83,7 @@ describe('classifyBackendStartupFailure — genuine data damage still severe', (
         stderrTail:
           'Failed to hydrate agent registry: Internal error: load agent_metadata: Database query failed: error occurred while decoding column "config_options": invalid utf-8 sequence of 1 bytes from index 793',
       },
-      message: 'aioncore exited before health check passed',
+      message: 'foolcore exited before health check passed',
       name: 'BackendStartupError',
     });
 
@@ -104,7 +104,7 @@ describe('classifyBackendStartupFailure — genuine data damage still severe', (
         stderrTail:
           'BOOTSTRAP_DATA_INIT_FAILED stage=database.recoverable_corruption databasePath=/db/aionui-backend.db: failed to initialize application data',
       },
-      message: 'aioncore exited before health check passed',
+      message: 'foolcore exited before health check passed',
       name: 'BackendStartupError',
     });
 

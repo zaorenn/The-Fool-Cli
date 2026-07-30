@@ -33,7 +33,7 @@ let app: ElectronApplication | null = null;
 let mainPage: Page | null = null;
 const e2eStateSandboxDir = fs.mkdtempSync(path.join(os.tmpdir(), 'aionui-e2e-state-'));
 const e2eStateFile = path.join(e2eStateSandboxDir, 'extension-states.json');
-// Disposable userData root so AionCore migrates a fresh DB per run instead of
+// Disposable userData root so The Fool Core migrates a fresh DB per run instead of
 // touching the developer's real database (a shared DB that fails migration
 // blocks the whole app from booting). Consumed by configureChromium.ts.
 const e2eUserDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'aionui-e2e-userdata-'));
@@ -201,7 +201,7 @@ async function launchApp(): Promise<ElectronApplication> {
     ...process.env,
     AIONUI_EXTENSIONS_PATH: process.env.AIONUI_EXTENSIONS_PATH || path.join(projectRoot, 'examples'),
     AIONUI_BACKEND_BUNDLED_DIR:
-      process.env.AIONUI_BACKEND_BUNDLED_DIR || path.join(projectRoot, 'resources', 'bundled-aioncore'),
+      process.env.AIONUI_BACKEND_BUNDLED_DIR || path.join(projectRoot, 'resources', 'bundled-foolcore'),
     AIONUI_EXTENSION_STATES_FILE: process.env.AIONUI_EXTENSION_STATES_FILE || e2eStateFile,
     AIONUI_DISABLE_AUTO_UPDATE: '1',
     AIONUI_DISABLE_DEVTOOLS: '1',

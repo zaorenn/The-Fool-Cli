@@ -119,7 +119,7 @@ describe('apiModelMapper', () => {
   });
 
   describe('buildCreateConversationBody', () => {
-    const aionrsModel = {
+    const foolrsModel = {
       id: 'openai',
       use_model: 'gemini-2.5-pro',
       platform: 'openai',
@@ -129,13 +129,13 @@ describe('apiModelMapper', () => {
     } as TProviderWithModel;
 
     it('keeps top-level model for assistant-first creates without forwarding type', () => {
-      // Regression: aionrs creates must keep the selected top-level model,
+      // Regression: foolrs creates must keep the selected top-level model,
       // otherwise the backend persists a NULL model and warmup later fails with
       // "Provider '' not found".
       const body = buildCreateConversationBody({
         name: 'hello',
-        model: aionrsModel,
-        assistant: { id: 'bare:aionrs' },
+        model: foolrsModel,
+        assistant: { id: 'bare:foolrs' },
         extra: { workspace: '' },
       });
 

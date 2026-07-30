@@ -35,8 +35,8 @@ const assistant = (overrides: Partial<Assistant> = {}): Assistant =>
     description_i18n: {},
     enabled: true,
     sort_order: 0,
-    agent_id: 'aionrs',
-    agent: { type: 'aionrs', source: 'internal' },
+    agent_id: 'foolrs',
+    agent: { type: 'foolrs', source: 'internal' },
     enabled_skills: [],
     custom_skill_names: [],
     disabled_builtin_skills: [],
@@ -102,7 +102,7 @@ describe('startVoiceConversation', () => {
     await startVoiceConversation({ text: 'run the tests', settings: pinned });
 
     // The same handover the home page uses, so nothing about sending is duplicated.
-    const stored = sessionStorage.getItem('aionrs_initial_message_conv-1');
+    const stored = sessionStorage.getItem('foolrs_initial_message_conv-1');
     expect(JSON.parse(String(stored))).toEqual({ input: 'run the tests' });
   });
 
@@ -112,7 +112,7 @@ describe('startVoiceConversation', () => {
     await startVoiceConversation({ text: 'run the tests', settings: pinned });
 
     expect(sessionStorage.getItem('acp_initial_message_conv-1')).not.toBeNull();
-    expect(sessionStorage.getItem('aionrs_initial_message_conv-1')).toBeNull();
+    expect(sessionStorage.getItem('foolrs_initial_message_conv-1')).toBeNull();
   });
 
   it('attaches files with the message', async () => {
@@ -124,7 +124,7 @@ describe('startVoiceConversation', () => {
 
     const params = createConversation.mock.calls[0][0] as { extra: { default_files?: string[] } };
     expect(params.extra.default_files).toEqual(['/tmp/shot.png']);
-    const stored = JSON.parse(String(sessionStorage.getItem('aionrs_initial_message_conv-1'))) as {
+    const stored = JSON.parse(String(sessionStorage.getItem('foolrs_initial_message_conv-1'))) as {
       files?: unknown[];
     };
     expect(stored.files).toEqual([{ kind: 'upload', path: '/tmp/shot.png' }]);

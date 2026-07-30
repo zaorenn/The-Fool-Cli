@@ -95,9 +95,9 @@ describe('useGuidAssistantSelection', () => {
     });
   });
 
-  it('restores the last selected guid assistant before falling back to the aionrs default', async () => {
+  it('restores the last selected guid assistant before falling back to the foolrs default', async () => {
     mockAssistants = [
-      assistantFixture({ id: 'bare-aionrs', runtimeKey: 'aionrs', source: 'generated', sortOrder: 1 }),
+      assistantFixture({ id: 'bare-foolrs', runtimeKey: 'foolrs', source: 'generated', sortOrder: 1 }),
       assistantFixture({ id: 'assistant-claude', runtimeKey: 'claude', source: 'builtin', sortOrder: 2 }),
     ];
     configGetMock.mockImplementation((key: string) =>
@@ -117,7 +117,7 @@ describe('useGuidAssistantSelection', () => {
 
   it('restores the last selected guid assistant when the guid page resets for a new chat', async () => {
     mockAssistants = [
-      assistantFixture({ id: 'bare-aionrs', runtimeKey: 'aionrs', source: 'generated', sortOrder: 1 }),
+      assistantFixture({ id: 'bare-foolrs', runtimeKey: 'foolrs', source: 'generated', sortOrder: 1 }),
       assistantFixture({ id: 'assistant-claude', runtimeKey: 'claude', source: 'builtin', sortOrder: 2 }),
     ];
     configGetMock.mockImplementation((key: string) =>
@@ -138,7 +138,7 @@ describe('useGuidAssistantSelection', () => {
 
   it('persists manual guid assistant selections for the next visit', async () => {
     mockAssistants = [
-      assistantFixture({ id: 'bare-aionrs', runtimeKey: 'aionrs', source: 'generated', sortOrder: 1 }),
+      assistantFixture({ id: 'bare-foolrs', runtimeKey: 'foolrs', source: 'generated', sortOrder: 1 }),
       assistantFixture({ id: 'assistant-claude', runtimeKey: 'claude', source: 'builtin', sortOrder: 2 }),
     ];
 
@@ -149,7 +149,7 @@ describe('useGuidAssistantSelection', () => {
     );
 
     await waitFor(() => {
-      expect(result.current.selectedAssistantId).toBe('bare-aionrs');
+      expect(result.current.selectedAssistantId).toBe('bare-foolrs');
     });
 
     act(() => {
@@ -161,7 +161,7 @@ describe('useGuidAssistantSelection', () => {
 
   it('falls back to the default assistant when the persisted guid assistant no longer exists', async () => {
     mockAssistants = [
-      assistantFixture({ id: 'bare-aionrs', runtimeKey: 'aionrs', source: 'generated', sortOrder: 1 }),
+      assistantFixture({ id: 'bare-foolrs', runtimeKey: 'foolrs', source: 'generated', sortOrder: 1 }),
       assistantFixture({ id: 'assistant-claude', runtimeKey: 'claude', source: 'builtin', sortOrder: 2 }),
     ];
     configGetMock.mockImplementation((key: string) =>
@@ -175,7 +175,7 @@ describe('useGuidAssistantSelection', () => {
     );
 
     await waitFor(() => {
-      expect(result.current.selectedAssistantId).toBe('bare-aionrs');
+      expect(result.current.selectedAssistantId).toBe('bare-foolrs');
     });
   });
 
@@ -450,7 +450,7 @@ describe('useGuidAssistantSelection', () => {
     expect(result.current.selectedMode).toBe('default');
   });
 
-  it('reads aionrs mode options from the managed agent catalog', async () => {
+  it('reads foolrs mode options from the managed agent catalog', async () => {
     mockAssistants = [
       {
         id: 'bare:632f31d2',
@@ -461,7 +461,7 @@ describe('useGuidAssistantSelection', () => {
         enabled: true,
         sort_order: 1,
         agent_id: '632f31d2',
-        agent: { type: 'aionrs', source: 'internal' },
+        agent: { type: 'foolrs', source: 'internal' },
         enabled_skills: [],
         custom_skill_names: [],
         disabled_builtin_skills: [],
@@ -477,7 +477,7 @@ describe('useGuidAssistantSelection', () => {
     mockManagedAgents = [
       {
         id: '632f31d2',
-        agent_type: 'aionrs',
+        agent_type: 'foolrs',
         available_modes: {
           current_mode_id: 'default',
           available_modes: [
@@ -499,7 +499,7 @@ describe('useGuidAssistantSelection', () => {
       expect(result.current.selectedAssistantId).toBe('bare:632f31d2');
     });
 
-    expect(result.current.selectedAssistantBackend).toBe('aionrs');
+    expect(result.current.selectedAssistantBackend).toBe('foolrs');
     expect(result.current.selectedMode).toBe('default');
     expect(result.current.currentAgentModeOptions.map((mode) => mode.value)).toEqual(['default', 'auto_edit', 'yolo']);
   });
@@ -516,7 +516,7 @@ function assistantFixture({
   source: Assistant['source'];
   sortOrder: number;
 }): Assistant {
-  const isAionrs = runtimeKey === 'aionrs';
+  const isFoolrs = runtimeKey === 'foolrs';
   return {
     id,
     source,
@@ -526,8 +526,8 @@ function assistantFixture({
     enabled: true,
     sort_order: sortOrder,
     agent_id: `agent-${runtimeKey}`,
-    agent: isAionrs
-      ? { type: 'aionrs', source: 'internal' }
+    agent: isFoolrs
+      ? { type: 'foolrs', source: 'internal' }
       : { type: 'acp', source: 'builtin', acp_backend: runtimeKey },
     enabled_skills: [],
     custom_skill_names: [],

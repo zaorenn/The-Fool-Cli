@@ -107,8 +107,8 @@
       "selectFolder": "Выбрать папку",
       "clearFolder": "Очистить",
       "model": "Модель",
-      "aionrsModelRequired": "Выберите модель для The Fool CLI",
-      "aionrsNoProvider": "Нет доступных моделей",
+      "foolrsModelRequired": "Выберите модель для The Fool CLI",
+      "foolrsNoProvider": "Нет доступных моделей",
       "assistantLockedExistingConversation": "Задачи продолжающегося диалога должны сохранять исходного помощника. Чтобы использовать другого помощника, создайте новую задачу.",
       "teamTaskExecutionModeLockedReason": "Запланированные задачи Team должны продолжать выполняться в принадлежащем им диалоге Team, поэтому режим выполнения нельзя изменить."
     },

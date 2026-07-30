@@ -6,7 +6,7 @@
 
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useAionrsMessage } from '@/renderer/pages/conversation/platforms/aionrs/useAionrsMessage';
+import { useFoolrsMessage } from '@/renderer/pages/conversation/platforms/foolrs/useFoolrsMessage';
 import { getConversationOrNull } from '@/renderer/pages/conversation/utils/conversationCache';
 import { resetConversationTurnClockForTests } from '@/renderer/pages/conversation/utils/conversationTurnClock';
 import type { IResponseMessage } from '@/common/adapter/ipcBridge';
@@ -46,7 +46,7 @@ vi.mock('@/common', () => ({
   },
 }));
 
-describe('useAionrsMessage turn clock', () => {
+describe('useFoolrsMessage turn clock', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetConversationTurnClockForTests();
@@ -57,7 +57,7 @@ describe('useAionrsMessage turn clock', () => {
   it('preserves the turn start timestamp when switching away and back to a running conversation', async () => {
     vi.mocked(getConversationOrNull).mockResolvedValue(null);
 
-    const { result, rerender } = renderHook(({ id }) => useAionrsMessage(id), {
+    const { result, rerender } = renderHook(({ id }) => useFoolrsMessage(id), {
       initialProps: { id: 'conv-1' },
     });
     await waitFor(() => {
@@ -101,7 +101,7 @@ describe('useAionrsMessage turn clock', () => {
     );
 
     const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(100_000);
-    const first = renderHook(() => useAionrsMessage('conv-2'));
+    const first = renderHook(() => useFoolrsMessage('conv-2'));
     await waitFor(() => {
       expect(first.result.current.running).toBe(true);
     });
@@ -110,7 +110,7 @@ describe('useAionrsMessage turn clock', () => {
 
     // A fresh mount starts on an idle conversation, then navigates to conv-2.
     nowSpy.mockReturnValue(250_000);
-    const { result, rerender } = renderHook(({ id }) => useAionrsMessage(id), {
+    const { result, rerender } = renderHook(({ id }) => useFoolrsMessage(id), {
       initialProps: { id: 'conv-1' },
     });
     await waitFor(() => {
@@ -129,7 +129,7 @@ describe('useAionrsMessage turn clock', () => {
   it('drops a stale turn start timestamp when hydration reports the conversation idle', async () => {
     vi.mocked(getConversationOrNull).mockResolvedValue(null);
 
-    const { result, rerender } = renderHook(({ id }) => useAionrsMessage(id), {
+    const { result, rerender } = renderHook(({ id }) => useFoolrsMessage(id), {
       initialProps: { id: 'conv-1' },
     });
     await waitFor(() => {
@@ -169,7 +169,7 @@ describe('useAionrsMessage turn clock', () => {
   it('clears the turn start timestamp when the turn finishes', async () => {
     vi.mocked(getConversationOrNull).mockResolvedValue(null);
 
-    const { result } = renderHook(() => useAionrsMessage('conv-1'));
+    const { result } = renderHook(() => useFoolrsMessage('conv-1'));
     await waitFor(() => {
       expect(result.current.hasHydratedRunningState).toBe(true);
     });

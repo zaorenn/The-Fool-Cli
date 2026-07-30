@@ -61,7 +61,7 @@ describe('selectRecentLogFiles', () => {
   it('returns every file from the N most recent non-empty days', () => {
     const files = [
       { path: '/a/2026-05-22.log', mtime: Date.UTC(2026, 4, 22, 10), size: 100 },
-      { path: '/a/2026-05-22.aioncore.log', mtime: Date.UTC(2026, 4, 22, 11), size: 200 },
+      { path: '/a/2026-05-22.foolcore.log', mtime: Date.UTC(2026, 4, 22, 11), size: 200 },
       { path: '/a/2026-05-21.log', mtime: Date.UTC(2026, 4, 21, 10), size: 50 },
       { path: '/a/2026-05-20.log', mtime: Date.UTC(2026, 4, 20, 10), size: 0 },
       { path: '/a/2026-05-19.log', mtime: Date.UTC(2026, 4, 19, 10), size: 80 },
@@ -93,8 +93,8 @@ describe('listLogFilesSync', () => {
     try {
       const datedDir = path.join(logsDir, '2026', '07', '02');
       mkdirSync(datedDir, { recursive: true });
-      writeFileSync(path.join(datedDir, '2026-07-02.aioncore.log'), 'backend\n');
-      writeFileSync(path.join(datedDir, '2026-07-02.aionrs.log'), 'aionrs\n');
+      writeFileSync(path.join(datedDir, '2026-07-02.foolcore.log'), 'backend\n');
+      writeFileSync(path.join(datedDir, '2026-07-02.foolrs.log'), 'foolrs\n');
       writeFileSync(path.join(logsDir, '2026-07-02.log'), 'frontend\n');
 
       const files = listLogFilesSync(logsDir);
@@ -102,8 +102,8 @@ describe('listLogFilesSync', () => {
 
       expect(relative).toEqual([
         '2026-07-02.log',
-        '2026/07/02/2026-07-02.aioncore.log',
-        '2026/07/02/2026-07-02.aionrs.log',
+        '2026/07/02/2026-07-02.foolcore.log',
+        '2026/07/02/2026-07-02.foolrs.log',
       ]);
     } finally {
       rmSync(logsDir, { recursive: true, force: true });
@@ -138,12 +138,12 @@ describe('packAndCap', () => {
 describe('captureBackendStartupFailure', () => {
   it('captures and flushes a dedicated backend startup failure with diagnostics', async () => {
     autoUpdateDiagnosticsMock.readAutoUpdateDiagnostics.mockReturnValue(undefined);
-    const error = new Error('aioncore failed to start within timeout') as Error & {
+    const error = new Error('foolcore failed to start within timeout') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
       stage: 'health_timeout',
-      binaryPath: '/abs/path/aioncore',
+      binaryPath: '/abs/path/foolcore',
       port: 33334,
       stderrTail: 'database is locked',
     };
@@ -154,7 +154,7 @@ describe('captureBackendStartupFailure', () => {
     expect(Sentry.flush).toHaveBeenCalledWith(2000);
     expect(Sentry.withScope).toHaveBeenCalledOnce();
     expect(scopeSetContext).toHaveBeenCalledWith(
-      'aioncore_install_diagnostics',
+      'foolcore_install_diagnostics',
       expect.objectContaining({
         appVersion: '0.0.0-test',
         isPackaged: false,
@@ -179,14 +179,14 @@ describe('captureBackendStartupFailure', () => {
     vi.setSystemTime(new Date('2026-06-01T22:41:49.273Z'));
 
     try {
-      const error = new Error('aioncore startup failed while resolving backend binary') as Error & {
+      const error = new Error('foolcore startup failed while resolving backend binary') as Error & {
         details?: Record<string, unknown>;
       };
       error.details = {
         stage: 'resolve_binary',
         isPackaged: true,
         runtimeKey: 'win32-x64',
-        binaryName: 'aioncore.exe',
+        binaryName: 'foolcore.exe',
         resourcesPath: 'C:\\Users\\alice\\AppData\\Local\\Programs\\AionUi\\resources',
         bundledDirExists: false,
         runtimeDirExists: false,
@@ -215,7 +215,7 @@ describe('captureBackendStartupFailure', () => {
       expect(scopeSetTag).toHaveBeenCalledWith('aionui.backend_startup.seconds_since_quit_and_install', '46');
       expect(scopeSetTag).toHaveBeenCalledWith('aionui.backend_startup.install_path_kind', 'user_local_programs');
       expect(scopeSetContext).toHaveBeenCalledWith(
-        'aioncore_startup_classification',
+        'foolcore_startup_classification',
         expect.objectContaining({
           incompleteInstallationKind: 'missing_directory_resources',
           missingBundledAioncoreDir: true,
@@ -232,12 +232,12 @@ describe('captureBackendStartupFailure', () => {
   it('sets bucketed health polling tags for backend startup timeouts', async () => {
     scopeSetTag.mockClear();
     autoUpdateDiagnosticsMock.readAutoUpdateDiagnostics.mockReturnValue(undefined);
-    const error = new Error('aioncore failed to start within timeout') as Error & {
+    const error = new Error('foolcore failed to start within timeout') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
       stage: 'health_timeout',
-      binaryPath: '/abs/path/aioncore',
+      binaryPath: '/abs/path/foolcore',
       port: 33334,
       healthCheckAttempts: 1,
       healthCheckExpectedAttempts: 150,
@@ -258,7 +258,7 @@ describe('captureBackendStartupFailure', () => {
 
   it('sets backend data migration reason and boundary tags', async () => {
     scopeSetTag.mockClear();
-    const error = new Error('aioncore exited before health check passed') as Error & {
+    const error = new Error('foolcore exited before health check passed') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
@@ -278,7 +278,7 @@ describe('captureBackendStartupFailure', () => {
 
   it('sets local data repair reason and issue-kind tags', async () => {
     scopeSetTag.mockClear();
-    const error = new Error('aioncore exited before health check passed') as Error & {
+    const error = new Error('foolcore exited before health check passed') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
@@ -338,7 +338,7 @@ describe('initSentry beforeSend', () => {
       exception: {
         values: [
           {
-            value: '[WebUI] Cannot start: aioncore is not running (globalThis.__backendPort unset)',
+            value: '[WebUI] Cannot start: foolcore is not running (globalThis.__backendPort unset)',
           },
         ],
       },

@@ -678,7 +678,7 @@ const handleAppReady = async (): Promise<void> => {
     applyDebugBackendStartupFailure(debugBackendStartupFailure);
     mark(`debugBackendStartupFailure:${debugBackendStartupFailure.reason}`);
   } else {
-    // Start aioncore only after initializeProcess(). initStorage may open
+    // Start foolcore only after initializeProcess(). initStorage may open
     // the legacy Electron SQLite catalog for a one-shot v26 migration and must
     // close it before the backend touches the same file.
     const backendStartup = await startBackendOrExit({
@@ -826,7 +826,7 @@ const handleAppReady = async (): Promise<void> => {
             // Spawning a second backend here would race the first on SQLite.
             const port = (globalThis as typeof globalThis & { __backendPort?: number }).__backendPort;
             if (!port) {
-              throw new Error('[WebUI] Cannot start: aioncore is not running (globalThis.__backendPort unset)');
+              throw new Error('[WebUI] Cannot start: foolcore is not running (globalThis.__backendPort unset)');
             }
             return port;
           })(),
@@ -963,8 +963,8 @@ app.on('open-url', (event, url) => {
 installGpuCrashHandler();
 
 // Register the backend startup flow only when this process owns the single
-// instance lock. A lock-losing instance must NOT spawn a competing aioncore
-// backend — doing so races the first instance's aioncore over the same data
+// instance lock. A lock-losing instance must NOT spawn a competing foolcore
+// backend — doing so races the first instance's foolcore over the same data
 // directory and produced the "local data repair failed" false alarm
 // (Sentry 135525166). Gating here (rather than at the top-level second-instance
 // block) keeps it after handleAppReady is declared.
@@ -1023,7 +1023,7 @@ installQuitCleanup({
     disposeCronResumeListener?.();
     disposeCronResumeListener = null;
   },
-  // Stop aioncore subprocess — backend shutdown kills all agent children
+  // Stop foolcore subprocess — backend shutdown kills all agent children
   // transitively (no separate frontend workerTaskManager remains).
   stopBackend: () => backendManager.stop(),
   destroyPetWindow: async () => {

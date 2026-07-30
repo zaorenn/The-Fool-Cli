@@ -167,8 +167,8 @@ describe('feedback logs', () => {
     const logsDir = mkdtempSync(path.join(tmpdir(), 'aionui-feedback-logs-'));
     try {
       writeFileSync(path.join(logsDir, '2026-05-25.log'), 'today frontend\n');
-      writeFileSync(path.join(logsDir, '2026-05-25.aioncore.log'), 'today backend\n');
-      writeFileSync(path.join(logsDir, '2026-05-24.aionrs.log'), 'yesterday rust\n');
+      writeFileSync(path.join(logsDir, '2026-05-25.foolcore.log'), 'today backend\n');
+      writeFileSync(path.join(logsDir, '2026-05-24.foolrs.log'), 'yesterday rust\n');
       writeFileSync(path.join(logsDir, '2026-05-23.log'), 'third day frontend\n');
       writeFileSync(path.join(logsDir, '2026-05-22.log'), 'too old frontend\n');
       writeFileSync(path.join(logsDir, '2026-05-25.txt'), 'not a log\n');
@@ -200,8 +200,8 @@ describe('feedback logs', () => {
       mkdirSync(previousDir, { recursive: true });
       mkdirSync(oldDir, { recursive: true });
       writeFileSync(path.join(recentDir, '2026-07-02.log'), 'today frontend nested\n');
-      writeFileSync(path.join(recentDir, '2026-07-02.aioncore.log'), 'today backend nested\n');
-      writeFileSync(path.join(previousDir, '2026-07-01.aionrs.log'), 'yesterday rust nested\n');
+      writeFileSync(path.join(recentDir, '2026-07-02.foolcore.log'), 'today backend nested\n');
+      writeFileSync(path.join(previousDir, '2026-07-01.foolrs.log'), 'yesterday rust nested\n');
       writeFileSync(path.join(oldDir, '2026-06-30.log'), 'third day frontend nested\n');
       writeFileSync(path.join(logsDir, '2026-06-29.log'), 'too old flat\n');
 
@@ -214,7 +214,7 @@ describe('feedback logs', () => {
       expect(content).toContain('yesterday rust nested');
       expect(content).toContain('third day frontend nested');
       expect(content).not.toContain('too old flat');
-      expect(content).toContain('2026/07/02/2026-07-02.aioncore.log');
+      expect(content).toContain('2026/07/02/2026-07-02.foolcore.log');
     } finally {
       rmSync(logsDir, { recursive: true, force: true });
     }

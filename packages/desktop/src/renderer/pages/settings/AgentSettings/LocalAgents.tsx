@@ -134,12 +134,12 @@ const LocalAgents: React.FC = () => {
   const sortedOfficialAgents = useMemo(
     () =>
       officialAgents.toSorted((left, right) => {
-        const leftIsAionrs = left.agent_type === 'aionrs' || left.backend === 'aionrs';
-        const rightIsAionrs = right.agent_type === 'aionrs' || right.backend === 'aionrs';
-        if (leftIsAionrs !== rightIsAionrs) {
-          return leftIsAionrs ? -1 : 1;
+        const leftIsFoolrs = left.agent_type === 'foolrs' || left.backend === 'foolrs';
+        const rightIsFoolrs = right.agent_type === 'foolrs' || right.backend === 'foolrs';
+        if (leftIsFoolrs !== rightIsFoolrs) {
+          return leftIsFoolrs ? -1 : 1;
         }
-        // Strategic partner: pin Kimi right after the builtin aionrs agent.
+        // Strategic partner: pin Kimi right after the builtin foolrs agent.
         const leftIsKimi = left.backend === 'kimi';
         const rightIsKimi = right.backend === 'kimi';
         if (leftIsKimi !== rightIsKimi) {

@@ -42,7 +42,7 @@ vi.mock('@arco-design/web-react', () => ({
 }));
 
 vi.mock('@/renderer/hooks/context/ConversationContext', () => ({
-  useConversationContextSafe: () => ({ conversation_id: 'conversation-1', type: 'aionrs' }),
+  useConversationContextSafe: () => ({ conversation_id: 'conversation-1', type: 'foolrs' }),
 }));
 
 vi.mock('@/renderer/pages/team/hooks/TeamPermissionContext', () => ({

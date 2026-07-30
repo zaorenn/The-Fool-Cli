@@ -112,7 +112,7 @@ describe('migrateAssistants', () => {
 
     it('omits legacy default gemini so the backend applies its current default', () => {
       // Legacy Electron shipped 'gemini' as the global default; the current
-      // backend default is 'aionrs' (the internal gemini engine was removed).
+      // backend default is 'foolrs' (the internal gemini engine was removed).
       // Treat a legacy 'gemini' value as "no explicit choice" so users who
       // never touched the picker get the current default, not a broken one.
       const result = legacyAssistantToCreateRequest({ id: 'x', presetAgentType: 'gemini' });
@@ -126,7 +126,7 @@ describe('migrateAssistants', () => {
 
     it('maps non-default legacy backend choices to agent_id', () => {
       // Users who actually picked a backend keep their choice across the
-      // gemini → aionrs default migration.
+      // gemini → foolrs default migration.
       const result = legacyAssistantToCreateRequest(
         { id: 'x', presetAgentType: 'codex' },
         new Map([['codex', '8e1acf31']])
@@ -263,7 +263,7 @@ describe('migrateAssistants', () => {
     }
 
     it('preserves explicit user choice (codex) across the default change', async () => {
-      // Legacy built-in was set to 'codex'; backend default is 'aionrs'. The
+      // Legacy built-in was set to 'codex'; backend default is 'foolrs'. The
       // migration should PUT an override so the user's choice survives.
       const config = makeConfig({
         assistants: [{ id: 'builtin-word-creator', enabled: true, presetAgentType: 'codex', isBuiltin: true }],
@@ -289,7 +289,7 @@ describe('migrateAssistants', () => {
 
     it('does not override when legacy value is the old default (gemini)', async () => {
       // 'gemini' legacy-default must collapse to "no preference" so the user
-      // lands on the new default aionrs, not a broken gemini reference.
+      // lands on the new default foolrs, not a broken gemini reference.
       const config = makeConfig({
         assistants: [{ id: 'builtin-word-creator', enabled: true, presetAgentType: 'gemini', isBuiltin: true }],
       });
@@ -305,10 +305,10 @@ describe('migrateAssistants', () => {
     });
 
     it('does not override when legacy value already matches the current default', async () => {
-      // User picked 'aionrs' explicitly (or the legacy default already matched):
+      // User picked 'foolrs' explicitly (or the legacy default already matched):
       // writing an identical override would be a no-op row.
       const config = makeConfig({
-        assistants: [{ id: 'builtin-word-creator', enabled: true, presetAgentType: 'aionrs', isBuiltin: true }],
+        assistants: [{ id: 'builtin-word-creator', enabled: true, presetAgentType: 'foolrs', isBuiltin: true }],
       });
 
       (ipcBridge.assistants.list.invoke as any).mockResolvedValue(

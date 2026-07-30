@@ -99,7 +99,7 @@ describe('create scheduled task conversation action', () => {
     const onSessionClick = vi.fn();
     const { result } = renderActions(onSessionClick);
 
-    act(() => result.current.handleCreateCronTask(makeConversation('background-conversation', 'aionrs')));
+    act(() => result.current.handleCreateCronTask(makeConversation('background-conversation', 'foolrs')));
 
     expect(requestPrefillMock).toHaveBeenCalledWith('background-conversation', 'Create with /cron in AionUi');
     expect(navigateMock).toHaveBeenCalledWith('/conversation/background-conversation');

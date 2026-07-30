@@ -14,11 +14,11 @@ import type { Assistant } from '@/common/types/agent/assistantTypes';
 describe('assistantSelectUtils', () => {
   it('localizes assistant option names for the active locale', () => {
     const bareAssistant = makeAssistant({
-      id: 'bare-aionrs',
+      id: 'bare-foolrs',
       name: 'Aion CLI',
       name_i18n: { 'zh-CN': 'Aion 命令行' },
       source: 'generated',
-      preset_agent_type: 'aionrs',
+      preset_agent_type: 'foolrs',
     });
 
     const option = assistantToOption(bareAssistant, 'zh-CN');
@@ -47,7 +47,7 @@ describe('assistantSelectUtils', () => {
       id: 'unchecked',
       name: 'Unchecked',
       source: 'generated',
-      preset_agent_type: 'aionrs',
+      preset_agent_type: 'foolrs',
       agent_status: 'unchecked',
       team_selectable: true,
     });

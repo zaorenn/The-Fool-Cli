@@ -28,9 +28,9 @@ import AcpModelSelector from '@/renderer/components/agent/AcpModelSelector';
 import { getConversationOrNull } from '@/renderer/pages/conversation/utils/conversationCache';
 import { getConversationCreateErrorMessage } from '@/renderer/pages/conversation/utils/conversationCreateError';
 import GoogleModelSelector from '../platforms/gemini/GoogleModelSelector';
-import AionrsChat from '../platforms/aionrs/AionrsChat';
-import AionrsModelSelector from '../platforms/aionrs/AionrsModelSelector';
-import { useAionrsModelSelection } from '../platforms/aionrs/useAionrsModelSelection';
+import FoolrsChat from '../platforms/foolrs/FoolrsChat';
+import FoolrsModelSelector from '../platforms/foolrs/FoolrsModelSelector';
+import { useFoolrsModelSelection } from '../platforms/foolrs/useFoolrsModelSelection';
 import { useConversationRuntimeView } from '../runtime/useConversationRuntimeView';
 import { isLegacyReadOnlyConversationType } from '../utils/conversationRuntime';
 import { resolveConversationBackend } from '../utils/conversationAssistantIdentity';
@@ -139,9 +139,9 @@ const _AddNewConversation: React.FC<{ conversation: TChatConversation }> = ({ co
   );
 };
 
-type AionrsConversation = Extract<TChatConversation, { type: 'aionrs' }>;
+type FoolrsConversation = Extract<TChatConversation, { type: 'foolrs' }>;
 
-const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; sliderTitle: React.ReactNode }> = ({
+const FoolrsConversationPanel: React.FC<{ conversation: FoolrsConversation; sliderTitle: React.ReactNode }> = ({
   conversation,
   sliderTitle,
 }) => {
@@ -163,7 +163,7 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
     [conversation.id, runtimeView]
   );
 
-  const modelSelection = useAionrsModelSelection({
+  const modelSelection = useFoolrsModelSelection({
     initialModel: conversation.model,
     onSelectModel,
   });
@@ -173,7 +173,7 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
   const workspaceEnabled = Boolean(conversation.extra?.workspace) && !conversation.project_id;
   const cronJobId = resolveCronJobId(conversation.extra);
   const { info: presetAssistantInfo } = usePresetAssistantInfo(conversation);
-  const aionrsAssistantId = presetAssistantInfo?.assistantId;
+  const foolrsAssistantId = presetAssistantInfo?.assistantId;
   const layout = useLayoutContext();
   // Mobile: model selection moved into the sendbox `+` action sheet to free up
   // header space; the dropdown stays available on desktop and tablets ≥768px.
@@ -205,7 +205,7 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
       <div className='flex items-center gap-8px'>
         <CronJobManager conversation_id={conversation.id} cron_job_id={cronJobId} />
         {!isMobile && (
-          <AionrsModelSelector
+          <FoolrsModelSelector
             selection={modelSelection}
             thoughtLevel={runtimeConfig.thoughtLevel}
             setStatus={runtimeConfig.setStatus}
@@ -226,13 +226,13 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
     workspacePreferenceKey: conversation.project_id,
     isTemporaryWorkspace: (conversation.extra as { is_temporary_workspace?: boolean } | undefined)
       ?.is_temporary_workspace,
-    backend: 'aionrs' as const,
-    presetAssistant: presetAssistantInfo ? { ...presetAssistantInfo, id: aionrsAssistantId } : undefined,
+    backend: 'foolrs' as const,
+    presetAssistant: presetAssistantInfo ? { ...presetAssistantInfo, id: foolrsAssistantId } : undefined,
   };
 
   return (
     <ChatLayout {...chatLayoutProps} conversation_id={conversation.id}>
-      <AionrsChat
+      <FoolrsChat
         conversation_id={conversation.id}
         workspace={conversation.extra.workspace}
         modelSelection={modelSelection}
@@ -244,7 +244,7 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
           (conversation.extra as { mcp_statuses?: IConversationMcpStatus[] } | undefined)?.mcp_statuses
         }
         agent_name={presetAssistantInfo?.name}
-        assistantId={aionrsAssistantId}
+        assistantId={foolrsAssistantId}
       />
     </ChatLayout>
   );
@@ -261,13 +261,13 @@ const ChatConversation: React.FC<{
   const layout = useLayoutContext();
   const isMobile = Boolean(layout?.isMobile);
 
-  const isAionrsConversation = conversation?.type === 'aionrs';
+  const isFoolrsConversation = conversation?.type === 'foolrs';
   const isLegacyReadOnlyConversation = isLegacyReadOnlyConversationType(conversation?.type);
   const resolvedHideSendBox = hideSendBox || isLegacyReadOnlyConversationType(conversation?.type);
 
   // 使用统一的 Hook 获取预设助手信息（ACP/Codex 会话）
   // Use unified hook for preset assistant info (ACP/Codex conversations)
-  const acpConversation = isAionrsConversation ? undefined : conversation;
+  const acpConversation = isFoolrsConversation ? undefined : conversation;
   const { info: presetAssistantInfo, isLoading: isLoadingPreset } = usePresetAssistantInfo(acpConversation);
   const acpAssistantId = presetAssistantInfo?.assistantId;
   const resolvedConversationBackend = resolveConversationBackend(conversation, presetAssistantInfo?.backend);
@@ -276,7 +276,7 @@ const ChatConversation: React.FC<{
   const assistantDisplayName = presetAssistantInfo?.name || conversationAgentName;
 
   const conversationNode = useMemo(() => {
-    if (!conversation || isAionrsConversation) return null;
+    if (!conversation || isFoolrsConversation) return null;
     if (isLegacyReadOnlyConversation) {
       return <LegacyReadOnlyConversation key={conversation.id} conversation={conversation} />;
     }
@@ -305,7 +305,7 @@ const ChatConversation: React.FC<{
     }
   }, [
     conversation,
-    isAionrsConversation,
+    isFoolrsConversation,
     isLegacyReadOnlyConversation,
     resolvedConversationBackend,
     assistantDisplayName,
@@ -327,7 +327,7 @@ const ChatConversation: React.FC<{
   // Mobile: model selection moves into the sendbox `+` action sheet, so the
   // header selector is suppressed to free up vertical space.
   const modelSelector = useMemo(() => {
-    if (!conversation || isAionrsConversation) return undefined;
+    if (!conversation || isFoolrsConversation) return undefined;
     if (isMobile) return undefined;
     if (isLegacyReadOnlyConversation) return undefined;
     if (conversation.type === 'acp') {
@@ -342,10 +342,10 @@ const ChatConversation: React.FC<{
       );
     }
     return <GoogleModelSelector disabled={true} />;
-  }, [conversation, isAionrsConversation, isMobile, isLegacyReadOnlyConversation, resolvedConversationBackend]);
+  }, [conversation, isFoolrsConversation, isMobile, isLegacyReadOnlyConversation, resolvedConversationBackend]);
 
-  if (conversation && conversation.type === 'aionrs') {
-    return <AionrsConversationPanel key={conversation.id} conversation={conversation} sliderTitle={sliderTitle} />;
+  if (conversation && conversation.type === 'foolrs') {
+    return <FoolrsConversationPanel key={conversation.id} conversation={conversation} sliderTitle={sliderTitle} />;
   }
 
   // 如果有预设助手信息，使用预设助手的 logo 和名称；加载中时不进入 fallback；否则使用 backend 的 logo

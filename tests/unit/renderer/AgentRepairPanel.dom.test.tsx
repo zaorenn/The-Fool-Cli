@@ -217,7 +217,7 @@ describe('AgentRepairPanel', () => {
           ...mockAgent,
           id: '632f31d2',
           name: 'Aion CLI',
-          agent_type: 'aionrs',
+          agent_type: 'foolrs',
           agent_source: 'internal',
           status: 'online',
         }}

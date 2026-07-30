@@ -1,6 +1,6 @@
 /**
  * HTTP/WS bridge factory — drop-in replacement for bridge.buildProvider / bridge.buildEmitter
- * that routes calls to aioncore via REST API and WebSocket.
+ * that routes calls to foolcore via REST API and WebSocket.
  *
  * Exported helpers produce objects with the same shape as the local IPC bridge,
  * so existing renderer code works without changes.

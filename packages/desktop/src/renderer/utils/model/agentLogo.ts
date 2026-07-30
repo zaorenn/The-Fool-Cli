@@ -125,7 +125,8 @@ export function resolveAgentLogo(
   if (opts.icon) return normalizeLogoUrl(opts.icon);
 
   // The agent that ships with the app wears the app's own mark. Returned before
-  // the catalog is consulted, and deliberately without going through
+  // the catalog is consulted, so it is right from the first paint rather than
+  // after a round-trip, and deliberately without going through
   // `normalizeLogoUrl`: this is a bundled import, already a URL the browser can
   // load, and the guards there exist to reject paths that came off a machine or
   // out of a backend record — neither of which this is.

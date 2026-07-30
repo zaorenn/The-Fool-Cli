@@ -14,9 +14,9 @@ import { applyGpuRecoveryFlags } from './gpuRecovery';
 
 // ============ E2E test isolation ============
 // When running under E2E with an explicit sandbox dir, redirect userData there
-// BEFORE any getPath() call so the whole data tree (config, aioncore DB, logs)
+// BEFORE any getPath() call so the whole data tree (config, foolcore DB, logs)
 // lives in a disposable directory. This keeps tests off the developer's real
-// database — critical because AionCore refuses to boot when a shared DB fails
+// database — critical because The Fool Core refuses to boot when a shared DB fails
 // migration. Guarded by AIONUI_E2E_TEST so it never affects dev/production.
 // 仅 E2E：把 userData 指向一次性沙箱目录，避免测试读写真实数据库。
 const e2eUserDataDir = process.env.AIONUI_E2E_TEST === '1' ? process.env.AIONUI_E2E_USER_DATA_DIR : undefined;

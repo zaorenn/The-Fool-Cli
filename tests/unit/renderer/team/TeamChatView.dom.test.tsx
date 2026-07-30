@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const usePresetAssistantInfoMock = vi.fn();
 const acpChatMock = vi.fn(() => <div data-testid='mock-acp-chat' />);
-const aionrsChatMock = vi.fn(() => <div data-testid='mock-aionrs-chat' />);
+const foolrsChatMock = vi.fn(() => <div data-testid='mock-foolrs-chat' />);
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -21,9 +21,9 @@ vi.mock('@/renderer/pages/conversation/platforms/acp/AcpChat', () => ({
   default: (props: unknown) => acpChatMock(props),
 }));
 
-vi.mock('@/renderer/pages/conversation/platforms/aionrs/AionrsChat', () => ({
+vi.mock('@/renderer/pages/conversation/platforms/foolrs/FoolrsChat', () => ({
   __esModule: true,
-  default: (props: unknown) => aionrsChatMock(props),
+  default: (props: unknown) => foolrsChatMock(props),
 }));
 
 vi.mock('@/renderer/pages/conversation/platforms/legacy/LegacyReadOnlyConversation', () => ({
@@ -37,7 +37,7 @@ describe('TeamChatView', () => {
   beforeEach(() => {
     usePresetAssistantInfoMock.mockReset();
     acpChatMock.mockClear();
-    aionrsChatMock.mockClear();
+    foolrsChatMock.mockClear();
   });
 
   it('prefers preset assistant backend over legacy conversation extra backend', async () => {
@@ -143,7 +143,7 @@ describe('TeamChatView', () => {
     );
   });
 
-  it('passes loaded skills and MCP snapshot to AionRS team chat', async () => {
+  it('passes loaded skills and MCP snapshot to The Fool CLI team chat', async () => {
     usePresetAssistantInfoMock.mockReturnValue({ info: null });
     const mcpStatuses = [{ id: 'office', name: 'office', status: 'loaded' as const }];
 
@@ -151,8 +151,8 @@ describe('TeamChatView', () => {
       <TeamChatView
         conversation={{
           id: 'conv-1',
-          type: 'aionrs',
-          name: 'Team - AionRS',
+          type: 'foolrs',
+          name: 'Team - The Fool CLI',
           created_at: Date.now(),
           updated_at: Date.now(),
           extra: {
@@ -173,8 +173,8 @@ describe('TeamChatView', () => {
       />
     );
 
-    expect(await screen.findByTestId('mock-aionrs-chat')).toBeInTheDocument();
-    expect(aionrsChatMock.mock.calls[0]?.[0]).toEqual(
+    expect(await screen.findByTestId('mock-foolrs-chat')).toBeInTheDocument();
+    expect(foolrsChatMock.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({
         loadedSkills: ['excel'],
         loadedMcpServers: ['office'],

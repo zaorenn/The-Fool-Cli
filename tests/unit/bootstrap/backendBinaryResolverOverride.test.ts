@@ -8,7 +8,7 @@ vi.mock('node:child_process', () => ({ execSync: vi.fn() }));
 vi.mock('node:fs', () => ({ existsSync: vi.fn(), readdirSync: vi.fn() }));
 
 const originalResourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
-const originalBundledDirOverride = process.env.AIONUI_BACKEND_BUNDLED_DIR;
+const originalBundledDirOverride = process.env.FOOL_BACKEND_BUNDLED_DIR;
 
 function setResourcesPath(resourcesPath: string | undefined): void {
   Object.defineProperty(process, 'resourcesPath', { configurable: true, value: resourcesPath });
@@ -18,17 +18,17 @@ describe('resolveBinaryPath bundled override', () => {
   afterEach(() => {
     vi.clearAllMocks();
     setResourcesPath(originalResourcesPath);
-    if (originalBundledDirOverride === undefined) delete process.env.AIONUI_BACKEND_BUNDLED_DIR;
-    else process.env.AIONUI_BACKEND_BUNDLED_DIR = originalBundledDirOverride;
+    if (originalBundledDirOverride === undefined) delete process.env.FOOL_BACKEND_BUNDLED_DIR;
+    else process.env.FOOL_BACKEND_BUNDLED_DIR = originalBundledDirOverride;
   });
 
   it('allows an explicit bundled directory in a packaged E2E launch', () => {
-    const bundledDir = join('C:\\workspace', 'resources', 'bundled-aioncore');
+    const bundledDir = join('C:\\workspace', 'resources', 'bundled-foolcore');
     const runtimeKey = `${process.platform}-${process.arch}`;
-    const binaryName = process.platform === 'win32' ? 'aioncore.exe' : 'aioncore';
+    const binaryName = process.platform === 'win32' ? 'foolcore.exe' : 'foolcore';
     const candidate = join(bundledDir, runtimeKey, binaryName);
 
-    process.env.AIONUI_BACKEND_BUNDLED_DIR = bundledDir;
+    process.env.FOOL_BACKEND_BUNDLED_DIR = bundledDir;
     setResourcesPath('C:\\electron\\resources');
     vi.mocked(existsSync).mockImplementation(
       (path) => path === bundledDir || path === join(bundledDir, runtimeKey) || path === candidate
@@ -40,11 +40,11 @@ describe('resolveBinaryPath bundled override', () => {
   });
 
   it('falls back when an allowed override does not contain the backend binary', () => {
-    const bundledDir = join('C:\\workspace', 'resources', 'bundled-aioncore');
+    const bundledDir = join('C:\\workspace', 'resources', 'bundled-foolcore');
     const runtimeKey = `${process.platform}-${process.arch}`;
-    const binaryName = process.platform === 'win32' ? 'aioncore.exe' : 'aioncore';
-    const packagedCandidate = join('C:\\electron\\resources', 'bundled-aioncore', runtimeKey, binaryName);
-    process.env.AIONUI_BACKEND_BUNDLED_DIR = bundledDir;
+    const binaryName = process.platform === 'win32' ? 'foolcore.exe' : 'foolcore';
+    const packagedCandidate = join('C:\\electron\\resources', 'bundled-foolcore', runtimeKey, binaryName);
+    process.env.FOOL_BACKEND_BUNDLED_DIR = bundledDir;
     setResourcesPath('C:\\electron\\resources');
     vi.mocked(existsSync).mockImplementation((path) => path === packagedCandidate);
     vi.mocked(readdirSync).mockReturnValue([] as ReturnType<typeof readdirSync>);
@@ -52,12 +52,12 @@ describe('resolveBinaryPath bundled override', () => {
   });
 
   it('suppresses an override in packaged non-E2E launches', () => {
-    const bundledDir = join('C:\\workspace', 'resources', 'bundled-aioncore');
+    const bundledDir = join('C:\\workspace', 'resources', 'bundled-foolcore');
     const runtimeKey = `${process.platform}-${process.arch}`;
-    const binaryName = process.platform === 'win32' ? 'aioncore.exe' : 'aioncore';
+    const binaryName = process.platform === 'win32' ? 'foolcore.exe' : 'foolcore';
     const overrideCandidate = join(bundledDir, runtimeKey, binaryName);
-    const packagedCandidate = join('C:\\electron\\resources', 'bundled-aioncore', runtimeKey, binaryName);
-    process.env.AIONUI_BACKEND_BUNDLED_DIR = bundledDir;
+    const packagedCandidate = join('C:\\electron\\resources', 'bundled-foolcore', runtimeKey, binaryName);
+    process.env.FOOL_BACKEND_BUNDLED_DIR = bundledDir;
     setResourcesPath('C:\\electron\\resources');
     vi.mocked(existsSync).mockImplementation((path) => path === overrideCandidate || path === packagedCandidate);
     vi.mocked(readdirSync).mockReturnValue([] as ReturnType<typeof readdirSync>);

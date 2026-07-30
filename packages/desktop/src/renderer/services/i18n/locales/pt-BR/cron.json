@@ -107,8 +107,8 @@
       "selectFolder": "Selecionar Pasta",
       "clearFolder": "Limpar",
       "model": "Modelo",
-      "aionrsModelRequired": "Por favor, selecione um modelo para o The Fool CLI",
-      "aionrsNoProvider": "Nenhum modelo disponível",
+      "foolrsModelRequired": "Por favor, selecione um modelo para o The Fool CLI",
+      "foolrsNoProvider": "Nenhum modelo disponível",
       "assistantLockedExistingConversation": "Tarefas de conversa em andamento devem manter o assistente original. Crie uma nova tarefa para usar outro assistente.",
       "teamTaskExecutionModeLockedReason": "Tarefas agendadas de Team devem continuar executando na conversa de Team proprietária, por isso o modo de execução não pode ser alterado."
     },

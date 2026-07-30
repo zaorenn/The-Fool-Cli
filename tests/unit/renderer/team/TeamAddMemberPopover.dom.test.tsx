@@ -56,7 +56,7 @@ vi.mock('@/renderer/pages/team/hooks/useTeamAssistantOptions', () => ({
         team_selectable: false,
         team_block_reason: 'blocked',
       },
-      { id: 'unchecked', name: 'Unchecked', backend: 'aionrs', team_selectable: true },
+      { id: 'unchecked', name: 'Unchecked', backend: 'foolrs', team_selectable: true },
     ],
     loading: false,
     error: undefined,

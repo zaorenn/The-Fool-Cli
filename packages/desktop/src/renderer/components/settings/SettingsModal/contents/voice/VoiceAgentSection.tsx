@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
 import type { IProvider } from '@/common/config/storage';
 import type { Assistant } from '@/common/types/agent/assistantTypes';
-import { isAionrsAssistant } from '@/common/types/agent/assistantTypes';
+import { isFoolrsAssistant } from '@/common/types/agent/assistantTypes';
 import type { FoolVoiceSettings } from '@/common/types/foolVoice';
 import { useManagedAgentRuntimeCatalog } from '@renderer/hooks/agent/useManagedAgents';
 import { buildAgentRuntimeModelInfo } from '@renderer/utils/model/agentRuntimeCatalog';
@@ -81,7 +81,7 @@ const VoiceAgentSection: React.FC<VoiceAgentSectionProps> = ({ settings, onChang
   const selectedAssistant = assistants.find((assistant) => assistant.id === settings.session.assistantId);
   // The Aion CLI backend is handed the provider record itself, so it cannot fall
   // back to an assistant default the way an ACP agent can.
-  const modelRequired = Boolean(selectedAssistant && isAionrsAssistant(selectedAssistant));
+  const modelRequired = Boolean(selectedAssistant && isFoolrsAssistant(selectedAssistant));
 
   /**
    * The models the selected ACP agent runs, as it names them.

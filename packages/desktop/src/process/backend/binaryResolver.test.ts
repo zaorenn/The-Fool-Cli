@@ -38,18 +38,18 @@ describe('resolveBinaryPath', () => {
     setResourcesPath(originalResourcesPath);
   });
 
-  it('attaches bundled path diagnostics when aioncore cannot be resolved', () => {
+  it('attaches bundled path diagnostics when foolcore cannot be resolved', () => {
     const resourcesPath = '/app/resources';
     const runtimeKey = `${process.platform}-${process.arch}`;
-    const binaryName = process.platform === 'win32' ? 'aioncore.exe' : 'aioncore';
-    const bundledDir = join(resourcesPath, 'bundled-aioncore');
+    const binaryName = process.platform === 'win32' ? 'foolcore.exe' : 'foolcore';
+    const bundledDir = join(resourcesPath, 'bundled-foolcore');
     const runtimeDir = join(bundledDir, runtimeKey);
     const checkedBundledPath = join(runtimeDir, binaryName);
 
     setResourcesPath(resourcesPath);
     vi.mocked(existsSync).mockReturnValue(false);
     vi.mocked(readdirSync).mockImplementation((path) => {
-      if (path === resourcesPath) return [dirEntry('bundled-aioncore', true)];
+      if (path === resourcesPath) return [dirEntry('bundled-foolcore', true)];
       if (path === runtimeDir) return [dirEntry('manifest.json')];
       return [] as ReturnType<typeof readdirSync>;
     });
@@ -57,7 +57,7 @@ describe('resolveBinaryPath', () => {
       throw new Error('not found on PATH');
     });
 
-    expect(() => resolveBinaryPath()).toThrow('Cannot find "aioncore" binary');
+    expect(() => resolveBinaryPath()).toThrow('Cannot find "foolcore" binary');
 
     try {
       resolveBinaryPath();
@@ -71,9 +71,9 @@ describe('resolveBinaryPath', () => {
           checkedBundledPath,
           bundledDirExists: false,
           runtimeDirExists: false,
-          resourcesDirEntries: ['bundled-aioncore/'],
+          resourcesDirEntries: ['bundled-foolcore/'],
           runtimeDirEntries: ['manifest.json'],
-          pathLookupCommand: process.platform === 'win32' ? 'where aioncore' : 'which aioncore',
+          pathLookupCommand: process.platform === 'win32' ? 'where foolcore' : 'which foolcore',
           pathLookupError: expect.stringContaining('not found on PATH'),
         }),
       });

@@ -54,7 +54,7 @@ describe('submitFeedbackReport', () => {
         },
       ],
       collectLogs: true,
-      description: '  AionCore   cannot start  ',
+      description: '  The Fool Core   cannot start  ',
       extra: {
         installation_integrity: {
           source: 'backend_startup_failure',
@@ -77,9 +77,9 @@ describe('submitFeedbackReport', () => {
     expect(sentryMocks.captureEvent).toHaveBeenCalledWith(
       {
         level: 'info',
-        message: 'AionUi installation is incomplete: AionCore cannot start',
+        message: 'AionUi installation is incomplete: The Fool Core cannot start',
         extra: {
-          description: 'AionCore cannot start',
+          description: 'The Fool Core cannot start',
           installation_integrity: {
             source: 'backend_startup_failure',
           },

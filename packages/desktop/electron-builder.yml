@@ -111,9 +111,9 @@ extraResources:
     to: app.png
   - from: resources/tray.png
     to: tray.png
-  # aioncore binary (pre-compiled per platform/arch, ships its own bun runtime)
-  - from: resources/bundled-aioncore
-    to: bundled-aioncore
+  # foolcore binary (pre-compiled per platform/arch, ships its own bun runtime)
+  - from: resources/bundled-foolcore
+    to: bundled-foolcore
   - from: resources/hub
     to: hub
 win:

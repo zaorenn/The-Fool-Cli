@@ -63,7 +63,7 @@ export type StreamMessage = {
 };
 
 // Stream `type` values that represent an agent asking the user to confirm a
-// permission. ACP emits `acp_permission`; aionrs emits both `acp_permission`
+// permission. ACP emits `acp_permission`; foolrs emits both `acp_permission`
 // and `permission`.
 const PERMISSION_TYPES = new Set(['acp_permission', 'permission']);
 
