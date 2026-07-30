@@ -1180,8 +1180,8 @@
   "assistantAgentUnchecked": "Потрібний агент ще не перевірено.",
   "assistantAgentMissing": "Потрібний агент не встановлено.",
   "assistantTeamUnsupported": "Цей асистент зараз не можна використовувати в командному режимі.",
-  "webui.letButlerSetup": "Нехай дворецький налаштує",
-  "talkToButler": {
+  "webui.letJesterSetup": "Нехай дворецький налаштує",
+  "talkToJester": {
     "createViaChat": "Створити через чат",
     "createManually": "Створити вручну",
     "addViaChat": "Додати через чат",
@@ -1198,7 +1198,7 @@
       "diagnose": "У мене виникла проблема з The Fool, допоможи її діагностувати.\n\n[Модуль] {{module}}\n[Опис] {{description}}\n[Вкладення] див. скриншоти в полі введення.\n\nБудь ласка, визнач причину та підкажи, як виправити.",
       "diagnoseChatError": "Під час розмови в The Fool сталася помилка, допоможи її діагностувати.\n\n[Помилка] {{error}}\n\nБудь ласка, визнач причину та підкажи, як виправити."
     },
-    "solveWithButler": "Запитати дворецького"
+    "solveWithJester": "Запитати дворецького"
   },
   "bugReportModuleLabel": "Module",
   "bugReportModulePlaceholder": "Select the module related to the issue",

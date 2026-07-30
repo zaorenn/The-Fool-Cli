@@ -1266,8 +1266,8 @@
   "assistantAgentUnchecked": "L'agent requis n'a pas encore été vérifié.",
   "assistantAgentMissing": "L'agent requis n'est pas installé.",
   "assistantTeamUnsupported": "Cet assistant ne peut pas être utilisé en mode équipe pour le moment.",
-  "webui.letButlerSetup": "Laisse le majordome l'installer",
-  "talkToButler": {
+  "webui.letJesterSetup": "Laisse le majordome l'installer",
+  "talkToJester": {
     "createViaChat": "Créer via le chat",
     "createManually": "Créer manuellement",
     "addViaChat": "Ajouter via le chat",
@@ -1284,7 +1284,7 @@
       "diagnose": "J'ai rencontré un problème avec The Fool, aidez-moi à le diagnostiquer.\n\n[Module] {{module}}\n[Description] {{description}}\n[Pièces jointes] voir les captures d'écran dans l'entrée.\n\nVeuillez diagnostiquer la cause et me dire comment y remédier.",
       "diagnoseChatError": "J'ai rencontré une erreur lors d'une conversation dans The Fool, aidez-moi à la diagnostiquer.\n\n[Erreur] {{error}}\n\nVeuillez diagnostiquer la cause et me dire comment y remédier."
     },
-    "solveWithButler": "Demander au majordome"
+    "solveWithJester": "Demander au majordome"
   },
   "providerIdConflict": "L'ID du fournisseur existe déjà. Veuillez réessayer.",
   "autoInjectedSkillsHint": "Chargé automatiquement dans chaque conversation – pas besoin de les activer ; l'agent décide quand les utiliser.",

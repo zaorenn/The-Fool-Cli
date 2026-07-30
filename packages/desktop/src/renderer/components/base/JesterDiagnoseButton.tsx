@@ -4,42 +4,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useTalkToButler } from '@/renderer/hooks/assistant/useTalkToButler';
+import { useTalkToJester } from '@/renderer/hooks/assistant/useTalkToJester';
 import { Robot } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
-type ButlerDiagnoseButtonProps = {
-  /** Error text handed to the Butler as diagnosis context. */
+type JesterDiagnoseButtonProps = {
+  /** Error text handed to the Jester as diagnosis context. */
   errorText: string;
   /** Additional classes appended to the default pill styling. */
   className?: string;
 };
 
 /**
- * Inline "ask the Butler" chip shown next to FeedbackButton on error surfaces.
+ * Inline "ask the Jester" chip shown next to FeedbackButton on error surfaces.
  * Instead of filing a report, it routes the user to the home chat with the
- * AionUi Butler selected and a diagnosis prompt (including the error text)
+ * AionUi Jester selected and a diagnosis prompt (including the error text)
  * pre-filled — the same flow as the report modal's "Solve via chat" action.
  */
-const ButlerDiagnoseButton: React.FC<ButlerDiagnoseButtonProps> = ({ errorText, className }) => {
+const JesterDiagnoseButton: React.FC<JesterDiagnoseButtonProps> = ({ errorText, className }) => {
   const { t } = useTranslation();
-  const talkToButler = useTalkToButler();
+  const talkToJester = useTalkToJester();
 
   const handleClick = useCallback(
     (event: React.MouseEvent<HTMLElement>) => {
       event.stopPropagation();
-      const prompt = t('settings.talkToButler.prompt.diagnoseChatError', {
+      const prompt = t('settings.talkToJester.prompt.diagnoseChatError', {
         defaultValue:
           'I ran into an error during a conversation in AionUi, please help me diagnose it.\n\n[Error] {{error}}\n\nPlease diagnose the cause and tell me how to fix it.',
         error: errorText.trim(),
       });
-      talkToButler({ prompt }).catch((err) => {
-        console.error('[ButlerDiagnoseButton] Failed to open butler chat:', err);
+      talkToJester({ prompt }).catch((err) => {
+        console.error('[JesterDiagnoseButton] Failed to open jester chat:', err);
       });
     },
-    [errorText, t, talkToButler]
+    [errorText, t, talkToJester]
   );
 
   return (
@@ -59,9 +59,9 @@ const ButlerDiagnoseButton: React.FC<ButlerDiagnoseButtonProps> = ({ errorText, 
           viewBox (unlike Comment in FeedbackButton), so items-center alone
           lines it up with the text baseline. */}
       <Robot theme='outline' size='14' fill='currentColor' className='flex-shrink-0' />
-      <span>{t('settings.talkToButler.solveWithButler')}</span>
+      <span>{t('settings.talkToJester.solveWithJester')}</span>
     </button>
   );
 };
 
-export default ButlerDiagnoseButton;
+export default JesterDiagnoseButton;

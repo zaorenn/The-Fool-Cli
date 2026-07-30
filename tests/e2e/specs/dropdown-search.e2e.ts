@@ -125,7 +125,7 @@ test.describe('Assistant editor default selects search', () => {
   test('default model / skills / mcp selects expose search above the threshold', async ({ page }) => {
     // Assistants moved from settings to a standalone `#/assistants` page; the
     // legacy goToAssistantSettings helper still walks the settings sider and
-    // fails, so navigate directly. Create is now a TalkToButler dropdown —
+    // fails, so navigate directly. Create is now a TalkToJester dropdown —
     // open it and pick "create manually" to reach the editor.
     await page.evaluate(() => window.location.assign('#/assistants'));
     const createButton = page.locator('[data-testid="btn-create-assistant"]');

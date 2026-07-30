@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 import useConfigModelListWithImage from '@/renderer/hooks/agent/useConfigModelListWithImage';
 import AionScrollArea from '@/renderer/components/base/AionScrollArea';
 import AionSelect from '@/renderer/components/base/AionSelect';
-import TalkToButlerButton from '@/renderer/components/base/TalkToButlerButton';
+import TalkToJesterButton from '@/renderer/components/base/TalkToJesterButton';
 import AddMcpServerModal from '@/renderer/pages/settings/components/AddMcpServerModal';
 import McpServerItem from '@/renderer/pages/settings/ToolsSettings/McpServerItem';
 import {
@@ -160,10 +160,10 @@ const ModalMcpManagementSection: React.FC<{
 
   const renderAddButton = () => {
     return (
-      <TalkToButlerButton
+      <TalkToJesterButton
         label={t('settings.mcpAddServer')}
-        chatLabel={t('settings.talkToButler.addViaChat', { defaultValue: 'Add via chat' })}
-        prompt={t('settings.talkToButler.prompt.addMcp', { defaultValue: 'Help me set up an MCP server.' })}
+        chatLabel={t('settings.talkToJester.addViaChat', { defaultValue: 'Add via chat' })}
+        prompt={t('settings.talkToJester.prompt.addMcp', { defaultValue: 'Help me set up an MCP server.' })}
         extraActions={[
           {
             key: 'json',

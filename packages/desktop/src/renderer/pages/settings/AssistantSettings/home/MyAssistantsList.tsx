@@ -7,7 +7,7 @@
 import type { AssistantListItem } from '../types';
 import { type AssistantEnabledFilter, filterByEnabled, groupMyAssistants } from '../assistantUtils';
 import MyAssistantCard from './MyAssistantCard';
-import { useTalkToButler } from '@/renderer/hooks/assistant/useTalkToButler';
+import { useTalkToJester } from '@/renderer/hooks/assistant/useTalkToJester';
 import { Dropdown, Menu, Button } from '@arco-design/web-react';
 import { AllApplication, Down } from '@icon-park/react';
 import React, { useMemo, useState } from 'react';
@@ -48,14 +48,14 @@ const MyAssistantsList: React.FC<MyAssistantsListProps> = ({
   searchActive = false,
 }) => {
   const { t } = useTranslation();
-  const talkToButler = useTalkToButler();
+  const talkToJester = useTalkToJester();
   const [filter, setFilter] = useState<AssistantEnabledFilter>('all');
 
-  // "Create via chat": hand off to the AionUi Butler on the home page with a
+  // "Create via chat": hand off to the AionUi Jester on the home page with a
   // ready-made create-an-assistant prompt (same flow as the header action).
   const handleCreateViaChat = () => {
-    void talkToButler({
-      prompt: t('settings.talkToButler.prompt.createAssistant', {
+    void talkToJester({
+      prompt: t('settings.talkToJester.prompt.createAssistant', {
         defaultValue: 'Help me create a new assistant and walk me through setting it up.',
       }),
     });
@@ -110,7 +110,7 @@ const MyAssistantsList: React.FC<MyAssistantsListProps> = ({
       </div>
       <p className='mb-16px max-w-360px text-12px leading-[1.6] text-t-secondary'>
         {t('settings.customEmptyBody', {
-          defaultValue: 'Create one by chatting with the butler, or duplicate an official assistant into your own.',
+          defaultValue: 'Create one by chatting with the jester, or duplicate an official assistant into your own.',
         })}
       </p>
       <div className='flex items-center gap-10px'>

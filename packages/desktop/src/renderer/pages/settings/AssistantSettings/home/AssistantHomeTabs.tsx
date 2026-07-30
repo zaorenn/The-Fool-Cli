@@ -9,7 +9,7 @@ import EnabledAssistantsList from './EnabledAssistantsList';
 import MyAssistantsList from './MyAssistantsList';
 import OfficialAssistantsGrid from './OfficialAssistantsGrid';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
-import TalkToButlerButton from '@/renderer/components/base/TalkToButlerButton';
+import TalkToJesterButton from '@/renderer/components/base/TalkToJesterButton';
 import { AionSearchInput } from '@/renderer/components/base';
 import SettingsPageHeader from '../../components/SettingsPageHeader';
 import React, { useMemo, useState } from 'react';
@@ -118,13 +118,13 @@ const AssistantHomeTabs: React.FC<AssistantHomeTabsProps> = ({
                     onChange={setSearchQuery}
                   />
                 )}
-                <TalkToButlerButton
+                <TalkToJesterButton
                   className='shrink-0'
                   label={t('settings.createAssistant', { defaultValue: 'Create Assistant' })}
-                  chatLabel={t('settings.talkToButler.createViaChat', { defaultValue: 'Create via chat' })}
+                  chatLabel={t('settings.talkToJester.createViaChat', { defaultValue: 'Create via chat' })}
                   onManual={onCreate}
-                  manualLabel={t('settings.talkToButler.createManually', { defaultValue: 'Create manually' })}
-                  prompt={t('settings.talkToButler.prompt.createAssistant', {
+                  manualLabel={t('settings.talkToJester.createManually', { defaultValue: 'Create manually' })}
+                  prompt={t('settings.talkToJester.prompt.createAssistant', {
                     defaultValue: 'Help me create a new assistant and walk me through setting it up.',
                   })}
                   data-testid='btn-create-assistant'

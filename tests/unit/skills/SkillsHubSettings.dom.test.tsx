@@ -91,7 +91,7 @@ vi.mock('react-i18next', () => ({
 import SkillsHubSettings from '@/renderer/pages/settings/SkillsSettings/SkillsHubSettings';
 
 describe('SkillsHubSettings', () => {
-  // The import action is now a TalkToButlerButton: open the menu, then click
+  // The import action is now a TalkToJesterButton: open the menu, then click
   // "Import Skills" (the manual item) to run the manual import.
   const triggerManualImport = async () => {
     fireEvent.click(screen.getByTestId('btn-add-skill'));

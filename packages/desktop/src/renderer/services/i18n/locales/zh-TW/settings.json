@@ -1268,8 +1268,8 @@
   "assistantAgentUnchecked": "所依賴的 Agent 尚未檢測。",
   "assistantAgentMissing": "所依賴的 Agent 尚未安裝。",
   "assistantTeamUnsupported": "該助手目前無法在團隊模式中使用。",
-  "webui.letButlerSetup": "讓管家幫我設定",
-  "talkToButler": {
+  "webui.letJesterSetup": "讓管家幫我設定",
+  "talkToJester": {
     "createViaChat": "透過對話建立",
     "createManually": "手動建立",
     "addViaChat": "透過對話新增",
@@ -1286,7 +1286,7 @@
       "diagnose": "我在使用 The Fool 時遇到問題，幫我排查一下。\n\n【模組】{{module}}\n【問題描述】{{description}}\n【附件】見輸入框中的截圖。\n\n請幫我診斷原因並給出解決辦法。",
       "diagnoseChatError": "我在 The Fool 對話過程中遇到了報錯，幫我排查一下。\n\n【報錯內容】{{error}}\n\n請幫我診斷原因並給出解決辦法。"
     },
-    "solveWithButler": "找管家排查"
+    "solveWithJester": "找管家排查"
   },
   "providerIdConflict": "Provider ID 已存在，請重試。",
   "autoInjectedSkillsHint": "每次對話都會自動載入，無需手動啟用；由智能體自行決定何時呼叫。",

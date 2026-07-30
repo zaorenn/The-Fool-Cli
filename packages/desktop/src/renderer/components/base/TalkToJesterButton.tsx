@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useTalkToButler } from '@/renderer/hooks/assistant/useTalkToButler';
+import { useTalkToJester } from '@/renderer/hooks/assistant/useTalkToJester';
 import { Button, Dropdown, Menu } from '@arco-design/web-react';
 import { Down } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useCallback } from 'react';
 
-export type TalkToButlerExtraAction = {
+export type TalkToJesterExtraAction = {
   key: string;
   label: string;
   onClick: () => void;
 };
 
-export type TalkToButlerButtonProps = {
+export type TalkToJesterButtonProps = {
   /**
    * Button label in its plain, action-neutral form — e.g. "Create assistant",
    * "Add model". Clicking the button opens the menu; it does NOT run any action
@@ -29,7 +29,7 @@ export type TalkToButlerButtonProps = {
   files?: string[];
   /**
    * Override for the "via chat" action. Default behaviour hands off to the
-   * AionUi Butler (select it + pre-fill `prompt`). Callers that want a
+   * AionUi Jester (select it + pre-fill `prompt`). Callers that want a
    * different chat target — e.g. the scheduled-tasks page, which creates with
    * the user's last-used assistant — pass their own handler here.
    */
@@ -40,7 +40,7 @@ export type TalkToButlerButtonProps = {
   onManual?: () => void;
   manualLabel?: string;
   /** Extra menu actions inserted before the manual item (e.g. MCP imports). */
-  extraActions?: TalkToButlerExtraAction[];
+  extraActions?: TalkToJesterExtraAction[];
   type?: 'primary' | 'outline' | 'secondary' | 'default';
   size?: 'mini' | 'small' | 'default' | 'large';
   className?: string;
@@ -53,12 +53,12 @@ const MANUAL_KEY = '__manual__';
 /**
  * Unified "create/add" entry point used across settings. The button itself is
  * action-neutral: clicking it only opens a dropdown menu where the user picks
- * "… via chat" (hand off to the AionUi Butler with a pre-filled prompt), the
+ * "… via chat" (hand off to the AionUi Jester with a pre-filled prompt), the
  * manual action, and/or extra actions. We intentionally do NOT run a default
  * action on the button, so no path is recommended over another. One component,
  * one style, everywhere (the scheduled-tasks page uses it too).
  */
-const TalkToButlerButton: React.FC<TalkToButlerButtonProps> = ({
+const TalkToJesterButton: React.FC<TalkToJesterButtonProps> = ({
   label,
   prompt,
   files,
@@ -72,20 +72,20 @@ const TalkToButlerButton: React.FC<TalkToButlerButtonProps> = ({
   className,
   ['data-testid']: testId,
 }) => {
-  const talkToButler = useTalkToButler();
+  const talkToJester = useTalkToJester();
 
   const handleSelect = useCallback(
     (key: string) => {
       if (key === CHAT_KEY) {
         if (onChat) onChat();
-        else void talkToButler({ prompt: prompt ?? '', files });
+        else void talkToJester({ prompt: prompt ?? '', files });
       } else if (key === MANUAL_KEY) {
         onManual?.();
       } else {
         extraActions?.find((action) => action.key === key)?.onClick();
       }
     },
-    [onChat, talkToButler, prompt, files, onManual, extraActions]
+    [onChat, talkToJester, prompt, files, onManual, extraActions]
   );
 
   const droplist = (
@@ -123,4 +123,4 @@ const TalkToButlerButton: React.FC<TalkToButlerButtonProps> = ({
   );
 };
 
-export default TalkToButlerButton;
+export default TalkToJesterButton;

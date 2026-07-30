@@ -37,7 +37,7 @@ describe('FeedbackButton mount points — source-level wiring', () => {
     expect(src).toMatch(/<FeedbackButton\s+module=['"]conversation-session['"]/);
   });
 
-  it('every conversation error surface pairs FeedbackButton with ButlerDiagnoseButton', () => {
+  it('every conversation error surface pairs FeedbackButton with JesterDiagnoseButton', () => {
     for (const file of [
       'packages/desktop/src/renderer/pages/conversation/Messages/components/MessageToolGroup.tsx',
       'packages/desktop/src/renderer/pages/conversation/Messages/components/MessageTips.tsx',
@@ -45,8 +45,8 @@ describe('FeedbackButton mount points — source-level wiring', () => {
     ]) {
       const src = read(file);
       const feedbackCount = (src.match(/<FeedbackButton/g) ?? []).length;
-      const butlerCount = (src.match(/<ButlerDiagnoseButton/g) ?? []).length;
-      expect(butlerCount, `${file}: each FeedbackButton needs a ButlerDiagnoseButton beside it`).toBe(feedbackCount);
+      const jesterCount = (src.match(/<JesterDiagnoseButton/g) ?? []).length;
+      expect(jesterCount, `${file}: each FeedbackButton needs a JesterDiagnoseButton beside it`).toBe(feedbackCount);
     }
   });
 

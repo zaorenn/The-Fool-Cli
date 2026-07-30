@@ -126,7 +126,7 @@ vi.mock('@/renderer/hooks/system/useDeepLink', () => ({
   consumePendingDeepLink: () => null,
 }));
 
-vi.mock('@/renderer/components/base/TalkToButlerButton', () => ({
+vi.mock('@/renderer/components/base/TalkToJesterButton', () => ({
   default: ({ label }: { label: React.ReactNode }) => <span>{label}</span>,
 }));
 

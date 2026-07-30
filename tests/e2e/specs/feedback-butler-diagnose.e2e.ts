@@ -1,5 +1,5 @@
 /**
- * Butler diagnose button — the "Ask the Butler" chip next to the feedback
+ * Jester diagnose button — the "Ask the Jester" chip next to the feedback
  * pill on conversation error bubbles. Clicking it must jump to the home chat
  * with a diagnosis prompt (containing the error text) pre-filled, mirroring
  * the report modal's "Solve via chat" flow.
@@ -32,15 +32,15 @@ async function ensureRendererReady(page: Page): Promise<void> {
   );
 }
 
-test('error bubble butler chip pre-fills a diagnosis prompt in the home chat', async ({ page }) => {
+test('error bubble jester chip pre-fills a diagnosis prompt in the home chat', async ({ page }) => {
   await goToGuid(page);
   await ensureRendererReady(page);
   const assistantId = await findAssistantIdForBackend(page, 'codex', { requireAvailable: true });
-  test.skip(!assistantId, 'No available Codex assistant for butler-diagnose test');
+  test.skip(!assistantId, 'No available Codex assistant for jester-diagnose test');
   if (!assistantId) return;
 
   const conversation = await httpPost<CreatedConversation>(page, '/api/conversations', {
-    name: `E2E butler diagnose ${Date.now()}`,
+    name: `E2E jester diagnose ${Date.now()}`,
     assistant: { id: assistantId },
     extra: { workspace: os.tmpdir(), custom_workspace: true, session_mode: 'full-access' },
   });
@@ -76,11 +76,11 @@ test('error bubble butler chip pre-fills a diagnosis prompt in the home chat', a
     );
 
     // The error bubble should surface both chips.
-    const butlerChip = page.locator('button:has-text("找管家排查"), button:has-text("Ask the Butler")').first();
-    await expect(butlerChip).toBeVisible({ timeout: 10_000 });
+    const jesterChip = page.locator('button:has-text("找管家排查"), button:has-text("Ask the Jester")').first();
+    await expect(jesterChip).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('button:has-text("反馈问题"), button:has-text("Report Issue")').first()).toBeVisible();
 
-    await butlerChip.click();
+    await jesterChip.click();
 
     // Lands on the home chat with the diagnosis prompt (incl. error text) seeded.
     await page.waitForFunction(() => window.location.hash.startsWith('#/guid'), { timeout: 10_000 });

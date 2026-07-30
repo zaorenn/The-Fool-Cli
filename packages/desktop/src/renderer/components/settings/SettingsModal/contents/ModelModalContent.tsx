@@ -26,7 +26,7 @@ import AddPlatformModal from '@/renderer/pages/settings/components/AddPlatformMo
 import { isNewApiPlatform, NEW_API_PROTOCOL_OPTIONS } from '@/renderer/utils/model/modelPlatforms';
 import EditModeModal from '@/renderer/pages/settings/components/EditModeModal';
 import AionScrollArea from '@/renderer/components/base/AionScrollArea';
-import TalkToButlerButton from '@/renderer/components/base/TalkToButlerButton';
+import TalkToJesterButton from '@/renderer/components/base/TalkToJesterButton';
 import { useProvidersQuery } from '@/renderer/hooks/agent/useModelProviderList';
 import { useSettingsViewMode } from '../settingsViewContext';
 import SettingsPageHeader from '@/renderer/pages/settings/components/SettingsPageHeader';
@@ -341,12 +341,12 @@ const ModelModalContent: React.FC = () => {
       <Button type='text' size='small' onClick={clearAllHealthData} className='!text-t-secondary hover:!text-t-primary'>
         {t('settings.clearStatus')}
       </Button>
-      <TalkToButlerButton
+      <TalkToJesterButton
         label={t('settings.addModel')}
-        chatLabel={t('settings.talkToButler.addViaChat', { defaultValue: 'Add via chat' })}
+        chatLabel={t('settings.talkToJester.addViaChat', { defaultValue: 'Add via chat' })}
         onManual={() => addPlatformModalCtrl.open()}
-        manualLabel={t('settings.talkToButler.addManually', { defaultValue: 'Add manually' })}
-        prompt={t('settings.talkToButler.prompt.addModel', {
+        manualLabel={t('settings.talkToJester.addManually', { defaultValue: 'Add manually' })}
+        prompt={t('settings.talkToJester.prompt.addModel', {
           defaultValue: 'Help me add a new LLM provider and API key, then set it as the default model.',
         })}
       />

@@ -6,7 +6,7 @@
 
 import AionModal from '@renderer/components/base/AionModal';
 import { FEEDBACK_MODULES } from './feedbackModules';
-import { useTalkToButler } from '@/renderer/hooks/assistant/useTalkToButler';
+import { useTalkToJester } from '@/renderer/hooks/assistant/useTalkToJester';
 import { uploadFileViaHttp } from '@/renderer/services/FileService';
 import { Button, Input, Select, Message, Upload } from '@arco-design/web-react';
 import type { UploadItem } from '@arco-design/web-react/es/Upload';
@@ -75,7 +75,7 @@ const FeedbackReportModal: React.FC<FeedbackReportModalProps> = ({
   feedbackDiagnosticsContext,
 }) => {
   const { t } = useTranslation();
-  const talkToButler = useTalkToButler();
+  const talkToJester = useTalkToJester();
 
   const [module, setModule] = useState<string | undefined>(defaultModule);
   const [description, setDescription] = useState('');
@@ -199,7 +199,7 @@ const FeedbackReportModal: React.FC<FeedbackReportModalProps> = ({
     feedbackDiagnosticsContext,
   ]);
 
-  // "Solve via chat": hand the report to the AionUi Butler for on-the-spot
+  // "Solve via chat": hand the report to the AionUi Jester for on-the-spot
   // diagnosis instead of submitting to the team. The typed description + module
   // become a structured prompt; screenshots are uploaded to disk so they ride
   // along in the chat input (reusing the same upload path as pasted images).
@@ -223,14 +223,14 @@ const FeedbackReportModal: React.FC<FeedbackReportModalProps> = ({
       ).filter((path): path is string => typeof path === 'string' && path.length > 0);
 
       const moduleLabel = t(selectedModule?.i18nKey ?? 'settings.bugReportModuleOther');
-      const prompt = t('settings.talkToButler.prompt.diagnose', {
+      const prompt = t('settings.talkToJester.prompt.diagnose', {
         defaultValue:
           'I ran into a problem with AionUi, please help me diagnose it.\n\n[Module] {{module}}\n[Description] {{description}}\n[Attachments] see the screenshots in the input.\n\nPlease diagnose the cause and tell me how to fix it.',
         module: moduleLabel,
         description: description.trim(),
       });
 
-      await talkToButler({ prompt, files });
+      await talkToJester({ prompt, files });
       resetForm();
       onCancel();
     } catch {
@@ -238,7 +238,7 @@ const FeedbackReportModal: React.FC<FeedbackReportModalProps> = ({
     } finally {
       setDiagnosing(false);
     }
-  }, [description, screenshots, selectedModule, t, talkToButler, resetForm, onCancel]);
+  }, [description, screenshots, selectedModule, t, talkToJester, resetForm, onCancel]);
 
   const isFormValid = module !== undefined && description.trim().length > 0;
 
@@ -343,7 +343,7 @@ const FeedbackReportModal: React.FC<FeedbackReportModalProps> = ({
               data-testid='btn-feedback-diagnose'
               className='!text-primary-6 hover:!text-primary-5'
             >
-              {t('settings.talkToButler.solveViaChat', { defaultValue: 'Solve via chat' })}
+              {t('settings.talkToJester.solveViaChat', { defaultValue: 'Solve via chat' })}
             </Button>
             <div className='flex items-center gap-8px'>
               <Button onClick={handleCancel} className='px-20px min-w-80px' style={{ borderRadius: 8 }}>

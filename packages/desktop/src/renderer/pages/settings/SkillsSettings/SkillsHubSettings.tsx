@@ -10,7 +10,7 @@ import useSWR from 'swr';
 import SkillUsedByStack, { getAssistantsUsingSkill } from './SkillUsedByStack';
 import SettingsPageWrapper from '../components/SettingsPageWrapper';
 import SettingsPageHeader from '../components/SettingsPageHeader';
-import TalkToButlerButton from '@/renderer/components/base/TalkToButlerButton';
+import TalkToJesterButton from '@/renderer/components/base/TalkToJesterButton';
 import { AionSearchInput } from '@/renderer/components/base';
 import { buildSkillImportNotice, getSkillImportErrorMessage } from './skillImportMessages';
 
@@ -992,12 +992,12 @@ const SkillsHubSettings: React.FC<SkillsHubSettingsProps> = ({ withWrapper = tru
             >
               {t('settings.skillsHub.importHistoryTitle', { defaultValue: 'Import history' })}
             </Button>
-            <TalkToButlerButton
+            <TalkToJesterButton
               label={t('settings.skillsHub.addSkill', { defaultValue: 'Add Skill' })}
-              chatLabel={t('settings.talkToButler.addViaChat', { defaultValue: 'Add via chat' })}
+              chatLabel={t('settings.talkToJester.addViaChat', { defaultValue: 'Add via chat' })}
               onManual={handleManualImport}
               manualLabel={t('settings.skillsHub.manualImport', { defaultValue: 'Import Skills' })}
-              prompt={t('settings.talkToButler.prompt.addSkill', {
+              prompt={t('settings.talkToJester.prompt.addSkill', {
                 defaultValue: 'Help me import a skill and attach it to an assistant.',
               })}
               data-testid='btn-add-skill'

@@ -110,7 +110,7 @@ async function openCustomAgentEditor(page: Page, command: string) {
 
   await goToSettings(page, 'agent');
 
-  // The "Add custom Agent" entry is a TalkToButlerButton dropdown; open it and
+  // The "Add custom Agent" entry is a TalkToJesterButton dropdown; open it and
   // choose "Add manually" to mount the inline editor modal.
   const addButton = page.locator('button:has-text("添加自定义 Agent"), button:has-text("Add Custom Agent")').first();
   await expect(addButton).toBeVisible({ timeout: 10_000 });

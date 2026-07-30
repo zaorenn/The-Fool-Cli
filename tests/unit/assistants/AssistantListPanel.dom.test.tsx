@@ -103,7 +103,7 @@ describe('AssistantListPanel', () => {
     const onCreateSpy = vi.fn();
     renderWithProviders(<AssistantListPanel {...defaultProps} onCreate={onCreateSpy} />);
 
-    // The create button is now a TalkToButlerButton: clicking it opens a menu;
+    // The create button is now a TalkToJesterButton: clicking it opens a menu;
     // "Create manually" is what runs onCreate.
     await user.click(screen.getByTestId('btn-create-assistant'));
     await clickMenuItem('btn-create-assistant-manual');

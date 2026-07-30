@@ -208,7 +208,7 @@ describe('MessageTips — FeedbackButton wiring', () => {
     });
   });
 
-  it('hides FeedbackButton but keeps ButlerDiagnoseButton when structured error opts out of feedback', () => {
+  it('hides FeedbackButton but keeps JesterDiagnoseButton when structured error opts out of feedback', () => {
     render(
       <MessageTips
         message={buildTips('error', 'raw provider 401', {
@@ -228,8 +228,8 @@ describe('MessageTips — FeedbackButton wiring', () => {
 
     // User-environment errors don't funnel to the report modal…
     expect(screen.queryByText('settings.oneClickFeedback')).not.toBeInTheDocument();
-    // …but the Butler chip stays: these are exactly what it diagnoses best.
-    expect(screen.getByText('settings.talkToButler.solveWithButler')).toBeInTheDocument();
+    // …but the Jester chip stays: these are exactly what it diagnoses best.
+    expect(screen.getByText('settings.talkToJester.solveWithJester')).toBeInTheDocument();
   });
 
   it('carries the rawError diagnostic summary into the feedback extra for internal errors', async () => {

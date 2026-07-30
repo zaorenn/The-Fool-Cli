@@ -20,6 +20,7 @@
 
 import { ipcBridge } from '@/common';
 import builtInAgentLogo from '@renderer/assets/logos/brand/app.png';
+import { isBuiltInAgent } from '@/renderer/utils/model/agentIdentity';
 import type { AssistantAvatar } from '@/renderer/utils/model/assistantAvatar';
 import {
   isBackendRelativeAssetPath,
@@ -29,20 +30,6 @@ import {
 import type { ManagedAgent } from '@/renderer/utils/model/agentTypes';
 import { resolveBackendAssetUrl } from '@/renderer/utils/platform';
 import useSWR from 'swr';
-
-/**
- * The agent that ships inside the app, as the backend still names it.
- *
- * The identifier is the backend's, not ours: it travels in every conversation
- * record and in the agent catalog, and the binary that serves them is not built
- * from this repository. Renaming it here would mean creating conversations of a
- * type the backend does not know and failing to recognise the agent it reports
- * — so the name stays and only what the user reads changes.
- */
-const BUILT_IN_AGENT_BACKEND = 'aionrs';
-
-const isBuiltInAgent = (backend: string | undefined | null): boolean =>
-  typeof backend === 'string' && backend.trim().toLowerCase() === BUILT_IN_AGENT_BACKEND;
 
 /** Map of lowercased backend id -> logo URL. */
 export type AgentLogoMap = Record<string, string>;

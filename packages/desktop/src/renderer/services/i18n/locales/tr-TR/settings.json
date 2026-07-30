@@ -1266,8 +1266,8 @@
   "assistantAgentUnchecked": "Gereken aracı henüz denetlenmedi.",
   "assistantAgentMissing": "Gereken aracı yüklü değil.",
   "assistantTeamUnsupported": "Bu asistan şu anda takım modunda kullanılamıyor.",
-  "webui.letButlerSetup": "Kâhya ayarlasın",
-  "talkToButler": {
+  "webui.letJesterSetup": "Kâhya ayarlasın",
+  "talkToJester": {
     "createViaChat": "Sohbetle oluştur",
     "createManually": "Elle oluştur",
     "addViaChat": "Sohbetle ekle",
@@ -1284,7 +1284,7 @@
       "diagnose": "The Fool kullanırken bir sorunla karşılaştım, teşhis etmeme yardım et.\n\n[Modül] {{module}}\n[Açıklama] {{description}}\n[Ekler] giriş alanındaki ekran görüntülerine bakın.\n\nLütfen nedenini teşhis et ve nasıl düzelteceğimi söyle.",
       "diagnoseChatError": "The Fool sohbeti sırasında bir hatayla karşılaştım, teşhis etmeme yardım et.\n\n[Hata] {{error}}\n\nLütfen nedenini teşhis et ve nasıl düzelteceğimi söyle."
     },
-    "solveWithButler": "Kâhya'ya sor"
+    "solveWithJester": "Kâhya'ya sor"
   },
   "providerIdConflict": "Provider ID zaten var. Lütfen tekrar deneyin.",
   "autoInjectedSkillsHint": "Her sohbete otomatik olarak yüklenir — etkinleştirmeye gerek yoktur; aracı bunları ne zaman kullanacağına karar verir.",

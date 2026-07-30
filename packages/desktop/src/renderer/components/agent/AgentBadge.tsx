@@ -7,6 +7,7 @@
 import { resolveAgentLogo, useAgentLogos } from '@/renderer/utils/model/agentLogo';
 import { iconColors } from '@/renderer/styles/colors';
 import { Robot } from '@icon-park/react';
+import { resolveAgentDisplayName } from '@/renderer/utils/model/agentIdentity';
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -87,7 +88,7 @@ const AgentBadge: React.FC<AgentBadgeProps> = ({
         agentLogoIsEmoji={agentLogoIsEmoji}
         agentLogoIsFallback={agentLogoIsFallback}
       />
-      <span className='text-sm text-t-primary'>{agent_name || backend}</span>
+      <span className='text-sm text-t-primary'>{resolveAgentDisplayName(agent_name, backend)}</span>
     </div>
   );
 };
