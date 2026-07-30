@@ -1,0 +1,97 @@
+<svg viewBox="0 -3 22 27" width="360" height="360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      /*
+        A three-ball cascade. Every ball follows the same throw path — hand,
+        arc, opposite hand — offset by a third of the cycle, which is what makes
+        a real cascade read as juggling rather than as objects orbiting a body.
+        Hand positions here match the two hands drawn below.
+      */
+      .jb {
+        animation: jb-cascade 1.35s linear infinite;
+      }
+      .jb--2 { animation-delay: -0.45s; }
+      .jb--3 { animation-delay: -0.90s; }
+
+      @keyframes jb-cascade {
+        /* left hand -> apex -> right hand */
+        0%   { transform: translate(4.6px, 13.6px); }
+        8%   { transform: translate(5.4px, 10.2px); }
+        20%  { transform: translate(7.6px, 5.4px); }
+        32%  { transform: translate(10.4px, 4.4px); }
+        44%  { transform: translate(14.2px, 8.8px); }
+        50%  { transform: translate(17.4px, 13.6px); }
+        /* right hand -> apex -> left hand */
+        58%  { transform: translate(16.6px, 10.2px); }
+        70%  { transform: translate(14.4px, 5.4px); }
+        82%  { transform: translate(11.6px, 4.4px); }
+        94%  { transform: translate(7.8px, 8.8px); }
+        100% { transform: translate(4.6px, 13.6px); }
+      }
+
+      /* Hands dip on the catch and lift on the throw, in step with the balls. */
+      .jh-l { animation: jh-left 1.35s ease-in-out infinite; }
+      .jh-r { animation: jh-right 1.35s ease-in-out infinite; }
+      @keyframes jh-left {
+        0%, 100% { transform: translateY(0.5px); }
+        25%      { transform: translateY(-0.35px); }
+        50%      { transform: translateY(0); }
+      }
+      @keyframes jh-right {
+        0%, 100% { transform: translateY(0); }
+        50%      { transform: translateY(0.5px); }
+        75%      { transform: translateY(-0.35px); }
+      }
+
+      .jbody { transform-origin: 11px 18px; animation: jb-breathe 2.7s ease-in-out infinite; }
+      .jeye  { transform-origin: 11px 11px; animation: jb-blink 4.2s ease-in-out infinite; }
+      .jshadow { transform-origin: 11px 21.6px; animation: jb-shadow 2.7s ease-in-out infinite; }
+      @keyframes jb-breathe {
+        0%, 100% { transform: scaleY(1) translateY(0); }
+        50%      { transform: scaleY(0.98) translateY(0.25px); }
+      }
+      @keyframes jb-blink {
+        0%, 92%, 100% { transform: scaleY(1); }
+        96%           { transform: scaleY(0.1); }
+      }
+      @keyframes jb-shadow {
+        0%, 100% { transform: scaleX(1); opacity: 0.45; }
+        50%      { transform: scaleX(0.9); opacity: 0.3; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .jb, .jh-l, .jh-r, .jbody, .jeye, .jshadow { animation: none; }
+      }
+    </style>
+  </defs>
+
+  <ellipse class="jshadow" cx="11" cy="21.6" rx="4" ry="0.6" fill="#c0c0c0" opacity="0.45"/>
+
+  <g class="jbody">
+    <!-- head / mask -->
+    <rect x="5" y="6" width="12" height="12" rx="6" fill="#f5f1e8"/>
+
+    <!-- jester cap: two curved horns with bells and a centre point -->
+    <g transform="translate(11 6.4)">
+      <path d="M0.5 0.2 C2.3 -0.9 4.0 -2.2 5.1 -4.4 C4.9 -1.9 3.7 0.1 2.2 0.7 C1.6 0.9 1.0 0.7 0.5 0.2 Z" fill="#c4123f"/>
+      <path d="M-0.5 0.2 C-2.3 -0.9 -4.0 -2.2 -5.1 -4.4 C-4.9 -1.9 -3.7 0.1 -2.2 0.7 C-1.6 0.9 -1.0 0.7 -0.5 0.2 Z" fill="#c4123f"/>
+      <path d="M-2.6 0.7 C-2.2 -2.4 -1.1 -4.3 0 -5.2 C1.1 -4.3 2.2 -2.4 2.6 0.7 Z" fill="#c4123f"/>
+      <circle cx="5.3" cy="-4.6" r="0.85" fill="#c4123f"/>
+      <circle cx="-5.3" cy="-4.6" r="0.85" fill="#c4123f"/>
+      <circle cx="0" cy="-5.6" r="0.75" fill="#c4123f"/>
+    </g>
+
+    <!-- face -->
+    <g class="jeye"><circle cx="11.00" cy="11.00" r="1.05" fill="#111827"/><circle cx="10.66" cy="10.62" r="0.3" fill="#f5f1e8" opacity="0.9"/></g><path d="M13.15 8.95 C13.55 10.25 13.55 11.75 13.15 13.05 C12.85 11.75 12.85 10.25 13.15 8.95 Z" fill="#c4123f"/>
+    <path d="M8 13.5 Q11 16.5 14 13.5" stroke="#111827" stroke-width="1" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <!-- hands, sitting where the cascade path begins and ends -->
+  <g class="jh-l"><circle cx="4.6" cy="15.2" r="1.5" fill="#c4123f"/></g>
+  <g class="jh-r"><circle cx="17.4" cy="15.2" r="1.5" fill="#c4123f"/></g>
+
+  <!-- the three balls -->
+  <g class="jb jb--1"><circle r="1.45" fill="#c4123f"/></g>
+  <g class="jb jb--2"><circle r="1.45" fill="#e34a6e"/></g>
+  <g class="jb jb--3"><circle r="1.45" fill="#981033"/></g>
+</svg>

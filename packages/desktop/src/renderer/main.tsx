@@ -95,6 +95,7 @@ import Router from './components/layout/Router';
 import Sider from './components/layout/Sider';
 import { useAuth } from './hooks/context/AuthContext';
 import { ConversationHistoryProvider } from './hooks/context/ConversationHistoryContext';
+import { useWakeWordListener } from './hooks/voice/useWakeWordListener';
 import HOC from './utils/ui/HOC';
 import type { BackendStartupFailureInfo } from '@/common/types/platform/electron';
 import type { IRuntimeStatusEvent, RuntimeFailureKind } from '@/common/adapter/ipcBridge';
@@ -289,6 +290,10 @@ const Main = () => {
   const { ready } = useAuth();
   const [configReady, setConfigReady] = useState(false);
 
+  // Listens for the wake phrase whenever the desktop pet is up. Mounted here, at
+  // the app root, so it survives navigation between conversations.
+  useWakeWordListener();
+
   useEffect(() => {
     if (!ready) return;
     void bootstrapRendererConfig().finally(() => setConfigReady(true));
@@ -434,3 +439,25 @@ if (backendStartupFailure && shouldShowBackendStartupFailureDialog) {
     </AppProviders>
   );
 }
+
+/**
+ * Retires the boot splash declared in `index.html`.
+ *
+ * Waits two frames so the first React paint is already on screen — removing it
+ * on mount alone can expose a blank window for a frame.
+ */
+const dismissBootSplash = (): void => {
+  const splash = document.getElementById('boot-splash');
+  if (!splash) return;
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      splash.classList.add('boot-splash--leaving');
+      splash.addEventListener('transitionend', () => splash.remove(), { once: true });
+      // Fallback for the case where the transition never fires.
+      window.setTimeout(() => splash.remove(), 600);
+    });
+  });
+};
+
+dismissBootSplash();
