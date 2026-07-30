@@ -170,14 +170,24 @@ childProcess.execSync = function mockedExecSync(command) {
     const offenders: string[] = [];
     for (const file of files) {
       const source = readFileSync(resolve(resourcesDir, file), 'utf8');
+      // `Abort` inside `.onVerifyInstDir` is not a failure. NSIS calls that
+      // callback on every keystroke in the path field and reads `Abort` as
+      // "this directory is not acceptable" — it greys out Next and nothing
+      // else. There is no other way to reject a directory there, so the rule
+      // below would forbid the only correct implementation of the guard that
+      // stops the installer deleting somebody's Documents folder.
+      let inVerifyInstDir = false;
       source.split(/\r?\n/).forEach((line, index) => {
+        if (/^\s*Function\s+\.onVerifyInstDir\b/.test(line)) inVerifyInstDir = true;
+        else if (inVerifyInstDir && /^\s*FunctionEnd\b/.test(line)) inVerifyInstDir = false;
+
         if (line.includes('!macro AIONUI_FAIL ')) {
           offenders.push(`${file}:${index + 1}: defines non-reportable coded failure macro`);
         }
         if (line.includes('!insertmacro AIONUI_FAIL ')) {
           offenders.push(`${file}:${index + 1}: uses non-reportable coded failure macro`);
         }
-        if (/^\s*Abort\b/.test(line)) {
+        if (!inVerifyInstDir && /^\s*Abort\b/.test(line)) {
           offenders.push(`${file}:${index + 1}: aborts without unified failure UI`);
         }
         if (line.includes('SetErrorLevel 2') && file !== 'installer-errors-sentry.nsh') {

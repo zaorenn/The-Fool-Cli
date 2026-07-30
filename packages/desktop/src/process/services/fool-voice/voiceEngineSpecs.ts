@@ -23,7 +23,33 @@ export type TtsEngineSpec =
   | (Common & { kind: 'kokoro'; model: string; voices: string })
   | (Common & { kind: 'kitten'; model: string; voices: string })
   | (Common & { kind: 'matcha'; acousticModel: string; vocoder: string })
-  | (Common & { kind: 'zipvoice'; encoder: string; decoder: string; vocoder: string });
+  /**
+   * ZipVoice needs a vocoder, and its archive does not contain one.
+   *
+   * `sherpa-onnx-zipvoice-distill-int8-zh-en-emilia.tar.bz2` ships the encoder,
+   * the decoder, the tokens and a pronunciation lexicon; the vocoder is a
+   * separate release asset (`vocoder-models/vocos_24khz.onnx`). Verified by
+   * loading the engine: without it, `Please provide --zipvoice-vocoder`.
+   */
+  | (Common & { kind: 'zipvoice'; encoder: string; decoder: string; vocoder: string; lexicon: string })
+  /**
+   * Pocket clones from the recording alone — no transcript.
+   *
+   * ZipVoice aligns the new text against what the reference clip says, so a
+   * wrong transcript is heard as the voice mispronouncing itself. Pocket builds
+   * a speaker embedding from the audio instead, and caches it, so the reference
+   * is paid for once per voice rather than once per sentence.
+   */
+  | (Common & {
+      kind: 'pocket';
+      lmFlow: string;
+      lmMain: string;
+      encoder: string;
+      decoder: string;
+      textConditioner: string;
+      vocabJson: string;
+      tokenScoresJson: string;
+    });
 
 export type SttEngineSpec =
   | (Common & { kind: 'whisper'; encoder: string; decoder: string; tokens: string })
@@ -47,6 +73,30 @@ export type SttEngineSpec =
 export const ENGINE_THREADS: Record<'speech-to-text' | 'text-to-speech', number> = {
   'speech-to-text': 8,
   'text-to-speech': 2,
+};
+
+/**
+ * Threads for one text-to-speech engine, which is not one number.
+ *
+ * The two above were written when every voice was a small one. Piper renders a
+ * sentence in 82 ms and gains nothing from more cores; the cloning engine runs
+ * an encoder, a flow-matching decoder and a vocoder over the same sentence and
+ * is the one voice a user ever waits for. Giving them the same two threads
+ * throttled the slow one to keep the fast one modest.
+ *
+ * Half the machine, capped: past six threads ONNX spends more time synchronising
+ * than computing at this model size, and the agent's own model needs cores too.
+ */
+const CLONING_THREAD_CAP = 6;
+
+/** Engines that speak in a voice they were not trained on, and pay for it. */
+const CLONING_KINDS: ReadonlySet<TtsEngineSpec['kind']> = new Set(['zipvoice', 'pocket']);
+
+export const ttsThreadsFor = (kind: TtsEngineSpec['kind'], cpuCount: number): number => {
+  if (!CLONING_KINDS.has(kind)) return ENGINE_THREADS['text-to-speech'];
+
+  const usable = Number.isFinite(cpuCount) && cpuCount > 0 ? Math.floor(cpuCount / 2) : 0;
+  return Math.max(ENGINE_THREADS['text-to-speech'], Math.min(CLONING_THREAD_CAP, usable));
 };
 
 export type VoiceEngineSpec =
@@ -123,6 +173,23 @@ export const VOICE_ENGINE_SPECS: Record<string, VoiceEngineSpec> = {
       voices: 'voices.bin',
     },
   },
+  // File names taken from the upstream Node example for this exact archive.
+  // Note the mixed precision: the encoder and the text conditioner ship as
+  // float even in the int8 build, so neither can be renamed to match the others.
+  'tts-pocket-int8-2026-01-26': {
+    role: 'text-to-speech',
+    engine: {
+      kind: 'pocket',
+      dir: 'sherpa-onnx-pocket-tts-int8-2026-01-26',
+      lmFlow: 'lm_flow.int8.onnx',
+      lmMain: 'lm_main.int8.onnx',
+      encoder: 'encoder.onnx',
+      decoder: 'decoder.int8.onnx',
+      textConditioner: 'text_conditioner.onnx',
+      vocabJson: 'vocab.json',
+      tokenScoresJson: 'token_scores.json',
+    },
+  },
   'tts-zipvoice-distill-int8': {
     role: 'text-to-speech',
     engine: {
@@ -130,7 +197,8 @@ export const VOICE_ENGINE_SPECS: Record<string, VoiceEngineSpec> = {
       dir: 'sherpa-onnx-zipvoice-distill-int8-zh-en-emilia',
       encoder: 'encoder.int8.onnx',
       decoder: 'decoder.int8.onnx',
-      vocoder: 'vocoder.int8.onnx',
+      vocoder: 'vocos_24khz.onnx',
+      lexicon: 'lexicon.txt',
     },
   },
 };

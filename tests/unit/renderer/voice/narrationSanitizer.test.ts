@@ -8,6 +8,26 @@ import { describe, expect, it } from 'vitest';
 import { sanitizeForSpeech, truncateToSpokenLength } from '@renderer/services/voice/narration/narrationSanitizer';
 
 describe('sanitizeForSpeech', () => {
+  // A speech engine handed an emoji reads its Unicode name mid-sentence, or
+  // stumbles over a codepoint it has no phoneme for.
+  it('drops emoji, keeping the sentence around them', () => {
+    const spoken = sanitizeForSpeech('Done ✅ and the tests pass 🎉');
+
+    expect(spoken).toBe('Done and the tests pass');
+  });
+
+  it('drops a joined emoji sequence whole, leaving no fragments behind', () => {
+    // Family: a chain of people welded together by zero-width joiners, plus a
+    // flag built from regional indicators and a skin-tone modifier.
+    const spoken = sanitizeForSpeech('Shipped 👨‍👩‍👧‍👦 🇹🇷 👍🏽 today');
+
+    expect(spoken).toBe('Shipped today');
+  });
+
+  it('keeps digits and hashes, which are not emoji however they are classified', () => {
+    expect(sanitizeForSpeech('Fixed 3 of 4 tests')).toBe('Fixed 3 of 4 tests');
+  });
+
   it('never speaks a fenced code block', () => {
     const spoken = sanitizeForSpeech('I fixed it:\n```ts\nconst x = 1;\nexport default x;\n```\nTests pass.');
 

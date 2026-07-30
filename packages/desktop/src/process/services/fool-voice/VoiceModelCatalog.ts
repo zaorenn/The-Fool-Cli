@@ -145,6 +145,19 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
     ],
   },
   {
+    id: 'tts-pocket-int8-2026-01-26',
+    providerId: 'local-sherpa',
+    displayName: 'Pocket (Voice cloning, fastest)',
+    languages: ['en'],
+    role: 'text-to-speech',
+    distribution: 'managed',
+    state: { status: 'not-installed' },
+    downloadBytes: null,
+    installedBytes: null,
+    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
+    profileIds: [],
+  },
+  {
     id: 'tts-zipvoice-distill-int8',
     providerId: 'local-sherpa',
     displayName: 'ZipVoice (Voice cloning, int8)',
@@ -243,12 +256,28 @@ export const FOOL_VOICE_PRESET_PROFILES: readonly VoiceProfile[] = [
   ),
 ];
 
+/**
+ * A file the model needs that its archive does not contain.
+ *
+ * ZipVoice is the case this exists for: the engine refuses to open without a
+ * vocoder, and the vocoder is published as its own release asset rather than
+ * inside the model archive.
+ */
+export type ManagedExtraFile = {
+  url: string;
+  sha256: string;
+  bytes: number;
+  /** Where it lands, relative to the model directory. */
+  destination: string;
+};
+
 export type ManagedCatalogEntry = {
   modelId: string;
   url: string;
   sha256: string | null;
   archiveBytes: number;
   expectedFiles: string[];
+  extraFiles?: ManagedExtraFile[];
 };
 
 /**
@@ -347,6 +376,27 @@ export const MANAGED_CATALOG_ENTRIES: Record<string, ManagedCatalogEntry> = {
       'sherpa-onnx-supertonic-3-tts-int8-2026-05-11/voice.bin',
     ],
   },
+  // Cloning without a transcript, and with the speaker embedding cached between
+  // requests rather than derived from the recording every time. `archiveBytes`
+  // is the size the release reports for this asset; the checksum is left unset
+  // because it has not been measured from a download on this project yet, which
+  // is the same footing the Whisper tiny entry above is on.
+  'tts-pocket-int8-2026-01-26': {
+    modelId: 'tts-pocket-int8-2026-01-26',
+    url: `${RELEASE_BASE}/tts-models/sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2`,
+    sha256: null,
+    archiveBytes: 98336520,
+    expectedFiles: [
+      'sherpa-onnx-pocket-tts-int8-2026-01-26/lm_flow.int8.onnx',
+      'sherpa-onnx-pocket-tts-int8-2026-01-26/lm_main.int8.onnx',
+      // Float even in the int8 build; these two are not quantised upstream.
+      'sherpa-onnx-pocket-tts-int8-2026-01-26/encoder.onnx',
+      'sherpa-onnx-pocket-tts-int8-2026-01-26/decoder.int8.onnx',
+      'sherpa-onnx-pocket-tts-int8-2026-01-26/text_conditioner.onnx',
+      'sherpa-onnx-pocket-tts-int8-2026-01-26/vocab.json',
+      'sherpa-onnx-pocket-tts-int8-2026-01-26/token_scores.json',
+    ],
+  },
   'tts-zipvoice-distill-int8': {
     modelId: 'tts-zipvoice-distill-int8',
     url: `${RELEASE_BASE}/tts-models/sherpa-onnx-zipvoice-distill-int8-zh-en-emilia.tar.bz2`,
@@ -355,7 +405,18 @@ export const MANAGED_CATALOG_ENTRIES: Record<string, ManagedCatalogEntry> = {
     expectedFiles: [
       'sherpa-onnx-zipvoice-distill-int8-zh-en-emilia/encoder.int8.onnx',
       'sherpa-onnx-zipvoice-distill-int8-zh-en-emilia/decoder.int8.onnx',
+      'sherpa-onnx-zipvoice-distill-int8-zh-en-emilia/lexicon.txt',
       'sherpa-onnx-zipvoice-distill-int8-zh-en-emilia/tokens.txt',
+    ],
+    // The engine refuses to open without a vocoder and the archive has none, so
+    // it is fetched alongside. Checksum and size measured from the download.
+    extraFiles: [
+      {
+        url: `${RELEASE_BASE}/vocoder-models/vocos_24khz.onnx`,
+        sha256: 'bcb3b970e384161c4d634f0bb9e999ff1c471b34c9bc0b1049a5014065ed3cc0',
+        bytes: 54157409,
+        destination: 'sherpa-onnx-zipvoice-distill-int8-zh-en-emilia/vocos_24khz.onnx',
+      },
     ],
   },
 };

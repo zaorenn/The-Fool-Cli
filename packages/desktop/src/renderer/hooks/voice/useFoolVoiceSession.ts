@@ -13,12 +13,11 @@ import {
   type VoiceTurnState,
 } from '@/common/types/foolVoice';
 import { AdaptiveVad } from '@renderer/services/voice/AdaptiveVad';
-import { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybackService';
+import { getSpeechPlayer } from '@renderer/services/voice/speechPlayer';
 import { MicrophoneCapture } from '@renderer/services/voice/MicrophoneCapture';
 import { EMPTY_EVIDENCE, type RunEvidence } from '@renderer/services/voice/narration/FoolNarrator';
-import { narrateForSpeech } from '@renderer/services/voice/narration/englishSummary';
 import { createRunEvidenceCollector } from '@renderer/services/voice/RunEvidenceCollector';
-import { selectTtsTarget } from '@renderer/services/voice/selectTtsTarget';
+import { speakText } from '@renderer/services/voice/speakText';
 import { publishVoiceStage, publishVoiceStageOff } from '@renderer/services/voice/publishVoiceStage';
 import {
   VOICE_REPLY_EVENT,
@@ -89,6 +88,19 @@ const MAX_WAKE_UTTERANCE_MS = 12000;
  */
 const MAX_AGENT_WAIT_MS = 10 * 60 * 1000;
 
+/**
+ * How long the answer is protected from being interrupted by itself.
+ *
+ * Speech leaves the speakers and comes straight back in through the microphone.
+ * Echo cancellation removes most of it, not all — and the detector only needs
+ * one frame over the bar to call it speech and cut the answer off. That is what
+ * left every reply lasting half a second: the voice interrupting itself.
+ *
+ * Long enough to cover the leak at the start of playback, short enough that
+ * talking over the answer still works — which is the point of barge-in.
+ */
+const BARGE_IN_GUARD_MS = 1200;
+
 /** Tracks whether a hand-started session holds the microphone. */
 let manualSessionActive = false;
 const manualListeners = new Set<(active: boolean) => void>();
@@ -147,12 +159,9 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
   const [missingModelId, setMissingModelId] = useState<string | null>(null);
 
   const capture = useRef<MicrophoneCapture | null>(null);
-  const playback = useRef<AudioPlaybackService | null>(null);
   const vad = useRef<AdaptiveVad | null>(null);
   const activeRef = useRef(false);
   const busyRef = useRef(false);
-  /** Which TTS models are installed, so a Turkish reply can pick a Turkish voice. */
-  const installedModelIdsRef = useRef<string[]>([]);
   /** True while this session is only waiting for the wake phrase. */
   const wakeModeRef = useRef(false);
   /** When the wake phrase's follow-up window closes. */
@@ -178,6 +187,20 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
   const oneShotRef = useRef(false);
   /** Set below, so the speaking path can close a one-shot session. */
   const stopRef = useRef<() => void>(() => undefined);
+  /** When the answer started playing, so it cannot interrupt itself. */
+  const playbackStartedAtRef = useRef(0);
+  /** Outlives re-subscription, so a turn's text is never thrown away mid-run. */
+  const collectorRef = useRef<ReturnType<typeof createRunEvidenceCollector> | null>(null);
+  /**
+   * True only between sending a spoken turn and speaking its answer.
+   *
+   * The session listens to the whole conversation stream, so without this it
+   * also spoke replies to turns the user *typed* — at the same time as the
+   * read-aloud setting was speaking them, two clips over each other from two
+   * playback services. The rattle that cut off after half a second was the two
+   * colliding, which is why the read-aloud button alone always sounded right.
+   */
+  const expectingAnswerRef = useRef(false);
 
   const sessionId = useMemo(() => crypto.randomUUID(), []);
 
@@ -230,11 +253,17 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
    */
   const hold = useCallback(() => {
     holdRef.current = true;
+    // This turn came from the microphone, so its answer is this session's to
+    // speak. Anything else arriving on the stream is not.
+    expectingAnswerRef.current = true;
     capture.current?.takeUtteranceWav();
     if (holdTimer.current !== null) window.clearTimeout(holdTimer.current);
     holdTimer.current = window.setTimeout(() => {
       holdTimer.current = null;
       if (!activeRef.current) return;
+      // The answer never came. Give up the claim on it too, or the next typed
+      // turn's reply would be spoken as though it had been asked for aloud.
+      expectingAnswerRef.current = false;
       if (wakeModeRef.current) listenForWake();
       else listen();
     }, MAX_AGENT_WAIT_MS);
@@ -298,7 +327,9 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
         awakeUntilRef.current = Date.now() + AWAKE_WINDOW_MS;
         // A short chime is the fastest possible "yes, I heard you" — it lands
         // before any window has repainted.
-        void playback.current?.playWakeChime().catch((): void => undefined);
+        void getSpeechPlayer()
+          .playWakeChime()
+          .catch((): void => undefined);
         publishVoiceStage({
           stage: 'processing',
           transcript: heard,
@@ -398,8 +429,19 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
 
       const event = vad.current.push(rms, performance.now());
 
-      // Barge-in: the user speaking cancels whatever is being said.
-      if (event === 'speech-started') playback.current?.stop();
+      // Barge-in belongs to hands-free turns only — the wake word and the
+      // desktop shortcut, where talking over the answer is the only way to stop
+      // it. In a chat the user has a screen and a button, and cutting the reply
+      // off because the microphone overheard something is never what they meant.
+      //
+      // Even there it waits out the opening moment: speech leaves the speakers
+      // and comes back in through the microphone, echo cancellation removes most
+      // of it but not all, and one frame over the bar is enough to call it
+      // speech. That is what left every reply lasting half a second — the voice
+      // interrupting itself.
+      const handsFree = wakeModeRef.current || oneShotRef.current;
+      const settling = Date.now() - playbackStartedAtRef.current < BARGE_IN_GUARD_MS;
+      if (event === 'speech-started' && handsFree && !settling) getSpeechPlayer().stop();
 
       // While speech is arriving, the caption strip draws this level as the
       // waveform: what is on screen is the sound in the room.
@@ -423,16 +465,12 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
       // Translated and shortened first when that is switched on, so the voice
       // reads a briefing in the language it can actually pronounce rather than a
       // full reply in one it cannot.
-      const narration = await narrateForSpeech(answer, evidence, settings);
-      if (narration.spokenText.length === 0) return;
-      // The session may have been stopped during the summary, which can take a
-      // model load; speaking after that would talk over a closed microphone.
-      if (!activeRef.current) return;
-
-      const installed = installedModelIdsRef.current;
-      const target = selectTtsTarget(narration.spokenText, settings, installed);
+      // What the model wrote, and nothing else. This used to run through the
+      // narrator, which appended sentences about the run — and, when it was
+      // handed nothing, replaced the whole reply with its fallback word:
+      // "Done." Speech is now the model's own text, sanitised so code and
+      // secrets can never be read out, and stopping there.
       const operationId = newOperationId();
-
       publishVoiceStage({ stage: 'speaking', phrase: settings.activation.wakePhrase.phrase, awake: true });
       enter({
         phase: 'speaking',
@@ -443,32 +481,37 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
         condition: { status: 'normal' },
       });
 
-      const synthesis = unwrap(
-        await ipcBridge.foolVoice.synthesize.invoke({
-          version: 1,
-          requestId: operationId,
-          payload: {
-            operationId,
-            providerId: settings.tts.providerId,
-            modelId: target.modelId,
-            profileId: target.profileId,
-            language: target.language,
-            speed: settings.tts.speed,
-            text: narration.spokenText,
-          },
-        })
-      );
-
-      // There is now something to interrupt, so start listening again — this is
-      // the moment the hold taken at submit time is for. Reset the detector first:
-      // it has heard nothing for however long the run took, and its idea of the
-      // noise floor is stale.
-      release();
-      vad.current?.reset();
-      capture.current?.beginUtterance();
-      utteranceStartedAtRef.current = Date.now();
-
-      await playback.current?.play(synthesis.audio);
+      // The same routine the read-aloud button goes through, which is the point:
+      // this used to be a second copy of it, and the two drifted on which voice
+      // to pick and on what to do when the chosen one was gone. It also renders
+      // the answer as a run of clips, so a long reply starts being spoken after
+      // its first sentence rather than after all of them.
+      await speakText({
+        text: answer,
+        settings,
+        playback: getSpeechPlayer(),
+        maxSpokenCharacters: settings.narrator.maxSpokenCharacters,
+        // The summary can take a model load, and the session may be closed
+        // during it; speaking then would talk over a shut microphone.
+        shouldContinue: () => activeRef.current,
+        onPlaybackStart: () => {
+          // There is now something to interrupt, so start listening again — this
+          // is the moment the hold taken at submit time is for. Reset the
+          // detector first: it has heard nothing for however long the run took,
+          // and its idea of the noise floor is stale.
+          release();
+          vad.current?.reset();
+          capture.current?.beginUtterance();
+          utteranceStartedAtRef.current = Date.now();
+        },
+        // Every clip, not just the first: the guard exists so the voice's own
+        // echo cannot be heard as the user interrupting, and each clip leaks its
+        // own opening moment into the microphone.
+        onClipStart: () => {
+          playbackStartedAtRef.current = Date.now();
+        },
+      });
+      playbackStartedAtRef.current = 0;
     },
     [enter, release, sessionId, settings]
   );
@@ -476,6 +519,10 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
   const speakThenListen = useCallback(
     (answer: string, evidence: RunEvidence): void => {
       if (!activeRef.current) return;
+      // Not this session's turn to speak: a typed one, answered while the wake
+      // listener happened to be holding the microphone open.
+      if (!expectingAnswerRef.current) return;
+      expectingAnswerRef.current = false;
 
       void speak(answer, evidence)
         .catch((): void => {
@@ -498,11 +545,23 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     [isAwake, listen, listenForWake, speak]
   );
 
+  // The collector is built once and calls whichever version is current.
+  const speakThenListenRef = useRef(speakThenListen);
+  speakThenListenRef.current = speakThenListen;
+
   // Turn completion arrives on the conversation's existing response stream.
   // Subscribing here — rather than adding a second detection path — keeps the
   // spoken brief in step with what the screen already shows.
   useEffect(() => {
-    const collector = createRunEvidenceCollector(({ answer, evidence }) => speakThenListen(answer, evidence));
+    // Built once and kept. `speakThenListen` is rebuilt whenever the settings
+    // object changes identity, and re-running this effect used to throw the
+    // collector away mid-turn — taking the text it had gathered with it. The
+    // reply then arrived with nothing in it, and the narrator, left with neither
+    // an answer nor evidence, fell back to its one-word phrase: "Done."
+    collectorRef.current ??= createRunEvidenceCollector(({ answer, evidence }) =>
+      speakThenListenRef.current(answer, evidence)
+    );
+    const collector = collectorRef.current;
     const disposeStream = ipcBridge.conversation?.responseStream?.on(collector.onStreamMessage);
 
     // Also honoured directly, so a caller can drive speech in tests or from a
@@ -515,7 +574,10 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
 
     return () => {
       disposeStream?.();
-      collector.reset();
+      // Deliberately not reset: this cleanup also runs on a plain re-subscribe,
+      // and clearing here is what lost the turn's text in the first place. The
+      // collector clears itself when a turn completes, and `stop` clears it when
+      // the session really ends.
       window.removeEventListener(VOICE_REPLY_EVENT, handleReply);
     };
   }, [speakThenListen]);
@@ -524,11 +586,13 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     const wasManual = activeRef.current && !wakeModeRef.current;
     activeRef.current = false;
     busyRef.current = false;
+    expectingAnswerRef.current = false;
+    collectorRef.current?.reset();
     wakeModeRef.current = false;
     awakeUntilRef.current = 0;
     oneShotRef.current = false;
     release();
-    playback.current?.stop();
+    getSpeechPlayer().stop();
     capture.current?.stop();
     capture.current = null;
     vad.current = null;
@@ -570,20 +634,12 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
       }
       setMissingModelId(null);
 
-      const catalog = unwrap(
-        await ipcBridge.foolVoice.catalog.invoke({
-          version: 1,
-          requestId: newOperationId(),
-          payload: { includeProfiles: false },
-        })
-      );
-      installedModelIdsRef.current = catalog.models
-        .filter((model) => model.state.status === 'ready')
-        .map((model) => model.id);
-
+      // The catalog used to be read here to decide which voice to speak with.
+      // `speakText` reads it when it is about to speak instead, which is both
+      // one fewer round-trip on the way to an open microphone and an answer that
+      // cannot be stale by the time it is used.
       capture.current = new MicrophoneCapture();
-      playback.current ??= new AudioPlaybackService();
-      playback.current.setOutputDevice(settings.devices.outputDeviceId);
+      getSpeechPlayer().setOutputDevice(settings.devices.outputDeviceId);
       vad.current = new AdaptiveVad(settings.vad);
 
       await capture.current.start(settings.devices.inputDeviceId);
@@ -636,7 +692,9 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     awakeUntilRef.current = Date.now() + AWAKE_WINDOW_MS;
     // The same chime the wake phrase gives: the fastest possible "I am listening",
     // and the only feedback there is when the window is not on screen.
-    void playback.current?.playWakeChime().catch((): void => undefined);
+    void getSpeechPlayer()
+      .playWakeChime()
+      .catch((): void => undefined);
     listen();
   }, [isAwake, listen, openMicrophone, processUtterance]);
 

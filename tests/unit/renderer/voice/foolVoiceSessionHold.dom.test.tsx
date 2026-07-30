@@ -74,15 +74,25 @@ vi.mock('@renderer/services/voice/AdaptiveVad', () => ({
 
 vi.mock('@renderer/services/voice/AudioPlaybackService', () => ({
   AudioPlaybackService: class {
+    private generation = 0;
     public play = play;
-    public stop = playbackStop;
     public setOutputDevice = () => undefined;
     public playWakeChime = () => Promise.resolve();
+    // A stop invalidates the token the answer is being spoken under, so the
+    // clips still queued behind it are dropped.
+    public stop = (): void => {
+      this.generation += 1;
+      playbackStop();
+    };
+    public currentGeneration = (): number => this.generation;
+    public isCurrent = (generation: number): boolean => this.generation === generation;
   },
 }));
 
+// Speech is the model's own text now: sanitised and spoken, with no narrator
+// adding sentences about the run and no fallback phrase replacing it.
 vi.mock('@renderer/services/voice/narration/englishSummary', () => ({
-  narrateForSpeech: (answer: string) => Promise.resolve({ spokenText: answer, source: 'answer', summarySource: 'off' }),
+  summarizeForSpeech: (raw: string) => Promise.resolve({ text: raw, source: 'off' }),
 }));
 
 const { useFoolVoiceSession, VOICE_REPLY_EVENT, VOICE_TURN_EVENT } =
@@ -118,7 +128,20 @@ describe('useFoolVoiceSession — the microphone hold', () => {
     play.mockClear();
     playbackStop.mockClear();
     healthInvoke.mockResolvedValue({ ok: true, data: { status: 'ready' } });
-    catalogInvoke.mockResolvedValue({ ok: true, data: { models: [] } });
+    // A voice has to be installed for there to be an answer to interrupt.
+    catalogInvoke.mockResolvedValue({
+      ok: true,
+      data: {
+        models: [
+          {
+            id: 'tts-piper-en-libritts-r',
+            providerId: 'local-sherpa',
+            role: 'text-to-speech',
+            state: { status: 'ready' },
+          },
+        ],
+      },
+    });
     transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'run the tests' } });
     synthesizeInvoke.mockResolvedValue({ ok: true, data: { audio } });
   });
@@ -154,10 +177,8 @@ describe('useFoolVoiceSession — the microphone hold', () => {
 
     await act(async () => {
       window.dispatchEvent(new CustomEvent(VOICE_REPLY_EVENT, { detail: { answer: 'The tests pass.' } }));
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      // Summary, catalog, synthesis and playback each take a turn of the queue.
+      for (let tick = 0; tick < 12; tick += 1) await Promise.resolve();
     });
 
     expect(play).toHaveBeenCalled();

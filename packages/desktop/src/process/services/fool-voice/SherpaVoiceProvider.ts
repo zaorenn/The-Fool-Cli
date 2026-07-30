@@ -4,15 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { cpus } from 'node:os';
 import path from 'node:path';
-import type { VoicePcm16Wav, VoiceSynthesizedWav } from '../../../common/types/foolVoice';
+import type { VoicePcm16Wav, VoiceProfile, VoiceSynthesizedWav } from '../../../common/types/foolVoice';
+import { ClonedVoiceStore, parseClonedProfileId } from './ClonedVoiceStore';
 import { VoiceModelCatalog } from './VoiceModelCatalog';
 import { AudioCodec } from './audioCodec';
 import {
   canUseGpu,
   ENGINE_THREADS,
   getEngineSpec,
+  ttsThreadsFor,
   type SttEngineSpec,
   type TtsEngineSpec,
   type VoiceCompute,
@@ -24,23 +27,65 @@ export type SherpaOfflineStream = {
   acceptWaveform: (waveform: { samples: Float32Array; sampleRate: number }) => void;
 };
 
+/**
+ * Cloning a voice, as the engine actually models it.
+ *
+ * There is no trained artefact: the reference clip and its transcript are handed
+ * over with every request, and the engine speaks the new text in that voice.
+ * Passing `generationConfig` routes to a different native entry point, which is
+ * why it is only ever set when there is a reference to carry.
+ */
+export type SherpaGenerationConfig = {
+  referenceAudio: Float32Array;
+  referenceSampleRate: number;
+  referenceText: string;
+};
+
+export type SherpaTtsRequest = {
+  text: string;
+  sid: number;
+  speed: number;
+  /** False makes the addon copy samples instead of handing out an external buffer. */
+  enableExternalBuffer?: boolean;
+  generationConfig?: SherpaGenerationConfig;
+};
+
+/**
+ * Building an engine reads its weights off disk and into memory.
+ *
+ * ZipVoice's decoder alone is 124 MB, and the synchronous constructor spends
+ * all of that inside the main process — every window frozen until it returns.
+ * The async factories do the same work on a worker thread. Optional on the type
+ * because the binding installed may predate them.
+ */
+export type SherpaRecognizer = {
+  createStream: () => SherpaOfflineStream;
+  decode: (stream: SherpaOfflineStream) => void;
+  /**
+   * Decodes on a worker thread instead of this one.
+   *
+   * Optional because this interface describes a binding that may be older
+   * than the one installed; callers fall back to the blocking `decode`.
+   */
+  decodeAsync?: (stream: SherpaOfflineStream) => Promise<void>;
+  /** The result belongs to the recogniser, not to the stream. */
+  getResult: (stream: SherpaOfflineStream) => { text: string };
+};
+
+export type SherpaSynthesizer = {
+  generate: (request: SherpaTtsRequest) => { samples: Float32Array; sampleRate: number };
+  /** Generates on a worker thread instead of this one; optional like the above. */
+  generateAsync?: (request: SherpaTtsRequest) => Promise<{ samples: Float32Array; sampleRate: number }>;
+  /** Speakers the loaded weights carry; 904 for Piper LibriTTS-R, 1 for single-voice models. */
+  numSpeakers: number;
+};
+
 export interface SherpaModule {
-  OfflineRecognizer: new (config: unknown) => {
-    createStream: () => SherpaOfflineStream;
-    decode: (stream: SherpaOfflineStream) => void;
-    /** The result belongs to the recogniser, not to the stream. */
-    getResult: (stream: SherpaOfflineStream) => { text: string };
+  OfflineRecognizer: (new (config: unknown) => SherpaRecognizer) & {
+    createAsync?: (config: unknown) => Promise<SherpaRecognizer>;
   };
-  OfflineTts: new (config: unknown) => {
-    generate: (request: {
-      text: string;
-      sid: number;
-      speed: number;
-      /** False makes the addon copy samples instead of handing out an external buffer. */
-      enableExternalBuffer?: boolean;
-    }) => { samples: Float32Array; sampleRate: number };
-    /** Speakers the loaded weights carry; 904 for Piper LibriTTS-R, 1 for single-voice models. */
-    numSpeakers: number;
+  OfflineTts: (new (config: unknown) => SherpaSynthesizer) & {
+    createAsync?: (config: unknown) => Promise<SherpaSynthesizer>;
   };
 }
 
@@ -52,6 +97,14 @@ export interface SherpaModule {
  * addresses the engine's speaker index directly.
  */
 const DYNAMIC_SPEAKER_ID = /^speaker-(\d+)$/;
+
+/**
+ * How many cloned voices the engine keeps a speaker embedding for.
+ *
+ * Far more than anyone records, so switching between voices never costs the
+ * derivation twice. The upstream example uses 50 and each entry is small.
+ */
+const VOICE_EMBEDDING_CACHE = 50;
 
 export const dynamicSpeakerId = (speakerIndex: number): string => `speaker-${speakerIndex}`;
 
@@ -97,7 +150,18 @@ const requiredFiles = (spec: TtsEngineSpec | SttEngineSpec): string[] => {
     case 'matcha':
       return [spec.acousticModel, spec.vocoder, 'tokens.txt'];
     case 'zipvoice':
-      return [spec.encoder, spec.decoder, spec.vocoder, 'tokens.txt'];
+      return [spec.encoder, spec.decoder, spec.vocoder, spec.lexicon, 'tokens.txt'];
+    // No `tokens.txt`: Pocket carries its vocabulary as JSON instead.
+    case 'pocket':
+      return [
+        spec.lmFlow,
+        spec.lmMain,
+        spec.encoder,
+        spec.decoder,
+        spec.textConditioner,
+        spec.vocabJson,
+        spec.tokenScoresJson,
+      ];
     case 'whisper':
       return [spec.encoder, spec.decoder, spec.tokens];
     case 'transducer':
@@ -109,6 +173,17 @@ export class SherpaVoiceProvider {
   private sherpaPromise: Promise<SherpaModule> | null = null;
   private recognizers = new Map<string, ReturnType<SherpaModule['OfflineRecognizer']['prototype']['constructor']>>();
   private synthesizers = new Map<string, InstanceType<SherpaModule['OfflineTts']>>();
+  private cloned: ClonedVoiceStore | null = null;
+  /**
+   * Decoded reference clips, kept between requests.
+   *
+   * A cloned voice carries its recording with every call, and a long answer is
+   * spoken as several clips — so the same file was being read and decoded once
+   * per sentence. Held against the modification times of the two files it was
+   * built from, which is what lets a re-recorded voice be picked up without
+   * restarting the app.
+   */
+  private references = new Map<string, { config: SherpaGenerationConfig; stamp: string }>();
 
   constructor(
     private modelsDir: string,
@@ -169,7 +244,7 @@ export class SherpaVoiceProvider {
     const base = this.modelDir(modelId, spec.dir);
     const at = (file: string) => path.join(base, file);
     const shared = {
-      numThreads: ENGINE_THREADS['text-to-speech'],
+      numThreads: ttsThreadsFor(spec.kind, cpus().length),
       provider: this.providerFor(modelId),
       debug: 0,
     };
@@ -209,6 +284,29 @@ export class SherpaVoiceProvider {
               vocoder: at(spec.vocoder),
               tokens,
               dataDir,
+              // Shipped with the model and needed for English pronunciation;
+              // without it the engine falls back to guessing from spelling.
+              lexicon: at(spec.lexicon),
+            },
+            ...shared,
+          },
+          maxNumSentences: 1,
+        };
+      case 'pocket':
+        return {
+          model: {
+            pocket: {
+              lmFlow: at(spec.lmFlow),
+              lmMain: at(spec.lmMain),
+              encoder: at(spec.encoder),
+              decoder: at(spec.decoder),
+              textConditioner: at(spec.textConditioner),
+              vocabJson: at(spec.vocabJson),
+              tokenScoresJson: at(spec.tokenScoresJson),
+              // Speaker embeddings, kept between requests. Deriving one from the
+              // recording is the expensive part of cloning, and a passage spoken
+              // as several clips would otherwise pay it once per clip.
+              voiceEmbeddingCacheCapacity: VOICE_EMBEDDING_CACHE,
             },
             ...shared,
           },
@@ -255,9 +353,67 @@ export class SherpaVoiceProvider {
     const cached = this.synthesizers.get(cacheKey);
     if (cached) return cached;
 
-    const synthesizer = new sherpa.OfflineTts(this.buildTtsConfig(modelId, spec.engine));
+    const config = this.buildTtsConfig(modelId, spec.engine);
+    const synthesizer = sherpa.OfflineTts.createAsync
+      ? await sherpa.OfflineTts.createAsync(config)
+      : new sherpa.OfflineTts(config);
     this.synthesizers.set(cacheKey, synthesizer);
     return synthesizer;
+  }
+
+  /** Voices cloned from the user's own recordings, alongside the models. */
+  private clonedVoices(): ClonedVoiceStore {
+    this.cloned ??= new ClonedVoiceStore(path.join(this.modelsDir, '..', '..', 'cloned-voices'));
+    return this.cloned;
+  }
+
+  /**
+   * The reference a cloned profile speaks with, or nothing for a preset voice.
+   *
+   * A profile naming a voice whose files have gone is treated as no reference
+   * rather than as an error: the engine then speaks in its own default voice,
+   * which is a worse answer than the one asked for and a better one than silence.
+   */
+  private referenceFor(profileId: string): SherpaGenerationConfig | undefined {
+    const voiceId = parseClonedProfileId(profileId);
+    if (!voiceId) return undefined;
+
+    const voice = this.clonedVoices().find(voiceId);
+    if (!voice) return undefined;
+
+    // Both files matter: the transcript is edited far more often than the
+    // recording, and a stale one is heard as the voice mispronouncing itself.
+    const stamp = this.referenceStamp(voice.referenceWavPath);
+    const cached = this.references.get(profileId);
+    if (cached && cached.stamp === stamp && cached.config.referenceText === voice.referenceText) {
+      return cached.config;
+    }
+
+    const { samples, sampleRate } = AudioCodec.decodePcm16Wav(readFileSync(voice.referenceWavPath));
+    const config: SherpaGenerationConfig = {
+      referenceAudio: samples,
+      referenceSampleRate: sampleRate,
+      referenceText: voice.referenceText,
+    };
+    this.references.set(profileId, { config, stamp });
+    return config;
+  }
+
+  /** Changes whenever the recording does, so a re-recorded voice is picked up. */
+  private referenceStamp(wavPath: string): string {
+    try {
+      const { mtimeMs, size } = statSync(wavPath);
+      return `${mtimeMs}:${size}`;
+    } catch {
+      // Unreadable stats mean the clip is re-read; a needless decode is a far
+      // better outcome than speaking with a recording that is no longer there.
+      return `unknown:${Date.now()}`;
+    }
+  }
+
+  /** The cloned voices, as profiles the catalog can offer. */
+  public clonedProfiles(): VoiceProfile[] {
+    return this.clonedVoices().profiles();
   }
 
   private clampSpeaker(speakerIndex: number, speakerCount: number): number {
@@ -292,7 +448,10 @@ export class SherpaVoiceProvider {
     const cacheKey = `${modelId}:${this.providerFor(modelId)}`;
     let recognizer = this.recognizers.get(cacheKey);
     if (!recognizer) {
-      recognizer = new sherpa.OfflineRecognizer(this.buildSttConfig(modelId, spec.engine));
+      const config = this.buildSttConfig(modelId, spec.engine);
+      recognizer = sherpa.OfflineRecognizer.createAsync
+        ? await sherpa.OfflineRecognizer.createAsync(config)
+        : new sherpa.OfflineRecognizer(config);
       this.recognizers.set(cacheKey, recognizer);
     }
 
@@ -303,7 +462,13 @@ export class SherpaVoiceProvider {
     stream.acceptWaveform({ samples, sampleRate });
 
     if (signal?.aborted) throw new Error('cancelled');
-    recognizer.decode(stream);
+    // Whisper spends the better part of a second on a few seconds of audio, and
+    // a synchronous decode spends all of it inside the main process — which is
+    // exactly what froze the window at the moment the dictation button came up.
+    // The async binding hands the work to a worker thread; the blocking call
+    // stays as the fallback for a binding that predates it.
+    if (recognizer.decodeAsync) await recognizer.decodeAsync(stream);
+    else recognizer.decode(stream);
 
     // The result hangs off the recogniser, not the stream.
     return recognizer.getResult(stream).text;
@@ -331,6 +496,10 @@ export class SherpaVoiceProvider {
 
     if (signal?.aborted) throw new Error('cancelled');
 
+    // A cloned voice is a recording plus its transcript, not a speaker index, so
+    // it overrides the id entirely and travels with the request.
+    const generationConfig = this.referenceFor(profileId);
+
     const startMs = Date.now();
     // Deliberately the plain `{ text, sid, speed }` form: the alternative
     // `generationConfig` path routes to a different native entry point that
@@ -341,7 +510,18 @@ export class SherpaVoiceProvider {
     // with "External buffers are not allowed" — every synthesis failed on that
     // even though the model had loaded. Copying the samples costs a memcpy of a
     // few hundred kilobytes.
-    const audioData = synthesizer.generate({ text, sid, speed, enableExternalBuffer: false });
+    const request: SherpaTtsRequest = {
+      text,
+      sid,
+      speed,
+      enableExternalBuffer: false,
+      ...(generationConfig ? { generationConfig } : {}),
+    };
+    // Synthesis runs off this thread where the binding allows it: done here, a
+    // long passage blocks the main process and freezes every window with it.
+    const audioData = synthesizer.generateAsync
+      ? await synthesizer.generateAsync(request)
+      : synthesizer.generate(request);
     if (!audioData?.samples?.length) throw new Error('Synthesis produced no audio');
     if (signal?.aborted) throw new Error('cancelled');
 

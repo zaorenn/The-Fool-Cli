@@ -255,6 +255,7 @@ const VoiceSettingsContent: React.FC = () => {
           models={catalog.models}
           profiles={catalog.profiles}
           selectedProfileId={settings.tts.profileId}
+          selectedModelId={settings.tts.modelId}
           installs={catalog.installs}
           verifications={catalog.verifications}
           onSelect={handleSelectVoice}

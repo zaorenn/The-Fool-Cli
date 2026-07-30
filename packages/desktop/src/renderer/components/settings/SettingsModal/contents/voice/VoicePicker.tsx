@@ -17,6 +17,16 @@ export type VoicePickerProps = {
   /** Preset voices across every model. */
   profiles: readonly VoiceProfile[];
   selectedProfileId: string;
+  /**
+   * The model the selected voice belongs to.
+   *
+   * A cloned voice is the user's recording, so it is offered against every
+   * engine that can render it and carries the same id under each — which made
+   * "is this the selected one?" unanswerable from the id alone. Both engines'
+   * cards lit up at once, and neither looked like the one that would actually
+   * speak.
+   */
+  selectedModelId: string;
   /** Live install state by model id; absent means idle. */
   installs: Readonly<Record<string, InstallState>>;
   verifications: Readonly<Record<string, VerificationState>>;
@@ -43,6 +53,7 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
   models,
   profiles,
   selectedProfileId,
+  selectedModelId,
   installs,
   verifications,
   onSelect,
@@ -154,7 +165,9 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
 
             <div className='grid grid-cols-2 gap-8px sm:grid-cols-3'>
               {modelProfiles.map((profile) => {
-                const selected = profile.id === selectedProfileId;
+                // Both halves, because a cloned voice wears the same id under
+                // every engine that can speak it.
+                const selected = profile.id === selectedProfileId && profile.modelId === selectedModelId;
 
                 return (
                   <div

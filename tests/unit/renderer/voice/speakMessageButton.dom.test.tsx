@@ -9,6 +9,7 @@ import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_FOOL_VOICE_SETTINGS, type FoolVoiceSettings } from '@/common/types/foolVoice';
 import SpeakMessageButton from '@renderer/components/chat/SpeakMessageButton';
+import { getSpeechPlayer } from '@renderer/services/voice/speechPlayer';
 
 const catalogInvoke = vi.fn();
 const synthesizeInvoke = vi.fn();
@@ -51,11 +52,20 @@ vi.mock('@renderer/hooks/voice/useFoolVoiceSettings', () => ({
   useFoolVoiceSettings: () => ({ settings, ready: true, update: vi.fn() }),
 }));
 
+// Models the real service's interruption token: a stop invalidates whatever a
+// multi-clip answer was speaking under, which is how the clips still queued
+// behind it get dropped.
 vi.mock('@renderer/services/voice/AudioPlaybackService', () => ({
   AudioPlaybackService: class {
+    private generation = 0;
     public play = play;
-    public stop = stop;
     public setOutputDevice = setOutputDevice;
+    public stop = (): void => {
+      this.generation += 1;
+      stop();
+    };
+    public currentGeneration = (): number => this.generation;
+    public isCurrent = (generation: number): boolean => this.generation === generation;
   },
 }));
 
@@ -108,7 +118,9 @@ describe('SpeakMessageButton', () => {
     synthesizeInvoke.mockReset();
     summaryPlanInvoke.mockReset();
     summarizeInvoke.mockReset();
-    play.mockClear();
+    play.mockReset();
+    play.mockResolvedValue(undefined);
+    stop.mockClear();
     setOutputDevice.mockClear();
     messageInfo.mockClear();
     messageError.mockClear();
@@ -216,12 +228,52 @@ describe('SpeakMessageButton', () => {
   });
 
   it('stops playback when pressed while speaking', async () => {
+    // Playback that never ends on its own, so the button is still in its
+    // speaking state when the second press arrives. With a clip that resolves
+    // immediately the press lands on an idle button and starts a second reading
+    // instead, which is the opposite of what this is about.
+    play.mockReturnValue(new Promise<void>(() => undefined));
+
     render(<SpeakMessageButton text='A long reply to read out.' />);
     fireEvent.click(screen.getByTestId('speak-message'));
     await waitFor(() => expect(play).toHaveBeenCalled());
+    const stopsBefore = stop.mock.calls.length;
 
     fireEvent.click(screen.getByTestId('speak-message'));
 
-    expect(stop).toHaveBeenCalled();
+    expect(stop.mock.calls.length).toBeGreaterThan(stopsBefore);
+  });
+
+  // A long reply is spoken as a run of clips, and the first one is short so
+  // speech starts while the rest is still being rendered.
+  it('renders a long reply in pieces rather than waiting for all of it', async () => {
+    const passage = Array.from({ length: 20 }, (_, index) => `This is sentence number ${index}.`).join(' ');
+
+    render(<SpeakMessageButton text={passage} />);
+    fireEvent.click(screen.getByTestId('speak-message'));
+
+    await waitFor(() => expect(play.mock.calls.length).toBeGreaterThan(1));
+    const spoken = synthesizeInvoke.mock.calls.map((call) => (call[0] as { payload: { text: string } }).payload.text);
+    expect(spoken.length).toBeGreaterThan(1);
+    // Every word still gets said, in order.
+    expect(spoken.join(' ')).toBe(passage);
+  });
+
+  // The clips behind an interrupted one belong to an answer the user has already
+  // silenced; speaking them would be the interruption failing to take.
+  it('drops the rest of the answer once playback is stopped', async () => {
+    const passage = Array.from({ length: 20 }, (_, index) => `This is sentence number ${index}.`).join(' ');
+    play.mockImplementationOnce(async () => {
+      // Stopping from anywhere — here, a barge-in — ends the whole passage.
+      getSpeechPlayer().stop();
+    });
+
+    render(<SpeakMessageButton text={passage} />);
+    fireEvent.click(screen.getByTestId('speak-message'));
+
+    await waitFor(() => expect(play).toHaveBeenCalled());
+    // Long enough for the next clip to have been played had the stop not taken.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(play.mock.calls.length).toBe(1);
   });
 });

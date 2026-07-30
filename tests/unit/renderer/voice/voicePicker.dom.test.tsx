@@ -51,6 +51,7 @@ const setup = (installed = true, overrides: Partial<React.ComponentProps<typeof 
       models={[model('kokoro', installed)]}
       profiles={[profile('af_bella', 'kokoro', 'Bella'), profile('am_adam', 'kokoro', 'Adam')]}
       selectedProfileId='af_bella'
+      selectedModelId='kokoro'
       installs={{}}
       verifications={{}}
       onSelect={onSelect}
@@ -96,6 +97,33 @@ describe('VoicePicker', () => {
     expect(screen.getByTestId('voice-option-am_adam').getAttribute('aria-pressed')).toBe('false');
   });
 
+  // A cloned voice is the user's recording, so it is offered against every
+  // engine that can render it and wears the same id under each. Answering "is
+  // this the selected one?" from the id alone lit both engines' cards at once,
+  // and neither looked like the one that would actually speak.
+  it('marks only the engine the selected voice belongs to', () => {
+    render(
+      <VoicePicker
+        models={[model('pocket', true), model('zipvoice', true)]}
+        profiles={[profile('cloned:ultron', 'pocket', 'Ultron'), profile('cloned:ultron', 'zipvoice', 'Ultron')]}
+        selectedProfileId='cloned:ultron'
+        selectedModelId='pocket'
+        installs={{}}
+        verifications={{}}
+        onSelect={vi.fn()}
+        onPreview={vi.fn()}
+        onInstall={vi.fn()}
+        onVerify={vi.fn()}
+        onBrowseSpeakers={vi.fn()}
+      />
+    );
+
+    const pressed = screen
+      .getAllByTestId('voice-option-cloned:ultron')
+      .map((card) => card.getAttribute('aria-pressed'));
+    expect(pressed).toEqual(['true', 'false']);
+  });
+
   it('previews without also selecting', () => {
     const { onPreview, onSelect } = setup();
 
@@ -123,6 +151,7 @@ describe('VoicePicker', () => {
         models={[model('empty', true)]}
         profiles={[]}
         selectedProfileId=''
+        selectedModelId=''
         installs={{}}
         verifications={{}}
         onSelect={vi.fn()}

@@ -300,6 +300,17 @@ export type FoolVoiceSettings = {
     volume: number;
     interruptible: true;
     fallbackToDefaultDevice: boolean;
+    /**
+     * Read the reply itself aloud, rather than a briefing about it.
+     *
+     * The English summary exists to make a long Turkish answer listenable
+     * through an English voice, which is the right trade when speech is a
+     * summary of work that happened. Switched on here, the point is to hear the
+     * answer — so the summariser is skipped entirely and the reply is spoken as
+     * written. Passing it through a model would be the one thing the user asked
+     * not to happen.
+     */
+    autoReadAloud: boolean;
   };
   agentOverrides: Record<string, FoolVoiceAgentOverride>;
 };
@@ -321,11 +332,32 @@ export const PUSH_TO_TALK_DEFAULT = 'Control+Alt+V';
  *
  * 1 — as shipped before the shortcut did anything.
  * 2 — the shortcut is live, so a record that never chose one is given the default.
+ * 3 — the detector's floor is one a normal speaking voice actually clears.
+ * 4 — cloning is Pocket's, so a voice cloned on the old engine moves across.
  */
-export const FOOL_VOICE_SCHEMA_VERSION = 2;
+export const FOOL_VOICE_SCHEMA_VERSION = 4;
+
+/** The engine cloned voices were rendered by before Pocket. */
+const LEGACY_CLONING_MODEL_ID = 'tts-zipvoice-distill-int8';
+
+/** The engine they are rendered by now. */
+export const CLONING_MODEL_ID = 'tts-pocket-int8-2026-01-26';
 
 /** The phrase shipped before {@link WAKE_PHRASE_DEFAULT}, upgraded on read. */
 export const WAKE_PHRASE_LEGACY_DEFAULT = 'hey fool';
+
+/**
+ * The detector sensitivity shipped before it was measured.
+ *
+ * Paired with the old noise floor it put the bar for speech around an RMS of
+ * 0.12, which an ordinary speaking voice does not reach — the microphone was
+ * open and simply never heard anything. Records still carrying this exact value
+ * never chose it, so they are moved to the current default once.
+ */
+const VAD_SENSITIVITY_LEGACY_DEFAULT = 0.55;
+
+/** How readily a frame counts as speech. Higher hears more. */
+export const VAD_SENSITIVITY_DEFAULT = 0.75;
 
 export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
   schemaVersion: FOOL_VOICE_SCHEMA_VERSION,
@@ -351,7 +383,7 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     minimumSpeechMs: 250,
     silenceMs: 800,
     maximumUtteranceMs: 30000,
-    sensitivity: 0.55,
+    sensitivity: VAD_SENSITIVITY_DEFAULT,
   },
   connections: {
     openAICompatible: {
@@ -395,6 +427,7 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     volume: 0.85,
     interruptible: true,
     fallbackToDefaultDevice: true,
+    autoReadAloud: false,
   },
   agentOverrides: {},
 };
@@ -484,7 +517,7 @@ const settingsSchema = z
         minimumSpeechMs: z.number().int().min(100).max(2000).default(250),
         silenceMs: z.number().int().min(250).max(5000).default(800),
         maximumUtteranceMs: z.number().int().min(3000).max(120000).default(30000),
-        sensitivity: z.number().min(0).max(1).default(0.55),
+        sensitivity: z.number().min(0).max(1).default(VAD_SENSITIVITY_DEFAULT),
       })
       .strict()
       .default({}),
@@ -566,6 +599,7 @@ const settingsSchema = z
         volume: z.number().min(0).max(1).default(0.85),
         interruptible: z.literal(true).default(true),
         fallbackToDefaultDevice: z.boolean().default(true),
+        autoReadAloud: z.boolean().default(false),
       })
       .strict()
       .default({}),
@@ -616,9 +650,43 @@ const upgradeShortcut = (settings: FoolVoiceSettings): FoolVoiceSettings => {
   };
 };
 
+/**
+ * Moves a record still carrying the unmeasured sensitivity onto the current one.
+ *
+ * The old value was not a preference anyone expressed — it shipped as the
+ * default and, with the noise floor it was paired with, set the bar for speech
+ * above an ordinary speaking voice. A sensitivity the user actually chose is
+ * left alone, and the version bump is what keeps this to once.
+ */
+const upgradeVadSensitivity = (settings: FoolVoiceSettings): FoolVoiceSettings => {
+  if (settings.schemaVersion >= FOOL_VOICE_SCHEMA_VERSION) return settings;
+  if (settings.vad.sensitivity !== VAD_SENSITIVITY_LEGACY_DEFAULT) return settings;
+
+  return { ...settings, vad: { ...settings.vad, sensitivity: VAD_SENSITIVITY_DEFAULT } };
+};
+
+/**
+ * Moves a voice cloned on the old engine onto the one that renders them now.
+ *
+ * The recording belongs to the user, not to the engine — the same clip is the
+ * same voice whichever renders it — so a record still naming the old engine is
+ * pointing at a voice that is very much still there. Left alone it would fall
+ * through to "that model has no voices" and the reply would be spoken by a
+ * stranger, which is a baffling way for a cloned voice to disappear.
+ *
+ * Only cloned profiles move. A preset voice on that engine was a real choice.
+ */
+const upgradeClonedVoiceEngine = (settings: FoolVoiceSettings): FoolVoiceSettings => {
+  if (settings.schemaVersion >= FOOL_VOICE_SCHEMA_VERSION) return settings;
+  if (settings.tts.modelId !== LEGACY_CLONING_MODEL_ID) return settings;
+  if (!settings.tts.profileId.startsWith('cloned:')) return settings;
+
+  return { ...settings, tts: { ...settings.tts, modelId: CLONING_MODEL_ID } };
+};
+
 /** Brings a stored record up to what this version of the app expects. */
 export const upgradeSettings = (settings: FoolVoiceSettings): FoolVoiceSettings =>
-  upgradeShortcut(upgradeWakePhrase(settings));
+  upgradeShortcut(upgradeVadSensitivity(upgradeWakePhrase(upgradeClonedVoiceEngine(settings))));
 
 /**
  * Moves settings still carrying the old wake phrase onto the current one.

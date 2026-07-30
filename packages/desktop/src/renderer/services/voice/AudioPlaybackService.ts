@@ -14,6 +14,17 @@ export class AudioPlaybackService {
   private currentSource: AudioBufferSourceNode | null = null;
   private outputDeviceId: string | null = null;
   private routedDeviceId: string | null = null;
+  /**
+   * Bumped by every deliberate stop, so a queued sequence can tell it was cut off.
+   *
+   * A long answer is spoken as several clips in a row, and stopping one of them
+   * has to stop the ones behind it too. Stopping the source alone cannot say
+   * that: a clip that was interrupted and a clip that simply ended both resolve
+   * the same way, and the next clip would start over a barge-in the user had
+   * already made. A caller holds the number it started with and checks it still
+   * has it.
+   */
+  private generation = 0;
 
   /**
    * Chooses which speaker plays synthesised audio.
@@ -57,7 +68,9 @@ export class AudioPlaybackService {
     }
     const audioBuffer = await context.decodeAudioData(bytes.buffer);
 
-    this.stop();
+    // The clip before this one gives way, but without counting as an
+    // interruption: the next clip of the same answer is not a barge-in.
+    this.stopCurrentSource();
 
     if (context.state === 'suspended') {
       await context.resume();
@@ -169,10 +182,29 @@ export class AudioPlaybackService {
     });
   }
 
-  public stop(): void {
+  /**
+   * The token a multi-clip answer holds for as long as it may keep speaking.
+   *
+   * Compared with {@link isCurrent} before each clip; a stop in between changes
+   * it, and the rest of the answer is dropped.
+   */
+  public currentGeneration(): number {
+    return this.generation;
+  }
+
+  public isCurrent(generation: number): boolean {
+    return this.generation === generation;
+  }
+
+  private stopCurrentSource(): void {
     if (this.currentSource) {
       this.currentSource.stop();
       this.currentSource = null;
     }
+  }
+
+  public stop(): void {
+    this.generation += 1;
+    this.stopCurrentSource();
   }
 }

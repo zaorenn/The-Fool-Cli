@@ -6,6 +6,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import {
+  CLONING_MODEL_ID,
   DEFAULT_FOOL_VOICE_SETTINGS,
   FOOL_VOICE_PROVIDERS,
   FOOL_VOICE_SCHEMA_VERSION,
@@ -146,6 +147,38 @@ describe('Fool voice settings contract', () => {
     });
 
     expect(settings.activation.pushToTalkShortcut).toBe('');
+  });
+
+  // The recording belongs to the user, not to the engine, so a record naming the
+  // engine clones used to be rendered by is pointing at a voice that is still
+  // there. Left alone it falls through to "that model has no voices" and the
+  // reply is spoken by a stranger.
+  it('moves a voice cloned on the old engine onto the one that renders them now', () => {
+    const settings = loadFoolVoiceSettings({
+      schemaVersion: 3,
+      tts: { modelId: 'tts-zipvoice-distill-int8', profileId: 'cloned:ultron' },
+    });
+
+    expect(settings.tts.modelId).toBe(CLONING_MODEL_ID);
+    expect(settings.tts.profileId).toBe('cloned:ultron');
+  });
+
+  it('leaves a preset voice on that engine alone, because it was a real choice', () => {
+    const settings = loadFoolVoiceSettings({
+      schemaVersion: 3,
+      tts: { modelId: 'tts-zipvoice-distill-int8', profileId: 'speaker-0' },
+    });
+
+    expect(settings.tts.modelId).toBe('tts-zipvoice-distill-int8');
+  });
+
+  it('leaves a cloned voice on any other engine alone', () => {
+    const settings = loadFoolVoiceSettings({
+      schemaVersion: 3,
+      tts: { modelId: 'tts-kokoro-en-v0_19-int8', profileId: 'cloned:ultron' },
+    });
+
+    expect(settings.tts.modelId).toBe('tts-kokoro-en-v0_19-int8');
   });
 });
 

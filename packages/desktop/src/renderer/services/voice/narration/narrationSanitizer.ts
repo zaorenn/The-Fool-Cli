@@ -17,7 +17,31 @@
 const CODE_PLACEHOLDER = ' the code ';
 const LINK_PLACEHOLDER = ' a link ';
 
+/**
+ * Emoji, and the pieces that build them.
+ *
+ * A speech engine handed one either says its Unicode name in the middle of a
+ * sentence — "party popper" — or stumbles over a codepoint it has no phoneme
+ * for. Neither is what the emoji was in the reply for. Covers the pictographs
+ * themselves, skin-tone modifiers, the zero-width joiner that welds sequences
+ * together, the variation selector that turns a glyph into an emoji, keycap
+ * marks and the regional indicators that spell out flags.
+ *
+ * Deliberately `Extended_Pictographic` rather than `Emoji`: the latter also
+ * matches plain digits and `#`, which very much do need reading.
+ *
+ * Written as alternation rather than one character class on purpose. A joiner
+ * or a variation selector sitting inside a class is nearly always a mistake —
+ * it reads as "match this as part of a sequence" when it matches on its own —
+ * so linters reject it. Here matching them on their own is exactly the point:
+ * each is dropped individually, which is what leaves no fragments behind when a
+ * joined sequence is stripped.
+ */
+const EMOJI =
+  /\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}]|[\u{1F3FB}-\u{1F3FF}]|\u{FE0E}|\u{FE0F}|\u{200D}|\u{20E3}/gu;
+
 const RULES: readonly { pattern: RegExp; replacement: string }[] = [
+  { pattern: EMOJI, replacement: ' ' },
   // Fenced code blocks, including diffs and terminal transcripts.
   { pattern: /```[\s\S]*?```/g, replacement: CODE_PLACEHOLDER },
   { pattern: /~~~[\s\S]*?~~~/g, replacement: CODE_PLACEHOLDER },
