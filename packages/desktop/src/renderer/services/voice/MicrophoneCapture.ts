@@ -49,11 +49,24 @@ export const encodeWav = (samples: Float32Array, sampleRate: number): ArrayBuffe
   return buffer;
 };
 
+/**
+ * Bytes to base64, in blocks rather than one character at a time.
+ *
+ * The single-character loop this replaces grew a string by one code unit per
+ * byte: ten seconds of 16 kHz audio is 320 000 of them, and building that
+ * string is what froze the window at the moment the button came up. Blocks of
+ * 32 KB hand the work to `String.fromCharCode` in bulk and stay well under the
+ * argument limit that makes `apply` throw on large arrays.
+ */
+const BASE64_BLOCK_BYTES = 0x8000;
+
 const toBase64 = (buffer: ArrayBuffer): string => {
   const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return window.btoa(binary);
+  const blocks: string[] = [];
+  for (let offset = 0; offset < bytes.length; offset += BASE64_BLOCK_BYTES) {
+    blocks.push(String.fromCharCode(...bytes.subarray(offset, offset + BASE64_BLOCK_BYTES)));
+  }
+  return window.btoa(blocks.join(''));
 };
 
 /**
@@ -112,13 +125,7 @@ export class MicrophoneCapture {
     this.utterance = [];
   }
 
-  /**
-   * Returns the buffered utterance as bridge-ready WAV and clears the buffer.
-   * Returns `null` when nothing was buffered.
-   */
-  public takeUtteranceWav(): VoicePcm16Wav | null {
-    const chunks = this.utterance;
-    this.utterance = null;
+  private encodeChunks(chunks: Float32Array[] | null): VoicePcm16Wav | null {
     if (!chunks || chunks.length === 0) return null;
 
     const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
@@ -139,6 +146,27 @@ export class MicrophoneCapture {
       byteLength: wav.byteLength,
       dataBase64: toBase64(wav),
     };
+  }
+
+  /**
+   * Returns the buffered utterance as bridge-ready WAV and clears the buffer.
+   * Returns `null` when nothing was buffered.
+   */
+  public takeUtteranceWav(): VoicePcm16Wav | null {
+    const chunks = this.utterance;
+    this.utterance = null;
+    return this.encodeChunks(chunks);
+  }
+
+  /**
+   * The same WAV, with the buffer left where it is.
+   *
+   * Held-button dictation transcribes what has been said so far every second or
+   * so, to show the words arriving; taking the buffer for that would throw away
+   * the first half of the sentence before the speaker had finished it.
+   */
+  public peekUtteranceWav(): VoicePcm16Wav | null {
+    return this.encodeChunks(this.utterance ? [...this.utterance] : null);
   }
 
   public stop(): void {

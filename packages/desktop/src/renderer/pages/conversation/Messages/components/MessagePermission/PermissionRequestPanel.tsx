@@ -18,6 +18,25 @@ import {
 
 const { Text } = Typography;
 
+/**
+ * Which panel the number keys belong to.
+ *
+ * A conversation keeps every permission request it has ever shown, so several
+ * panels are mounted at once and a bare window listener would answer all of
+ * them at the same time. The newest unanswered one claims the keys; the rest
+ * stay clickable but deaf.
+ */
+let keyboardOwner: symbol | null = null;
+
+/** Highest option a single keystroke can reach. */
+const MAX_NUMBERED_OPTIONS = 9;
+
+const isTypingTarget = (target: EventTarget | null): boolean => {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT';
+};
+
 type PermissionRequestPanelProps = {
   requestKey: string;
   testIdPrefix: 'message-permission' | 'message-acp-permission';
@@ -101,6 +120,42 @@ export const PermissionRequestPanel: React.FC<PermissionRequestPanelProps> = ({
     [hasResponded, onConfirm]
   );
 
+  const panelId = useRef<symbol>(Symbol('permission-panel'));
+  const numbered = options.slice(0, MAX_NUMBERED_OPTIONS);
+  const awaitingAnswer = !hasResponded && numbered.length > 0;
+
+  // The newest unanswered panel takes the keys, and hands them back when it is
+  // answered or unmounted — so scrolling back through old requests never leaves
+  // a stale panel listening.
+  useEffect(() => {
+    if (!awaitingAnswer) return;
+    const id = panelId.current;
+    keyboardOwner = id;
+    return () => {
+      if (keyboardOwner === id) keyboardOwner = null;
+    };
+  }, [awaitingAnswer, requestKey, optionsIdentity]);
+
+  useEffect(() => {
+    if (!awaitingAnswer) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (keyboardOwner !== panelId.current) return;
+      // A modifier means the keystroke belongs to a shortcut, and a focused
+      // composer means the user is typing "1" rather than choosing option one.
+      if (event.metaKey || event.ctrlKey || event.altKey || isTypingTarget(event.target)) return;
+
+      const option = numbered[Number(event.key) - 1];
+      if (!option || option.disabled) return;
+
+      event.preventDefault();
+      void submitOption(option);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [awaitingAnswer, numbered, submitOption]);
+
   return (
     <Card className={styles.card} bordered={false} data-testid={`${testIdPrefix}-card`}>
       <div className={styles.panel} aria-busy={isResponding}>
@@ -134,7 +189,7 @@ export const PermissionRequestPanel: React.FC<PermissionRequestPanelProps> = ({
                   aria-labelledby={optionsLabelId}
                   data-testid={`${testIdPrefix}-options`}
                 >
-                  {options.map((option) => (
+                  {options.map((option, index) => (
                     <Button
                       key={option.id}
                       className={styles.optionButton}
@@ -144,6 +199,11 @@ export const PermissionRequestPanel: React.FC<PermissionRequestPanelProps> = ({
                       loading={submittingId === option.id}
                       onClick={() => void submitOption(option)}
                     >
+                      {index < MAX_NUMBERED_OPTIONS && (
+                        <span className={styles.optionKey} aria-hidden='true' data-testid={`${option.testId}-key`}>
+                          {index + 1}
+                        </span>
+                      )}
                       <span className={styles.optionLabel}>{option.label}</span>
                     </Button>
                   ))}

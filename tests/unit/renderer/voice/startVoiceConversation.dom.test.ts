@@ -154,6 +154,25 @@ describe('startVoiceConversation', () => {
     expect(result).toEqual({ ok: false, reason: 'no-model' });
   });
 
+  // Hermes names the LM Studio model `lmstudio:qwen/qwen3.5-9b`; the AionUi
+  // provider calls the same weights `qwen/qwen3.5-9b`. A pin in the agent's own
+  // namespace matches no provider, and dropping it left the agent on whatever
+  // model it was last set to.
+  it("passes an ACP agent's own model id through, though no provider carries it", async () => {
+    listAssistants.mockResolvedValue([assistant({ agent: { type: 'hermes', source: 'builtin' } })]);
+
+    const result = await startVoiceConversation({
+      text: 'run the tests',
+      settings: settings({ assistantId: 'hermes', modelId: 'lmstudio:qwen/qwen3.5-9b' }),
+    });
+
+    expect(result).toEqual({ ok: true, conversationId: 'conv-1' });
+    const params = createConversation.mock.calls[0][0] as {
+      assistant?: { conversation_overrides?: { model?: string } };
+    };
+    expect(params.assistant?.conversation_overrides?.model).toBe('lmstudio:qwen/qwen3.5-9b');
+  });
+
   it('lets an ACP agent fall back to its own model', async () => {
     listAssistants.mockResolvedValue([assistant({ agent: { type: 'claude-code', source: 'builtin' } })]);
 

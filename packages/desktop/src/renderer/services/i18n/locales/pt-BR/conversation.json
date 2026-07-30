@@ -471,6 +471,12 @@
     "voice": {
       "startTalk": "Começar a falar",
       "stopTalk": "Parar de falar",
+      "dictateHold": "Segure para falar",
+      "dictateRelease": "Solte para enviar",
+      "autoReadOn": "Lendo as respostas em voz alta — clique para parar",
+      "autoReadOff": "Ler as respostas em voz alta",
+      "wakeListeningOn": "Ouvindo “{{phrase}}” — clique para parar",
+      "wakeListeningOff": "Sem ouvir — clique para ouvir a palavra de ativação",
       "installNeeded": "Instale primeiro um modelo de voz",
       "wakeArmed": "Aguardando “{{phrase}}” — clique para falar agora",
       "stageListening": "Ouvindo",

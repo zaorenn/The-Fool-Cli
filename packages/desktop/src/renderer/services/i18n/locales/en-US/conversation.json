@@ -465,6 +465,12 @@
     "voice": {
       "startTalk": "Start talking",
       "stopTalk": "Stop talking",
+      "dictateHold": "Hold to talk",
+      "dictateRelease": "Release to send",
+      "autoReadOn": "Reading replies aloud — click to stop",
+      "autoReadOff": "Read replies aloud",
+      "wakeListeningOn": "Listening for “{{phrase}}” — click to stop listening",
+      "wakeListeningOff": "Not listening — click to listen for the wake phrase",
       "installNeeded": "Install a speech model first",
       "wakeArmed": "Listening for “{{phrase}}” — click to talk now",
       "stageListening": "Listening",

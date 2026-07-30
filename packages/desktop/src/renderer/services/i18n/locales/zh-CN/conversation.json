@@ -465,6 +465,12 @@
     "voice": {
       "startTalk": "开始语音对话",
       "stopTalk": "停止语音对话",
+      "dictateHold": "按住说话",
+      "dictateRelease": "松开发送",
+      "autoReadOn": "正在朗读回复 — 点击停止",
+      "autoReadOff": "朗读回复",
+      "wakeListeningOn": "正在聆听“{{phrase}}” — 点击停止",
+      "wakeListeningOff": "未在聆听 — 点击开启唤醒词监听",
       "installNeeded": "请先安装语音模型",
       "wakeArmed": "正在等待“{{phrase}}” — 点击立即说话",
       "stageListening": "正在聆听",

@@ -465,6 +465,12 @@
     "voice": {
       "startTalk": "会話を開始",
       "stopTalk": "会話を停止",
+      "dictateHold": "押しながら話す",
+      "dictateRelease": "離すと送信",
+      "autoReadOn": "返信を読み上げ中 — クリックで停止",
+      "autoReadOff": "返信を読み上げる",
+      "wakeListeningOn": "「{{phrase}}」を待機中 — クリックで停止",
+      "wakeListeningOff": "待機していません — クリックでウェイクワード待機",
       "installNeeded": "先に音声モデルをインストールしてください",
       "wakeArmed": "「{{phrase}}」を待機中 — クリックすればすぐ話せます",
       "stageListening": "待機中",

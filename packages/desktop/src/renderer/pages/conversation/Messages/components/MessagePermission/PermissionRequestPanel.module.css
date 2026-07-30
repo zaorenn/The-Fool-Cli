@@ -157,6 +157,29 @@
   opacity: 0.6;
 }
 
+/* The key that picks this option. Quiet by default — it is a shortcut hint, not
+   a label — and it brightens with the row so a hovered option shows its key. */
+.optionKey {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  border: 1px solid var(--color-border-2);
+  border-radius: 4px;
+  color: var(--color-text-3);
+  font-size: 11px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.optionButton:global(.arco-btn):not(:disabled):hover .optionKey {
+  border-color: var(--color-primary-light-3);
+  color: var(--color-text-1);
+}
+
 .optionButton :global(.arco-btn-loading-icon) {
   margin-right: 8px;
 }

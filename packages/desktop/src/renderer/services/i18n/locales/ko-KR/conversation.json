@@ -465,6 +465,12 @@
     "voice": {
       "startTalk": "대화 시작",
       "stopTalk": "대화 중지",
+      "dictateHold": "누른 채로 말하기",
+      "dictateRelease": "놓으면 전송",
+      "autoReadOn": "답변을 읽어 주는 중 — 클릭하면 중지",
+      "autoReadOff": "답변 읽어 주기",
+      "wakeListeningOn": "“{{phrase}}” 대기 중 — 클릭하면 중지",
+      "wakeListeningOff": "대기 중 아님 — 클릭하면 호출어 대기",
       "installNeeded": "먼저 음성 모델을 설치하세요",
       "wakeArmed": "“{{phrase}}” 대기 중 — 지금 말하려면 클릭",
       "stageListening": "듣는 중",

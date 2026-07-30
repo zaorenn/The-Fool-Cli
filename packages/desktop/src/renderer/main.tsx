@@ -95,6 +95,7 @@ import Router from './components/layout/Router';
 import Sider from './components/layout/Sider';
 import { useAuth } from './hooks/context/AuthContext';
 import { ConversationHistoryProvider } from './hooks/context/ConversationHistoryContext';
+import { useAutoReadAloud } from './hooks/voice/useAutoReadAloud';
 import { useVoiceSessionRouter } from './hooks/voice/useVoiceSessionRouter';
 import { useWakeWordListener } from './hooks/voice/useWakeWordListener';
 import HOC from './utils/ui/HOC';
@@ -296,6 +297,9 @@ const Main = () => {
   // survive navigation between conversations.
   useWakeWordListener();
   useVoiceSessionRouter();
+  // Reads typed turns back when that is switched on, and stands down whenever
+  // the wake listener is up — that one speaks its own answers.
+  useAutoReadAloud();
 
   useEffect(() => {
     if (!ready) return;

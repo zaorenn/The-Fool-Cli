@@ -77,9 +77,11 @@ try {
     $resources = @($targetPathFull)
   } elseif ($targetPathFull -and (Test-Path -LiteralPath $targetPathFull -PathType Container)) {
     $topLevel = @(Get-ChildItem -LiteralPath $targetPathFull -Force -File -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+    # Nested paths only. The executable and the uninstaller sit at the top level
+    # and are already in $topLevel, so naming them here bought nothing and went
+    # stale at the rebrand — they were still 'AionUi.exe' long after the file was
+    # called something else.
     $knownRelative = @(
-      'AionUi.exe',
-      'Uninstall AionUi.exe',
       'resources\app.asar',
       'resources\app-update.yml',
       'resources\bundled-aioncore\win32-x64\aioncore.exe'

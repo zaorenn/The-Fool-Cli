@@ -211,6 +211,25 @@ describe('summarizeToEnglish', () => {
     expect(await run(fetchImpl as unknown as typeof fetch)).toEqual({ ok: false, failure: 'empty-output' });
   });
 
+  // Handed nothing, the prompt read "Translate into English and summarise:" with
+  // no passage after it, and a small local model answered the question it was
+  // actually asked — "no context was provided to summarize or translate". That
+  // is a non-empty string, so it passed for a briefing and was read aloud.
+  it.each(['', '   ', '\n\n', 'ok', 'Done.'])('never asks a model to summarise %j', async (text) => {
+    const fetchImpl = vi.fn();
+
+    const outcome = await summarizeToEnglish({
+      endpoint: localEndpoint,
+      text,
+      maxCharacters: 400,
+      timeoutMs: 3000,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    expect(outcome).toEqual({ ok: false, failure: 'empty-output' });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
   it('aborts the request once the timeout passes', async () => {
     vi.useFakeTimers();
     try {
@@ -224,7 +243,7 @@ describe('summarizeToEnglish', () => {
 
       void summarizeToEnglish({
         endpoint: localEndpoint,
-        text: 'Anything.',
+        text: 'Anything long enough to be worth summarising.',
         maxCharacters: 400,
         timeoutMs: 3000,
         fetchImpl: fetchImpl as unknown as typeof fetch,

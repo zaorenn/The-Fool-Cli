@@ -47,6 +47,107 @@ const makeOptions = (): PermissionPanelOption[] => [
   },
 ];
 
+const pressKey = (key: string, target: EventTarget = window) =>
+  act(() => {
+    fireEvent.keyDown(target, { key });
+  });
+
+describe('PermissionRequestPanel number keys', () => {
+  it('numbers each option so the key to press is visible', () => {
+    renderPanel();
+
+    expect(screen.getByTestId('message-permission-option-always-key').textContent).toBe('1');
+    expect(screen.getByTestId('message-permission-option-once-key').textContent).toBe('2');
+    expect(screen.getByTestId('message-permission-option-reject-key').textContent).toBe('3');
+  });
+
+  it('answers with the option the number picks', async () => {
+    const onConfirm = vi.fn().mockResolvedValue(undefined);
+    renderPanel({ onConfirm });
+
+    await pressKey('2');
+
+    expect(onConfirm).toHaveBeenCalledWith('once');
+  });
+
+  it('ignores a number with no option behind it', async () => {
+    const onConfirm = vi.fn().mockResolvedValue(undefined);
+    renderPanel({ onConfirm });
+
+    await pressKey('7');
+
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  // "1" typed into the composer is a character, not a choice.
+  it('leaves the keystroke alone while the user is typing', async () => {
+    const onConfirm = vi.fn().mockResolvedValue(undefined);
+    renderPanel({ onConfirm });
+    const input = document.createElement('textarea');
+    document.body.appendChild(input);
+
+    await pressKey('1', input);
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    input.remove();
+  });
+
+  it('stays out of the way of a shortcut', async () => {
+    const onConfirm = vi.fn().mockResolvedValue(undefined);
+    renderPanel({ onConfirm });
+
+    await act(() => {
+      fireEvent.keyDown(window, { key: '1', ctrlKey: true });
+    });
+
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it('does not answer a request that has already been answered', async () => {
+    const onConfirm = vi.fn().mockResolvedValue(undefined);
+    renderPanel({ onConfirm });
+
+    await pressKey('1');
+    await pressKey('3');
+
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(onConfirm).toHaveBeenCalledWith('always');
+  });
+
+  // A conversation keeps every request it has shown; a bare window listener
+  // would answer all of them at once.
+  it('gives the keys to the newest panel, not to the ones scrolled above it', async () => {
+    const older = vi.fn().mockResolvedValue(undefined);
+    const newer = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <>
+        <PermissionRequestPanel
+          requestKey='older'
+          testIdPrefix='message-permission'
+          title='Older request'
+          operationKind='execute'
+          options={makeOptions()}
+          onConfirm={older}
+        />
+        <PermissionRequestPanel
+          requestKey='newer'
+          testIdPrefix='message-acp-permission'
+          title='Newer request'
+          operationKind='execute'
+          options={makeOptions()}
+          onConfirm={newer}
+        />
+      </>
+    );
+
+    await pressKey('1');
+
+    expect(newer).toHaveBeenCalledTimes(1);
+    expect(older).not.toHaveBeenCalled();
+  });
+});
+
 const renderPanel = (props: Partial<React.ComponentProps<typeof PermissionRequestPanel>> = {}) =>
   render(
     <PermissionRequestPanel

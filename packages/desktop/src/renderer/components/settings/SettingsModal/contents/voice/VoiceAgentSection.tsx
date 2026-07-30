@@ -12,6 +12,8 @@ import type { IProvider } from '@/common/config/storage';
 import type { Assistant } from '@/common/types/agent/assistantTypes';
 import { isAionrsAssistant } from '@/common/types/agent/assistantTypes';
 import type { FoolVoiceSettings } from '@/common/types/foolVoice';
+import { useManagedAgentRuntimeCatalog } from '@renderer/hooks/agent/useManagedAgents';
+import { buildAgentRuntimeModelInfo } from '@renderer/utils/model/agentRuntimeCatalog';
 
 export type VoiceAgentSectionProps = {
   settings: FoolVoiceSettings;
@@ -47,6 +49,7 @@ const VoiceAgentSection: React.FC<VoiceAgentSectionProps> = ({ settings, onChang
   const { t } = useTranslation();
   const [assistants, setAssistants] = useState<Assistant[]>([]);
   const [providers, setProviders] = useState<IProvider[]>([]);
+  const managedAgents = useManagedAgentRuntimeCatalog();
 
   useEffect(() => {
     let active = true;
@@ -75,9 +78,39 @@ const VoiceAgentSection: React.FC<VoiceAgentSectionProps> = ({ settings, onChang
     [assistants, t]
   );
 
-  const modelOptions = useMemo(
-    () => [
-      { label: t('settings.voice.modelInherit'), value: modelValue('', '') },
+  const selectedAssistant = assistants.find((assistant) => assistant.id === settings.session.assistantId);
+  // The Aion CLI backend is handed the provider record itself, so it cannot fall
+  // back to an assistant default the way an ACP agent can.
+  const modelRequired = Boolean(selectedAssistant && isAionrsAssistant(selectedAssistant));
+
+  /**
+   * The models the selected ACP agent runs, as it names them.
+   *
+   * Read from the agent's own runtime catalog rather than from AionUi's
+   * providers, because the two use different namespaces for the same weights:
+   * Hermes calls the LM Studio model `lmstudio:qwen/qwen3.5-9b` and the provider
+   * calls it `qwen/qwen3.5-9b`. Offering the provider's spelling here produced a
+   * pin the agent could not resolve, so it quietly answered on its own default.
+   */
+  const agentOwnModels = useMemo(() => {
+    const agent = selectedAssistant?.agent_id
+      ? managedAgents.find((candidate) => candidate.id === selectedAssistant.agent_id)
+      : undefined;
+    const runtime = buildAgentRuntimeModelInfo(agent);
+    if (runtime) return runtime.available_models.map((model) => ({ id: model.id, label: model.label }));
+    return (selectedAssistant?.models ?? []).map((model) => ({ id: model, label: model }));
+  }, [managedAgents, selectedAssistant]);
+
+  const modelOptions = useMemo(() => {
+    const inherit = { label: t('settings.voice.modelInherit'), value: modelValue('', '') };
+    // An agent that carries its own models takes only those; a provider id would
+    // be meaningless to it, so the pair is stored with the provider left empty.
+    if (!modelRequired && agentOwnModels.length > 0) {
+      return [inherit, ...agentOwnModels.map((model) => ({ label: model.label, value: modelValue('', model.id) }))];
+    }
+
+    return [
+      inherit,
       ...providers.flatMap((provider) =>
         (provider.models ?? [])
           .filter((model) => provider.model_enabled?.[model] !== false)
@@ -86,14 +119,9 @@ const VoiceAgentSection: React.FC<VoiceAgentSectionProps> = ({ settings, onChang
             value: modelValue(provider.id, model),
           }))
       ),
-    ],
-    [providers, t]
-  );
+    ];
+  }, [agentOwnModels, modelRequired, providers, t]);
 
-  const selectedAssistant = assistants.find((assistant) => assistant.id === settings.session.assistantId);
-  // The Aion CLI backend is handed the provider record itself, so it cannot fall
-  // back to an assistant default the way an ACP agent can.
-  const modelRequired = Boolean(selectedAssistant && isAionrsAssistant(selectedAssistant));
   const modelMissing = modelRequired && settings.session.modelId.length === 0;
   const pinnedAgentGone = settings.session.assistantId.length > 0 && assistants.length > 0 && !selectedAssistant;
 

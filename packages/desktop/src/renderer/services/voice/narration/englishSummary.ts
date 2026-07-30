@@ -96,7 +96,12 @@ export const summarizeForSpeech = async (
   const sanitized = sanitizeForSpeech(raw);
   const asWritten = truncateToSpokenLength(sanitized, maxCharacters);
 
-  if (!settings.summary.translateToEnglish || sanitized.length === 0) {
+  // Reading the answer aloud means reading the answer. The rule lives here
+  // rather than in `narrateForSpeech` because this is the entry point both the
+  // read-aloud button and the voice loop go through — checking it one level up
+  // left this path summarising anyway, and announcing the model load it did not
+  // need over the caption window.
+  if (settings.playback.autoReadAloud || !settings.summary.translateToEnglish || sanitized.length === 0) {
     return { text: asWritten, source: 'off' };
   }
 

@@ -30,6 +30,10 @@ import { useTypewriterPlaceholder } from './hooks/useTypewriterPlaceholder';
 import { ensureBackendMcpCatalog } from '@/renderer/hooks/mcp/catalog';
 import { resolveGuidAssistantDefaults } from './utils/assistantDefaults';
 import SpeechInputButton from '@/renderer/components/chat/SpeechInputButton';
+import AutoReadAloudButton from '@/renderer/components/chat/AutoReadAloudButton';
+import VoiceDictationButton from '@/renderer/components/chat/VoiceDictationButton';
+import WakeListeningButton from '@/renderer/components/chat/WakeListeningButton';
+import VoiceWaveform from '@/renderer/components/chat/VoiceWaveform';
 import { VOICE_HOME_SUBMIT_EVENT, type VoiceSubmitDetail } from '@/renderer/services/voice/voiceEvents';
 import { chatFileRefPath, uploadFileRef } from '@/common/types/chatFile';
 import { useOpenFileSelector } from '@/renderer/hooks/file/useOpenFileSelector';
@@ -665,12 +669,27 @@ const GuidPage: React.FC = () => {
       mcpServers={availableMcpServers}
       selectedMcpServerIds={guidSelectedMcpServerIds ?? []}
       onToggleMcpServer={handleToggleMcpServer}
+      // The same pair the conversation composer carries. The app opens on this
+      // page, and it was the one composer without a microphone: dictation is
+      // switched off by default, so `SpeechInputButton` drew nothing and the
+      // first thing a new user saw had no way to talk to it at all.
       speechInputNode={
-        <SpeechInputButton
-          disabled={guidInput.loading}
-          onLiveTranscript={handleLiveTranscript}
-          onTranscript={handleSpeechTranscript}
-        />
+        <>
+          <SpeechInputButton
+            disabled={guidInput.loading}
+            onLiveTranscript={handleLiveTranscript}
+            onTranscript={handleSpeechTranscript}
+          />
+          <VoiceWaveform />
+          <VoiceDictationButton
+            disabled={guidInput.loading}
+            onLiveTranscript={handleLiveTranscript}
+            onTranscript={handleSpeechTranscript}
+            onSubmit={send.sendMessageHandler}
+          />
+          <AutoReadAloudButton disabled={guidInput.loading} />
+          <WakeListeningButton disabled={guidInput.loading} />
+        </>
       }
       loading={guidInput.loading}
       isButtonDisabled={send.isButtonDisabled}

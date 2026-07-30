@@ -39,6 +39,21 @@ export type SummarizeInput = {
 /** Roughly four characters to a token, with room for a sentence of overshoot. */
 const tokenBudget = (maxCharacters: number): number => Math.ceil(maxCharacters / 3) + 64;
 
+/**
+ * Least input worth handing to a model.
+ *
+ * Given an empty passage the prompt reads "Translate into English and
+ * summarise:" with nothing after it, and a small local model answers the
+ * question it was actually asked — "no context was provided to summarize or
+ * translate". That sentence is non-empty, so it passed for a briefing and was
+ * read aloud in place of the reply. Nothing this short can be summarised, and
+ * asking is what produced the complaint.
+ */
+const MINIMUM_SUMMARY_CHARACTERS = 12;
+
+export const hasSummarizableText = (text: string): boolean =>
+  text.replace(/\s+/g, ' ').trim().length >= MINIMUM_SUMMARY_CHARACTERS;
+
 const buildSystemPrompt = (maxCharacters: number): string =>
   [
     'You are an English-only translator and summariser.',
@@ -187,6 +202,10 @@ const askOnce = async (input: SummarizeInput, signal: AbortSignal, options: AskO
  * an English one and a better answer than the whole reply.
  */
 export const summarizeToEnglish = async (input: SummarizeInput): Promise<SummaryOutcome> => {
+  // Nothing to summarise: the caller speaks the passage as written rather than
+  // the model's complaint about having been handed nothing.
+  if (!hasSummarizableText(input.text)) return { ok: false, failure: 'empty-output' };
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), input.timeoutMs);
 

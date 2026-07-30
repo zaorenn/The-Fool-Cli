@@ -8,6 +8,7 @@
 
 !addincludedir "${PROJECT_DIR}\resources\windows"
 !include "installer-common.nsh"
+!include "installer-dir-guard.nsh"
 
 !macro customHeader
   !insertmacro AIONUI_INSTALLER_CUSTOM_HEADER

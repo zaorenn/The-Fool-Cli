@@ -62,8 +62,28 @@ const readAccent = (): string => {
   return /^#[0-9a-f]{3,8}$/i.test(value) ? value : VOICE_STAGE_OFF.accent;
 };
 
+/** Surfaces inside this window that draw the stage, e.g. the composer waveform. */
+const listeners = new Set<(event: VoiceStageEvent) => void>();
+
+/**
+ * Watches the voice loop from inside the main window.
+ *
+ * The pet and the caption strip are separate windows and hear about this over
+ * IPC; a control sitting next to the composer is in this window and would
+ * otherwise have to round-trip through the bridge to learn what the loop three
+ * modules away is doing.
+ */
+export const subscribeVoiceStage = (listener: (event: VoiceStageEvent) => void): (() => void) => {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+};
+
 const send = (event: VoiceStageEvent): void => {
   current = event;
+  // Snapshot first: a listener may unsubscribe while being notified.
+  for (const listener of Array.from(listeners)) listener(event);
   // The pet and the caption strip are desktop windows. In the browser build — and
   // anywhere the bridge is not wired — there is nothing to tell, and voice must
   // keep working regardless.

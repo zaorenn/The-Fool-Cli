@@ -450,6 +450,12 @@
     "voice": {
       "startTalk": "Konuşmayı başlat",
       "stopTalk": "Konuşmayı durdur",
+      "dictateHold": "Konuşmak için basılı tut",
+      "dictateRelease": "Göndermek için bırak",
+      "autoReadOn": "Cevaplar sesli okunuyor — durdurmak için tıkla",
+      "autoReadOff": "Cevapları sesli oku",
+      "wakeListeningOn": "“{{phrase}}” için dinliyor — durdurmak için tıkla",
+      "wakeListeningOff": "Dinlemiyor — uyandırma sözcüğünü dinlemek için tıkla",
       "installNeeded": "Önce bir konuşma modeli kurun",
       "wakeArmed": "“{{phrase}}” için dinliyor — hemen konuşmak için tıkla",
       "stageListening": "Dinliyor",

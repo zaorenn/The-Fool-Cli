@@ -465,6 +465,12 @@
     "voice": {
       "startTalk": "Commencer à parler",
       "stopTalk": "Arrêter de parler",
+      "dictateHold": "Maintenir pour parler",
+      "dictateRelease": "Relâcher pour envoyer",
+      "autoReadOn": "Lecture des réponses à voix haute — cliquer pour arrêter",
+      "autoReadOff": "Lire les réponses à voix haute",
+      "wakeListeningOn": "À l’écoute de « {{phrase}} » — cliquer pour arrêter",
+      "wakeListeningOff": "Pas à l’écoute — cliquer pour écouter le mot de réveil",
       "installNeeded": "Installez d'abord un modèle vocal",
       "wakeArmed": "À l’écoute de « {{phrase}} » — cliquez pour parler tout de suite",
       "stageListening": "À l’écoute",

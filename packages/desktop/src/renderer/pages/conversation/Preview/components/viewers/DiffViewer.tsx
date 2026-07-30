@@ -201,8 +201,12 @@ const DiffPreview: React.FC<DiffPreviewProps> = ({
         )}
       </div>
 
-      {/* Portal: inject side-by-side toggle into d2h-file-header */}
-      {viewMode === 'preview' &&
+      {/* Portal: inject the side-by-side toggle into d2h-file-header. Only when
+          the toolbar is hidden — with the toolbar up its own checkbox is already
+          on screen, and rendering both put two of the same control in view, each
+          able to disagree with the other about what it was showing. */}
+      {hideToolbar &&
+        viewMode === 'preview' &&
         operatorRef.current &&
         ReactDOM.createPortal(
           <Checkbox className='whitespace-nowrap' checked={sideBySide} onChange={(value) => setSideBySide(value)}>

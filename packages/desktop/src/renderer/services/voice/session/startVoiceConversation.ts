@@ -110,6 +110,15 @@ export const startVoiceConversation = async (request: VoiceConversationRequest):
   // there is nothing to create the conversation with.
   if (aionrs && !model) return { ok: false, reason: 'no-model' };
 
+  // An ACP agent names models in a namespace of its own: Hermes calls the LM
+  // Studio model `lmstudio:qwen/qwen3.5-9b` where the AionUi provider calls the
+  // same weights `qwen/qwen3.5-9b`. So a pinned id that matches no provider is
+  // not a stale pin — it is the agent's own name for the model, and passing it
+  // through unchanged is the only way the agent can resolve it. Without this the
+  // override arrived empty and the agent answered on whatever model it was last
+  // left on, which is exactly what pinning is supposed to prevent.
+  const overrideModelId = model?.use_model ?? (modelId.length > 0 ? modelId : undefined);
+
   try {
     const conversation = await ipcBridge.conversation.create.invoke({
       name: request.text,
@@ -117,7 +126,7 @@ export const startVoiceConversation = async (request: VoiceConversationRequest):
       assistant: {
         id: assistant.id,
         locale: i18next.language || 'en-US',
-        conversation_overrides: { model: model?.use_model },
+        conversation_overrides: { model: overrideModelId },
       },
       extra: {
         workspace: '',

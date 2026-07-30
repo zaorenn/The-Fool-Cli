@@ -466,6 +466,12 @@
     "voice": {
       "startTalk": "Sprechen starten",
       "stopTalk": "Sprechen beenden",
+      "dictateHold": "Zum Sprechen gedrückt halten",
+      "dictateRelease": "Zum Senden loslassen",
+      "autoReadOn": "Antworten werden vorgelesen — zum Beenden klicken",
+      "autoReadOff": "Antworten vorlesen",
+      "wakeListeningOn": "Wartet auf „{{phrase}}“ — zum Beenden klicken",
+      "wakeListeningOff": "Hört nicht zu — klicken, um auf das Weckwort zu warten",
       "installNeeded": "Installieren Sie zuerst ein Sprachmodell",
       "wakeArmed": "Wartet auf „{{phrase}}“ — klicken, um sofort zu sprechen",
       "stageListening": "Hört zu",

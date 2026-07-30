@@ -11,13 +11,33 @@ export type VadEvent = 'idle' | 'calibrating' | 'speech-started' | 'speech' | 'u
 type VadConfig = FoolVoiceSettings['vad'];
 
 /**
- * Minimum headroom above the ambient floor, so a dead-silent room still needs a
- * real signal rather than tripping on numerical noise.
+ * Lowest ambient level the calibration will believe.
+ *
+ * Only a guard against numerical noise in a silent room. It used to be 0.05,
+ * which is not a noise floor at all but roughly the level of a speaking voice:
+ * multiplied up it put the bar for speech near an RMS of 0.12, so the
+ * microphone sat open and heard nothing short of a shout.
  */
-const MINIMUM_FLOOR = 0.05;
+const MINIMUM_FLOOR = 0.004;
 
-/** How far above the calibrated floor a frame must sit to count as speech. */
-const THRESHOLD_SPAN = 2;
+/**
+ * The lowest bar for speech, whatever the room.
+ *
+ * A dead-silent room calibrates to almost nothing, and a threshold proportional
+ * to almost nothing would trip on a fan or a passing car.
+ */
+const MINIMUM_THRESHOLD = 0.01;
+
+/**
+ * How far above the calibrated floor a frame must sit, across the sensitivity
+ * range.
+ *
+ * The two ends are what sensitivity actually moves between; the old formula
+ * spanned 3x down to 2x, so turning the setting all the way up barely changed
+ * what the detector heard.
+ */
+const MULTIPLIER_AT_LEAST_SENSITIVE = 4.5;
+const MULTIPLIER_AT_MOST_SENSITIVE = 1.3;
 
 /**
  * Energy-based voice activity detection.
@@ -53,8 +73,23 @@ export class AdaptiveVad {
     return this.announcedStart;
   }
 
-  /** Discards the current utterance and ambient baseline. */
+  /**
+   * Ends the current utterance. The calibrated floor stands.
+   *
+   * This is called between every turn, and it used to throw the ambient floor
+   * away with the utterance — so the next second of audio was measured as
+   * "the room". After the wake word that second is the user already talking,
+   * which set the floor at speech level and the bar at twice that: the reason
+   * a woken session had to be shouted at while the held button heard fine.
+   *
+   * A turn ending is not the room changing. Use {@link recalibrate} for that.
+   */
   public reset(): void {
+    this.resetUtterance();
+  }
+
+  /** Forgets the room as well, for a new device or a new session. */
+  public recalibrate(): void {
     this.calibrationStartMs = null;
     this.ambientSum = 0;
     this.ambientCount = 0;
@@ -86,7 +121,9 @@ export class AdaptiveVad {
 
     const floor = Math.max(this.ambientSum / this.ambientCount, MINIMUM_FLOOR);
     // A higher sensitivity setting lowers the bar a speaker has to clear.
-    this.threshold = floor * (1 + THRESHOLD_SPAN * (1 - this.config.sensitivity) + this.config.sensitivity);
+    const span = MULTIPLIER_AT_LEAST_SENSITIVE - MULTIPLIER_AT_MOST_SENSITIVE;
+    const multiplier = MULTIPLIER_AT_LEAST_SENSITIVE - span * this.config.sensitivity;
+    this.threshold = Math.max(floor * multiplier, MINIMUM_THRESHOLD);
     return 'calibrating';
   }
 

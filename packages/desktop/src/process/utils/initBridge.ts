@@ -67,7 +67,12 @@ initAllBridges({
       return {
         providers: ['local-sherpa', 'openai-compatible', 'transcript-wake-word'] as any,
         models: models as any,
-        profiles: req.includeProfiles ? VoiceModelCatalog.getPresetProfiles() : [],
+        // The user's own cloned voices sit alongside the shipped presets: from
+        // the picker's side a voice is a voice, whether it came with the model
+        // or from a recording.
+        profiles: req.includeProfiles
+          ? [...VoiceModelCatalog.getPresetProfiles(), ...sherpaProvider.clonedProfiles()]
+          : [],
       };
     },
     health: (req) =>

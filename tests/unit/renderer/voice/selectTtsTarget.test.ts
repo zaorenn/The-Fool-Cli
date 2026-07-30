@@ -46,10 +46,13 @@ describe('selectTtsTarget', () => {
     });
   });
 
-  it('falls back to Supertonic when Piper Turkish is absent', () => {
+  // Supertonic installs and reports ready, but `sherpa-onnx-node` has no engine
+  // for it: routing a reply there threw inside playback, where the failure is
+  // swallowed, so the answer was never spoken at all.
+  it('does not route Turkish to Supertonic, which cannot synthesise', () => {
     const target = selectTtsTarget('Değişiklikleri kaydettim', settings, ['tts-supertonic-3-int8-2026-05-11']);
 
-    expect(target.modelId).toBe('tts-supertonic-3-int8-2026-05-11');
+    expect(target.modelId).toBe('tts-piper-en-libritts-r');
   });
 
   it('returns the configured target for empty text', () => {

@@ -27,9 +27,16 @@ import { shouldShowCaption, VOICE_STAGE_OFF, type VoiceStageEvent } from '@/comm
 const PRELOAD_DIR = path.join(__dirname, '..', 'preload');
 const RENDERER_DIR = path.join(__dirname, '..', 'renderer', 'voice');
 
-/** Wide enough for a spoken sentence at a readable size. */
+/**
+ * Wide enough for a spoken sentence at a readable size.
+ *
+ * The height is the card plus room for its shadow. It came down when the
+ * oscilloscope moved behind the words instead of sitting in a row of its own:
+ * the trace says the microphone is hearing you, which is worth a background and
+ * not worth a third of the strip.
+ */
 const WIDTH = 620;
-const HEIGHT = 132;
+const HEIGHT = 104;
 /**
  * A hair above the taskbar, centred on the display.
  *
@@ -137,8 +144,35 @@ const clearHideTimer = (): void => {
  * The delay on the way out is deliberate: a transcript that vanished the instant
  * the turn ended would be unreadable.
  */
+/**
+ * Whether the user is already looking at the app.
+ *
+ * The strip exists for talking to the pet across the room with the window
+ * minimised or behind something. Thrown over a focused window it covers the
+ * very screen the user is reading — and the composer already draws the
+ * waveform and the state, so it would be saying it twice.
+ */
+const appIsInView = (): boolean =>
+  BrowserWindow.getAllWindows().some(
+    (window) =>
+      window !== captionWindow &&
+      !window.isDestroyed() &&
+      window.isVisible() &&
+      !window.isMinimized() &&
+      window.isFocused()
+  );
+
 export function updateCaption(event: VoiceStageEvent): void {
   pending = event;
+
+  if (appIsInView()) {
+    // Nothing to show over the top of; take away anything already up.
+    if (captionWindow) {
+      clearHideTimer();
+      destroyCaptionWindow();
+    }
+    return;
+  }
 
   if (shouldShowCaption(event)) {
     clearHideTimer();

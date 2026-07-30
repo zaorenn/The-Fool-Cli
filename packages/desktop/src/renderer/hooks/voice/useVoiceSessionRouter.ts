@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { ipcBridge } from '@/common';
 import {
   VOICE_HOME_SUBMIT_EVENT,
@@ -45,6 +45,19 @@ import { readVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 /** Time allowed for the target surface to mount before the text is handed over. */
 const HANDOVER_MS = 450;
 
+/**
+ * How long to watch for the chat the home composer opens, and how often to look.
+ *
+ * React Router's hash history navigates with `history.pushState`, which does not
+ * fire `hashchange` — so a listener for that event never hears the chat being
+ * opened, and the binding was never written: every wake word started another
+ * conversation. The location itself is the only thing that does change, so it is
+ * read directly. Bounded, because a turn that never opens a chat must not leave
+ * a timer running for the rest of the session.
+ */
+const BINDING_WATCH_MS = 30000;
+const BINDING_POLL_MS = 200;
+
 const currentPath = (): string => {
   const hash = window.location.hash;
   return hash.startsWith('#') ? hash.slice(1) : hash;
@@ -56,10 +69,38 @@ const goTo = (path: string): void => {
 };
 
 export const useVoiceSessionRouter = (): void => {
-  /** Set while a spoken turn is opening a new chat, so its id can be bound. */
-  const awaitingNewConversation = useRef(false);
-
   useEffect(() => {
+    let watchTimer: number | null = null;
+    let watchUntil = 0;
+
+    const stopWatching = (): void => {
+      if (watchTimer === null) return;
+      window.clearInterval(watchTimer);
+      watchTimer = null;
+    };
+
+    /**
+     * Binds whichever chat the home composer opens next.
+     *
+     * Started only *after* navigating away to the home page, so a conversation
+     * route left over from the previous turn can never be mistaken for the new
+     * chat and bound in its place.
+     */
+    const watchForNewConversation = (): void => {
+      watchUntil = Date.now() + BINDING_WATCH_MS;
+      if (watchTimer !== null) return;
+
+      watchTimer = window.setInterval(() => {
+        const match = /^\/conversation\/([^/?]+)/.exec(currentPath());
+        if (match) {
+          stopWatching();
+          bindConversation(match[1]);
+          return;
+        }
+        if (Date.now() >= watchUntil) stopWatching();
+      }, BINDING_POLL_MS);
+    };
+
     /** Hands the text to a surface that has to mount first. */
     const handOver = (name: string, detail: VoiceSubmitDetail, immediate: boolean): void => {
       window.setTimeout(
@@ -89,24 +130,24 @@ export const useVoiceSessionRouter = (): void => {
         if (started.ok) {
           // The conversation page picks the message up as it mounts, so there is
           // nothing to hand over and nothing to type.
+          stopWatching();
           bindConversation(started.conversationId);
-          awaitingNewConversation.current = false;
           goTo(`/conversation/${started.conversationId}`);
           return;
         }
 
         // Nothing pinned, or the pinned agent has gone: the home composer still
         // knows how to open a chat.
-        awaitingNewConversation.current = true;
         const alreadyAtHome = currentPath() === '/guid';
         goTo('/guid');
+        watchForNewConversation();
         handOver(VOICE_HOME_SUBMIT_EVENT, { text, files }, alreadyAtHome);
         return;
       }
 
       const target = `/conversation/${bound}`;
       const alreadyThere = currentPath() === target;
-      awaitingNewConversation.current = false;
+      stopWatching();
       goTo(target);
       handOver(VOICE_SUBMIT_EVENT, { text, files }, alreadyThere);
     };
@@ -121,7 +162,10 @@ export const useVoiceSessionRouter = (): void => {
     };
 
     window.addEventListener(VOICE_TURN_EVENT, onTurn);
-    return () => window.removeEventListener(VOICE_TURN_EVENT, onTurn);
+    return () => {
+      window.removeEventListener(VOICE_TURN_EVENT, onTurn);
+      stopWatching();
+    };
   }, []);
 
   // The pet's menu asks for a fresh chat next time. The pet is a desktop window,
@@ -130,20 +174,5 @@ export const useVoiceSessionRouter = (): void => {
     const emitter = ipcBridge.foolVoice?.newSessionOnNextWake;
     if (typeof emitter?.on !== 'function') return;
     return emitter.on(() => requestNewSession());
-  }, []);
-
-  // A spoken turn that opened a new chat through the home composer lands on
-  // /conversation/<id>; that id is what later turns should go to.
-  useEffect(() => {
-    const remember = () => {
-      if (!awaitingNewConversation.current) return;
-      const match = /^\/conversation\/([^/?]+)/.exec(currentPath());
-      if (!match) return;
-      awaitingNewConversation.current = false;
-      bindConversation(match[1]);
-    };
-
-    window.addEventListener('hashchange', remember);
-    return () => window.removeEventListener('hashchange', remember);
   }, []);
 };

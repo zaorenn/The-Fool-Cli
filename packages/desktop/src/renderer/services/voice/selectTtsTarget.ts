@@ -12,10 +12,17 @@ export type TtsTarget = {
   language: string;
 };
 
-/** Turkish voices, in preference order, used when the reply is Turkish. */
+/**
+ * Turkish voices, in preference order, used when the reply is Turkish.
+ *
+ * Only voices the synthesiser can actually open belong here. Supertonic was
+ * listed until it turned out `sherpa-onnx-node` carries no Supertonic engine at
+ * all: a Turkish reply routed to it threw `Not a text-to-speech model` inside
+ * playback, where the failure is swallowed, so the answer was simply never
+ * spoken. An English voice reading Turkish is a bad accent; this was silence.
+ */
 const TURKISH_TARGETS: readonly TtsTarget[] = [
   { modelId: 'tts-piper-tr-fettah', profileId: 'piper-tr-fettah-v2', language: 'tr' },
-  { modelId: 'tts-supertonic-3-int8-2026-05-11', profileId: 'supertonic-speaker-0', language: 'tr' },
 ];
 
 /** Characters that occur in Turkish but not in English. */

@@ -101,22 +101,40 @@
         margin-left: auto;
       }
 
+      /* The trace and the words share one row rather than stacking into two.
+         The oscilloscope is context — it says the microphone is hearing you —
+         and the sentence is the content, so the trace goes behind it and the
+         card keeps the height of the text alone. */
+      #stack {
+        position: relative;
+        margin-top: 8px;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
       /* The oscilloscope is drawn on canvas — see captionRenderer.ts. */
       #wave {
+        position: absolute;
+        inset: 0;
         display: block;
         width: 100%;
-        height: 38px;
-        margin-top: 6px;
+        height: 100%;
+        /* Held back so it never competes with the words drawn over it. */
+        opacity: 0.4;
       }
 
       #transcript {
-        margin-top: 6px;
+        position: relative;
         font-size: 16px;
         line-height: 1.35;
-        max-height: 44px;
+        max-height: 40px;
         overflow: hidden;
         text-align: center;
         color: #f5f1e8;
+        /* Keeps the sentence readable where the trace runs behind a letter. */
+        text-shadow: 0 1px 4px rgba(11, 13, 16, 0.95);
       }
 
       #transcript:empty::before {
@@ -142,8 +160,10 @@
         <span id="stage"></span>
         <span id="hint"></span>
       </div>
-      <canvas id="wave"></canvas>
-      <div id="transcript" data-placeholder=""></div>
+      <div id="stack">
+        <canvas id="wave"></canvas>
+        <div id="transcript" data-placeholder=""></div>
+      </div>
     </div>
     <script type="module" src="./captionRenderer.ts"></script>
   </body>

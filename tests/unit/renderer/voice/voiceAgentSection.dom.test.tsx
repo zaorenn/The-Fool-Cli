@@ -50,6 +50,12 @@ vi.mock('@arco-design/web-react', () => ({
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 
+const managedAgents = vi.fn<() => unknown[]>();
+
+vi.mock('@renderer/hooks/agent/useManagedAgents', () => ({
+  useManagedAgentRuntimeCatalog: () => managedAgents(),
+}));
+
 const assistant = (overrides: Partial<Assistant> = {}): Assistant =>
   ({
     id: 'hermes',
@@ -93,8 +99,10 @@ describe('VoiceAgentSection', () => {
   beforeEach(() => {
     listAssistants.mockReset();
     listProviders.mockReset();
+    managedAgents.mockReset();
     listAssistants.mockResolvedValue([assistant()]);
     listProviders.mockResolvedValue([provider()]);
+    managedAgents.mockReturnValue([]);
   });
 
   it('offers the assistants and models the app has', async () => {
@@ -163,6 +171,46 @@ describe('VoiceAgentSection', () => {
 
     const change = onChange.mock.calls[0][0] as (previous: FoolVoiceSettings) => FoolVoiceSettings;
     expect(change(settings()).session.attachScreenshot).toBe(false);
+  });
+
+  // Hermes calls the LM Studio model `lmstudio:qwen/qwen3.5-9b`; the provider
+  // calls the same weights `qwen/qwen3.5-9b`. Offering the provider's spelling
+  // produced a pin the agent could not resolve, so it answered on its default.
+  const hermes = () => assistant({ agent_id: '55f3ed1c', agent: { type: 'hermes', source: 'builtin' } });
+  const hermesCatalog = [
+    {
+      id: '55f3ed1c',
+      available_models: {
+        current_model_id: 'nous:poolside/laguna-s-2.1:free',
+        available_models: [{ id: 'lmstudio:qwen/qwen3.5-9b', label: 'LM Studio · qwen/qwen3.5-9b' }],
+      },
+    },
+  ];
+
+  it("offers an ACP agent's own models rather than the app's provider models", async () => {
+    listAssistants.mockResolvedValue([hermes()]);
+    managedAgents.mockReturnValue(hermesCatalog);
+
+    render(<VoiceAgentSection settings={settings({ assistantId: 'hermes' })} onChange={vi.fn()} />);
+
+    await waitFor(() => expect(screen.getByText('LM Studio · qwen/qwen3.5-9b')).toBeTruthy());
+    expect(screen.queryByText('qwen/qwen3.5-9b · LM Studio (Local)')).toBeNull();
+  });
+
+  it("stores an ACP model with no provider, because the agent's id is the whole address", async () => {
+    const onChange = vi.fn();
+    listAssistants.mockResolvedValue([hermes()]);
+    managedAgents.mockReturnValue(hermesCatalog);
+
+    render(<VoiceAgentSection settings={settings({ assistantId: 'hermes' })} onChange={onChange} />);
+
+    await waitFor(() => expect(screen.getByText('LM Studio · qwen/qwen3.5-9b')).toBeTruthy());
+    fireEvent.change(screen.getByTestId('voice-agent-model'), {
+      target: { value: '::lmstudio:qwen/qwen3.5-9b' },
+    });
+
+    const change = onChange.mock.calls[0][0] as (previous: FoolVoiceSettings) => FoolVoiceSettings;
+    expect(change(settings()).session).toMatchObject({ providerId: '', modelId: 'lmstudio:qwen/qwen3.5-9b' });
   });
 
   it('stores the provider alongside the model, since a model name alone is ambiguous', async () => {
