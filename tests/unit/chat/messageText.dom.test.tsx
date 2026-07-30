@@ -135,6 +135,12 @@ vi.mock('@icon-park/react', () => ({
   Copy: () => <span data-testid='copy-icon' />,
 }));
 
+// Read-aloud has its own tests and pulls in the voice bridge; these cases are
+// about attachment and marker rendering.
+vi.mock('@/renderer/components/chat/SpeakMessageButton', () => ({
+  default: () => <span data-testid='speak-message' />,
+}));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? key,

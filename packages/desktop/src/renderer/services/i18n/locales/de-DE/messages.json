@@ -67,5 +67,9 @@
     "yesAlwaysAllowTool": "Ja, Tool \"{{toolName}}\" vom Server \"{{serverName}}\" immer erlauben",
     "yesAlwaysAllowServer": "Ja, alle Tools vom Server \"{{serverName}}\" immer erlauben",
     "no": "Nein (Esc)"
-  }
+  },
+  "speakAloud": "Vorlesen",
+  "speakStop": "Vorlesen beenden",
+  "speakNeedsVoice": "Installiere unter Einstellungen → Stimme eine Stimme, damit Antworten vorgelesen werden.",
+  "speakFailed": "Diese Nachricht konnte nicht vorgelesen werden."
 }

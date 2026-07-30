@@ -67,5 +67,9 @@
     "yesAlwaysAllowTool": "はい、サーバー \"{{serverName}}\" のツール \"{{toolName}}\" を常に許可",
     "yesAlwaysAllowServer": "はい、サーバー \"{{serverName}}\" のすべてのツールを常に許可",
     "no": "いいえ (esc)"
-  }
+  },
+  "speakAloud": "読み上げる",
+  "speakStop": "読み上げを停止",
+  "speakNeedsVoice": "返信を読み上げるには、設定 → 音声で声をインストールしてください。",
+  "speakFailed": "このメッセージを読み上げられませんでした。"
 }

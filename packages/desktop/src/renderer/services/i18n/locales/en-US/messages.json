@@ -67,5 +67,9 @@
     "yesAlwaysAllowTool": "Yes, always allow tool \"{{toolName}}\" from server \"{{serverName}}\"",
     "yesAlwaysAllowServer": "Yes, always allow all tools from server \"{{serverName}}\"",
     "no": "No (esc)"
-  }
+  },
+  "speakAloud": "Read aloud",
+  "speakStop": "Stop reading",
+  "speakNeedsVoice": "Install a voice in Settings → Voice to have replies read aloud.",
+  "speakFailed": "Could not read this message aloud."
 }

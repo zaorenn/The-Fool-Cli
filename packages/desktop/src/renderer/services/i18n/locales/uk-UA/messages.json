@@ -69,5 +69,9 @@
   },
   "copyLastOutput": {
     "empty": "No response to copy yet"
-  }
+  },
+  "speakAloud": "Прочитати вголос",
+  "speakStop": "Зупинити читання",
+  "speakNeedsVoice": "Встановіть голос у «Налаштування → Голос», щоб відповіді читалися вголос.",
+  "speakFailed": "Не вдалося прочитати це повідомлення вголос."
 }

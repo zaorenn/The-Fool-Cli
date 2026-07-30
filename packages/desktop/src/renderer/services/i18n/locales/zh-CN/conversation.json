@@ -462,7 +462,8 @@
     "voice": {
       "startTalk": "开始语音对话",
       "stopTalk": "停止语音对话",
-      "installNeeded": "请先安装语音模型"
+      "installNeeded": "请先安装语音模型",
+      "wakeArmed": "正在等待“{{phrase}}” — 点击立即说话"
     }
   },
   "sideQuestion": {

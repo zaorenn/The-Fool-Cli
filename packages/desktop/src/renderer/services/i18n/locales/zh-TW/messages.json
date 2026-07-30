@@ -67,5 +67,9 @@
     "yesAlwaysAllowTool": "是，始終允許來自伺服器 \"{{serverName}}\" 的工具 \"{{toolName}}\"",
     "yesAlwaysAllowServer": "是，始終允許來自伺服器 \"{{serverName}}\" 的所有工具",
     "no": "否 (esc)"
-  }
+  },
+  "speakAloud": "朗讀",
+  "speakStop": "停止朗讀",
+  "speakNeedsVoice": "請在「設定 → 語音」中安裝一個音色，回覆才能朗讀。",
+  "speakFailed": "無法朗讀這則訊息。"
 }

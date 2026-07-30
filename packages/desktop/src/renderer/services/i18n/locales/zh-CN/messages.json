@@ -67,5 +67,9 @@
     "yesAlwaysAllowTool": "是，始终允许来自服务器 \"{{serverName}}\" 的工具 \"{{toolName}}\"",
     "yesAlwaysAllowServer": "是，始终允许来自服务器 \"{{serverName}}\" 的所有工具",
     "no": "否 (esc)"
-  }
+  },
+  "speakAloud": "朗读",
+  "speakStop": "停止朗读",
+  "speakNeedsVoice": "请在“设置 → 语音”中安装一个音色，回复才能朗读。",
+  "speakFailed": "无法朗读这条消息。"
 }

@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Message, Select, Slider, Switch } from '@arco-design/web-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Button, Input, Message, Select, Slider, Switch } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
-import {
-  DEFAULT_FOOL_VOICE_SETTINGS,
-  type FoolVoiceSettings,
-  type VoiceModel,
-  type VoiceProfile,
-} from '@/common/types/foolVoice';
+import type { VoiceProfile } from '@/common/types/foolVoice';
+import { useFoolVoiceSettings } from '@renderer/hooks/voice/useFoolVoiceSettings';
 import { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybackService';
+import { reconcileVoiceModels } from '@renderer/services/voice/reconcileVoiceModels';
+import AudioDeviceSection from './AudioDeviceSection';
+import SpeakerBrowser from './SpeakerBrowser';
 import VoicePicker from './VoicePicker';
+import { useVoiceCatalog } from './useVoiceCatalog';
 
 const PREVIEW_TEXT: Record<string, string> = {
   en: 'This is how I will sound when I speak.',
@@ -34,192 +34,158 @@ type Section = { key: string; title: string; body: React.ReactNode };
 /**
  * The Voice settings surface.
  *
- * Voices are picked by clicking a card with a preview button rather than by
- * typing a model or speaker id, and each model states plainly whether it is
- * installed.
+ * Everything here is persisted as it changes and read back by the rest of the
+ * app — the talk button, the read-aloud button and the wake-word listener all
+ * use the same stored settings, so a device or voice chosen here is the one that
+ * is actually used.
  */
 const VoiceSettingsContent: React.FC = () => {
   const { t } = useTranslation();
-  const [settings, setSettings] = useState<FoolVoiceSettings>(DEFAULT_FOOL_VOICE_SETTINGS);
-  const [models, setModels] = useState<readonly VoiceModel[]>([]);
-  const [profiles, setProfiles] = useState<readonly VoiceProfile[]>([]);
-  const [inputDevices, setInputDevices] = useState<MediaDeviceInfo[]>([]);
-  const [outputDevices, setOutputDevices] = useState<MediaDeviceInfo[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const { settings, ready, update } = useFoolVoiceSettings();
+  const catalog = useVoiceCatalog();
+  const [browsingModelId, setBrowsingModelId] = useState<string | null>(null);
+  const [speakerCount, setSpeakerCount] = useState<number | null>(null);
 
   const playback = useMemo(() => new AudioPlaybackService(), []);
 
-  const refreshCatalog = useCallback(async () => {
-    try {
-      const catalog = unwrap(
-        await ipcBridge.foolVoice.catalog.invoke({
+  // Point the selection at models that are really installed. The shipped default
+  // names a half-gigabyte download, so without this the page opens claiming to
+  // use a model the user does not have while ignoring the ones they do.
+  const reconciled = useRef(false);
+  useEffect(() => {
+    if (!ready || reconciled.current || catalog.models.length === 0) return;
+    const next = reconcileVoiceModels(settings, catalog.models);
+    reconciled.current = true;
+    if (next) update(() => next);
+  }, [catalog.models, ready, settings, update]);
+
+  const speak = useCallback(
+    async (modelId: string, profileId: string, language: string) => {
+      playback.setOutputDevice(settings.devices.outputDeviceId);
+      const requestId = newRequestId();
+      const synthesis = unwrap(
+        await ipcBridge.foolVoice.synthesize.invoke({
           version: 1,
-          requestId: newRequestId(),
-          payload: { includeProfiles: true },
+          requestId,
+          payload: {
+            operationId: requestId,
+            providerId: 'local-sherpa',
+            modelId,
+            profileId,
+            language,
+            speed: settings.tts.speed,
+            text: PREVIEW_TEXT[language] ?? PREVIEW_TEXT.en,
+          },
         })
       );
-      setModels(catalog.models);
-      setProfiles(catalog.profiles);
-      setLoadError(null);
-    } catch {
-      setLoadError('catalog');
-    }
-  }, []);
+      await playback.play(synthesis.audio);
+    },
+    [playback, settings.devices.outputDeviceId, settings.tts.speed]
+  );
 
-  useEffect(() => {
-    void refreshCatalog();
-
-    const unsubscribe = ipcBridge.foolVoice.downloadProgress.on((event) => {
-      const payload = event.payload as any;
-      if (payload.state === 'ready' || payload.state === 'cancelled' || payload.state === 'invalid') {
-        void refreshCatalog();
-      } else {
-        setModels((prev) =>
-          prev.map((m) => {
-            if (m.id === payload.modelId && m.distribution === 'managed') {
-              const newStatus =
-                payload.state === 'queued' ||
-                payload.state === 'downloading' ||
-                payload.state === 'extracting' ||
-                payload.state === 'validating'
-                  ? 'partial'
-                  : 'installing';
-              return {
-                ...m,
-                state: { status: newStatus, downloadedBytes: payload.downloadedBytes },
-              } as VoiceModel;
-            }
-            return m;
-          })
-        );
-      }
-    });
-
-    return () => unsubscribe();
-  }, [refreshCatalog]);
-
-  useEffect(() => {
-    const loadDevices = async () => {
-      try {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          stream.getTracks().forEach((track) => track.stop());
-        } catch {
-          // ignore, they might not have a mic or denied it
-        }
-
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        setInputDevices(devices.filter((device) => device.kind === 'audioinput'));
-        setOutputDevices(devices.filter((device) => device.kind === 'audiooutput'));
-      } catch {
-        setInputDevices([]);
-        setOutputDevices([]);
-      }
-    };
-
-    void loadDevices();
-    navigator.mediaDevices?.addEventListener?.('devicechange', loadDevices);
-    return () => navigator.mediaDevices?.removeEventListener?.('devicechange', loadDevices);
-  }, []);
-
-  const handleSelectVoice = useCallback((profile: VoiceProfile) => {
-    setSettings((previous) => ({
-      ...previous,
-      tts: {
-        ...previous.tts,
-        modelId: profile.modelId,
-        profileId: profile.id,
-        language: profile.languages[0] ?? previous.tts.language,
-      },
-    }));
-  }, []);
+  const handleSelectVoice = useCallback(
+    (profile: VoiceProfile) => {
+      update((previous) => ({
+        ...previous,
+        tts: {
+          ...previous.tts,
+          modelId: profile.modelId,
+          profileId: profile.id,
+          language: profile.languages[0] ?? previous.tts.language,
+        },
+      }));
+    },
+    [update]
+  );
 
   const handlePreview = useCallback(
     async (profile: VoiceProfile) => {
-      const language = profile.languages[0] ?? 'en';
-      // Honour the speaker chosen above, not just the system default.
-      playback.setOutputDevice(settings.devices.outputDeviceId);
       try {
-        const requestId = newRequestId();
-        const synthesis = unwrap(
-          await ipcBridge.foolVoice.synthesize.invoke({
-            version: 1,
-            requestId,
-            payload: {
-              operationId: requestId,
-              providerId: 'local-sherpa',
-              modelId: profile.modelId,
-              profileId: profile.id,
-              language,
-              speed: settings.tts.speed,
-              text: PREVIEW_TEXT[language] ?? PREVIEW_TEXT.en,
-            },
-          })
-        );
-        await playback.play(synthesis.audio);
+        await speak(profile.modelId, profile.id, profile.languages[0] ?? 'en');
       } catch {
         Message.error(t('settings.voice.previewFailed'));
       }
     },
-    [playback, settings.devices.outputDeviceId, settings.tts.speed, t]
+    [speak, t]
   );
 
-  const handleInstall = useCallback(
-    (modelId: string) => {
-      const operationId = newRequestId();
-      void ipcBridge.foolVoice.download
-        .invoke({ version: 1, requestId: operationId, payload: { operationId, providerId: 'local-sherpa', modelId } })
-        .then(() => {
-          Message.info(t('settings.voice.installStarted'));
-          return refreshCatalog();
-        })
-        .catch(() => Message.error(t('settings.voice.installFailed')));
-    },
-    [refreshCatalog, t]
-  );
+  const handleBrowseSpeakers = useCallback((modelId: string) => {
+    setSpeakerCount(null);
+    setBrowsingModelId(modelId);
 
-  const sttModels = models.filter((model) => model.role === 'speech-to-text');
+    // The count comes from the loaded engine, so it reflects the weights that
+    // were actually downloaded.
+    void ipcBridge.foolVoice.speakers
+      .invoke({ version: 1, requestId: newRequestId(), payload: { providerId: 'local-sherpa', modelId } })
+      .then((response) => setSpeakerCount(response.ok ? response.data.speakerCount : 0))
+      .catch(() => setSpeakerCount(0));
+  }, []);
+
+  const browsingModel = catalog.models.find((model) => model.id === browsingModelId) ?? null;
+
+  const sttModels = catalog.models.filter((model) => model.role === 'speech-to-text');
+  const selectedSttModel = catalog.models.find((model) => model.id === settings.stt.modelId);
+  const sttInstall = catalog.installs[settings.stt.modelId];
+  const sttVerification = catalog.verifications[settings.stt.modelId];
 
   const sections: Section[] = [
     {
       key: 'devices',
       title: t('settings.voice.devices'),
       body: (
+        <AudioDeviceSection
+          devices={settings.devices}
+          volume={settings.playback.volume}
+          onChange={(devices) => update((previous) => ({ ...previous, devices }))}
+        />
+      ),
+    },
+    {
+      key: 'wakeWord',
+      title: t('settings.voice.wakeWord'),
+      body: (
         <div className='flex flex-col gap-12px'>
-          <label className='flex flex-col gap-4px'>
-            <span className='text-13px text-t-secondary'>{t('settings.voice.microphone')}</span>
-            <Select
-              value={settings.devices.inputDeviceId ?? ''}
-              placeholder={t('settings.voice.systemDefault')}
-              onChange={(value: string) =>
-                setSettings((previous) => ({
+          <label className='flex items-center justify-between gap-12px'>
+            <span className='text-13px text-t-secondary'>{t('settings.voice.wakeWordEnabled')}</span>
+            <Switch
+              data-testid='voice-wake-enabled'
+              checked={settings.activation.wakePhrase.enabled}
+              onChange={(checked: boolean) =>
+                update((previous) => ({
                   ...previous,
-                  devices: { ...previous.devices, inputDeviceId: value || null },
+                  activation: {
+                    ...previous.activation,
+                    wakePhrase: { ...previous.activation.wakePhrase, enabled: checked },
+                  },
                 }))
               }
-              options={inputDevices.map((device) => ({
-                label: device.label || device.deviceId,
-                value: device.deviceId,
-              }))}
             />
           </label>
           <label className='flex flex-col gap-4px'>
-            <span className='text-13px text-t-secondary'>{t('settings.voice.speaker')}</span>
-            <Select
-              value={settings.devices.outputDeviceId ?? ''}
-              placeholder={t('settings.voice.systemDefault')}
+            <span className='text-13px text-t-secondary'>{t('settings.voice.wakePhrase')}</span>
+            <Input
+              data-testid='voice-wake-phrase'
+              value={settings.activation.wakePhrase.phrase}
               onChange={(value: string) =>
-                setSettings((previous) => ({
+                update((previous) => ({
                   ...previous,
-                  devices: { ...previous.devices, outputDeviceId: value || null },
+                  activation: {
+                    ...previous.activation,
+                    // Two characters minimum, matching the stored schema.
+                    wakePhrase: { ...previous.activation.wakePhrase, phrase: value.slice(0, 64) },
+                  },
                 }))
               }
-              options={outputDevices.map((device) => ({
-                label: device.label || device.deviceId,
-                value: device.deviceId,
-              }))}
             />
           </label>
+          <span className='text-12px text-t-secondary'>{t('settings.voice.wakeWordPetHint')}</span>
+          {/* Hearing the phrase needs the transcription model, so say so rather
+              than leaving a switch that quietly does nothing. */}
+          {settings.activation.wakePhrase.enabled && selectedSttModel?.state.status !== 'ready' && (
+            <span className='text-12px text-warning' data-testid='voice-wake-needs-model'>
+              {t('settings.voice.wakeWordNeedsModel')}
+            </span>
+          )}
         </div>
       ),
     },
@@ -240,7 +206,7 @@ const VoiceSettingsContent: React.FC = () => {
               step={50}
               value={settings.vad.silenceMs}
               onChange={(value) =>
-                setSettings((previous) => ({
+                update((previous) => ({
                   ...previous,
                   vad: { ...previous.vad, silenceMs: Array.isArray(value) ? value[0] : value },
                 }))
@@ -254,20 +220,53 @@ const VoiceSettingsContent: React.FC = () => {
       key: 'speechToText',
       title: t('settings.voice.speechToText'),
       body: (
-        <div className='flex gap-8px items-center'>
-          <Select
-            className='flex-1'
-            value={settings.stt.modelId}
-            onChange={(value: string) =>
-              setSettings((previous) => ({ ...previous, stt: { ...previous.stt, modelId: value } }))
-            }
-            options={sttModels.map((model) => ({
-              label: `${model.displayName}${model.state.status === 'ready' ? '' : ` — ${t('settings.voice.notInstalled')}`}`,
-              value: model.id,
-            }))}
-          />
-          {models.find((m) => m.id === settings.stt.modelId)?.state.status !== 'ready' && (
-            <Button onClick={() => handleInstall(settings.stt.modelId)}>{t('settings.voice.install')}</Button>
+        <div className='flex flex-col gap-8px'>
+          <div className='flex gap-8px items-center'>
+            <Select
+              className='flex-1'
+              value={settings.stt.modelId}
+              onChange={(value: string) =>
+                update((previous) => ({ ...previous, stt: { ...previous.stt, modelId: value } }))
+              }
+              options={sttModels.map((model) => ({
+                label: `${model.displayName}${model.state.status === 'ready' ? '' : ` — ${t('settings.voice.notInstalled')}`}`,
+                value: model.id,
+              }))}
+            />
+            {selectedSttModel?.state.status !== 'ready' && (
+              <Button
+                type='primary'
+                data-testid='voice-stt-install'
+                loading={Boolean(sttInstall) && sttInstall.phase !== 'failed'}
+                disabled={Boolean(sttInstall) && sttInstall.phase !== 'failed'}
+                onClick={() => catalog.install(settings.stt.modelId)}
+              >
+                {sttInstall ? t('settings.voice.installing') : t('settings.voice.install')}
+              </Button>
+            )}
+            <Button
+              data-testid='voice-stt-verify'
+              loading={sttVerification === 'checking'}
+              onClick={() => catalog.verify(settings.stt.modelId)}
+            >
+              {t('settings.voice.check')}
+            </Button>
+          </div>
+          {sttInstall && sttInstall.totalBytes && sttInstall.phase !== 'failed' && (
+            <span className='text-12px text-t-secondary' data-testid='voice-stt-progress'>
+              {`${Math.min(99, Math.floor((sttInstall.downloadedBytes / sttInstall.totalBytes) * 100))}% · ${Math.round(sttInstall.downloadedBytes / 1024 / 1024)}/${Math.round(sttInstall.totalBytes / 1024 / 1024)}MB`}
+            </span>
+          )}
+          {sttInstall?.phase === 'failed' && (
+            <span className='text-12px text-danger'>{t('settings.voice.installFailed')}</span>
+          )}
+          {sttVerification === 'usable' && (
+            <span className='text-12px text-success'>{t('settings.voice.checkUsable')}</span>
+          )}
+          {(sttVerification === 'unusable' || sttVerification === 'not-installed') && (
+            <span className='text-12px text-danger'>
+              {sttVerification === 'not-installed' ? t('settings.voice.notInstalled') : t('settings.voice.checkBroken')}
+            </span>
           )}
         </div>
       ),
@@ -277,12 +276,16 @@ const VoiceSettingsContent: React.FC = () => {
       title: t('settings.voice.textToSpeech'),
       body: (
         <VoicePicker
-          models={models}
-          profiles={profiles}
+          models={catalog.models}
+          profiles={catalog.profiles}
           selectedProfileId={settings.tts.profileId}
+          installs={catalog.installs}
+          verifications={catalog.verifications}
           onSelect={handleSelectVoice}
           onPreview={handlePreview}
-          onInstall={handleInstall}
+          onInstall={catalog.install}
+          onVerify={catalog.verify}
+          onBrowseSpeakers={handleBrowseSpeakers}
         />
       ),
     },
@@ -290,13 +293,40 @@ const VoiceSettingsContent: React.FC = () => {
 
   return (
     <div className='flex flex-col gap-24px'>
-      {loadError && <Alert type='warning' content={t('settings.voice.catalogUnavailable')} />}
+      {catalog.loadFailed && <Alert type='warning' content={t('settings.voice.catalogUnavailable')} />}
       {sections.map((section) => (
         <section key={section.key} data-testid={`voice-section-${section.key}`}>
           <h3 className='text-14px font-500 text-t-primary mb-12px'>{section.title}</h3>
           {section.body}
         </section>
       ))}
+
+      {browsingModel && speakerCount !== null && (
+        <SpeakerBrowser
+          model={browsingModel}
+          speakerCount={speakerCount}
+          selectedProfileId={settings.tts.profileId}
+          onClose={() => setBrowsingModelId(null)}
+          onSelect={(profileId) =>
+            update((previous) => ({
+              ...previous,
+              tts: {
+                ...previous.tts,
+                modelId: browsingModel.id,
+                profileId,
+                language: browsingModel.languages[0] ?? previous.tts.language,
+              },
+            }))
+          }
+          onPreview={async (profileId) => {
+            try {
+              await speak(browsingModel.id, profileId, browsingModel.languages[0] ?? 'en');
+            } catch {
+              Message.error(t('settings.voice.previewFailed'));
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

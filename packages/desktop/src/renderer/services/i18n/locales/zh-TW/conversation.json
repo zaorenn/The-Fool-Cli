@@ -462,7 +462,8 @@
     "voice": {
       "startTalk": "開始語音對話",
       "stopTalk": "停止語音對話",
-      "installNeeded": "請先安裝語音模型"
+      "installNeeded": "請先安裝語音模型",
+      "wakeArmed": "正在等待「{{phrase}}」— 點擊立即說話"
     }
   },
   "sideQuestion": {

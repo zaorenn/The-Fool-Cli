@@ -32,6 +32,17 @@ vi.mock('@renderer/hooks/voice/useFoolVoiceSession', () => ({
   VOICE_SUBMIT_EVENT: 'fool:voice-submit',
 }));
 
+let wakeState: 'off' | 'listening' | 'awake' = 'off';
+const wakeSubscribers = new Set<(state: 'off' | 'listening' | 'awake') => void>();
+
+vi.mock('@renderer/hooks/voice/useWakeWordListener', () => ({
+  peekWakeListenerState: () => wakeState,
+  subscribeWakeListener: (listener: (state: 'off' | 'listening' | 'awake') => void) => {
+    wakeSubscribers.add(listener);
+    return () => wakeSubscribers.delete(listener);
+  },
+}));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
@@ -91,5 +102,26 @@ describe('VoiceTalkButton', () => {
     render(<VoiceTalkButton disabled />);
 
     expect(screen.getByRole('button', { name: 'conversation.chat.voice.startTalk' })).toHaveProperty('disabled', true);
+  });
+
+  it('shows that the wake word is being listened for, so an open microphone is visible', () => {
+    wakeState = 'listening';
+    render(<VoiceTalkButton />);
+
+    const button = screen.getByTestId('voice-talk');
+    expect(button.getAttribute('data-wake')).toBe('listening');
+    expect(button.getAttribute('aria-label')).toBe('conversation.chat.voice.wakeArmed');
+    wakeState = 'off';
+  });
+
+  it('says nothing about the wake word once a session is running', () => {
+    wakeState = 'listening';
+    session.state = listening;
+    render(<VoiceTalkButton />);
+
+    const button = screen.getByTestId('voice-talk');
+    expect(button.getAttribute('data-wake')).toBeNull();
+    expect(button.getAttribute('aria-label')).toBe('conversation.chat.voice.stopTalk');
+    wakeState = 'off';
   });
 });

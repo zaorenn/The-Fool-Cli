@@ -39,23 +39,30 @@ const profile = (id: string, modelId: string, displayName: string): VoiceProfile
   deletable: false,
 });
 
-const setup = (installed = true) => {
+const setup = (installed = true, overrides: Partial<React.ComponentProps<typeof VoicePicker>> = {}) => {
   const onSelect = vi.fn();
   const onPreview = vi.fn().mockResolvedValue(undefined);
   const onInstall = vi.fn();
+  const onVerify = vi.fn();
+  const onBrowseSpeakers = vi.fn();
 
   render(
     <VoicePicker
       models={[model('kokoro', installed)]}
       profiles={[profile('af_bella', 'kokoro', 'Bella'), profile('am_adam', 'kokoro', 'Adam')]}
       selectedProfileId='af_bella'
+      installs={{}}
+      verifications={{}}
       onSelect={onSelect}
       onPreview={onPreview}
       onInstall={onInstall}
+      onVerify={onVerify}
+      onBrowseSpeakers={onBrowseSpeakers}
+      {...overrides}
     />
   );
 
-  return { onSelect, onPreview, onInstall };
+  return { onSelect, onPreview, onInstall, onVerify, onBrowseSpeakers };
 };
 
 describe('VoicePicker', () => {
@@ -116,12 +123,74 @@ describe('VoicePicker', () => {
         models={[model('empty', true)]}
         profiles={[]}
         selectedProfileId=''
+        installs={{}}
+        verifications={{}}
         onSelect={vi.fn()}
         onPreview={vi.fn()}
         onInstall={vi.fn()}
+        onVerify={vi.fn()}
+        onBrowseSpeakers={vi.fn()}
       />
     );
 
     expect(screen.queryByTestId('voice-group-empty')).toBeNull();
+  });
+
+  it('cannot be pressed twice while a download is running', () => {
+    const { onInstall } = setup(false, {
+      installs: { kokoro: { phase: 'downloading', downloadedBytes: 5_242_880, totalBytes: 10_485_760 } },
+    });
+
+    const button = screen.getByTestId('voice-model-install-kokoro') as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+
+    fireEvent.click(button);
+    expect(onInstall).not.toHaveBeenCalled();
+  });
+
+  it('shows how far a download has got, so an install does not look stalled', () => {
+    setup(false, {
+      installs: { kokoro: { phase: 'downloading', downloadedBytes: 5_242_880, totalBytes: 10_485_760 } },
+    });
+
+    expect(screen.getByTestId('voice-model-install-kokoro').textContent).toContain('50%');
+    expect(screen.getByTestId('voice-model-install-kokoro').textContent).toContain('5/10MB');
+  });
+
+  it('offers a retry after a failed download instead of spinning for ever', () => {
+    const { onInstall } = setup(false, {
+      installs: { kokoro: { phase: 'failed', downloadedBytes: 0, totalBytes: null, errorCode: 'network' } },
+    });
+
+    const button = screen.getByTestId('voice-model-install-kokoro') as HTMLButtonElement;
+    expect(button.disabled).toBe(false);
+
+    fireEvent.click(button);
+    expect(onInstall).toHaveBeenCalledWith('kokoro');
+  });
+
+  it('checks a model on request and reports what the check found', () => {
+    const { onVerify } = setup(true, { verifications: { kokoro: 'usable' } });
+
+    expect(screen.getByTestId('voice-ok-kokoro')).toBeTruthy();
+
+    fireEvent.click(screen.getByTestId('voice-model-verify-kokoro'));
+    expect(onVerify).toHaveBeenCalledWith('kokoro');
+  });
+
+  it('says plainly when a check finds the model unusable', () => {
+    setup(true, { verifications: { kokoro: 'unusable' } });
+
+    expect(screen.getByTestId('voice-bad-kokoro')).toBeTruthy();
+  });
+
+  it('points at the full voice list for a model that carries more than one', () => {
+    const { onBrowseSpeakers } = setup();
+
+    fireEvent.click(screen.getByTestId('voice-model-hint-kokoro'));
+    expect(onBrowseSpeakers).toHaveBeenCalledWith('kokoro');
+
+    fireEvent.click(screen.getByTestId('voice-browse-kokoro'));
+    expect(onBrowseSpeakers).toHaveBeenCalledTimes(2);
   });
 });

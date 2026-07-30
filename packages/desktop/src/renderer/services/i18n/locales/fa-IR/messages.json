@@ -67,5 +67,9 @@
     "yesAlwaysAllowTool": "بله، همیشه اجازه ابزار «{{toolName}}» از سرور «{{serverName}}» بده",
     "yesAlwaysAllowServer": "بله، همیشه اجازه تمام ابزارها از سرور «{{serverName}}» بده",
     "no": "خیر (esc)"
-  }
+  },
+  "speakAloud": "خواندن با صدای بلند",
+  "speakStop": "توقف خواندن",
+  "speakNeedsVoice": "برای خواندن پاسخ‌ها با صدای بلند، از تنظیمات ← صدا یک صدا نصب کنید.",
+  "speakFailed": "خواندن این پیام با صدای بلند ممکن نشد."
 }

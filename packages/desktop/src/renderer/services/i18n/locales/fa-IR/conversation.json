@@ -462,7 +462,8 @@
     "voice": {
       "startTalk": "شروع گفتگو",
       "stopTalk": "توقف گفتگو",
-      "installNeeded": "ابتدا یک مدل گفتار نصب کنید"
+      "installNeeded": "ابتدا یک مدل گفتار نصب کنید",
+      "wakeArmed": "در انتظار «{{phrase}}» — برای صحبت فوری کلیک کنید"
     }
   },
   "sideQuestion": {

@@ -67,5 +67,9 @@
     "yesAlwaysAllowTool": "Evet, \"{{serverName}}\" sunucusundan \"{{toolName}}\" aracına her zaman izin ver",
     "yesAlwaysAllowServer": "Evet, \"{{serverName}}\" sunucusundaki tüm araçlara her zaman izin ver",
     "no": "Hayır (esc)"
-  }
+  },
+  "speakAloud": "Sesli oku",
+  "speakStop": "Okumayı durdur",
+  "speakNeedsVoice": "Yanıtların sesli okunması için Ayarlar → Ses bölümünden bir ses kur.",
+  "speakFailed": "Bu mesaj sesli okunamadı."
 }

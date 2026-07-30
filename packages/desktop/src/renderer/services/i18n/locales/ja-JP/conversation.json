@@ -462,7 +462,8 @@
     "voice": {
       "startTalk": "会話を開始",
       "stopTalk": "会話を停止",
-      "installNeeded": "先に音声モデルをインストールしてください"
+      "installNeeded": "先に音声モデルをインストールしてください",
+      "wakeArmed": "「{{phrase}}」を待機中 — クリックすればすぐ話せます"
     }
   },
   "sideQuestion": {

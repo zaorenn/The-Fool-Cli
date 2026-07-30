@@ -67,5 +67,9 @@
     "yesAlwaysAllowTool": "예, 서버 \"{{serverName}}\"의 도구 \"{{toolName}}\" 항상 허용",
     "yesAlwaysAllowServer": "예, 서버 \"{{serverName}}\"의 모든 도구 항상 허용",
     "no": "아니요 (esc)"
-  }
+  },
+  "speakAloud": "소리내어 읽기",
+  "speakStop": "읽기 중지",
+  "speakNeedsVoice": "답변을 읽어주려면 설정 → 음성에서 음성을 설치하세요.",
+  "speakFailed": "이 메시지를 읽어줄 수 없습니다."
 }

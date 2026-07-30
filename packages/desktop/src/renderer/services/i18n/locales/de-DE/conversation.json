@@ -463,7 +463,8 @@
     "voice": {
       "startTalk": "Sprechen starten",
       "stopTalk": "Sprechen beenden",
-      "installNeeded": "Installieren Sie zuerst ein Sprachmodell"
+      "installNeeded": "Installieren Sie zuerst ein Sprachmodell",
+      "wakeArmed": "Wartet auf „{{phrase}}“ — klicken, um sofort zu sprechen"
     }
   },
   "sideQuestion": {

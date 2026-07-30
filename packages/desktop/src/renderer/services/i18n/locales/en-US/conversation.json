@@ -462,7 +462,8 @@
     "voice": {
       "startTalk": "Start talking",
       "stopTalk": "Stop talking",
-      "installNeeded": "Install a speech model first"
+      "installNeeded": "Install a speech model first",
+      "wakeArmed": "Listening for “{{phrase}}” — click to talk now"
     }
   },
   "sideQuestion": {

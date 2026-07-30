@@ -67,5 +67,9 @@
     "yesAlwaysAllowTool": "Oui, toujours autoriser l'outil \"{{toolName}}\" du serveur \"{{serverName}}\"",
     "yesAlwaysAllowServer": "Oui, toujours autoriser tous les outils du serveur \"{{serverName}}\"",
     "no": "Non (Échap)"
-  }
+  },
+  "speakAloud": "Lire à voix haute",
+  "speakStop": "Arrêter la lecture",
+  "speakNeedsVoice": "Installez une voix dans Paramètres → Voix pour que les réponses soient lues à haute voix.",
+  "speakFailed": "Impossible de lire ce message à haute voix."
 }

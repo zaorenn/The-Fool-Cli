@@ -79,6 +79,45 @@ export class AudioPlaybackService {
     });
   }
 
+  /**
+   * Plays a short tone on the selected speaker.
+   *
+   * Picking a device from a list proves nothing on its own — this is how the
+   * user confirms that the device they chose is the one that actually sounds.
+   */
+  public async playTone(options: { frequencyHz?: number; durationMs?: number; volume?: number } = {}): Promise<void> {
+    const { frequencyHz = 440, durationMs = 400, volume = 0.2 } = options;
+
+    this.audioContext ??= new window.AudioContext() as RoutableAudioContext;
+    const context = this.audioContext;
+
+    await this.routeToSelectedDevice(context);
+    if (context.state === 'suspended') await context.resume();
+
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.frequency.value = frequencyHz;
+    // Ramped rather than switched, so the tone does not start with a click.
+    const now = context.currentTime;
+    const endsAt = now + durationMs / 1000;
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(Math.max(0, Math.min(1, volume)), now + 0.02);
+    gain.gain.linearRampToValueAtTime(0, endsAt);
+
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(now);
+    oscillator.stop(endsAt);
+
+    return new Promise((resolve) => {
+      oscillator.onended = () => {
+        oscillator.disconnect();
+        gain.disconnect();
+        resolve();
+      };
+    });
+  }
+
   public stop(): void {
     if (this.currentSource) {
       this.currentSource.stop();

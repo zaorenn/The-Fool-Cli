@@ -13,6 +13,7 @@ import { iconColors } from '@/renderer/styles/colors';
 import { Alert, Message, Tooltip } from '@arco-design/web-react';
 import { Copy } from '@icon-park/react';
 import classNames from 'classnames';
+import SpeakMessageButton from '@/renderer/components/chat/SpeakMessageButton';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { copyText } from '@/renderer/utils/ui/clipboard';
@@ -305,6 +306,9 @@ const MessageText: React.FC<{ message: IMessageText; showCopyRow?: boolean }> = 
             })}
           >
             {copyButton}
+            {/* Read the reply aloud. Only on model replies — there is nothing
+                useful in hearing your own message played back. */}
+            {!isUserMessage && <SpeakMessageButton text={message.content?.content ?? ''} />}
             {message.created_at && (
               <span className='text-12px text-t-secondary opacity-0 group-hover:opacity-100 transition-opacity select-none'>
                 {formatMessageTime(message.created_at)}

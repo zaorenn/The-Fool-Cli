@@ -462,7 +462,8 @@
     "voice": {
       "startTalk": "대화 시작",
       "stopTalk": "대화 중지",
-      "installNeeded": "먼저 음성 모델을 설치하세요"
+      "installNeeded": "먼저 음성 모델을 설치하세요",
+      "wakeArmed": "“{{phrase}}” 대기 중 — 지금 말하려면 클릭"
     }
   },
   "sideQuestion": {

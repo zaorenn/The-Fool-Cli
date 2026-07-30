@@ -447,7 +447,8 @@
     "voice": {
       "startTalk": "Konuşmayı başlat",
       "stopTalk": "Konuşmayı durdur",
-      "installNeeded": "Önce bir konuşma modeli kurun"
+      "installNeeded": "Önce bir konuşma modeli kurun",
+      "wakeArmed": "“{{phrase}}” için dinliyor — hemen konuşmak için tıkla"
     }
   },
   "sideQuestion": {
