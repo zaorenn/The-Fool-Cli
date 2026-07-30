@@ -1,10 +1,168 @@
 <svg viewBox="-18 -18 58 58" width="500" height="500" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs><style>
-    .jg-body { transform-origin:11px 13px; animation:jg-lean .8s ease-in-out infinite; }
+      /* ==PET-CORE== */
+      /* Anchor transforms at each shape's own box so the numbers read as intent
+         rather than as viewBox arithmetic. */
+      .pet-body,
+      .pet-head,
+      .pet-hat,
+      .pet-eye,
+      .pet-pupil,
+      .pet-lid,
+      .pet-shadow,
+      .pet-arm-l,
+      .pet-arm-r {
+        transform-box: fill-box;
+      }
+
+      /* Breath scales from the feet, never from the centre. */
+      .pet-body {
+        transform-origin: 50% 100%;
+        animation: pet-breathe 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      }
+
+      /* A slow lean, offset from the breath so the two never sync up. */
+      .pet-lean {
+        animation: pet-sway 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+      }
+
+      /* The head is carried, it does not drive: it follows a beat late. */
+      .pet-head {
+        transform-origin: 50% 100%;
+        animation: pet-bob 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+        animation-delay: 0.22s;
+      }
+
+      /* The bells trail further behind again. */
+      .pet-hat {
+        transform-origin: 50% 100%;
+        animation: pet-hat-swing 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+        animation-delay: 0.38s;
+      }
+
+      /* The lid is the blink. In its own group so the pupil underneath can go on
+         tracking the cursor while the eye is shut. */
+      .pet-lid {
+        transform-origin: 50% 0%;
+        animation: pet-blink 4.3s cubic-bezier(0.3, 0, 0.2, 1) infinite;
+      }
+
+      /* Involuntary flicks between rests, as eyes actually move. */
+      .pet-saccade {
+        transform-origin: 50% 50%;
+        animation: pet-saccade 11s steps(1, end) infinite;
+      }
+
+      .pet-shine {
+        animation: pet-shine 4.3s ease-in-out infinite;
+      }
+
+      /* Tied to the breath, so contact with the ground stays believable. */
+      .pet-shadow {
+        transform-origin: 50% 50%;
+        animation: pet-shadow 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      }
+
+      .pet-arm-l {
+        transform-origin: 100% 0%;
+        animation: pet-arm-l 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+        animation-delay: 0.3s;
+      }
+
+      .pet-arm-r {
+        transform-origin: 0% 0%;
+        animation: pet-arm-r 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+        animation-delay: 0.46s;
+      }
+
+      /* The rise is quicker than the fall, like a real breath. */
+      @keyframes pet-breathe {
+        0% { transform: scale(1, 1) translateY(0); }
+        38% { transform: scale(0.988, 1.014) translateY(-0.16px); }
+        100% { transform: scale(1, 1) translateY(0); }
+      }
+
+      @keyframes pet-sway {
+        0%, 100% { transform: rotate(0deg) translateX(0); }
+        27% { transform: rotate(1.15deg) translateX(0.1px); }
+        52% { transform: rotate(0.1deg) translateX(0); }
+        78% { transform: rotate(-1.15deg) translateX(-0.1px); }
+      }
+
+      @keyframes pet-bob {
+        0% { transform: translateY(0) rotate(0deg); }
+        38% { transform: translateY(-0.22px) rotate(-0.5deg); }
+        100% { transform: translateY(0) rotate(0deg); }
+      }
+
+      @keyframes pet-hat-swing {
+        0%, 100% { transform: rotate(0deg); }
+        27% { transform: rotate(3.4deg); }
+        55% { transform: rotate(-0.6deg); }
+        80% { transform: rotate(-3.4deg); }
+      }
+
+      /* Down fast, up slower, then a second flick: the shape of a real blink
+         rather than an on/off frame. */
+      @keyframes pet-blink {
+        0%, 88% { transform: scaleY(0); }
+        90.5% { transform: scaleY(1); }
+        93% { transform: scaleY(0.08); }
+        95.5% { transform: scaleY(1); }
+        98% { transform: scaleY(0); }
+      }
+
+      @keyframes pet-saccade {
+        0%, 34% { transform: translate(0, 0); }
+        36%, 55% { transform: translate(0.42px, -0.12px); }
+        57%, 72% { transform: translate(-0.36px, 0.08px); }
+        74%, 100% { transform: translate(0, 0); }
+      }
+
+      @keyframes pet-shine {
+        0%, 100% { transform: translate(0, 0); opacity: 0.9; }
+        45% { transform: translate(0.12px, 0.06px); opacity: 0.72; }
+      }
+
+      @keyframes pet-shadow {
+        0% { transform: scaleX(1); opacity: 0.34; }
+        38% { transform: scaleX(0.955); opacity: 0.26; }
+        100% { transform: scaleX(1); opacity: 0.34; }
+      }
+
+      @keyframes pet-arm-l {
+        0%, 100% { transform: rotate(0deg); }
+        27% { transform: rotate(-5deg); }
+        78% { transform: rotate(4deg); }
+      }
+
+      @keyframes pet-arm-r {
+        0%, 100% { transform: rotate(0deg); }
+        27% { transform: rotate(5deg); }
+        78% { transform: rotate(-4deg); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .pet-body,
+        .pet-lean,
+        .pet-head,
+        .pet-hat,
+        .pet-lid,
+        .pet-saccade,
+        .pet-shine,
+        .pet-shadow,
+        .pet-arm-l,
+        .pet-arm-r {
+          animation: none;
+        }
+      }
+      /* ==/PET-CORE== */
+
+    .pet-body { transform-origin:11px 13px; animation:pet-breathe 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite, jg-lean .8s ease-in-out infinite; }
     .jg-ba { animation:jg-casc 2.4s ease-in-out infinite; animation-delay:0s; }
     .jg-bb { animation:jg-casc 2.4s ease-in-out infinite; animation-delay:-.8s; }
     .jg-bc { animation:jg-casc 2.4s ease-in-out infinite; animation-delay:-1.6s; }
-    .jg-shadow { transform-origin:11px 22px; animation:jg-shadow .8s ease-in-out infinite; }
+    .pet-shadow { transform-origin:11px 22px; animation:pet-shadow 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite, juggling-shadow .8s ease-in-out infinite; }
     @keyframes jg-casc {
       0%  {transform:translate(3px,18px) scale(1.1)}
       15% {transform:translate(5px,6px) scale(.9)}
@@ -15,12 +173,19 @@
       100%{transform:translate(19px,18px) scale(1.1)}
     }
     @keyframes jg-lean { 0%{transform:rotate(-4deg) scaleX(1.02)} 50%{transform:rotate(4deg) translateY(-1px) scaleX(.98)} 100%{transform:rotate(-4deg) scaleX(1.02)} }
-    @keyframes jg-shadow { 0%,100%{transform:scaleX(1);opacity:.3} 50%{transform:scaleX(.9);opacity:.2} }
-  </style></defs>
+    @keyframes juggling-shadow { 0%,100%{transform:scaleX(1);opacity:.3} 50%{transform:scaleX(.9);opacity:.2} }
+  </style>
+    <clipPath id="juggling-head-clip">
+      <rect x="5" y="7" width="12" height="12" rx="6"/>
+    </clipPath>
+    <clipPath id="juggling-eye-clip">
+      <circle cx="11" cy="12" r="1.35"/>
+    </clipPath>
+  </defs>
 
   <!-- 底座 -->
   <rect x="7" y="21" width="8" height="1" rx="0.3" fill="#D9D9D9"/>
-  <ellipse class="jg-shadow" cx="11" cy="22" rx="6" ry="0.6" fill="#c0c0c0"/>
+  <ellipse class="pet-shadow" cx="11" cy="22" rx="6" ry="0.6" fill="#c0c0c0"/>
 
   <!-- 三彩球（cascade 轨迹，错开 0.8s） -->
   <!-- 绿球 -->
@@ -28,7 +193,7 @@
   <!-- 黄球 -->
   <circle class="jg-bb" cx="0" cy="0" r="1.8" fill="#FEBE06"/>
 
-  <g class="jg-body">
+  <g class="pet-body">
     <!-- 左手（大，偏下） -->
     <rect x="2" y="12" width="3" height="3" rx="1.5" fill="#f5f1e8" fill-opacity="0.7"/>
     <!-- 身体 -->
@@ -37,9 +202,23 @@
     <g class="pet-hat" transform="translate(11.41 5.95) rotate(130.8)"><path d="M-0.32 -0.26 C-1.45 -1.45 -3.02 -2.08 -3.81 -4.05 C-3.42 -1.56 -2.63 0.52 -1.63 0.62 C-1.05 0.62 -0.58 0.31 -0.32 -0.26 Z" fill="#c4123f"/><path d="M0.32 -0.26 C1.45 -1.45 3.02 -2.08 3.81 -4.05 C3.42 -1.56 2.63 0.52 1.63 0.62 C1.05 0.62 0.58 0.31 0.32 -0.26 Z" fill="#c4123f"/><path d="M-1.52 0.52 C-1.05 -2.85 1.05 -2.85 1.52 0.52 Z" fill="#c4123f"/><path d="M0 -5.29 C-0.79 -3.74 -0.89 -1.04 -0.53 0.52 L0.53 0.52 C0.89 -1.04 0.79 -3.74 0 -5.29 Z" fill="#c4123f"/><circle cx="-3.94" cy="-4.15" r="0.88" fill="#c4123f"/><circle cx="3.94" cy="-4.15" r="0.88" fill="#c4123f"/><circle cx="0" cy="-5.81" r="0.79" fill="#c4123f"/></g>
       <rect x="12" y="6" width="1" height="1" fill="#981033"/>
     <!-- 眼睛（单圆眼） -->
-    <rect x="10" y="11" width="2" height="2" rx="1" fill="black"/>
-    <!-- scar — same spot on the face in every state: head centre + (2.15, -1). -->
-    <path d="M13.15 9.95 C13.55 11.25 13.55 12.75 13.15 14.05 C12.85 12.75 12.85 11.25 13.15 9.95 Z" fill="#c4123f"/>
+    
+    <g class="pet-eye" clip-path="url(#juggling-head-clip)">
+      <g class="pet-pupil">
+        <g class="pet-saccade">
+          <g clip-path="url(#juggling-eye-clip)">
+            <circle cx="11" cy="12" r="1.15" fill="#111827"/>
+            <circle class="pet-shine" cx="10.62" cy="11.58" r="0.34" fill="#f5f1e8" opacity="0.9"/>
+            <circle cx="11.42" cy="12.50" r="0.18" fill="#f5f1e8" opacity="0.35"/>
+            <rect class="pet-lid" x="9.60" y="10.60" width="2.8" height="2.8" fill="#f5f1e8"/>
+          </g>
+          <!-- scar: just past the eye, and it rides with it -->
+          <path d="M13.35 9.60 C13.85 10.90 13.80 13.10 13.30 14.40 C13.00 13.05 13.02 10.95 13.35 9.60 Z" fill="#c4123f"/>
+          <path d="M13.00 10.55 L13.90 10.90" stroke="#981033" stroke-width="0.22" stroke-linecap="round" opacity="0.85"/>
+          <path d="M13.00 13.20 L13.85 13.50" stroke="#981033" stroke-width="0.22" stroke-linecap="round" opacity="0.85"/>
+        </g>
+      </g>
+    </g>
     <!-- 弧线笑嘴 -->
     <path d="M9 14C9.95144 15.4272 12.0486 15.4272 13 14" stroke="black" stroke-linecap="round"/>
     <!-- 右手（小，右侧） -->

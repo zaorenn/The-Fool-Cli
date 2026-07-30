@@ -1,13 +1,171 @@
 <svg viewBox="-18 -18 58 58" width="500" height="500" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <style>
+      /* ==PET-CORE== */
+      /* Anchor transforms at each shape's own box so the numbers read as intent
+         rather than as viewBox arithmetic. */
+      .pet-body,
+      .pet-head,
+      .pet-hat,
+      .pet-eye,
+      .pet-pupil,
+      .pet-lid,
+      .pet-shadow,
+      .pet-arm-l,
+      .pet-arm-r {
+        transform-box: fill-box;
+      }
+
+      /* Breath scales from the feet, never from the centre. */
+      .pet-body {
+        transform-origin: 50% 100%;
+        animation: pet-breathe 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      }
+
+      /* A slow lean, offset from the breath so the two never sync up. */
+      .pet-lean {
+        animation: pet-sway 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+      }
+
+      /* The head is carried, it does not drive: it follows a beat late. */
+      .pet-head {
+        transform-origin: 50% 100%;
+        animation: pet-bob 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+        animation-delay: 0.22s;
+      }
+
+      /* The bells trail further behind again. */
+      .pet-hat {
+        transform-origin: 50% 100%;
+        animation: pet-hat-swing 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+        animation-delay: 0.38s;
+      }
+
+      /* The lid is the blink. In its own group so the pupil underneath can go on
+         tracking the cursor while the eye is shut. */
+      .pet-lid {
+        transform-origin: 50% 0%;
+        animation: pet-blink 4.3s cubic-bezier(0.3, 0, 0.2, 1) infinite;
+      }
+
+      /* Involuntary flicks between rests, as eyes actually move. */
+      .pet-saccade {
+        transform-origin: 50% 50%;
+        animation: pet-saccade 11s steps(1, end) infinite;
+      }
+
+      .pet-shine {
+        animation: pet-shine 4.3s ease-in-out infinite;
+      }
+
+      /* Tied to the breath, so contact with the ground stays believable. */
+      .pet-shadow {
+        transform-origin: 50% 50%;
+        animation: pet-shadow 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      }
+
+      .pet-arm-l {
+        transform-origin: 100% 0%;
+        animation: pet-arm-l 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+        animation-delay: 0.3s;
+      }
+
+      .pet-arm-r {
+        transform-origin: 0% 0%;
+        animation: pet-arm-r 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+        animation-delay: 0.46s;
+      }
+
+      /* The rise is quicker than the fall, like a real breath. */
+      @keyframes pet-breathe {
+        0% { transform: scale(1, 1) translateY(0); }
+        38% { transform: scale(0.988, 1.014) translateY(-0.16px); }
+        100% { transform: scale(1, 1) translateY(0); }
+      }
+
+      @keyframes pet-sway {
+        0%, 100% { transform: rotate(0deg) translateX(0); }
+        27% { transform: rotate(1.15deg) translateX(0.1px); }
+        52% { transform: rotate(0.1deg) translateX(0); }
+        78% { transform: rotate(-1.15deg) translateX(-0.1px); }
+      }
+
+      @keyframes pet-bob {
+        0% { transform: translateY(0) rotate(0deg); }
+        38% { transform: translateY(-0.22px) rotate(-0.5deg); }
+        100% { transform: translateY(0) rotate(0deg); }
+      }
+
+      @keyframes pet-hat-swing {
+        0%, 100% { transform: rotate(0deg); }
+        27% { transform: rotate(3.4deg); }
+        55% { transform: rotate(-0.6deg); }
+        80% { transform: rotate(-3.4deg); }
+      }
+
+      /* Down fast, up slower, then a second flick: the shape of a real blink
+         rather than an on/off frame. */
+      @keyframes pet-blink {
+        0%, 88% { transform: scaleY(0); }
+        90.5% { transform: scaleY(1); }
+        93% { transform: scaleY(0.08); }
+        95.5% { transform: scaleY(1); }
+        98% { transform: scaleY(0); }
+      }
+
+      @keyframes pet-saccade {
+        0%, 34% { transform: translate(0, 0); }
+        36%, 55% { transform: translate(0.42px, -0.12px); }
+        57%, 72% { transform: translate(-0.36px, 0.08px); }
+        74%, 100% { transform: translate(0, 0); }
+      }
+
+      @keyframes pet-shine {
+        0%, 100% { transform: translate(0, 0); opacity: 0.9; }
+        45% { transform: translate(0.12px, 0.06px); opacity: 0.72; }
+      }
+
+      @keyframes pet-shadow {
+        0% { transform: scaleX(1); opacity: 0.34; }
+        38% { transform: scaleX(0.955); opacity: 0.26; }
+        100% { transform: scaleX(1); opacity: 0.34; }
+      }
+
+      @keyframes pet-arm-l {
+        0%, 100% { transform: rotate(0deg); }
+        27% { transform: rotate(-5deg); }
+        78% { transform: rotate(4deg); }
+      }
+
+      @keyframes pet-arm-r {
+        0%, 100% { transform: rotate(0deg); }
+        27% { transform: rotate(5deg); }
+        78% { transform: rotate(-4deg); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .pet-body,
+        .pet-lean,
+        .pet-head,
+        .pet-hat,
+        .pet-lid,
+        .pet-saccade,
+        .pet-shine,
+        .pet-shadow,
+        .pet-arm-l,
+        .pet-arm-r {
+          animation: none;
+        }
+      }
+      /* ==/PET-CORE== */
+
       .think-body {
         transform-origin: 11px 12px;
         animation: think-breathe 3.2s ease-in-out infinite;
       }
-      .thinking-shadow {
+      .pet-shadow {
         transform-origin: 14px 26.5px;
-        animation: thinking-shadow-pulse 3.2s ease-in-out infinite;
+        animation:pet-shadow 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite, pet-shadow-pulse 3.2s ease-in-out infinite;
       }
       .think-bubble { animation: think-bubble-float 3s ease-in-out infinite; }
       .tpx1 { animation: think-dot 1.8s infinite 0s; }
@@ -39,6 +197,13 @@
         50%     { transform: scaleX(0.96); opacity: 0.28; }
       }
     </style>
+  
+    <clipPath id="thinking-head-clip">
+      <rect x="8" y="11" width="12" height="12" rx="6"/>
+    </clipPath>
+    <clipPath id="thinking-eye-clip">
+      <circle cx="14" cy="16" r="1.35"/>
+    </clipPath>
   </defs>
 
   <!-- 完全使用设计稿原始坐标，不做任何偏移 -->
@@ -49,10 +214,10 @@
   <rect class="tgl3" x="5"  y="12" width="1.2" height="1.2" rx="0.2" fill="#94BDFF"/>
 
   <!-- shadow — 统一样式 -->
-  <ellipse class="thinking-shadow" cx="14" cy="26.5" rx="4" ry="0.6" fill="#c0c0c0"/>
+  <ellipse class="pet-shadow" cx="14" cy="26.5" rx="4" ry="0.6" fill="#c0c0c0"/>
   <!-- 去掉设计稿里的 D9D9D9 阴影条 -->
 
-  <g class="think-body">
+  <g class="think-body pet-body">
     <!-- 左手：设计稿原始 ellipse path -->
     <path d="M8.9418 18.0631C8.35737 17.476 7.40762 17.4738 6.82048 18.0582C6.23334 18.6426 6.23115 19.5924 6.81558 20.1795C7.40001 20.7667 8.34975 20.7689 8.93689 20.1844C9.52403 19.6 9.52623 18.6502 8.9418 18.0631Z" fill="#f5f1e8" fill-opacity="0.7"/>
     <!-- 身体：设计稿原始 rect -->
@@ -65,10 +230,23 @@
     <!-- 白色眼睛块 -->
     <rect x="8" y="8" width="2" height="3" fill="white"/>
     <!-- 嘟嘴圆点 -->
-    <rect x="13" y="15" width="2" height="2" rx="1" fill="black"/>
-    <!-- scar — same spot on the face in every state: head centre + (2.15, -1).
-         This head is mirrored into x 8..20, y 11..23, so its centre is (14, 17). -->
-    <path d="M16.15 13.95 C16.55 15.25 16.55 16.75 16.15 18.05 C15.85 16.75 15.85 15.25 16.15 13.95 Z" fill="#c4123f"/>
+    
+    <g class="pet-eye" clip-path="url(#thinking-head-clip)">
+      <g class="pet-pupil">
+        <g class="pet-saccade">
+          <g clip-path="url(#thinking-eye-clip)">
+            <circle cx="14" cy="16" r="1.15" fill="#111827"/>
+            <circle class="pet-shine" cx="13.62" cy="15.58" r="0.34" fill="#f5f1e8" opacity="0.9"/>
+            <circle cx="14.42" cy="16.50" r="0.18" fill="#f5f1e8" opacity="0.35"/>
+            <rect class="pet-lid" x="12.60" y="14.60" width="2.8" height="2.8" fill="#f5f1e8"/>
+          </g>
+          <!-- scar: just past the eye, and it rides with it -->
+          <path d="M16.35 13.60 C16.85 14.90 16.80 17.10 16.30 18.40 C16.00 17.05 16.02 14.95 16.35 13.60 Z" fill="#c4123f"/>
+          <path d="M16.00 14.55 L16.90 14.90" stroke="#981033" stroke-width="0.22" stroke-linecap="round" opacity="0.85"/>
+          <path d="M16.00 17.20 L16.85 17.50" stroke="#981033" stroke-width="0.22" stroke-linecap="round" opacity="0.85"/>
+        </g>
+      </g>
+    </g>
     <!-- 嘴弧 -->
     <path d="M13 18.5C12.1198 18.72 11.8162 19.8162 12.4577 20.4577L12.5 20.5" stroke="black" stroke-linecap="round"/>
   </g>

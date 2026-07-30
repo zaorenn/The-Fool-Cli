@@ -1,6 +1,35 @@
-<svg viewBox="-18 -18 58 58" width="500" height="500" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs><style>
-      /* ==PET-CORE== */
+/**
+ * @license
+ * Copyright 2026 AionUi (aionui.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * Keeps the shared animation language identical across every pet state.
+ *
+ * The states are hand-drawn scenes — a laptop, a broom, a crate — so they are
+ * not generated. What they must share is the *motion*: the same breath, the same
+ * blink, the same secondary sway in the hat, or the character stops reading as
+ * one creature when the state changes. That core lives here and is written into
+ * each file between the two markers, so a change to the motion is a change in
+ * one place.
+ *
+ *   node scripts/sync-pet-animation-core.mjs          # write
+ *   node scripts/sync-pet-animation-core.mjs --check  # verify only (CI-friendly)
+ */
+
+import { readdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+
+const STATES_DIR = path.resolve(import.meta.dirname, '..', 'public', 'pet-states');
+const OPEN = '/* ==PET-CORE== */';
+const CLOSE = '/* ==/PET-CORE== */';
+
+/**
+ * Durations are deliberately not multiples of each other (3.7 / 6.1 / 4.3 / 11)
+ * so the loop never lands on an obvious beat.
+ */
+export const PET_CORE = `
       /* Anchor transforms at each shape's own box so the numbers read as intent
          rather than as viewBox arithmetic. */
       .pet-body,
@@ -156,98 +185,58 @@
           animation: none;
         }
       }
-      /* ==/PET-CORE== */
+`;
 
-    .bd-all {
-      transform-origin: 11px 17px;
-      animation: bd-bounce 0.55s cubic-bezier(0.36,0.07,0.19,0.97) infinite;
-    }
-    .bd-gear {
-      transform-origin: 19px 8px;
-      animation: bd-spin 2s linear infinite;
-    }
-    .bd-block-l {
-      transform-origin: 4px 16px;
-      animation: bd-wobble-l 0.55s ease-in-out infinite alternate;
-    }
-    .bd-block-r {
-      transform-origin: 18px 16px;
-      animation: bd-wobble-r 0.55s ease-in-out infinite alternate;
-    }
-    .bd-spark1 { animation: bd-spark 1s ease-out infinite; animation-delay: 0s; }
-    .bd-spark2 { animation: bd-spark 1s ease-out infinite; animation-delay: 0.33s; }
-    .bd-spark3 { animation: bd-spark 1s ease-out infinite; animation-delay: 0.66s; }
-    .bd-shadow {
-      transform-origin: 11px 25px;
-      animation: bd-shadow 0.55s cubic-bezier(0.36,0.07,0.19,0.97) infinite;
-    }
-    @keyframes bd-bounce {
-      0%,100% { transform: translateY(0) scaleY(1) scaleX(1); }
-      30%     { transform: translateY(-3px) scaleY(1.06) scaleX(0.95); }
-      60%     { transform: translateY(1.5px) scaleY(0.94) scaleX(1.05); }
-    }
-    @keyframes bd-spin {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
-    @keyframes bd-wobble-l {
-      from { transform: rotate(-10deg) translateY(0); }
-      to   { transform: rotate(5deg) translateY(-2px); }
-    }
-    @keyframes bd-wobble-r {
-      from { transform: rotate(10deg) translateY(-2px); }
-      to   { transform: rotate(-5deg) translateY(0); }
-    }
-    @keyframes bd-spark {
-      0%   { transform: translate(0,0) scale(1); opacity: 1; }
-      100% { transform: translate(3px,-6px) scale(0.2); opacity: 0; }
-    }
-    @keyframes bd-shadow {
-      0%,100% { transform: scaleX(1); opacity: 0.3; }
-      30%     { transform: scaleX(0.8); opacity: 0.15; }
-      60%     { transform: scaleX(1.1); opacity: 0.35; }
-    }
-  </style></defs>
+const CORE_BLOCK = `${OPEN}${PET_CORE}      ${CLOSE}`;
 
-  <ellipse class="bd-shadow" cx="11" cy="25" rx="7" ry="0.75" fill="#c0c0c0"/>
+/** Replaces the marked block, or reports the file as unmarked. */
+const withCore = (svg) => {
+  const start = svg.indexOf(OPEN);
+  const end = svg.indexOf(CLOSE);
+  if (start === -1 || end === -1) return null;
+  return `${svg.slice(0, start)}${CORE_BLOCK}${svg.slice(end + CLOSE.length)}`;
+};
 
-  <g class="bd-all pet-body">
-    <!-- 齿轮（右上角旋转） -->
-    <g class="bd-gear">
-      <circle cx="19" cy="8" r="3" fill="none" stroke="#d72b55" stroke-width="1.2"/>
-      <circle cx="19" cy="8" r="1.2" fill="#d72b55"/>
-      <!-- 齿 -->
-      <rect x="18.3" y="4.5" width="1.4" height="1.2" rx="0.3" fill="#d72b55"/>
-      <rect x="18.3" y="10.3" width="1.4" height="1.2" rx="0.3" fill="#d72b55"/>
-      <rect x="15.5" y="7.3" width="1.2" height="1.4" rx="0.3" fill="#d72b55"/>
-      <rect x="21.3" y="7.3" width="1.2" height="1.4" rx="0.3" fill="#d72b55"/>
-    </g>
+const main = async () => {
+  const checkOnly = process.argv.includes('--check');
+  const files = (await readdir(STATES_DIR)).filter((name) => name.endsWith('.svg')).sort();
 
-    <!-- 火花 -->
-    <rect class="bd-spark1" x="17" y="12" width="1" height="1" rx="0.3" fill="#981033"/>
-    <rect class="bd-spark2" x="19" y="14" width="0.8" height="0.8" rx="0.2" fill="#FF9500"/>
-    <rect class="bd-spark3" x="15" y="13" width="0.7" height="0.7" rx="0.2" fill="#981033"/>
+  const unmarked = [];
+  const stale = [];
+  let written = 0;
 
-    <!-- 左手拿积木 -->
-    <g class="bd-block-l">
-      <rect x="1" y="13" width="4" height="4" rx="0.8" fill="#7c91e8"/>
-      <rect x="2.5" y="11.8" width="1" height="1.5" rx="0.4" fill="#7c91e8"/>
-    </g>
-    <!-- 右手拿积木 -->
-    <g class="bd-block-r">
-      <rect x="17" y="13" width="4" height="4" rx="0.8" fill="#e87c7c"/>
-      <rect x="18.5" y="11.8" width="1" height="1.5" rx="0.4" fill="#e87c7c"/>
-    </g>
+  for (const name of files) {
+    const file = path.join(STATES_DIR, name);
+    const svg = await readFile(file, 'utf8');
+    const next = withCore(svg);
 
-    <!-- 身体 -->
-    <rect x="5" y="6" width="12" height="12" rx="6" fill="#f5f1e8"/>
-    <!-- 帽子 -->
-    <g class="pet-hat" transform="translate(11.00 7.00) rotate(0.0)"><path d="M-0.48 -0.30 C-2.20 -1.68 -4.60 -2.40 -5.80 -4.68 C-5.20 -1.80 -4.00 0.60 -2.48 0.72 C-1.60 0.72 -0.88 0.36 -0.48 -0.30 Z" fill="#c4123f"/><path d="M0.48 -0.30 C2.20 -1.68 4.60 -2.40 5.80 -4.68 C5.20 -1.80 4.00 0.60 2.48 0.72 C1.60 0.72 0.88 0.36 0.48 -0.30 Z" fill="#c4123f"/><path d="M-2.32 0.60 C-1.60 -3.30 1.60 -3.30 2.32 0.60 Z" fill="#c4123f"/><path d="M0 -6.12 C-1.20 -4.32 -1.36 -1.20 -0.80 0.60 L0.80 0.60 C1.36 -1.20 1.20 -4.32 0 -6.12 Z" fill="#c4123f"/><circle cx="-6.00" cy="-4.80" r="1.02" fill="#c4123f"/><circle cx="6.00" cy="-4.80" r="1.02" fill="#c4123f"/><circle cx="0" cy="-6.72" r="0.92" fill="#c4123f"/></g>
-    <!-- 眼睛（开心眯眼，专注状） -->
-    <path d="M9 11 Q11 9.5 13 11" stroke="#111827" stroke-width="1.2" stroke-linecap="round" fill="none"/>
-    <!-- scar — same spot on the face in every state: head centre + (2.15, -1). -->
-    <path d="M13.15 8.95 C13.55 10.25 13.55 11.75 13.15 13.05 C12.85 11.75 12.85 10.25 13.15 8.95 Z" fill="#c4123f"/>
-    <!-- 嘴巴（咬牙专注） -->
-    <path d="M9 14 Q11 16 13 14" stroke="#111827" stroke-width="0.9" stroke-linecap="round" fill="none"/>
-  </g>
-</svg>
+    if (next === null) {
+      unmarked.push(name);
+      continue;
+    }
+    if (next === svg) continue;
+
+    stale.push(name);
+    if (!checkOnly) {
+      await writeFile(file, next, 'utf8');
+      written += 1;
+    }
+  }
+
+  if (unmarked.length > 0) {
+    console.log(`States without the core markers (not yet rebuilt): ${unmarked.join(', ')}`);
+  }
+
+  if (checkOnly) {
+    if (stale.length > 0) {
+      console.error(`Animation core out of sync in: ${stale.join(', ')}`);
+      process.exit(1);
+    }
+    console.log(`Animation core in sync across ${files.length - unmarked.length} states.`);
+    return;
+  }
+
+  console.log(`Animation core written to ${written} state(s); ${files.length - unmarked.length} carry it.`);
+};
+
+await main();

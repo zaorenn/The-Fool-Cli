@@ -1,13 +1,171 @@
 <svg viewBox="-18 -18 58 58" width="500" height="500" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <style>
+      /* ==PET-CORE== */
+      /* Anchor transforms at each shape's own box so the numbers read as intent
+         rather than as viewBox arithmetic. */
+      .pet-body,
+      .pet-head,
+      .pet-hat,
+      .pet-eye,
+      .pet-pupil,
+      .pet-lid,
+      .pet-shadow,
+      .pet-arm-l,
+      .pet-arm-r {
+        transform-box: fill-box;
+      }
+
+      /* Breath scales from the feet, never from the centre. */
+      .pet-body {
+        transform-origin: 50% 100%;
+        animation: pet-breathe 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      }
+
+      /* A slow lean, offset from the breath so the two never sync up. */
+      .pet-lean {
+        animation: pet-sway 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+      }
+
+      /* The head is carried, it does not drive: it follows a beat late. */
+      .pet-head {
+        transform-origin: 50% 100%;
+        animation: pet-bob 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+        animation-delay: 0.22s;
+      }
+
+      /* The bells trail further behind again. */
+      .pet-hat {
+        transform-origin: 50% 100%;
+        animation: pet-hat-swing 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+        animation-delay: 0.38s;
+      }
+
+      /* The lid is the blink. In its own group so the pupil underneath can go on
+         tracking the cursor while the eye is shut. */
+      .pet-lid {
+        transform-origin: 50% 0%;
+        animation: pet-blink 4.3s cubic-bezier(0.3, 0, 0.2, 1) infinite;
+      }
+
+      /* Involuntary flicks between rests, as eyes actually move. */
+      .pet-saccade {
+        transform-origin: 50% 50%;
+        animation: pet-saccade 11s steps(1, end) infinite;
+      }
+
+      .pet-shine {
+        animation: pet-shine 4.3s ease-in-out infinite;
+      }
+
+      /* Tied to the breath, so contact with the ground stays believable. */
+      .pet-shadow {
+        transform-origin: 50% 50%;
+        animation: pet-shadow 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      }
+
+      .pet-arm-l {
+        transform-origin: 100% 0%;
+        animation: pet-arm-l 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+        animation-delay: 0.3s;
+      }
+
+      .pet-arm-r {
+        transform-origin: 0% 0%;
+        animation: pet-arm-r 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+        animation-delay: 0.46s;
+      }
+
+      /* The rise is quicker than the fall, like a real breath. */
+      @keyframes pet-breathe {
+        0% { transform: scale(1, 1) translateY(0); }
+        38% { transform: scale(0.988, 1.014) translateY(-0.16px); }
+        100% { transform: scale(1, 1) translateY(0); }
+      }
+
+      @keyframes pet-sway {
+        0%, 100% { transform: rotate(0deg) translateX(0); }
+        27% { transform: rotate(1.15deg) translateX(0.1px); }
+        52% { transform: rotate(0.1deg) translateX(0); }
+        78% { transform: rotate(-1.15deg) translateX(-0.1px); }
+      }
+
+      @keyframes pet-bob {
+        0% { transform: translateY(0) rotate(0deg); }
+        38% { transform: translateY(-0.22px) rotate(-0.5deg); }
+        100% { transform: translateY(0) rotate(0deg); }
+      }
+
+      @keyframes pet-hat-swing {
+        0%, 100% { transform: rotate(0deg); }
+        27% { transform: rotate(3.4deg); }
+        55% { transform: rotate(-0.6deg); }
+        80% { transform: rotate(-3.4deg); }
+      }
+
+      /* Down fast, up slower, then a second flick: the shape of a real blink
+         rather than an on/off frame. */
+      @keyframes pet-blink {
+        0%, 88% { transform: scaleY(0); }
+        90.5% { transform: scaleY(1); }
+        93% { transform: scaleY(0.08); }
+        95.5% { transform: scaleY(1); }
+        98% { transform: scaleY(0); }
+      }
+
+      @keyframes pet-saccade {
+        0%, 34% { transform: translate(0, 0); }
+        36%, 55% { transform: translate(0.42px, -0.12px); }
+        57%, 72% { transform: translate(-0.36px, 0.08px); }
+        74%, 100% { transform: translate(0, 0); }
+      }
+
+      @keyframes pet-shine {
+        0%, 100% { transform: translate(0, 0); opacity: 0.9; }
+        45% { transform: translate(0.12px, 0.06px); opacity: 0.72; }
+      }
+
+      @keyframes pet-shadow {
+        0% { transform: scaleX(1); opacity: 0.34; }
+        38% { transform: scaleX(0.955); opacity: 0.26; }
+        100% { transform: scaleX(1); opacity: 0.34; }
+      }
+
+      @keyframes pet-arm-l {
+        0%, 100% { transform: rotate(0deg); }
+        27% { transform: rotate(-5deg); }
+        78% { transform: rotate(4deg); }
+      }
+
+      @keyframes pet-arm-r {
+        0%, 100% { transform: rotate(0deg); }
+        27% { transform: rotate(5deg); }
+        78% { transform: rotate(-4deg); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .pet-body,
+        .pet-lean,
+        .pet-head,
+        .pet-hat,
+        .pet-lid,
+        .pet-saccade,
+        .pet-shine,
+        .pet-shadow,
+        .pet-arm-l,
+        .pet-arm-r {
+          animation: none;
+        }
+      }
+      /* ==/PET-CORE== */
+
       .sleep-body {
         transform-origin: 11px 15px;
         animation: sleep-breathe 4s ease-in-out infinite;
       }
-      .sleeping-shadow {
+      .pet-shadow {
         transform-origin: 11px 17.5px;
-        animation: sleeping-shadow-pulse 4s ease-in-out infinite;
+        animation:pet-shadow 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite, pet-shadow-pulse 4s ease-in-out infinite;
       }
       .sleep-z1 { animation: sleep-zzz1 5s ease-in-out infinite; animation-delay: 0s; opacity: 0; }
       .sleep-z2 { animation: sleep-zzz2 5s ease-in-out infinite; animation-delay: 1.6s; opacity: 0; }
@@ -53,9 +211,9 @@
   <use href="#sleep-pz" class="sleep-z3" fill="#c0c8e0"/>
 
   <!-- shadow -->
-  <ellipse class="sleeping-shadow" cx="11" cy="17.5" rx="4" ry="0.6" fill="#c0c0c0"/>
+  <ellipse class="pet-shadow" cx="11" cy="17.5" rx="4" ry="0.6" fill="#c0c0c0"/>
 
-  <g class="sleep-body">
+  <g class="sleep-body pet-body">
     <!-- 左手（大灰色，偏下） -->
     <rect x="2" y="14" width="3" height="3" rx="1.5" fill="#f5f1e8" fill-opacity="0.7"/>
     <!-- 压扁的身体（宽扁椭圆） -->

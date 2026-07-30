@@ -91,16 +91,19 @@ window.petAPI.onEyeMove(({ eyeDx, eyeDy, bodyDx, bodyRotate }) => {
   const doc = currentObject.contentDocument;
   if (!doc) return;
 
-  // Target the dedicated wrapper groups (.idle-pupil and .idle-track) rather
-  // than the animated .idle-eye / .idle-body. Those already have CSS keyframes
-  // running — writing style.transform to them gets overwritten every frame, so
-  // tracking becomes invisible. The wrappers have no animation of their own,
-  // so their SVG transform attributes stick. Using setAttribute (not style)
-  // because SVG transform attributes and CSS transforms are separate channels
-  // in SVG — the attribute stacks on top of the descendant's CSS animation
-  // without overwriting it.
-  const pupil = doc.querySelector('.idle-pupil') as SVGGElement | null;
-  const track = doc.querySelector('.idle-track') as SVGGElement | null;
+  // Target the dedicated wrapper groups (.pet-pupil and .pet-track) rather than
+  // the animated .pet-eye / .pet-body. Those already have CSS keyframes running
+  // — writing style.transform to them gets overwritten every frame, so tracking
+  // becomes invisible. The wrappers have no animation of their own, so their SVG
+  // transform attributes stick. Using setAttribute (not style) because SVG
+  // transform attributes and CSS transforms are separate channels in SVG — the
+  // attribute stacks on top of the descendant's CSS animation without
+  // overwriting it.
+  //
+  // The names are shared by every state's artwork, so tracking works in each
+  // pose rather than only in idle.
+  const pupil = doc.querySelector('.pet-pupil') as SVGGElement | null;
+  const track = doc.querySelector('.pet-track') as SVGGElement | null;
 
   if (pupil) pupil.setAttribute('transform', `translate(${eyeDx} ${eyeDy})`);
   // rotate(angle cx cy) — rotation center is pinned to (11,12) in SVG units,
