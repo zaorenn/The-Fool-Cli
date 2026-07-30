@@ -1334,7 +1334,15 @@
     "wakeWordEnabled": "با شنیدن واژه بیدارسازی گفتگو را آغاز کن",
     "wakePhrase": "عبارت بیدارسازی",
     "wakeWordPetHint": "فقط زمانی که همدم رومیزی روشن است گوش می‌دهد.",
-    "wakeWordNeedsModel": "برای کار کردن واژه بیدارسازی، مدل تشخیص گفتار را نصب کنید."
+    "wakeWordNeedsModel": "برای کار کردن واژه بیدارسازی، مدل تشخیص گفتار را نصب کنید.",
+    "wakeTestSpeakNow": "حالا «{{phrase}}» را بگو — در حال شنیدن…",
+    "wakeTestChecking": "در حال بررسی گفته شما…",
+    "wakeTestMatched": "«{{heard}}» شنیده شد — واژه بیدارسازی کار می‌کند.",
+    "wakeTestMissed": "«{{heard}}» شنیده شد — این بیدار نمی‌کرد.",
+    "wakeTestSilent": "چیزی شنیده نشد. میکروفون بالا را بررسی کنید.",
+    "wakeTestFailed": "آزمایش اجرا نشد.",
+    "wakePhraseTooShort": "عبارت بیدارسازی باید حداقل دو نویسه باشد.",
+    "wakeWordModel": "شنیده‌شده توسط"
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",

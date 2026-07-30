@@ -1336,7 +1336,15 @@
     "wakeWordEnabled": "ウェイクワードを聞いたら会話を始める",
     "wakePhrase": "ウェイクフレーズ",
     "wakeWordPetHint": "デスクトップペットが有効なときのみ待ち受けます。",
-    "wakeWordNeedsModel": "ウェイクワードを使うには音声認識モデルをインストールしてください。"
+    "wakeWordNeedsModel": "ウェイクワードを使うには音声認識モデルをインストールしてください。",
+    "wakeTestSpeakNow": "今「{{phrase}}」と言ってください — 聞いています…",
+    "wakeTestChecking": "聞き取った内容を確認中…",
+    "wakeTestMatched": "「{{heard}}」と聞こえました — ウェイクワードは動作します。",
+    "wakeTestMissed": "「{{heard}}」と聞こえました — これでは起動しません。",
+    "wakeTestSilent": "何も聞こえませんでした。上のマイクを確認してください。",
+    "wakeTestFailed": "テストを実行できませんでした。",
+    "wakePhraseTooShort": "ウェイクフレーズは2文字以上必要です。",
+    "wakeWordModel": "認識モデル"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",

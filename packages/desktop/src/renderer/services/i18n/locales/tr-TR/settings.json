@@ -1334,7 +1334,15 @@
     "wakeWordEnabled": "Uyandırma sözcüğünü duyunca konuşmaya başla",
     "wakePhrase": "Uyandırma ifadesi",
     "wakeWordPetHint": "Yalnızca masaüstü pet açıkken dinler.",
-    "wakeWordNeedsModel": "Uyandırma sözcüğünün dinlemesi için konuşma tanıma modelini kur."
+    "wakeWordNeedsModel": "Uyandırma sözcüğünün dinlemesi için konuşma tanıma modelini kur.",
+    "wakeTestSpeakNow": "Şimdi “{{phrase}}” de — dinliyor…",
+    "wakeTestChecking": "Söylediğin kontrol ediliyor…",
+    "wakeTestMatched": "“{{heard}}” duyuldu — uyandırma sözcüğü çalışıyor.",
+    "wakeTestMissed": "“{{heard}}” duyuldu — bu uyandırmazdı.",
+    "wakeTestSilent": "Hiçbir şey duyulmadı. Yukarıdaki mikrofonu kontrol et.",
+    "wakeTestFailed": "Test çalıştırılamadı.",
+    "wakePhraseTooShort": "Uyandırma ifadesi en az iki karakter olmalı.",
+    "wakeWordModel": "Duyan model"
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

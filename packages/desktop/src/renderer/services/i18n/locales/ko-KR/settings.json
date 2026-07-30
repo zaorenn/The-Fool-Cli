@@ -1336,7 +1336,15 @@
     "wakeWordEnabled": "호출어를 들으면 음성 대화를 시작",
     "wakePhrase": "호출 문구",
     "wakeWordPetHint": "데스크톱 펫이 켜져 있을 때만 듣습니다.",
-    "wakeWordNeedsModel": "호출어가 동작하려면 음성 인식 모델을 설치하세요."
+    "wakeWordNeedsModel": "호출어가 동작하려면 음성 인식 모델을 설치하세요.",
+    "wakeTestSpeakNow": "지금 “{{phrase}}”라고 말하세요 — 듣는 중…",
+    "wakeTestChecking": "말한 내용을 확인 중…",
+    "wakeTestMatched": "“{{heard}}”로 들렸습니다 — 호출어가 작동합니다.",
+    "wakeTestMissed": "“{{heard}}”로 들렸습니다 — 이것으로는 깨우지 못합니다.",
+    "wakeTestSilent": "아무 소리도 들리지 않았습니다. 위의 마이크를 확인하세요.",
+    "wakeTestFailed": "테스트를 실행할 수 없습니다.",
+    "wakePhraseTooShort": "호출 문구는 두 글자 이상이어야 합니다.",
+    "wakeWordModel": "인식 모델"
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",

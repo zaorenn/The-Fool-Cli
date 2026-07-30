@@ -1336,7 +1336,15 @@
     "wakeWordEnabled": "聽到喚醒詞就開始語音對話",
     "wakePhrase": "喚醒短語",
     "wakeWordPetHint": "僅在桌面寵物開啟時監聽。",
-    "wakeWordNeedsModel": "請先安裝語音辨識模型，喚醒詞才能監聽。"
+    "wakeWordNeedsModel": "請先安裝語音辨識模型，喚醒詞才能監聽。",
+    "wakeTestSpeakNow": "現在說「{{phrase}}」— 正在聆聽…",
+    "wakeTestChecking": "正在檢查你說的話…",
+    "wakeTestMatched": "聽到「{{heard}}」— 喚醒詞有效。",
+    "wakeTestMissed": "聽到「{{heard}}」— 這不會喚醒它。",
+    "wakeTestSilent": "沒有聽到聲音。請檢查上面的麥克風。",
+    "wakeTestFailed": "測試無法執行。",
+    "wakePhraseTooShort": "喚醒短語至少需要兩個字元。",
+    "wakeWordModel": "辨識模型"
   },
   "themeCustomizer": {
     "title": "自訂主題",

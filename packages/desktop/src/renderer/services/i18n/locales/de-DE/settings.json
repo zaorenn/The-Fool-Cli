@@ -1334,7 +1334,15 @@
     "wakeWordEnabled": "Gespräch beginnen, sobald das Aktivierungswort fällt",
     "wakePhrase": "Aktivierungsphrase",
     "wakeWordPetHint": "Hört nur zu, solange das Desktop-Maskottchen aktiv ist.",
-    "wakeWordNeedsModel": "Installiere das Spracherkennungsmodell, damit das Aktivierungswort zuhören kann."
+    "wakeWordNeedsModel": "Installiere das Spracherkennungsmodell, damit das Aktivierungswort zuhören kann.",
+    "wakeTestSpeakNow": "Sag jetzt „{{phrase}}“ — höre zu…",
+    "wakeTestChecking": "Prüfe, was du gesagt hast…",
+    "wakeTestMatched": "„{{heard}}“ gehört — das Aktivierungswort funktioniert.",
+    "wakeTestMissed": "„{{heard}}“ gehört — damit wäre es nicht aufgewacht.",
+    "wakeTestSilent": "Nichts gehört. Prüfe das Mikrofon oben.",
+    "wakeTestFailed": "Der Test konnte nicht ausgeführt werden.",
+    "wakePhraseTooShort": "Eine Aktivierungsphrase braucht mindestens zwei Zeichen.",
+    "wakeWordModel": "Gehört über"
   },
   "themeCustomizer": {
     "title": "Design anpassen",

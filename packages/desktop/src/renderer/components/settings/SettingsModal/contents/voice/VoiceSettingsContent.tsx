@@ -15,6 +15,7 @@ import { reconcileVoiceModels } from '@renderer/services/voice/reconcileVoiceMod
 import AudioDeviceSection from './AudioDeviceSection';
 import SpeakerBrowser from './SpeakerBrowser';
 import VoicePicker from './VoicePicker';
+import WakeWordSection from './WakeWordSection';
 import { useVoiceCatalog } from './useVoiceCatalog';
 
 const PREVIEW_TEXT: Record<string, string> = {
@@ -144,49 +145,12 @@ const VoiceSettingsContent: React.FC = () => {
       key: 'wakeWord',
       title: t('settings.voice.wakeWord'),
       body: (
-        <div className='flex flex-col gap-12px'>
-          <label className='flex items-center justify-between gap-12px'>
-            <span className='text-13px text-t-secondary'>{t('settings.voice.wakeWordEnabled')}</span>
-            <Switch
-              data-testid='voice-wake-enabled'
-              checked={settings.activation.wakePhrase.enabled}
-              onChange={(checked: boolean) =>
-                update((previous) => ({
-                  ...previous,
-                  activation: {
-                    ...previous.activation,
-                    wakePhrase: { ...previous.activation.wakePhrase, enabled: checked },
-                  },
-                }))
-              }
-            />
-          </label>
-          <label className='flex flex-col gap-4px'>
-            <span className='text-13px text-t-secondary'>{t('settings.voice.wakePhrase')}</span>
-            <Input
-              data-testid='voice-wake-phrase'
-              value={settings.activation.wakePhrase.phrase}
-              onChange={(value: string) =>
-                update((previous) => ({
-                  ...previous,
-                  activation: {
-                    ...previous.activation,
-                    // Two characters minimum, matching the stored schema.
-                    wakePhrase: { ...previous.activation.wakePhrase, phrase: value.slice(0, 64) },
-                  },
-                }))
-              }
-            />
-          </label>
-          <span className='text-12px text-t-secondary'>{t('settings.voice.wakeWordPetHint')}</span>
-          {/* Hearing the phrase needs the transcription model, so say so rather
-              than leaving a switch that quietly does nothing. */}
-          {settings.activation.wakePhrase.enabled && selectedSttModel?.state.status !== 'ready' && (
-            <span className='text-12px text-warning' data-testid='voice-wake-needs-model'>
-              {t('settings.voice.wakeWordNeedsModel')}
-            </span>
-          )}
-        </div>
+        <WakeWordSection
+          settings={settings}
+          listenModel={selectedSttModel}
+          onChange={update}
+          onInstallModel={() => catalog.install(settings.stt.modelId)}
+        />
       ),
     },
     {

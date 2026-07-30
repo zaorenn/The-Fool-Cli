@@ -1335,7 +1335,15 @@
     "wakeWordEnabled": "听到唤醒词就开始语音对话",
     "wakePhrase": "唤醒短语",
     "wakeWordPetHint": "仅在桌面宠物开启时监听。",
-    "wakeWordNeedsModel": "请先安装语音识别模型，唤醒词才能监听。"
+    "wakeWordNeedsModel": "请先安装语音识别模型，唤醒词才能监听。",
+    "wakeTestSpeakNow": "现在说“{{phrase}}” — 正在聆听…",
+    "wakeTestChecking": "正在检查你说的话…",
+    "wakeTestMatched": "听到“{{heard}}” — 唤醒词有效。",
+    "wakeTestMissed": "听到“{{heard}}” — 这不会唤醒它。",
+    "wakeTestSilent": "没有听到声音。请检查上面的麦克风。",
+    "wakeTestFailed": "测试无法运行。",
+    "wakePhraseTooShort": "唤醒短语至少需要两个字符。",
+    "wakeWordModel": "识别模型"
   },
   "themeCustomizer": {
     "title": "自定义主题",

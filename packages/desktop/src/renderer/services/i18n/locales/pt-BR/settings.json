@@ -1337,7 +1337,15 @@
     "wakeWordEnabled": "Começar a conversa ao ouvir a palavra de ativação",
     "wakePhrase": "Frase de ativação",
     "wakeWordPetHint": "Só escuta enquanto o mascote estiver ativo.",
-    "wakeWordNeedsModel": "Instale o modelo de reconhecimento de fala para a palavra de ativação funcionar."
+    "wakeWordNeedsModel": "Instale o modelo de reconhecimento de fala para a palavra de ativação funcionar.",
+    "wakeTestSpeakNow": "Diga “{{phrase}}” agora — ouvindo…",
+    "wakeTestChecking": "Verificando o que você disse…",
+    "wakeTestMatched": "Ouvi “{{heard}}” — a palavra de ativação funciona.",
+    "wakeTestMissed": "Ouvi “{{heard}}” — isso não teria ativado.",
+    "wakeTestSilent": "Nada foi ouvido. Verifique o microfone acima.",
+    "wakeTestFailed": "O teste não pôde ser executado.",
+    "wakePhraseTooShort": "A frase de ativação precisa de pelo menos dois caracteres.",
+    "wakeWordModel": "Ouvido por"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

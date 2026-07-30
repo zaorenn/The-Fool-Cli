@@ -1334,7 +1334,15 @@
     "wakeWordEnabled": "Start talking when I say the wake word",
     "wakePhrase": "Wake phrase",
     "wakeWordPetHint": "Listens only while the desktop pet is on.",
-    "wakeWordNeedsModel": "Install the speech-to-text model to let the wake word listen."
+    "wakeWordNeedsModel": "Install the speech-to-text model to let the wake word listen.",
+    "wakeTestSpeakNow": "Say “{{phrase}}” now — listening…",
+    "wakeTestChecking": "Checking what you said…",
+    "wakeTestMatched": "Heard “{{heard}}” — the wake word works.",
+    "wakeTestMissed": "Heard “{{heard}}” — that would not have woken it.",
+    "wakeTestSilent": "Nothing was heard. Check the microphone above.",
+    "wakeTestFailed": "The test could not run.",
+    "wakePhraseTooShort": "A wake phrase needs at least two characters.",
+    "wakeWordModel": "Heard through"
   },
   "themeCustomizer": {
     "title": "Customize theme",

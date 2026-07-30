@@ -1334,7 +1334,15 @@
     "wakeWordEnabled": "Commencer à parler dès que j’entends le mot d’activation",
     "wakePhrase": "Phrase d’activation",
     "wakeWordPetHint": "N’écoute que lorsque la mascotte est active.",
-    "wakeWordNeedsModel": "Installez le modèle de reconnaissance vocale pour que le mot d’activation fonctionne."
+    "wakeWordNeedsModel": "Installez le modèle de reconnaissance vocale pour que le mot d’activation fonctionne.",
+    "wakeTestSpeakNow": "Dites « {{phrase}} » — à l’écoute…",
+    "wakeTestChecking": "Vérification de ce que vous avez dit…",
+    "wakeTestMatched": "Entendu « {{heard}} » — le mot d’activation fonctionne.",
+    "wakeTestMissed": "Entendu « {{heard}} » — cela ne l’aurait pas réveillé.",
+    "wakeTestSilent": "Rien n’a été entendu. Vérifiez le microphone ci-dessus.",
+    "wakeTestFailed": "Le test n’a pas pu être exécuté.",
+    "wakePhraseTooShort": "Une phrase d’activation doit compter au moins deux caractères.",
+    "wakeWordModel": "Écouté via"
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",
