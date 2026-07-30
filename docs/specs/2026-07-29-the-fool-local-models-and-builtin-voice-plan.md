@@ -61,8 +61,20 @@ describe('readLmsCliModels', () => {
   it('returns every llm and vlm entry', async () => {
     const execFile = ok(
       JSON.stringify([
-        { type: 'llm', modelKey: 'qwen/qwen3-14b', displayName: 'Qwen3 14B', maxContextLength: 40960, trainedForToolUse: true },
-        { type: 'vlm', modelKey: 'google/gemma-4-e4b', displayName: 'Gemma 4', maxContextLength: 8192, trainedForToolUse: false },
+        {
+          type: 'llm',
+          modelKey: 'qwen/qwen3-14b',
+          displayName: 'Qwen3 14B',
+          maxContextLength: 40960,
+          trainedForToolUse: true,
+        },
+        {
+          type: 'vlm',
+          modelKey: 'google/gemma-4-e4b',
+          displayName: 'Gemma 4',
+          maxContextLength: 8192,
+          trainedForToolUse: false,
+        },
       ])
     );
 
@@ -88,7 +100,9 @@ describe('readLmsCliModels', () => {
   });
 
   it('skips entries with no usable modelKey instead of failing the whole read', async () => {
-    const execFile = ok(JSON.stringify([{ type: 'llm' }, { type: 'llm', modelKey: '' }, { type: 'llm', modelKey: 'a' }]));
+    const execFile = ok(
+      JSON.stringify([{ type: 'llm' }, { type: 'llm', modelKey: '' }, { type: 'llm', modelKey: 'a' }])
+    );
 
     const models = await readLmsCliModels({ execFile, homeDir: 'C:/Users/x' });
 
@@ -127,11 +141,7 @@ export type LocalModelEntry = {
   toolUse: boolean;
 };
 
-export type ExecFileFn = (
-  file: string,
-  args: string[],
-  options: { timeout: number }
-) => Promise<{ stdout: string }>;
+export type ExecFileFn = (file: string, args: string[], options: { timeout: number }) => Promise<{ stdout: string }>;
 
 const CLI_TIMEOUT_MS = 5000;
 const USABLE_TYPES = new Set(['llm', 'vlm']);
@@ -152,7 +162,11 @@ const toEntry = (raw: unknown): LocalModelEntry | null => {
   };
 };
 
-const candidates = (homeDir: string): string[] => [`${homeDir}/.lmstudio/bin/lms.exe`, `${homeDir}/.lmstudio/bin/lms`, 'lms'];
+const candidates = (homeDir: string): string[] => [
+  `${homeDir}/.lmstudio/bin/lms.exe`,
+  `${homeDir}/.lmstudio/bin/lms`,
+  'lms',
+];
 
 export const readLmsCliModels = async (options: {
   execFile: ExecFileFn;
@@ -255,10 +269,7 @@ export type ScanFs = {
 const MAX_DEPTH = 3;
 const MAX_FILES = 2000;
 
-export const scanModelDirectory = async (options: {
-  fs: ScanFs;
-  root: string;
-}): Promise<LocalModelEntry[] | null> => {
+export const scanModelDirectory = async (options: { fs: ScanFs; root: string }): Promise<LocalModelEntry[] | null> => {
   const found: LocalModelEntry[] = [];
 
   const walk = async (path: string, relative: string, depth: number): Promise<void> => {
@@ -461,7 +472,12 @@ Then add to that file, keeping the existing `discoverAndRegisterLocalProviders` 
 ```ts
 import { httpRequest } from '@/common/adapter/httpBridge';
 import type { IProvider } from '@/common/config/storage';
-import { isLmStudioProvider, mergeModelIds, resolveLmStudioModels, type LmStudioSourceDeps } from './LmStudioModelSource';
+import {
+  isLmStudioProvider,
+  mergeModelIds,
+  resolveLmStudioModels,
+  type LmStudioSourceDeps,
+} from './LmStudioModelSource';
 
 export const publishLmStudioModels = async (deps: {
   source: LmStudioSourceDeps;
@@ -728,7 +744,12 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import VoiceTalkButton from '@renderer/components/chat/VoiceTalkButton';
 
-const session = { state: { phase: 'idle', condition: { status: 'normal' }, enteredAtMs: 0 }, missingModelId: null, start: vi.fn(), stop: vi.fn() };
+const session = {
+  state: { phase: 'idle', condition: { status: 'normal' }, enteredAtMs: 0 },
+  missingModelId: null,
+  start: vi.fn(),
+  stop: vi.fn(),
+};
 vi.mock('@renderer/hooks/voice/useFoolVoiceSession', () => ({ useFoolVoiceSession: () => session }));
 
 describe('VoiceTalkButton', () => {

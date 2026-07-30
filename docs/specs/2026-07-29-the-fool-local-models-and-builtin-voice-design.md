@@ -304,13 +304,13 @@ Coverage for new source files meets the project's 80% target.
 
 ## 9. Risks
 
-| Risk | Mitigation |
-| --- | --- |
-| `lms ls --json` output format changes | Three-tier resolution; format change degrades rather than empties |
-| ZipVoice unproven on Windows x64 through this binding | Measured gate; cloning section omitted with a recorded reason if it fails |
-| Kokoro covers English and Chinese, not Turkish | Supertonic Turkish retained as the Turkish voice |
-| Moving voice settings out of `SystemModalContent` could hide an existing control | Covered by the zero-regression parity checklist |
-| Scope creep from "nothing may be missing" | Parity checklist is a verification artifact, not a mandate to add new upstream features |
+| Risk                                                                             | Mitigation                                                                              |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `lms ls --json` output format changes                                            | Three-tier resolution; format change degrades rather than empties                       |
+| ZipVoice unproven on Windows x64 through this binding                            | Measured gate; cloning section omitted with a recorded reason if it fails               |
+| Kokoro covers English and Chinese, not Turkish                                   | Supertonic Turkish retained as the Turkish voice                                        |
+| Moving voice settings out of `SystemModalContent` could hide an existing control | Covered by the zero-regression parity checklist                                         |
+| Scope creep from "nothing may be missing"                                        | Parity checklist is a verification artifact, not a mandate to add new upstream features |
 
 ## 10. Explicitly out of scope
 

@@ -67,6 +67,13 @@ const ThemeCustomizer: React.FC = () => {
     // Seed each swatch from what the theme actually renders, so the picker
     // opens on the real colour instead of an empty value.
     setPresetColors(readActiveThemeColors());
+
+    // Switching preset while this page is open changes what "no override" means,
+    // so re-read the swatch defaults instead of showing the old theme's colours.
+    return configService.subscribe('theme.activeId', () => {
+      // One frame later: the preset's stylesheet has to be in place first.
+      requestAnimationFrame(() => setPresetColors(readActiveThemeColors()));
+    });
   }, []);
 
   /** Applies immediately, then persists — the preview must never lag the input. */
@@ -100,16 +107,20 @@ const ThemeCustomizer: React.FC = () => {
 
       <div className='flex flex-col gap-12px'>
         {THEME_COLOR_KEYS.map((key) => (
-          <label key={key} className='flex items-center justify-between gap-12px'>
+          // Deliberately a div, not a label: ColorPicker renders a hidden input,
+          // and a wrapping label forwards the click to it, which re-triggers the
+          // popup and closes it again — leaving the picker impossible to open.
+          // The test id sits on the row because Arco does not forward unknown
+          // props onto the picker's own DOM node.
+          <div key={key} className='flex items-center justify-between gap-12px' data-testid={`theme-color-${key}`}>
             <span className='text-13px text-t-secondary'>{t(`settings.themeCustomizer.${key}`)}</span>
             <ColorPicker
               showText
               disabledAlpha
               value={overrides.colors[key] ?? presetColors[key]}
-              data-testid={`theme-color-${key}`}
               onChange={(value) => handleColor(key, String(value))}
             />
-          </label>
+          </div>
         ))}
       </div>
     </section>

@@ -9,6 +9,7 @@ import { configService } from '@/common/config/configService';
 import { ipcBridge } from '@/common';
 import { resolveActiveTheme } from '@/common/theme/resolveTheme';
 import { BUILTIN_THEMES } from '@renderer/theme/builtinThemes';
+import { reassertThemeOverrides } from './applyThemeOverrides';
 import { processCustomCss } from './customCssProcessor';
 import { getSystemPrefersDark } from './systemAppearance';
 
@@ -41,6 +42,9 @@ export function applyTheme(theme: Theme, root: Document = document): void {
   root.body?.setAttribute('arco-theme', theme.appearance);
   upsertStyle(TOKENS_STYLE_ID, tokensToCss(theme.tokens), root);
   upsertStyle(DECORATION_STYLE_ID, theme.css ? processCustomCss(theme.css) : null, root);
+  // The theme's stylesheet has just been moved to the end of <head>; the user's
+  // colour overrides have to follow it or the preset wins on source order.
+  reassertThemeOverrides(root);
 }
 
 /** Resolve `activeId` locally, apply, persist, and publish to main for cross-window broadcast. */
