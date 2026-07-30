@@ -195,6 +195,7 @@ export function createPetWindow(): void {
         petWindow.webContents.send('pet:voice-stage', {
           stage: event.stage,
           stageLabel: event.stageLabel,
+          notice: event.notice,
           accent: event.accent,
         });
       }

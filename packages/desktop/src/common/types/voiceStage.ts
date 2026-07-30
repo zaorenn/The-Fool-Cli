@@ -51,6 +51,15 @@ export type VoiceStageEvent = {
   hint: string;
   placeholder: string;
   /**
+   * A transient line that replaces the stage word over the pet.
+   *
+   * For work the user would otherwise read as a hang: a local summary model
+   * being loaded takes tens of seconds, and silence during that is
+   * indistinguishable from a freeze. Empty the rest of the time. Already
+   * translated, like the labels above.
+   */
+  notice: string;
+  /**
    * True once the wake phrase has been heard and the turn is really going
    * somewhere.
    *
@@ -70,6 +79,7 @@ export const VOICE_STAGE_OFF: VoiceStageEvent = {
   stageLabel: '',
   hint: '',
   placeholder: '',
+  notice: '',
   awake: false,
 };
 

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { EMPTY_EVIDENCE, type RunEvidence } from './FoolNarrator';
+import { EMPTY_EVIDENCE, type RunEvidence } from './narration/FoolNarrator';
 
 /**
  * A conversation response-stream message, narrowed to the fields the spoken

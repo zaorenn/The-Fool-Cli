@@ -470,7 +470,8 @@
       "stageGenerating": "Працюю",
       "stageSpeaking": "Відповідаю",
       "stageHint": "скажіть «{{phrase}}»",
-      "stagePlaceholder": "Чекаю, коли ви заговорите…"
+      "stagePlaceholder": "Чекаю, коли ви заговорите…",
+      "wakingModel": "Пробуджуємо {{model}}…"
     }
   },
   "sideQuestion": {

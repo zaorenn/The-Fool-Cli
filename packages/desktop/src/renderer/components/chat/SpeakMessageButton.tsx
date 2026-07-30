@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
 import { useFoolVoiceSettings } from '@renderer/hooks/voice/useFoolVoiceSettings';
 import { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybackService';
-import { sanitizeForSpeech, truncateToSpokenLength } from '@renderer/services/voice/narrationSanitizer';
+import { summarizeForSpeech } from '@renderer/services/voice/narration/englishSummary';
 import { selectTtsTarget } from '@renderer/services/voice/selectTtsTarget';
 
 export type SpeakMessageButtonProps = {
@@ -34,6 +34,8 @@ const MAX_SPOKEN_CHARACTERS = 1200;
  *
  * The text is run through the narration sanitiser first, so code blocks, diffs,
  * file paths and secrets are never spoken even when the message is mostly code.
+ * With the English summary switched on it is then translated and shortened, which
+ * is what makes a long Turkish answer listenable through an English voice.
  */
 const SpeakMessageButton: React.FC<SpeakMessageButtonProps> = ({ text }) => {
   const { t } = useTranslation();
@@ -61,7 +63,7 @@ const SpeakMessageButton: React.FC<SpeakMessageButtonProps> = ({ text }) => {
   }, []);
 
   const speak = useCallback(async () => {
-    const spoken = truncateToSpokenLength(sanitizeForSpeech(text), MAX_SPOKEN_CHARACTERS);
+    const { text: spoken } = await summarizeForSpeech(text, settings, MAX_SPOKEN_CHARACTERS);
     if (spoken.length === 0) return;
 
     const catalog = unwrap(

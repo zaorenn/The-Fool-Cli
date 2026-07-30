@@ -15,6 +15,7 @@ import {
   VoiceModelCatalog,
 } from '../services/fool-voice';
 import { registerLocalModelsBridge } from '../services/local-models';
+import { handleSummarize, handleSummaryPlan } from '../services/voice-summary';
 import { initVoiceStageHub } from '../voice/voiceStageHub';
 import { ipcBridge } from '@/common';
 import { ConfigStorage } from '@/common/config/storage';
@@ -127,6 +128,8 @@ initAllBridges({
         speakerCount,
         source,
       })),
+    summaryPlan: handleSummaryPlan,
+    summarize: handleSummarize,
   },
 });
 

@@ -455,7 +455,8 @@
       "stageGenerating": "Üzerinde çalışıyor",
       "stageSpeaking": "Yanıtlıyor",
       "stageHint": "“{{phrase}}” de",
-      "stagePlaceholder": "Konuşmanı bekliyor…"
+      "stagePlaceholder": "Konuşmanı bekliyor…",
+      "wakingModel": "{{model}} uyandırılıyor…"
     }
   },
   "sideQuestion": {

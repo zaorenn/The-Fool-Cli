@@ -20,6 +20,10 @@ import type {
   VoiceResponseEnvelope,
   VoiceSpeakersRequest,
   VoiceSpeakersResponse,
+  VoiceSummarizeRequest,
+  VoiceSummarizeResponse,
+  VoiceSummaryPlanRequest,
+  VoiceSummaryPlanResponse,
   VoiceSynthesizeRequest,
   VoiceSynthesizeResponse,
   VoiceTranscribeRequest,
@@ -37,6 +41,8 @@ export type FoolVoiceBridgeHandlers = {
   synthesize: (request: VoiceSynthesizeRequest) => MaybePromise<VoiceSynthesizeResponse>;
   cancel: (request: VoiceCancelRequest) => MaybePromise<VoiceCancelResponse>;
   speakers: (request: VoiceSpeakersRequest) => MaybePromise<VoiceSpeakersResponse>;
+  summaryPlan: (request: VoiceSummaryPlanRequest) => MaybePromise<VoiceSummaryPlanResponse>;
+  summarize: (request: VoiceSummarizeRequest) => MaybePromise<VoiceSummarizeResponse>;
 };
 
 type BridgeErrorCode = Extract<VoiceResponseEnvelope<never>, { ok: false }>['error']['code'];
@@ -290,6 +296,52 @@ const validateSpeakersRequest = (payload: unknown): BridgeErrorCode | null =>
     ? null
     : 'invalid-request';
 
+/**
+ * Room for a reply, not for a transcript.
+ *
+ * Long enough that a full assistant answer arrives intact; short enough that the
+ * summariser can never be handed a whole conversation to forward to a provider.
+ */
+const MAX_SUMMARY_CODE_POINTS = 24000;
+/** LM Studio names models by publisher/repo/file, well past an identifier's length. */
+const MAX_MODEL_REFERENCE_LENGTH = 256;
+
+const isModelReference = (value: unknown, allowEmpty: boolean): value is string =>
+  typeof value === 'string' &&
+  value.length <= MAX_MODEL_REFERENCE_LENGTH &&
+  (allowEmpty || value.length > 0) &&
+  !value.includes('\n');
+
+const validateSummaryPlanRequest = (payload: unknown): BridgeErrorCode | null =>
+  isRecord(payload) &&
+  hasExactKeys(payload, ['modelId', 'lastUsedModelId']) &&
+  isModelReference(payload.modelId, true) &&
+  isModelReference(payload.lastUsedModelId, true)
+    ? null
+    : 'invalid-request';
+
+const validateSummarizeRequest = (payload: unknown): BridgeErrorCode | null => {
+  if (
+    !isRecord(payload) ||
+    !hasExactKeys(payload, ['operationId', 'modelId', 'text', 'timeoutMs', 'maxCharacters']) ||
+    !isIdentifier(payload.operationId) ||
+    !isModelReference(payload.modelId, true) ||
+    typeof payload.text !== 'string' ||
+    typeof payload.timeoutMs !== 'number' ||
+    !Number.isInteger(payload.timeoutMs) ||
+    payload.timeoutMs < 1000 ||
+    payload.timeoutMs > 120000 ||
+    typeof payload.maxCharacters !== 'number' ||
+    !Number.isInteger(payload.maxCharacters) ||
+    payload.maxCharacters < 120 ||
+    payload.maxCharacters > 4000
+  ) {
+    return 'invalid-request';
+  }
+  if ([...payload.text].length === 0) return 'invalid-request';
+  return [...payload.text].length > MAX_SUMMARY_CODE_POINTS ? 'payload-too-large' : null;
+};
+
 /** A speaker count has to be a plausible index range, not an arbitrary number. */
 const MAX_SPEAKERS = 4096;
 
@@ -306,6 +358,16 @@ const validateCatalogResponse = (response: VoiceCatalogResponse): boolean =>
 
 const validateSynthesizeResponse = (response: VoiceSynthesizeResponse): boolean =>
   validateAudio(response.audio, MAX_SYNTHESIS_BYTES, true) === null;
+
+/**
+ * A summary that is empty, or longer than what was asked for, is not speakable.
+ *
+ * Caught here rather than in the renderer so a model that ignores its
+ * instructions is reported as a provider fault instead of quietly becoming the
+ * spoken answer.
+ */
+const validateSummarizeResponse = (response: VoiceSummarizeResponse): boolean =>
+  typeof response.text === 'string' && [...response.text].length > 0;
 
 export function initFoolVoiceBridge(handlers: Partial<FoolVoiceBridgeHandlers> = {}): void {
   registerHandler(
@@ -352,5 +414,19 @@ export function initFoolVoiceBridge(handlers: Partial<FoolVoiceBridgeHandlers> =
     handlers.speakers,
     validateSpeakersResponse,
     'speakers'
+  );
+  registerHandler(
+    ipcBridge.foolVoice.summaryPlan,
+    validateSummaryPlanRequest,
+    handlers.summaryPlan,
+    undefined,
+    'summary.plan'
+  );
+  registerHandler(
+    ipcBridge.foolVoice.summarize,
+    validateSummarizeRequest,
+    handlers.summarize,
+    validateSummarizeResponse,
+    'summarize'
   );
 }

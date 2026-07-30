@@ -1343,7 +1343,14 @@
     "wakeTestSilent": "没有听到声音。请检查上面的麦克风。",
     "wakeTestFailed": "测试无法运行。",
     "wakePhraseTooShort": "唤醒短语至少需要两个字符。",
-    "wakeWordModel": "识别模型"
+    "wakeWordModel": "识别模型",
+    "spokenSummary": "语音摘要",
+    "summaryEnglish": "朗读简短的英文摘要，而不是完整回复",
+    "summaryEnglishHint": "已安装的语音都是英文的，朗读完整回复需要好几分钟。会先由模型翻译并压缩；如果没有可用的模型，则按原文朗读。",
+    "summaryModel": "摘要模型",
+    "summaryModelCold": "尚未加载 — 第一次回答会比较慢",
+    "summaryNoModel": "本机没有可用于摘要的模型，因此回复将按原文朗读。",
+    "summaryChecking": "正在查找模型…"
   },
   "themeCustomizer": {
     "title": "自定义主题",

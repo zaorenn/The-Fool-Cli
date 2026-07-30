@@ -32,6 +32,10 @@ import type {
   VoiceResponseEnvelope,
   VoiceSpeakersRequest,
   VoiceSpeakersResponse,
+  VoiceSummarizeRequest,
+  VoiceSummarizeResponse,
+  VoiceSummaryPlanRequest,
+  VoiceSummaryPlanResponse,
   VoiceSynthesizeRequest,
   VoiceSynthesizeResponse,
   VoiceTranscribeRequest,
@@ -190,6 +194,16 @@ export const foolVoice = {
     VoiceResponseEnvelope<VoiceSpeakersResponse>,
     VoiceRequestEnvelope<VoiceSpeakersRequest>
   >('fool.voice.speakers'),
+  /** Which model would summarise the next reply, and whether it is loaded yet. */
+  summaryPlan: bridge.buildProvider<
+    VoiceResponseEnvelope<VoiceSummaryPlanResponse>,
+    VoiceRequestEnvelope<VoiceSummaryPlanRequest>
+  >('fool.voice.summary.plan'),
+  /** Turns a reply into the short English briefing that is spoken. */
+  summarize: bridge.buildProvider<
+    VoiceResponseEnvelope<VoiceSummarizeResponse>,
+    VoiceRequestEnvelope<VoiceSummarizeRequest>
+  >('fool.voice.summarize'),
   downloadProgress: bridge.buildEmitter<VoiceEventEnvelope<VoiceDownloadProgress>>('fool.voice.download.progress'),
   /**
    * What the voice loop is doing, published by the main window.

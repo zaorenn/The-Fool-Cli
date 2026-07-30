@@ -471,7 +471,8 @@
       "stageGenerating": "Trabajando en ello",
       "stageSpeaking": "Respondiendo",
       "stageHint": "di «{{phrase}}»",
-      "stagePlaceholder": "Esperando que hables…"
+      "stagePlaceholder": "Esperando que hables…",
+      "wakingModel": "Despertando {{model}}…"
     }
   },
   "sideQuestion": {

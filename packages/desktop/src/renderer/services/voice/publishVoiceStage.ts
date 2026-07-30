@@ -42,6 +42,8 @@ const STAGE_KEYS: Record<VoiceStage, string> = {
 let current: VoiceStageEvent = VOICE_STAGE_OFF;
 let queued: VoiceStageEvent | null = null;
 let frame: number | null = null;
+/** Survives stage changes: a model keeps loading while the loop moves on. */
+let notice = '';
 
 /** Reads the accent the app is painting with right now, custom colours included. */
 const readAccent = (): string => {
@@ -83,6 +85,7 @@ export const publishVoiceStage = (input: StageInput): void => {
     stageLabel: key ? i18next.t(key) : '',
     hint: input.stage === 'listening' ? i18next.t('conversation.chat.voice.stageHint', { phrase }) : '',
     placeholder: i18next.t('conversation.chat.voice.stagePlaceholder'),
+    notice,
     awake: input.awake ?? false,
   };
 
@@ -91,6 +94,7 @@ export const publishVoiceStage = (input: StageInput): void => {
     event.stage !== current.stage ||
     event.transcript !== current.transcript ||
     event.stageLabel !== current.stageLabel ||
+    event.notice !== current.notice ||
     event.awake !== current.awake;
 
   if (isNews) {
@@ -110,9 +114,28 @@ export const publishVoiceStage = (input: StageInput): void => {
 
 export const peekVoiceStage = (): VoiceStageEvent => current;
 
+/**
+ * Shows a line over the pet for work that has no stage of its own.
+ *
+ * Used for a local model being loaded: it can take the better part of a minute,
+ * and a pet standing silently through it looks broken rather than busy. Sent
+ * immediately — the point is to arrive before the wait, not with it.
+ */
+export const publishVoiceNotice = (text: string): void => {
+  notice = text;
+  send({ ...current, notice: text, accent: readAccent() });
+};
+
+export const clearVoiceNotice = (): void => {
+  if (notice.length === 0) return;
+  notice = '';
+  send({ ...current, notice: '', accent: readAccent() });
+};
+
 /** Used when a session ends, so no surface is left claiming to listen. */
 export const publishVoiceStageOff = (): void => {
   queued = null;
+  notice = '';
   if (frame !== null) {
     cancelAnimationFrame(frame);
     frame = null;

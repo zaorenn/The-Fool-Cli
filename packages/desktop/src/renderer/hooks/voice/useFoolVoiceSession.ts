@@ -15,7 +15,8 @@ import {
 import { AdaptiveVad } from '@renderer/services/voice/AdaptiveVad';
 import { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybackService';
 import { MicrophoneCapture } from '@renderer/services/voice/MicrophoneCapture';
-import { EMPTY_EVIDENCE, narrate, type RunEvidence } from '@renderer/services/voice/FoolNarrator';
+import { EMPTY_EVIDENCE, type RunEvidence } from '@renderer/services/voice/narration/FoolNarrator';
+import { narrateForSpeech } from '@renderer/services/voice/narration/englishSummary';
 import { createRunEvidenceCollector } from '@renderer/services/voice/RunEvidenceCollector';
 import { selectTtsTarget } from '@renderer/services/voice/selectTtsTarget';
 import { publishVoiceStage, publishVoiceStageOff } from '@renderer/services/voice/publishVoiceStage';
@@ -330,11 +331,14 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
 
   const speak = useCallback(
     async (answer: string, evidence: RunEvidence): Promise<void> => {
-      const narration = narrate(answer, evidence, {
-        language: settings.narrator.language,
-        maxSpokenCharacters: settings.narrator.maxSpokenCharacters,
-      });
+      // Translated and shortened first when that is switched on, so the voice
+      // reads a briefing in the language it can actually pronounce rather than a
+      // full reply in one it cannot.
+      const narration = await narrateForSpeech(answer, evidence, settings);
       if (narration.spokenText.length === 0) return;
+      // The session may have been stopped during the summary, which can take a
+      // model load; speaking after that would talk over a closed microphone.
+      if (!activeRef.current) return;
 
       const installed = installedModelIdsRef.current;
       const target = selectTtsTarget(narration.spokenText, settings, installed);

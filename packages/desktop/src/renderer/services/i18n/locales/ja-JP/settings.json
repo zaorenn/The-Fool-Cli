@@ -1344,7 +1344,14 @@
     "wakeTestSilent": "何も聞こえませんでした。上のマイクを確認してください。",
     "wakeTestFailed": "テストを実行できませんでした。",
     "wakePhraseTooShort": "ウェイクフレーズは2文字以上必要です。",
-    "wakeWordModel": "認識モデル"
+    "wakeWordModel": "認識モデル",
+    "spokenSummary": "音声要約",
+    "summaryEnglish": "返答の全文ではなく、短い英語の要約を読み上げる",
+    "summaryEnglishHint": "インストール済みの音声は英語で、返答の全文を読み上げると数分かかります。まずモデルが翻訳して短くします。対応できるモデルがない場合は、そのまま読み上げます。",
+    "summaryModel": "要約するモデル",
+    "summaryModelCold": "まだ読み込まれていません — 最初の返答は遅くなります",
+    "summaryNoModel": "このマシンには要約できるモデルがないため、返答はそのまま読み上げられます。",
+    "summaryChecking": "モデルを探しています…"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",

@@ -192,7 +192,10 @@ window.voiceCaptionAPI.onCaption((event) => {
 
   card.classList.toggle('shown', event.stage !== 'off');
   stageLabel.textContent = event.stageLabel;
-  hint.textContent = event.hint;
+  // The notice replaces the hint rather than the stage: on the strip there is
+  // room for both, and "waking the model" is exactly the sort of thing the hint
+  // slot is for.
+  hint.textContent = event.notice || event.hint;
   transcript.textContent = event.transcript;
   transcript.dataset.placeholder = event.placeholder;
 

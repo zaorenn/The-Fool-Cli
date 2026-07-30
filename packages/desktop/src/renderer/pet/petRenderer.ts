@@ -116,10 +116,14 @@ window.petAPI.onEyeMove(({ eyeDx, eyeDy, bodyDx, bodyRotate }) => {
 // same event, so they cannot disagree.
 const stageLabel = document.getElementById('stage');
 
-window.petAPI.onVoiceStage(({ stage, stageLabel: text, accent }) => {
+window.petAPI.onVoiceStage(({ stage, stageLabel: text, notice, accent }) => {
   if (!stageLabel) return;
-  const live = stage !== 'off' && text.length > 0;
-  stageLabel.textContent = text;
+  // A notice takes the bubble: it exists precisely because the stage word would
+  // not explain the wait. It also shows with the loop off, which is how a
+  // read-aloud press can say it is loading a model with no session running.
+  const message = notice || text;
+  const live = notice.length > 0 || (stage !== 'off' && text.length > 0);
+  stageLabel.textContent = message;
   stageLabel.style.setProperty('--stage-accent', accent || '#c4123f');
   stageLabel.classList.toggle('shown', live);
 });

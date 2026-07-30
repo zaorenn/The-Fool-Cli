@@ -470,7 +470,8 @@
       "stageGenerating": "考えています",
       "stageSpeaking": "応答中",
       "stageHint": "「{{phrase}}」と言ってください",
-      "stagePlaceholder": "話しかけてください…"
+      "stagePlaceholder": "話しかけてください…",
+      "wakingModel": "{{model}} を起動しています…"
     }
   },
   "sideQuestion": {

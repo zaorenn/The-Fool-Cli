@@ -1342,7 +1342,14 @@
     "wakeTestSilent": "No se oyó nada. Comprueba el micrófono de arriba.",
     "wakeTestFailed": "No se pudo ejecutar la prueba.",
     "wakePhraseTooShort": "La frase de activación necesita al menos dos caracteres.",
-    "wakeWordModel": "Escuchado por"
+    "wakeWordModel": "Escuchado por",
+    "spokenSummary": "Resumen hablado",
+    "summaryEnglish": "Leer un resumen corto en inglés en lugar de la respuesta completa",
+    "summaryEnglishHint": "Las voces instaladas son inglesas y leer la respuesta completa lleva minutos. Un modelo la traduce y la acorta primero; si ninguno puede, la respuesta se lee tal cual.",
+    "summaryModel": "Resumido por",
+    "summaryModelCold": "aún no está cargado — la primera respuesta será lenta",
+    "summaryNoModel": "Ningún modelo de esta máquina puede resumir, así que las respuestas se leen tal cual.",
+    "summaryChecking": "Buscando un modelo…"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

@@ -12,6 +12,8 @@ import SpeakMessageButton from '@renderer/components/chat/SpeakMessageButton';
 
 const catalogInvoke = vi.fn();
 const synthesizeInvoke = vi.fn();
+const summaryPlanInvoke = vi.fn();
+const summarizeInvoke = vi.fn();
 const cancelInvoke = vi.fn().mockResolvedValue({ ok: true, data: {} });
 const play = vi.fn().mockResolvedValue(undefined);
 const stop = vi.fn();
@@ -19,14 +21,28 @@ const setOutputDevice = vi.fn();
 const messageInfo = vi.fn();
 const messageError = vi.fn();
 
-let settings: FoolVoiceSettings = DEFAULT_FOOL_VOICE_SETTINGS;
+/**
+ * The English summary is switched off for these cases.
+ *
+ * It has its own tests; everything here is about which voice says what, and
+ * leaving a model in the middle of that would only obscure it.
+ */
+const NO_SUMMARY: FoolVoiceSettings = {
+  ...DEFAULT_FOOL_VOICE_SETTINGS,
+  summary: { ...DEFAULT_FOOL_VOICE_SETTINGS.summary, translateToEnglish: false },
+};
+
+let settings: FoolVoiceSettings = NO_SUMMARY;
 
 vi.mock('@/common', () => ({
   ipcBridge: {
     foolVoice: {
       catalog: { invoke: (request: unknown) => catalogInvoke(request) },
       synthesize: { invoke: (request: unknown) => synthesizeInvoke(request) },
+      summaryPlan: { invoke: (request: unknown) => summaryPlanInvoke(request) },
+      summarize: { invoke: (request: unknown) => summarizeInvoke(request) },
       cancel: { invoke: (request: unknown) => cancelInvoke(request) },
+      stage: { emit: () => undefined },
     },
   },
 }));
@@ -87,9 +103,11 @@ const synthesis = {
 
 describe('SpeakMessageButton', () => {
   beforeEach(() => {
-    settings = DEFAULT_FOOL_VOICE_SETTINGS;
+    settings = NO_SUMMARY;
     catalogInvoke.mockReset();
     synthesizeInvoke.mockReset();
+    summaryPlanInvoke.mockReset();
+    summarizeInvoke.mockReset();
     play.mockClear();
     setOutputDevice.mockClear();
     messageInfo.mockClear();
@@ -100,9 +118,9 @@ describe('SpeakMessageButton', () => {
 
   it('speaks the message with the voice and speaker the user configured', async () => {
     settings = {
-      ...DEFAULT_FOOL_VOICE_SETTINGS,
+      ...NO_SUMMARY,
       devices: { inputDeviceId: null, outputDeviceId: 'speaker-7' },
-      tts: { ...DEFAULT_FOOL_VOICE_SETTINGS.tts, profileId: 'speaker-457', speed: 1.2 },
+      tts: { ...NO_SUMMARY.tts, profileId: 'speaker-457', speed: 1.2 },
     };
 
     render(<SpeakMessageButton text='The tests pass.' />);
@@ -133,8 +151,8 @@ describe('SpeakMessageButton', () => {
 
   it('falls back to an installed voice when the configured model was removed', async () => {
     settings = {
-      ...DEFAULT_FOOL_VOICE_SETTINGS,
-      tts: { ...DEFAULT_FOOL_VOICE_SETTINGS.tts, modelId: 'tts-gone', profileId: 'ghost' },
+      ...NO_SUMMARY,
+      tts: { ...NO_SUMMARY.tts, modelId: 'tts-gone', profileId: 'ghost' },
     };
     catalogInvoke.mockResolvedValue({ ok: true, data: { models: [readyModel('tts-kokoro-en-v0_19-int8')] } });
 
@@ -161,6 +179,40 @@ describe('SpeakMessageButton', () => {
 
     await waitFor(() => expect(catalogInvoke).not.toHaveBeenCalled());
     expect(synthesizeInvoke).not.toHaveBeenCalled();
+  });
+
+  it('speaks the English briefing rather than the Turkish reply when that is switched on', async () => {
+    settings = DEFAULT_FOOL_VOICE_SETTINGS;
+    summaryPlanInvoke.mockResolvedValue({
+      ok: true,
+      data: { modelId: 'qwen3-4b', displayName: 'qwen3-4b', loaded: true, local: true, origin: 'loaded' },
+    });
+    summarizeInvoke.mockResolvedValue({
+      ok: true,
+      data: { operationId: 'op', text: 'The tests pass.', modelId: 'qwen3-4b', source: 'model' },
+    });
+
+    render(<SpeakMessageButton text='Testler geçiyor, iki dosyayı değiştirdim.' />);
+    fireEvent.click(screen.getByTestId('speak-message'));
+
+    await waitFor(() => expect(synthesizeInvoke).toHaveBeenCalled());
+    const request = synthesizeInvoke.mock.calls[0][0] as { payload: Record<string, unknown> };
+    expect(request.payload.text).toBe('The tests pass.');
+  });
+
+  it('still reads the reply when no model could summarise it', async () => {
+    settings = DEFAULT_FOOL_VOICE_SETTINGS;
+    summaryPlanInvoke.mockResolvedValue({
+      ok: true,
+      data: { modelId: '', displayName: '', loaded: false, local: false, origin: 'none' },
+    });
+
+    render(<SpeakMessageButton text='Testler geçiyor.' />);
+    fireEvent.click(screen.getByTestId('speak-message'));
+
+    await waitFor(() => expect(synthesizeInvoke).toHaveBeenCalled());
+    const request = synthesizeInvoke.mock.calls[0][0] as { payload: Record<string, unknown> };
+    expect(request.payload.text).toBe('Testler geçiyor.');
   });
 
   it('stops playback when pressed while speaking', async () => {

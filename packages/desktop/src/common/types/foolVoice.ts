@@ -252,6 +252,20 @@ export type FoolVoiceSettings = {
         timeoutMs: number;
         maxSpokenCharacters: number;
       };
+  /**
+   * Speaking a short English briefing rather than the reply itself.
+   *
+   * The installed voices are English; handed Turkish they produce something
+   * between an accent and a mangling, and a whole reply is far too long to sit
+   * through. On by default for that reason, and off in one click for anyone who
+   * would rather hear the reply as written.
+   */
+  summary: {
+    translateToEnglish: boolean;
+    /** Empty means: whichever local model is loaded, or the last one used. */
+    modelId: string;
+    timeoutMs: number;
+  };
   playback: {
     volume: number;
     interruptible: true;
@@ -314,6 +328,15 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     mode: 'deterministic',
     language: 'en',
     maxSpokenCharacters: 600,
+  },
+  summary: {
+    translateToEnglish: true,
+    modelId: '',
+    // Generous on purpose: a local model that has to load its weights, or one
+    // that thinks before answering, is slow once and fast afterwards. The pet
+    // says what the wait is for, so a long ceiling costs nothing in the normal
+    // case and saves the first answer of a session in the slow one.
+    timeoutMs: 45000,
   },
   playback: {
     volume: 0.85,
@@ -466,6 +489,16 @@ const settingsSchema = z
         language: 'en',
         maxSpokenCharacters: 600,
       }),
+    summary: z
+      .object({
+        translateToEnglish: z.boolean().default(true),
+        // Longer than an identifier: LM Studio names models by their full
+        // publisher/repo/file path, which routinely runs past 128 characters.
+        modelId: z.string().max(256).default(''),
+        timeoutMs: z.number().int().min(1000).max(120000).default(45000),
+      })
+      .strict()
+      .default({}),
     playback: z
       .object({
         volume: z.number().min(0).max(1).default(0.85),
@@ -797,6 +830,59 @@ export type VoiceSpeakersResponse = {
   /** `engine` means the model was opened; `catalog` is the preset fallback. */
   source: 'engine' | 'catalog';
 };
+/** Where the summarising model came from, for the settings page and for support. */
+export type VoiceSummaryModelOrigin = 'configured' | 'loaded' | 'last-used' | 'installed' | 'none';
+
+/**
+ * Asked before summarising, so the wait can be explained.
+ *
+ * A local model that is installed but not loaded takes tens of seconds on its
+ * first request. Knowing that in advance is what lets the pet say "waking the
+ * model" instead of appearing to have frozen.
+ */
+export type VoiceSummaryPlanRequest = {
+  /** The model the user pinned in settings; empty means choose automatically. */
+  modelId: string;
+  /** The model that last produced a summary; empty when there has not been one. */
+  lastUsedModelId: string;
+};
+export type VoiceSummaryPlanResponse = {
+  /** Empty when nothing on this machine can summarise. */
+  modelId: string;
+  displayName: string;
+  /** False when the host has to load the weights before it can answer. */
+  loaded: boolean;
+  /** True when the model runs on this machine. */
+  local: boolean;
+  origin: VoiceSummaryModelOrigin;
+};
+
+export type VoiceSummarizeRequest = {
+  operationId: string;
+  /** The model chosen by {@link VoiceSummaryPlanResponse}; empty resolves again. */
+  modelId: string;
+  text: string;
+  timeoutMs: number;
+  maxCharacters: number;
+};
+export type VoiceSummarizeResponse = {
+  operationId: string;
+  /** The English briefing, or the text unchanged when no model could produce one. */
+  text: string;
+  modelId: string;
+  source: 'model' | 'original';
+  /**
+   * True when the briefing came back in English.
+   *
+   * A small local model sometimes shortens the reply but keeps its language. That
+   * is still a better thing to speak than the whole reply, so it is used — but
+   * the caller is told, because it is not what was asked for.
+   */
+  translated: boolean;
+  /** Why the model was not used. Absent when it was. */
+  reason?: 'no-model' | 'unreachable' | 'timeout' | 'empty-output';
+};
+
 export type VoiceCancelRequest = { operationId: string };
 export type VoiceCancelResponse = {
   operationId: string;

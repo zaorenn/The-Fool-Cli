@@ -5,7 +5,12 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { EMPTY_EVIDENCE, describeEvidence, narrate, type RunEvidence } from '@renderer/services/voice/FoolNarrator';
+import {
+  EMPTY_EVIDENCE,
+  describeEvidence,
+  narrate,
+  type RunEvidence,
+} from '@renderer/services/voice/narration/FoolNarrator';
 
 const options = { language: 'en' as const, maxSpokenCharacters: 600 };
 const evidence = (over: Partial<RunEvidence> = {}): RunEvidence => ({ ...EMPTY_EVIDENCE, ...over });

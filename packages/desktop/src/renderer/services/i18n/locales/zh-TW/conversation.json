@@ -470,7 +470,8 @@
       "stageGenerating": "正在處理",
       "stageSpeaking": "正在回答",
       "stageHint": "說「{{phrase}}」",
-      "stagePlaceholder": "等你說話…"
+      "stagePlaceholder": "等你說話…",
+      "wakingModel": "正在喚醒 {{model}}…"
     }
   },
   "sideQuestion": {

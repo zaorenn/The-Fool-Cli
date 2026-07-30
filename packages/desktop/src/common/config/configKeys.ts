@@ -13,6 +13,13 @@ export type ConfigKeyMap = {
   'ui.themeOverrides': ThemeOverrides | undefined;
   /** The chat that spoken turns go to, until the user asks for a new one. */
   'voice.boundConversationId': string | undefined;
+  /**
+   * The model that last produced a spoken English summary.
+   *
+   * Remembered so the next launch starts with a model that is already loaded
+   * rather than paying the cold start again on the first thing said.
+   */
+  'voice.summaryModelId': string | undefined;
   'window.bounds': { x?: number; y?: number; width: number; height: number } | undefined;
   'webui.desktop.enabled': boolean | undefined;
   'webui.desktop.allowRemote': boolean | undefined;

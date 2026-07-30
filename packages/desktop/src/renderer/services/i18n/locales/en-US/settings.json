@@ -1342,7 +1342,14 @@
     "wakeTestSilent": "Nothing was heard. Check the microphone above.",
     "wakeTestFailed": "The test could not run.",
     "wakePhraseTooShort": "A wake phrase needs at least two characters.",
-    "wakeWordModel": "Heard through"
+    "wakeWordModel": "Heard through",
+    "spokenSummary": "Spoken summary",
+    "summaryEnglish": "Speak a short English summary instead of the whole reply",
+    "summaryEnglishHint": "The installed voices are English, and reading a whole reply takes minutes. A model translates and shortens it first; if none can, the reply is spoken as written.",
+    "summaryModel": "Summarised by",
+    "summaryModelCold": "not loaded yet — the first answer will be slow",
+    "summaryNoModel": "No model on this machine can summarise, so replies are spoken as written.",
+    "summaryChecking": "Looking for a model…"
   },
   "themeCustomizer": {
     "title": "Customize theme",

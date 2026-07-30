@@ -470,7 +470,8 @@
       "stageGenerating": "Working on it",
       "stageSpeaking": "Answering",
       "stageHint": "say “{{phrase}}”",
-      "stagePlaceholder": "Waiting for you to speak…"
+      "stagePlaceholder": "Waiting for you to speak…",
+      "wakingModel": "Waking {{model}}…"
     }
   },
   "sideQuestion": {

@@ -470,7 +470,8 @@
       "stageGenerating": "Au travail",
       "stageSpeaking": "Réponse",
       "stageHint": "dites « {{phrase}} »",
-      "stagePlaceholder": "J’attends que vous parliez…"
+      "stagePlaceholder": "J’attends que vous parliez…",
+      "wakingModel": "Réveil de {{model}}…"
     }
   },
   "sideQuestion": {

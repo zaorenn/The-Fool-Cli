@@ -471,7 +471,8 @@
       "stageGenerating": "Arbeitet daran",
       "stageSpeaking": "Antwortet",
       "stageHint": "sag „{{phrase}}“",
-      "stagePlaceholder": "Warte, bis du sprichst…"
+      "stagePlaceholder": "Warte, bis du sprichst…",
+      "wakingModel": "{{model}} wird geweckt…"
     }
   },
   "sideQuestion": {

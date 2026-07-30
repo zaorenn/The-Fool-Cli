@@ -14,6 +14,7 @@ import { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybackServ
 import { reconcileVoiceModels } from '@renderer/services/voice/reconcileVoiceModels';
 import AudioDeviceSection from './AudioDeviceSection';
 import SpeakerBrowser from './SpeakerBrowser';
+import SummarySection from './SummarySection';
 import VoicePicker from './VoicePicker';
 import WakeWordSection from './WakeWordSection';
 import { useVoiceCatalog } from './useVoiceCatalog';
@@ -179,6 +180,11 @@ const VoiceSettingsContent: React.FC = () => {
           </label>
         </div>
       ),
+    },
+    {
+      key: 'spokenSummary',
+      title: t('settings.voice.spokenSummary'),
+      body: <SummarySection settings={settings} onChange={update} />,
     },
     {
       key: 'speechToText',

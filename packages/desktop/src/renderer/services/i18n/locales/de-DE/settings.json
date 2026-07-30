@@ -1342,7 +1342,14 @@
     "wakeTestSilent": "Nichts gehört. Prüfe das Mikrofon oben.",
     "wakeTestFailed": "Der Test konnte nicht ausgeführt werden.",
     "wakePhraseTooShort": "Eine Aktivierungsphrase braucht mindestens zwei Zeichen.",
-    "wakeWordModel": "Gehört über"
+    "wakeWordModel": "Gehört über",
+    "spokenSummary": "Gesprochene Zusammenfassung",
+    "summaryEnglish": "Kurze englische Zusammenfassung statt der ganzen Antwort vorlesen",
+    "summaryEnglishHint": "Die installierten Stimmen sind englisch, und die ganze Antwort zu lesen dauert Minuten. Ein Modell übersetzt und kürzt sie zuerst; kann keines das, wird die Antwort unverändert vorgelesen.",
+    "summaryModel": "Zusammengefasst von",
+    "summaryModelCold": "noch nicht geladen — die erste Antwort wird langsam sein",
+    "summaryNoModel": "Auf diesem Rechner kann kein Modell zusammenfassen, deshalb werden Antworten unverändert vorgelesen.",
+    "summaryChecking": "Suche ein Modell…"
   },
   "themeCustomizer": {
     "title": "Design anpassen",

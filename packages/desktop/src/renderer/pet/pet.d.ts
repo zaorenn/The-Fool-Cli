@@ -3,7 +3,7 @@ interface PetAPI {
   onEyeMove: (cb: (data: { eyeDx: number; eyeDy: number; bodyDx: number; bodyRotate: number }) => void) => void;
   onResize: (cb: (size: number) => void) => void;
   /** The voice stage, with its label already translated by the main window. */
-  onVoiceStage: (cb: (data: { stage: string; stageLabel: string; accent: string }) => void) => void;
+  onVoiceStage: (cb: (data: { stage: string; stageLabel: string; notice: string; accent: string }) => void) => void;
 }
 
 interface PetHitAPI {

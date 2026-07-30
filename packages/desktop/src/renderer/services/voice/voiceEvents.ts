@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { RunEvidence } from '@renderer/services/voice/FoolNarrator';
+import type { RunEvidence } from '@renderer/services/voice/narration/FoolNarrator';
 
 /**
  * The window events voice uses to talk to the rest of the app.

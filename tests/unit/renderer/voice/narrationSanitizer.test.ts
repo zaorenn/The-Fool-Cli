@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { sanitizeForSpeech, truncateToSpokenLength } from '@renderer/services/voice/narrationSanitizer';
+import { sanitizeForSpeech, truncateToSpokenLength } from '@renderer/services/voice/narration/narrationSanitizer';
 
 describe('sanitizeForSpeech', () => {
   it('never speaks a fenced code block', () => {

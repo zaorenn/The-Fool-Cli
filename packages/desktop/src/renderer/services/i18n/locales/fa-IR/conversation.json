@@ -470,7 +470,8 @@
       "stageGenerating": "در حال کار",
       "stageSpeaking": "در حال پاسخ",
       "stageHint": "بگو «{{phrase}}»",
-      "stagePlaceholder": "در انتظار صحبت شما…"
+      "stagePlaceholder": "در انتظار صحبت شما…",
+      "wakingModel": "بیدار کردن {{model}}…"
     }
   },
   "sideQuestion": {

@@ -476,7 +476,8 @@
       "stageGenerating": "Trabalhando nisso",
       "stageSpeaking": "Respondendo",
       "stageHint": "diga “{{phrase}}”",
-      "stagePlaceholder": "Esperando você falar…"
+      "stagePlaceholder": "Esperando você falar…",
+      "wakingModel": "Acordando {{model}}…"
     }
   },
   "sideQuestion": {
