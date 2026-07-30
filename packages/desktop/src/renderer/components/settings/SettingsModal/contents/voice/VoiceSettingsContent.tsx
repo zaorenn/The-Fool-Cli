@@ -15,6 +15,7 @@ import { reconcileVoiceModels } from '@renderer/services/voice/reconcileVoiceMod
 import AudioDeviceSection from './AudioDeviceSection';
 import SpeakerBrowser from './SpeakerBrowser';
 import SummarySection from './SummarySection';
+import VoiceAgentSection from './VoiceAgentSection';
 import VoicePicker from './VoicePicker';
 import WakeWordSection from './WakeWordSection';
 import { useVoiceCatalog } from './useVoiceCatalog';
@@ -153,6 +154,11 @@ const VoiceSettingsContent: React.FC = () => {
           onInstallModel={() => catalog.install(settings.stt.modelId)}
         />
       ),
+    },
+    {
+      key: 'voiceAgent',
+      title: t('settings.voice.agentSection'),
+      body: <VoiceAgentSection settings={settings} onChange={update} />,
     },
     {
       key: 'conversation',

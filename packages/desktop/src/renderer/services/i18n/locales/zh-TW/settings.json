@@ -1351,7 +1351,15 @@
     "summaryModel": "摘要模型",
     "summaryModelCold": "尚未載入 — 第一次回答會比較慢",
     "summaryNoModel": "本機沒有可用於摘要的模型，因此回覆將依原文朗讀。",
-    "summaryChecking": "正在尋找模型…"
+    "summaryChecking": "正在尋找模型…",
+    "agentSection": "語音使用的智慧體",
+    "agent": "智慧體",
+    "agentModel": "模型",
+    "agentInherit": "與首頁一致",
+    "modelInherit": "智慧體自帶的模型",
+    "agentHint": "無論首頁選了什麼，語音對話都會用這裡指定的智慧體和模型開始。這也讓喚醒詞在視窗最小化時依然可用——工作階段是直接建立的，而不是寫入首頁輸入框。",
+    "agentNeedsModel": "該智慧體需要在此處選擇模型，否則語音對話無法開始。",
+    "agentMissing": "所選智慧體已不存在，語音對話將回退到首頁。"
   },
   "themeCustomizer": {
     "title": "自訂主題",

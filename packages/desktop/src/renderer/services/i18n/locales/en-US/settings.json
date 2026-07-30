@@ -1349,7 +1349,15 @@
     "summaryModel": "Summarised by",
     "summaryModelCold": "not loaded yet — the first answer will be slow",
     "summaryNoModel": "No model on this machine can summarise, so replies are spoken as written.",
-    "summaryChecking": "Looking for a model…"
+    "summaryChecking": "Looking for a model…",
+    "agentSection": "Agent for voice",
+    "agent": "Agent",
+    "agentModel": "Model",
+    "agentInherit": "Whatever the home page uses",
+    "modelInherit": "The agent's own model",
+    "agentHint": "A spoken turn always opens on this agent and model, whatever the home page is set to. It also means a wake word works with the window minimised — the chat is created directly rather than typed into the home page.",
+    "agentNeedsModel": "This agent needs a model chosen here, or a spoken turn cannot start.",
+    "agentMissing": "The chosen agent no longer exists, so spoken turns fall back to the home page."
   },
   "themeCustomizer": {
     "title": "Customize theme",

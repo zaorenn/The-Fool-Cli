@@ -460,6 +460,13 @@ const createWindow = ({ showOnReady = true }: { showOnReady?: boolean } = {}): v
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       webviewTag: true, // 启用 webview 标签用于 HTML 预览 / Enable webview tag for HTML preview
+      // The voice loop lives in this window: the microphone, the wake word, the
+      // turn that follows it and the answer being spoken. Chromium throttles
+      // timers in a hidden window to about one a second, which is enough to make
+      // a hands-free turn stall on whichever timeout it was waiting for. A wake
+      // word whose whole purpose is to work while you are looking at something
+      // else cannot be throttled for being in the background.
+      backgroundThrottling: false,
     },
   });
   console.log(`[AionUi] Main window created (id=${mainWindow.id})`);

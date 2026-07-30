@@ -330,8 +330,10 @@ const GuidPage: React.FC = () => {
       const { text } = (event as CustomEvent<VoiceSubmitDetail>).detail;
       if (!text.trim()) return;
       setInputRef.current(text);
-      // Let the controlled input commit before the send handler reads it.
-      requestAnimationFrame(() => sendRef.current());
+      // Let the controlled input commit before the send handler reads it. A
+      // timeout, not an animation frame: a minimised window paints no frames, and
+      // a hands-free turn that waits for one never gets sent.
+      setTimeout(() => sendRef.current(), 0);
     };
 
     window.addEventListener(VOICE_HOME_SUBMIT_EVENT, handleVoiceSubmit);

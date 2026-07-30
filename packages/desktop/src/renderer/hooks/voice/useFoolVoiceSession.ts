@@ -71,6 +71,16 @@ const AWAKE_WINDOW_MS = 25000;
  */
 const MAX_WAKE_UTTERANCE_MS = 12000;
 
+/**
+ * How long a turn may run before the listener stops waiting for its answer.
+ *
+ * Only a backstop for a run that never reports back at all. A real answer
+ * releases the hold the moment it starts being spoken, so this number does not
+ * cap how long an agent may work — it caps how long a broken turn can leave the
+ * microphone deaf.
+ */
+const MAX_AGENT_WAIT_MS = 10 * 60 * 1000;
+
 /** Tracks whether a hand-started session holds the microphone. */
 let manualSessionActive = false;
 const manualListeners = new Set<(active: boolean) => void>();
@@ -140,6 +150,17 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
   /** When the wake phrase's follow-up window closes. */
   const awakeUntilRef = useRef(0);
   const utteranceStartedAtRef = useRef(0);
+  /**
+   * True while the agent is working and audio is being ignored.
+   *
+   * The microphone stays open — reopening it costs a device round-trip and, on
+   * some machines, a permission blink — but nothing is listened to. Otherwise
+   * everything said or overheard during a two-minute run queues up as the next
+   * command.
+   */
+  const holdRef = useRef(false);
+  /** Releases the hold if the answer never arrives. */
+  const holdTimer = useRef<number | null>(null);
 
   const sessionId = useMemo(() => crypto.randomUUID(), []);
 
@@ -147,7 +168,17 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     setState({ ...next, enteredAtMs: Date.now() } as VoiceTurnState);
   }, []);
 
+  /** Stops ignoring audio and clears the safety timer. */
+  const release = useCallback(() => {
+    holdRef.current = false;
+    if (holdTimer.current !== null) {
+      window.clearTimeout(holdTimer.current);
+      holdTimer.current = null;
+    }
+  }, []);
+
   const listen = useCallback(() => {
+    release();
     vad.current?.reset();
     capture.current?.beginUtterance();
     utteranceStartedAtRef.current = Date.now();
@@ -158,18 +189,39 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
       clientTurnId: crypto.randomUUID(),
       condition: { status: 'normal' },
     });
-  }, [enter, sessionId, settings.activation.wakePhrase.phrase]);
+  }, [enter, release, sessionId, settings.activation.wakePhrase.phrase]);
 
   /** Back to waiting for the phrase, with the microphone still open. */
   const listenForWake = useCallback(() => {
+    release();
     vad.current?.reset();
     capture.current?.beginUtterance();
     utteranceStartedAtRef.current = Date.now();
     publishVoiceStage({ stage: 'listening', phrase: settings.activation.wakePhrase.phrase, awake: false });
     enter({ phase: 'wake-listening', sessionId, condition: { status: 'normal' } });
-  }, [enter, sessionId, settings.activation.wakePhrase.phrase]);
+  }, [enter, release, sessionId, settings.activation.wakePhrase.phrase]);
 
   const isAwake = useCallback(() => Date.now() < awakeUntilRef.current, []);
+
+  /**
+   * Stops listening until the answer starts being spoken.
+   *
+   * The safety timer is the important half: if the turn never reports back — a
+   * crashed agent, a stream that ends without a final message — the listener must
+   * not sit deaf forever. It drops back to whichever mode it was in, which for a
+   * wake-word session means waiting for the phrase again.
+   */
+  const hold = useCallback(() => {
+    holdRef.current = true;
+    capture.current?.takeUtteranceWav();
+    if (holdTimer.current !== null) window.clearTimeout(holdTimer.current);
+    holdTimer.current = window.setTimeout(() => {
+      holdTimer.current = null;
+      if (!activeRef.current) return;
+      if (wakeModeRef.current) listenForWake();
+      else listen();
+    }, MAX_AGENT_WAIT_MS);
+  }, [listen, listenForWake]);
 
   const submit = useCallback((text: string) => {
     window.dispatchEvent(new CustomEvent<VoiceSubmitDetail>(VOICE_TURN_EVENT, { detail: { text } }));
@@ -244,7 +296,11 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
         });
 
         // "wake up fool, run the tests" should not need saying twice.
-        if (match.commandText.length > 0) submit(match.commandText);
+        if (match.commandText.length > 0) {
+          submit(match.commandText);
+          hold();
+          return;
+        }
         listen();
         return;
       }
@@ -268,14 +324,19 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
         awake: true,
       });
       submit(text);
-      listen();
+      // Nothing is listened to until the answer starts being spoken. A long run
+      // otherwise turns every overheard sentence into the next command.
+      hold();
     },
-    [enter, isAwake, listen, listenForWake, sessionId, settings.activation.wakePhrase.phrase, submit, transcribe]
+    [enter, hold, isAwake, listen, listenForWake, sessionId, settings.activation.wakePhrase.phrase, submit, transcribe]
   );
 
   const onFrame = useCallback(
     ({ rms }: { rms: number }) => {
       if (!activeRef.current || !vad.current || !capture.current) return;
+      // The agent is working. The microphone is open but nothing said to it counts
+      // until there is an answer to interrupt.
+      if (holdRef.current) return;
 
       const event = vad.current.push(rms, performance.now());
 
@@ -370,9 +431,18 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
         })
       );
 
+      // There is now something to interrupt, so start listening again — this is
+      // the moment the hold taken at submit time is for. Reset the detector first:
+      // it has heard nothing for however long the run took, and its idea of the
+      // noise floor is stale.
+      release();
+      vad.current?.reset();
+      capture.current?.beginUtterance();
+      utteranceStartedAtRef.current = Date.now();
+
       await playback.current?.play(synthesis.audio);
     },
-    [enter, sessionId, settings]
+    [enter, release, sessionId, settings]
   );
 
   const speakThenListen = useCallback(
@@ -422,6 +492,7 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     busyRef.current = false;
     wakeModeRef.current = false;
     awakeUntilRef.current = 0;
+    release();
     playback.current?.stop();
     capture.current?.stop();
     capture.current = null;
@@ -430,7 +501,7 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     // No surface should be left claiming to listen after the microphone closes.
     publishVoiceStageOff();
     setState(idleState());
-  }, []);
+  }, [release]);
 
   /**
    * Checks the models, then opens capture and playback.

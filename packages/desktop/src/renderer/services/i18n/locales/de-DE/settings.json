@@ -1349,7 +1349,15 @@
     "summaryModel": "Zusammengefasst von",
     "summaryModelCold": "noch nicht geladen — die erste Antwort wird langsam sein",
     "summaryNoModel": "Auf diesem Rechner kann kein Modell zusammenfassen, deshalb werden Antworten unverändert vorgelesen.",
-    "summaryChecking": "Suche ein Modell…"
+    "summaryChecking": "Suche ein Modell…",
+    "agentSection": "Agent für Sprache",
+    "agent": "Agent",
+    "agentModel": "Modell",
+    "agentInherit": "Wie auf der Startseite",
+    "modelInherit": "Das eigene Modell des Agenten",
+    "agentHint": "Ein gesprochener Zug beginnt immer mit diesem Agenten und Modell, unabhängig davon, was die Startseite eingestellt hat. Damit funktioniert das Weckwort auch bei minimiertem Fenster — der Chat wird direkt erstellt und nicht auf der Startseite eingetippt.",
+    "agentNeedsModel": "Dieser Agent braucht hier ein ausgewähltes Modell, sonst kann kein gesprochener Zug beginnen.",
+    "agentMissing": "Der gewählte Agent existiert nicht mehr, deshalb fallen gesprochene Züge auf die Startseite zurück."
   },
   "themeCustomizer": {
     "title": "Design anpassen",

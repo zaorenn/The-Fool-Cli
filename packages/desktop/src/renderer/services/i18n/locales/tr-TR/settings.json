@@ -1349,7 +1349,15 @@
     "summaryModel": "Özetleyen",
     "summaryModelCold": "henüz yüklü değil — ilk cevap yavaş olacak",
     "summaryNoModel": "Bu makinede özetleyebilecek bir model yok, bu yüzden cevaplar yazıldığı gibi okunuyor.",
-    "summaryChecking": "Model aranıyor…"
+    "summaryChecking": "Model aranıyor…",
+    "agentSection": "Ses için ajan",
+    "agent": "Ajan",
+    "agentModel": "Model",
+    "agentInherit": "Ana sayfanın kullandığı",
+    "modelInherit": "Ajanın kendi modeli",
+    "agentHint": "Sesli bir tur, ana sayfa ne seçili olursa olsun her zaman bu ajan ve modelle açılır. Ayrıca pencere küçültülmüşken de çalışır: sohbet ana sayfaya yazılmak yerine doğrudan oluşturulur.",
+    "agentNeedsModel": "Bu ajan için burada bir model seçilmeli, yoksa sesli tur başlayamaz.",
+    "agentMissing": "Seçilen ajan artık yok, bu yüzden sesli turlar ana sayfaya düşüyor."
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

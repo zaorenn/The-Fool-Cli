@@ -1352,7 +1352,15 @@
     "summaryModel": "Resumido por",
     "summaryModelCold": "ainda não carregado — a primeira resposta será lenta",
     "summaryNoModel": "Nenhum modelo nesta máquina pode resumir, então as respostas são lidas como estão.",
-    "summaryChecking": "Procurando um modelo…"
+    "summaryChecking": "Procurando um modelo…",
+    "agentSection": "Agente para voz",
+    "agent": "Agente",
+    "agentModel": "Modelo",
+    "agentInherit": "O mesmo da página inicial",
+    "modelInherit": "O modelo do próprio agente",
+    "agentHint": "Um turno falado sempre abre com este agente e modelo, seja o que for que a página inicial tenha selecionado. Isso também faz a palavra de ativação funcionar com a janela minimizada — a conversa é criada diretamente, não digitada na página inicial.",
+    "agentNeedsModel": "Este agente precisa de um modelo escolhido aqui, ou um turno falado não pode começar.",
+    "agentMissing": "O agente escolhido não existe mais, então os turnos falados voltam para a página inicial."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

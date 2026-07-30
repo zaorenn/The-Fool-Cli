@@ -1350,7 +1350,15 @@
     "summaryModel": "摘要模型",
     "summaryModelCold": "尚未加载 — 第一次回答会比较慢",
     "summaryNoModel": "本机没有可用于摘要的模型，因此回复将按原文朗读。",
-    "summaryChecking": "正在查找模型…"
+    "summaryChecking": "正在查找模型…",
+    "agentSection": "语音使用的智能体",
+    "agent": "智能体",
+    "agentModel": "模型",
+    "agentInherit": "与首页一致",
+    "modelInherit": "智能体自带的模型",
+    "agentHint": "无论首页选了什么，语音对话都会用这里指定的智能体和模型开始。这也让唤醒词在窗口最小化时依然可用——会话是直接创建的，而不是写入首页输入框。",
+    "agentNeedsModel": "该智能体需要在此处选择模型，否则语音对话无法开始。",
+    "agentMissing": "所选智能体已不存在，语音对话将回退到首页。"
   },
   "themeCustomizer": {
     "title": "自定义主题",

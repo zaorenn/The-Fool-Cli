@@ -16,8 +16,8 @@ import i18next from 'i18next';
  * transcript are always the same moment rather than three near-misses.
  *
  * Level updates arrive per audio frame — roughly eight times a second — so they
- * are coalesced: a stage change goes out immediately, a level change rides the
- * next animation frame.
+ * are coalesced: a stage change goes out immediately, a level change waits for
+ * the next tick.
  */
 
 type StageInput = {
@@ -44,6 +44,16 @@ let queued: VoiceStageEvent | null = null;
 let frame: number | null = null;
 /** Survives stage changes: a model keeps loading while the loop moves on. */
 let notice = '';
+
+/**
+ * How long a level update may wait to be coalesced.
+ *
+ * A timer, not an animation frame: this window is often minimised while the pet
+ * is being talked to, and a minimised window paints nothing — an animation frame
+ * that never arrives would leave the waveform frozen at whatever it last showed.
+ * Roughly thirty a second is smooth and costs the same as a frame would.
+ */
+const COALESCE_MS = 33;
 
 /** Reads the accent the app is painting with right now, custom colours included. */
 const readAccent = (): string => {
@@ -100,16 +110,16 @@ export const publishVoiceStage = (input: StageInput): void => {
   if (isNews) {
     queued = null;
     if (frame !== null) {
-      cancelAnimationFrame(frame);
+      window.clearTimeout(frame);
       frame = null;
     }
     send(event);
     return;
   }
 
-  // Only the level moved: let it ride the next frame.
+  // Only the level moved: let it ride the next tick.
   queued = event;
-  frame ??= requestAnimationFrame(flush);
+  frame ??= window.setTimeout(flush, COALESCE_MS);
 };
 
 export const peekVoiceStage = (): VoiceStageEvent => current;
@@ -137,7 +147,7 @@ export const publishVoiceStageOff = (): void => {
   queued = null;
   notice = '';
   if (frame !== null) {
-    cancelAnimationFrame(frame);
+    window.clearTimeout(frame);
     frame = null;
   }
   send({ ...VOICE_STAGE_OFF, accent: readAccent() });

@@ -1349,7 +1349,15 @@
     "summaryModel": "Résumé par",
     "summaryModelCold": "pas encore chargé — la première réponse sera lente",
     "summaryNoModel": "Aucun modèle de cette machine ne peut résumer, les réponses sont donc lues telles quelles.",
-    "summaryChecking": "Recherche d'un modèle…"
+    "summaryChecking": "Recherche d'un modèle…",
+    "agentSection": "Agent pour la voix",
+    "agent": "Agent",
+    "agentModel": "Modèle",
+    "agentInherit": "Le même que la page d'accueil",
+    "modelInherit": "Le modèle propre à l'agent",
+    "agentHint": "Un tour parlé s'ouvre toujours avec cet agent et ce modèle, quoi que la page d'accueil ait sélectionné. Cela permet aussi au mot de réveil de fonctionner fenêtre réduite : la conversation est créée directement, et non saisie sur la page d'accueil.",
+    "agentNeedsModel": "Cet agent a besoin d'un modèle choisi ici, sinon un tour parlé ne peut pas démarrer.",
+    "agentMissing": "L'agent choisi n'existe plus, les tours parlés reviennent donc à la page d'accueil."
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

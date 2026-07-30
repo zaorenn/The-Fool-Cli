@@ -266,6 +266,24 @@ export type FoolVoiceSettings = {
     modelId: string;
     timeoutMs: number;
   };
+  /**
+   * The agent and model a spoken turn runs on.
+   *
+   * Talking to the pet is its own way of working, and it should not depend on
+   * where the home page happens to be pointed. Pinning them here means the same
+   * agent and the same model answer every time the wake word is heard, whatever
+   * was last selected by hand.
+   *
+   * All three empty keeps the old behaviour: the turn inherits whatever the home
+   * page would have used.
+   */
+  session: {
+    /** Assistant id, as the assistant list reports it. */
+    assistantId: string;
+    /** Provider holding the model. Empty leaves the model to the assistant. */
+    providerId: string;
+    modelId: string;
+  };
   playback: {
     volume: number;
     interruptible: true;
@@ -337,6 +355,11 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     // says what the wait is for, so a long ceiling costs nothing in the normal
     // case and saves the first answer of a session in the slow one.
     timeoutMs: 45000,
+  },
+  session: {
+    assistantId: '',
+    providerId: '',
+    modelId: '',
   },
   playback: {
     volume: 0.85,
@@ -496,6 +519,14 @@ const settingsSchema = z
         // publisher/repo/file path, which routinely runs past 128 characters.
         modelId: z.string().max(256).default(''),
         timeoutMs: z.number().int().min(1000).max(120000).default(45000),
+      })
+      .strict()
+      .default({}),
+    session: z
+      .object({
+        assistantId: z.string().max(128).default(''),
+        providerId: z.string().max(128).default(''),
+        modelId: z.string().max(256).default(''),
       })
       .strict()
       .default({}),
