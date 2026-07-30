@@ -75,12 +75,12 @@
   "backendStartup": {
     "incompatibleRuntime": {
       "title": "Ce système n'est pas pris en charge par le backend fourni",
-      "description": "The Fool s'est ouvert, mais le backend local AionCore ne peut pas fonctionner sur cette version de Linux. Veuillez effectuer une mise à niveau vers une distribution Linux prise en charge et redémarrer The Fool.",
+      "description": "The Fool s'est ouvert, mais le backend local The Fool Core ne peut pas fonctionner sur cette version de Linux. Veuillez effectuer une mise à niveau vers une distribution Linux prise en charge et redémarrer The Fool.",
       "requiredVersions": "Symboles d'exécution requis : {{versions}}"
     },
     "incompleteInstallation": {
       "title": "L'installation d'The Fool est incomplète",
-      "description": "Cette installation ne dispose pas des ressources locales requises, AionCore ne peut donc pas démarrer. Veuillez télécharger et réinstaller la dernière version d'The Fool. Si le problème réapparaît après la réinstallation, vérifiez si un logiciel de sécurité ou antivirus a mis AionCore en quarantaine.",
+      "description": "Cette installation ne dispose pas des ressources locales requises, The Fool Core ne peut donc pas démarrer. Veuillez télécharger et réinstaller la dernière version d'The Fool. Si le problème réapparaît après la réinstallation, vérifiez si un logiciel de sécurité ou antivirus a mis The Fool Core en quarantaine.",
       "downloadLatest": "Télécharger le dernier",
       "sendDiagnostics": "Envoyer des diagnostics",
       "diagnosticsSent": "Diagnostics envoyés",
@@ -94,7 +94,7 @@
     },
     "dataMigration": {
       "title": "Échec de la migration des données locales",
-      "description": "The Fool s'est ouvert, mais AionCore s'est arrêté lors de l'initialisation des données locales. La réinstallation d'The Fool ne résoudra peut-être pas ce problème. Envoyez un rapport de diagnostic ou contactez le support afin que la migration de la base de données locale puisse être inspectée.",
+      "description": "The Fool s'est ouvert, mais The Fool Core s'est arrêté lors de l'initialisation des données locales. La réinstallation d'The Fool ne résoudra peut-être pas ce problème. Envoyez un rapport de diagnostic ou contactez le support afin que la migration de la base de données locale puisse être inspectée.",
       "sendDiagnostics": "Envoyer des diagnostics",
       "diagnosticsSent": "Diagnostics envoyés",
       "diagnosticsReportSuccess": "Rapport de diagnostic envoyé",
@@ -102,7 +102,7 @@
     },
     "localDataRepair": {
       "title": "La réparation des données locales a échoué",
-      "description": "The Fool s'est ouvert, mais AionCore s'est arrêté lors de la préparation des données locales de démarrage, comme les enregistrements d'assistants ou d'agents. La réinstallation d'The Fool ne résoudra peut-être pas ce problème. Envoyez un rapport de diagnostic ou contactez l'assistance afin que la base de données locale puisse être inspectée.",
+      "description": "The Fool s'est ouvert, mais The Fool Core s'est arrêté lors de la préparation des données locales de démarrage, comme les enregistrements d'assistants ou d'agents. La réinstallation d'The Fool ne résoudra peut-être pas ce problème. Envoyez un rapport de diagnostic ou contactez l'assistance afin que la base de données locale puisse être inspectée.",
       "sendDiagnostics": "Envoyer des diagnostics",
       "diagnosticsSent": "Diagnostics envoyés",
       "diagnosticsReportSuccess": "Rapport de diagnostic envoyé",
@@ -110,7 +110,7 @@
     },
     "startupDirectory": {
       "title": "Le répertoire de démarrage n'est pas disponible",
-      "description": "The Fool s'est ouvert, mais AionCore n'a pas pu démarrer car le répertoire de travail ou de journal configuré est manquant, indisponible ou bloqué par les autorisations. Vérifiez que les répertoires configurés existent et sont accessibles en écriture, puis redémarrez The Fool.",
+      "description": "The Fool s'est ouvert, mais The Fool Core n'a pas pu démarrer car le répertoire de travail ou de journal configuré est manquant, indisponible ou bloqué par les autorisations. Vérifiez que les répertoires configurés existent et sont accessibles en écriture, puis redémarrez The Fool.",
       "sendDiagnostics": "Envoyer des diagnostics",
       "diagnosticsSent": "Diagnostics envoyés",
       "diagnosticsReportSuccess": "Rapport de diagnostic envoyé",

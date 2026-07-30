@@ -19,6 +19,7 @@
  */
 
 import { ipcBridge } from '@/common';
+import builtInAgentLogo from '@renderer/assets/logos/brand/app.png';
 import type { AssistantAvatar } from '@/renderer/utils/model/assistantAvatar';
 import {
   isBackendRelativeAssetPath,
@@ -28,6 +29,20 @@ import {
 import type { ManagedAgent } from '@/renderer/utils/model/agentTypes';
 import { resolveBackendAssetUrl } from '@/renderer/utils/platform';
 import useSWR from 'swr';
+
+/**
+ * The agent that ships inside the app, as the backend still names it.
+ *
+ * The identifier is the backend's, not ours: it travels in every conversation
+ * record and in the agent catalog, and the binary that serves them is not built
+ * from this repository. Renaming it here would mean creating conversations of a
+ * type the backend does not know and failing to recognise the agent it reports
+ * — so the name stays and only what the user reads changes.
+ */
+const BUILT_IN_AGENT_BACKEND = 'aionrs';
+
+const isBuiltInAgent = (backend: string | undefined | null): boolean =>
+  typeof backend === 'string' && backend.trim().toLowerCase() === BUILT_IN_AGENT_BACKEND;
 
 /** Map of lowercased backend id -> logo URL. */
 export type AgentLogoMap = Record<string, string>;
@@ -122,6 +137,13 @@ export function resolveAgentLogo(
 ): string | null {
   if (opts.icon) return normalizeLogoUrl(opts.icon);
 
+  // The agent that ships with the app wears the app's own mark. Returned before
+  // the catalog is consulted, and deliberately without going through
+  // `normalizeLogoUrl`: this is a bundled import, already a URL the browser can
+  // load, and the guards there exist to reject paths that came off a machine or
+  // out of a backend record — neither of which this is.
+  if (isBuiltInAgent(opts.backend)) return builtInAgentLogo;
+
   if (opts.isExtension && opts.custom_agent_id) {
     const adapterId = opts.custom_agent_id.split(':').pop();
     const logo = lookupBackendLogo(logos, adapterId);
@@ -142,6 +164,8 @@ export function resolveAgentAvatar(
 ): AssistantAvatar {
   const explicitAvatar = resolveAssistantAvatar(opts.icon || undefined);
   if (explicitAvatar.kind !== 'fallback') return explicitAvatar;
+
+  if (isBuiltInAgent(opts.backend)) return { kind: 'image', value: builtInAgentLogo };
 
   if (opts.isExtension && opts.custom_agent_id) {
     const adapterId = opts.custom_agent_id.split(':').pop();

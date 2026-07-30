@@ -102,7 +102,7 @@ export const AgentHubModal: React.FC<AgentHubModalProps> = ({ visible, onCancel 
           </Typography.Text>
           <Link className='text-12px leading-18px' onClick={openAionHubRepo}>
             {t('settings.agentManagement.marketContributionAction', {
-              defaultValue: 'Open a PR on AionHub',
+              defaultValue: 'Open a PR on the agent hub',
             })}
           </Link>
         </div>

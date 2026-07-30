@@ -75,12 +75,12 @@
   "backendStartup": {
     "incompatibleRuntime": {
       "title": "이 시스템은 번들 백엔드를 지원하지 않습니다",
-      "description": "The Fool는 열렸지만 로컬 AionCore 백엔드를 이 Linux 버전에서 실행할 수 없습니다. 지원되는 Linux 배포판으로 업그레이드한 뒤 The Fool를 다시 시작하세요.",
+      "description": "The Fool는 열렸지만 로컬 The Fool Core 백엔드를 이 Linux 버전에서 실행할 수 없습니다. 지원되는 Linux 배포판으로 업그레이드한 뒤 The Fool를 다시 시작하세요.",
       "requiredVersions": "필요한 런타임 심볼: {{versions}}"
     },
     "incompleteInstallation": {
       "title": "The Fool 설치가 불완전합니다",
-      "description": "현재 설치에 필요한 로컬 리소스가 없어 AionCore를 시작할 수 없습니다. 최신 The Fool를 다운로드하여 다시 설치하세요. 다시 설치한 후에도 문제가 반복되면 보안 또는 바이러스 백신 소프트웨어가 AionCore를 격리했는지 확인하세요.",
+      "description": "현재 설치에 필요한 로컬 리소스가 없어 The Fool Core를 시작할 수 없습니다. 최신 The Fool를 다운로드하여 다시 설치하세요. 다시 설치한 후에도 문제가 반복되면 보안 또는 바이러스 백신 소프트웨어가 The Fool Core를 격리했는지 확인하세요.",
       "downloadLatest": "최신 버전 다운로드",
       "sendDiagnostics": "진단 보고서 보내기",
       "diagnosticsSent": "진단 보고서를 보냈습니다",
@@ -94,7 +94,7 @@
     },
     "dataMigration": {
       "title": "Local data migration failed",
-      "description": "The Fool opened, but AionCore stopped while initializing local data. Reinstalling The Fool may not fix this. Send a diagnostics report or contact support so the local database migration can be inspected.",
+      "description": "The Fool opened, but The Fool Core stopped while initializing local data. Reinstalling The Fool may not fix this. Send a diagnostics report or contact support so the local database migration can be inspected.",
       "sendDiagnostics": "Send diagnostics",
       "diagnosticsSent": "Diagnostics sent",
       "diagnosticsReportSuccess": "Diagnostics report sent",
@@ -102,7 +102,7 @@
     },
     "localDataRepair": {
       "title": "Local data repair failed",
-      "description": "The Fool는 열렸지만 AionCore가 assistant 또는 에이전트 레코드 같은 로컬 시작 데이터를 준비하는 동안 중지되었습니다. The Fool를 다시 설치해도 문제가 해결되지 않을 수 있습니다. 로컬 데이터베이스를 검사할 수 있도록 진단 보고서를 보내거나 지원팀에 문의하세요.",
+      "description": "The Fool는 열렸지만 The Fool Core가 assistant 또는 에이전트 레코드 같은 로컬 시작 데이터를 준비하는 동안 중지되었습니다. The Fool를 다시 설치해도 문제가 해결되지 않을 수 있습니다. 로컬 데이터베이스를 검사할 수 있도록 진단 보고서를 보내거나 지원팀에 문의하세요.",
       "sendDiagnostics": "Send diagnostics",
       "diagnosticsSent": "Diagnostics sent",
       "diagnosticsReportSuccess": "Diagnostics report sent",
@@ -110,7 +110,7 @@
     },
     "startupDirectory": {
       "title": "Startup directory is unavailable",
-      "description": "The Fool opened, but AionCore could not start because the configured work or log directory is missing, unavailable, or blocked by permissions. Check that the configured directories exist and are writable, then restart The Fool.",
+      "description": "The Fool opened, but The Fool Core could not start because the configured work or log directory is missing, unavailable, or blocked by permissions. Check that the configured directories exist and are writable, then restart The Fool.",
       "sendDiagnostics": "Send diagnostics",
       "diagnosticsSent": "Diagnostics sent",
       "diagnosticsReportSuccess": "Diagnostics report sent",

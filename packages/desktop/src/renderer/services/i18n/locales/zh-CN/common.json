@@ -75,12 +75,12 @@
   "backendStartup": {
     "incompatibleRuntime": {
       "title": "当前系统不支持内置后端",
-      "description": "The Fool 已打开，但本地 AionCore 后端无法在当前 Linux 版本上运行。请升级到受支持的 Linux 发行版后重启 The Fool。",
+      "description": "The Fool 已打开，但本地 The Fool Core 后端无法在当前 Linux 版本上运行。请升级到受支持的 Linux 发行版后重启 The Fool。",
       "requiredVersions": "需要的运行时符号：{{versions}}"
     },
     "incompleteInstallation": {
       "title": "The Fool 安装不完整",
-      "description": "当前安装缺少必要的本地资源，AionCore 无法启动。请下载并重新安装最新版 The Fool；如果重新安装后仍然出现，请检查系统安全软件或杀毒软件是否隔离了 AionCore。",
+      "description": "当前安装缺少必要的本地资源，The Fool Core 无法启动。请下载并重新安装最新版 The Fool；如果重新安装后仍然出现，请检查系统安全软件或杀毒软件是否隔离了 The Fool Core。",
       "downloadLatest": "下载最新版",
       "sendDiagnostics": "发送诊断报告",
       "diagnosticsSent": "诊断报告已发送",
@@ -94,7 +94,7 @@
     },
     "dataMigration": {
       "title": "本地数据迁移失败",
-      "description": "The Fool 已打开，但 AionCore 在初始化本地数据时停止。重复安装 The Fool 未必能解决此问题。请发送诊断报告或联系支持，以便检查本地数据库迁移状态。",
+      "description": "The Fool 已打开，但 The Fool Core 在初始化本地数据时停止。重复安装 The Fool 未必能解决此问题。请发送诊断报告或联系支持，以便检查本地数据库迁移状态。",
       "sendDiagnostics": "发送诊断报告",
       "diagnosticsSent": "诊断报告已发送",
       "diagnosticsReportSuccess": "诊断报告已发送",
@@ -102,7 +102,7 @@
     },
     "localDataRepair": {
       "title": "本地数据修复失败",
-      "description": "The Fool 已打开，但 AionCore 在准备本地启动数据时停止，例如 assistant 或智能体记录。重新安装 The Fool 可能无法解决此问题。请发送诊断报告或联系支持，以便检查本地数据库。",
+      "description": "The Fool 已打开，但 The Fool Core 在准备本地启动数据时停止，例如 assistant 或智能体记录。重新安装 The Fool 可能无法解决此问题。请发送诊断报告或联系支持，以便检查本地数据库。",
       "sendDiagnostics": "发送诊断",
       "diagnosticsSent": "诊断已发送",
       "diagnosticsReportSuccess": "诊断报告已发送",
@@ -110,7 +110,7 @@
     },
     "startupDirectory": {
       "title": "启动目录不可用",
-      "description": "The Fool 已打开，但由于配置的工作目录或日志目录不存在、不可访问或权限受限，AionCore 无法启动。请确认这些目录存在且可写，然后重启 The Fool。",
+      "description": "The Fool 已打开，但由于配置的工作目录或日志目录不存在、不可访问或权限受限，The Fool Core 无法启动。请确认这些目录存在且可写，然后重启 The Fool。",
       "sendDiagnostics": "发送诊断报告",
       "diagnosticsSent": "诊断报告已发送",
       "diagnosticsReportSuccess": "诊断报告已发送",

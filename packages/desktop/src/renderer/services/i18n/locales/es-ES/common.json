@@ -74,12 +74,12 @@
   "backendStartup": {
     "incompatibleRuntime": {
       "title": "Este sistema no es compatible con el backend incluido",
-      "description": "The Fool se abrió, pero el backend local AionCore no puede ejecutarse en esta versión de Linux. Actualiza a una distribución de Linux compatible y reinicia The Fool.",
+      "description": "The Fool se abrió, pero el backend local The Fool Core no puede ejecutarse en esta versión de Linux. Actualiza a una distribución de Linux compatible y reinicia The Fool.",
       "requiredVersions": "Símbolos de runtime requeridos: {{versions}}"
     },
     "incompleteInstallation": {
       "title": "La instalación de The Fool está incompleta",
-      "description": "Esta instalación no tiene los recursos locales necesarios, por lo que AionCore no puede iniciar. Descarga e instala la última versión de The Fool. Si el problema persiste después de reinstalar, verifica si el software de seguridad o antivirus puso en cuarentena AionCore.",
+      "description": "Esta instalación no tiene los recursos locales necesarios, por lo que The Fool Core no puede iniciar. Descarga e instala la última versión de The Fool. Si el problema persiste después de reinstalar, verifica si el software de seguridad o antivirus puso en cuarentena The Fool Core.",
       "downloadLatest": "Descargar la última versión",
       "sendDiagnostics": "Enviar diagnóstico",
       "diagnosticsSent": "Diagnóstico enviado",
@@ -93,7 +93,7 @@
     },
     "dataMigration": {
       "title": "Local data migration failed",
-      "description": "The Fool opened, but AionCore stopped while initializing local data. Reinstalling The Fool may not fix this. Send a diagnostics report or contact support so the local database migration can be inspected.",
+      "description": "The Fool opened, but The Fool Core stopped while initializing local data. Reinstalling The Fool may not fix this. Send a diagnostics report or contact support so the local database migration can be inspected.",
       "sendDiagnostics": "Send diagnostics",
       "diagnosticsSent": "Diagnostics sent",
       "diagnosticsReportSuccess": "Diagnostics report sent",
@@ -101,7 +101,7 @@
     },
     "localDataRepair": {
       "title": "Local data repair failed",
-      "description": "The Fool se abrió, pero AionCore se detuvo al preparar datos locales de inicio, como registros de asistentes o agentes. Reinstalar The Fool puede no solucionar este problema. Envía un informe de diagnóstico o contacta con soporte para que se pueda inspeccionar la base de datos local.",
+      "description": "The Fool se abrió, pero The Fool Core se detuvo al preparar datos locales de inicio, como registros de asistentes o agentes. Reinstalar The Fool puede no solucionar este problema. Envía un informe de diagnóstico o contacta con soporte para que se pueda inspeccionar la base de datos local.",
       "sendDiagnostics": "Send diagnostics",
       "diagnosticsSent": "Diagnostics sent",
       "diagnosticsReportSuccess": "Diagnostics report sent",
@@ -109,7 +109,7 @@
     },
     "startupDirectory": {
       "title": "Startup directory is unavailable",
-      "description": "The Fool opened, but AionCore could not start because the configured work or log directory is missing, unavailable, or blocked by permissions. Check that the configured directories exist and are writable, then restart The Fool.",
+      "description": "The Fool opened, but The Fool Core could not start because the configured work or log directory is missing, unavailable, or blocked by permissions. Check that the configured directories exist and are writable, then restart The Fool.",
       "sendDiagnostics": "Send diagnostics",
       "diagnosticsSent": "Diagnostics sent",
       "diagnosticsReportSuccess": "Diagnostics report sent",
