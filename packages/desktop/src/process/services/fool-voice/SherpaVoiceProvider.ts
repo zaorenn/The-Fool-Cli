@@ -112,7 +112,7 @@ export class SherpaVoiceProvider {
     const base = this.modelDir(modelId, spec.dir);
     const at = (file: string) => path.join(base, file);
     const shared = {
-      numThreads: 2,
+      numThreads: ENGINE_THREADS['text-to-speech'],
       provider: this.providerFor(modelId),
       debug: 0,
     };
@@ -163,7 +163,7 @@ export class SherpaVoiceProvider {
   private buildSttConfig(modelId: string, spec: SttEngineSpec): unknown {
     const base = this.modelDir(modelId, spec.dir);
     const at = (file: string) => path.join(base, file);
-    const shared = { numThreads: 2, provider: this.providerFor(modelId), debug: 0 };
+    const shared = { numThreads: ENGINE_THREADS['speech-to-text'], provider: this.providerFor(modelId), debug: 0 };
 
     if (spec.kind === 'whisper') {
       return {
