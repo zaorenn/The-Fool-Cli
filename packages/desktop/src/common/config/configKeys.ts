@@ -1,5 +1,6 @@
 import type { ICssTheme } from '@/common/config/storage';
 import type { Theme } from '@/common/theme/types';
+import type { ThemeOverrides } from '@/common/config/themeOverrides';
 
 export type ConfigKeyMap = {
   language: string;
@@ -9,6 +10,7 @@ export type ConfigKeyMap = {
   'ui.fontSize.chat': number | undefined;
   'ui.fontSize.markdown': number | undefined;
   'ui.fontSize.code': number | undefined;
+  'ui.themeOverrides': ThemeOverrides | undefined;
   'window.bounds': { x?: number; y?: number; width: number; height: number } | undefined;
   'webui.desktop.enabled': boolean | undefined;
   'webui.desktop.allowRemote': boolean | undefined;

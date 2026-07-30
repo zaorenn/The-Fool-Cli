@@ -14,7 +14,7 @@ export type TtsTarget = {
 
 /** Turkish voices, in preference order, used when the reply is Turkish. */
 const TURKISH_TARGETS: readonly TtsTarget[] = [
-  { modelId: 'tts-piper-tr-fettah-int8', profileId: 'piper-tr-fettah', language: 'tr' },
+  { modelId: 'tts-piper-tr-fettah', profileId: 'piper-tr-fettah-v2', language: 'tr' },
   { modelId: 'tts-supertonic-3-int8-2026-05-11', profileId: 'supertonic-speaker-0', language: 'tr' },
 ];
 

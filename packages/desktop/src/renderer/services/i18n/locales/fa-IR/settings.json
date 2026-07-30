@@ -1311,5 +1311,14 @@
     "previewFailed": "پیش‌نمایش پخش نشد",
     "local": "محلی",
     "catalogUnavailable": "فهرست مدل‌های صدا بارگیری نشد."
+  },
+  "themeCustomizer": {
+    "title": "سفارشی‌سازی پوسته",
+    "reset": "بازنشانی",
+    "primary": "رنگ تأکید",
+    "background": "پس‌زمینه",
+    "surface": "پنل‌ها",
+    "text": "متن",
+    "cornerRadius": "گردی گوشه‌ها"
   }
 }

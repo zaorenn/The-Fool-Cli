@@ -1312,5 +1312,14 @@
     "previewFailed": "无法播放试听",
     "local": "本地",
     "catalogUnavailable": "无法加载语音模型列表。"
+  },
+  "themeCustomizer": {
+    "title": "自定义主题",
+    "reset": "重置",
+    "primary": "强调色",
+    "background": "背景",
+    "surface": "面板",
+    "text": "文字",
+    "cornerRadius": "圆角大小"
   }
 }

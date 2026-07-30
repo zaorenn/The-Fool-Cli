@@ -1311,5 +1311,14 @@
     "previewFailed": "Önizleme çalınamadı",
     "local": "Yerel",
     "catalogUnavailable": "Ses modeli listesi yüklenemedi."
+  },
+  "themeCustomizer": {
+    "title": "Temayı özelleştir",
+    "reset": "Sıfırla",
+    "primary": "Vurgu rengi",
+    "background": "Arka plan",
+    "surface": "Paneller",
+    "text": "Yazı",
+    "cornerRadius": "Köşe yuvarlaklığı"
   }
 }

@@ -1311,5 +1311,14 @@
     "previewFailed": "Aperçu impossible à lire",
     "local": "Local",
     "catalogUnavailable": "La liste des modèles vocaux n’a pas pu être chargée."
+  },
+  "themeCustomizer": {
+    "title": "Personnaliser le thème",
+    "reset": "Réinitialiser",
+    "primary": "Couleur d'accent",
+    "background": "Arrière-plan",
+    "surface": "Panneaux",
+    "text": "Texte",
+    "cornerRadius": "Arrondi des coins"
   }
 }

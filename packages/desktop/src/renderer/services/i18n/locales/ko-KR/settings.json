@@ -1313,5 +1313,14 @@
     "previewFailed": "미리 듣기를 재생하지 못했습니다",
     "local": "로컬",
     "catalogUnavailable": "음성 모델 목록을 불러오지 못했습니다."
+  },
+  "themeCustomizer": {
+    "title": "테마 사용자 지정",
+    "reset": "초기화",
+    "primary": "강조 색상",
+    "background": "배경",
+    "surface": "패널",
+    "text": "텍스트",
+    "cornerRadius": "모서리 둥글기"
   }
 }

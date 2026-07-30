@@ -1314,5 +1314,14 @@
     "previewFailed": "Não foi possível reproduzir a prévia",
     "local": "Local",
     "catalogUnavailable": "Não foi possível carregar a lista de modelos de voz."
+  },
+  "themeCustomizer": {
+    "title": "Personalizar tema",
+    "reset": "Redefinir",
+    "primary": "Cor de destaque",
+    "background": "Fundo",
+    "surface": "Painéis",
+    "text": "Texto",
+    "cornerRadius": "Arredondamento"
   }
 }

@@ -1311,5 +1311,14 @@
     "previewFailed": "No se pudo reproducir la vista previa",
     "local": "Local",
     "catalogUnavailable": "No se pudo cargar la lista de modelos de voz."
+  },
+  "themeCustomizer": {
+    "title": "Personalizar tema",
+    "reset": "Restablecer",
+    "primary": "Color de acento",
+    "background": "Fondo",
+    "surface": "Paneles",
+    "text": "Texto",
+    "cornerRadius": "Redondeo de esquinas"
   }
 }

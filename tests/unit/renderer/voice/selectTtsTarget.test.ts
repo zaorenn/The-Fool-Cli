@@ -9,7 +9,7 @@ import { DEFAULT_FOOL_VOICE_SETTINGS } from '@/common/types/foolVoice';
 import { isLikelyTurkish, selectTtsTarget } from '@renderer/services/voice/selectTtsTarget';
 
 const settings = DEFAULT_FOOL_VOICE_SETTINGS;
-const withTurkishInstalled = ['tts-kokoro-en-v0_19-int8', 'tts-piper-tr-fettah-int8'];
+const withTurkishInstalled = ['tts-piper-en-libritts-r', 'tts-piper-tr-fettah'];
 
 describe('isLikelyTurkish', () => {
   it.each(['Değişiklikleri kaydettim', 'İki dosya güncellendi', 'bu bir test'])('detects Turkish: %s', (text) => {
@@ -24,24 +24,24 @@ describe('isLikelyTurkish', () => {
 describe('selectTtsTarget', () => {
   it('uses the configured English voice for English text', () => {
     expect(selectTtsTarget('I fixed the login validation', settings, withTurkishInstalled)).toEqual({
-      modelId: 'tts-kokoro-en-v0_19-int8',
-      profileId: 'af_bella',
+      modelId: 'tts-piper-en-libritts-r',
+      profileId: 'libritts-p0',
       language: 'en',
     });
   });
 
   it('switches to an installed Turkish voice for Turkish text', () => {
     expect(selectTtsTarget('İki dosyayı güncelledim', settings, withTurkishInstalled)).toEqual({
-      modelId: 'tts-piper-tr-fettah-int8',
-      profileId: 'piper-tr-fettah',
+      modelId: 'tts-piper-tr-fettah',
+      profileId: 'piper-tr-fettah-v2',
       language: 'tr',
     });
   });
 
   it('keeps the configured voice when no Turkish model is installed', () => {
-    expect(selectTtsTarget('İki dosyayı güncelledim', settings, ['tts-kokoro-en-v0_19-int8'])).toEqual({
-      modelId: 'tts-kokoro-en-v0_19-int8',
-      profileId: 'af_bella',
+    expect(selectTtsTarget('İki dosyayı güncelledim', settings, ['tts-piper-en-libritts-r'])).toEqual({
+      modelId: 'tts-piper-en-libritts-r',
+      profileId: 'libritts-p0',
       language: 'en',
     });
   });
@@ -53,7 +53,7 @@ describe('selectTtsTarget', () => {
   });
 
   it('returns the configured target for empty text', () => {
-    expect(selectTtsTarget('   ', settings, withTurkishInstalled).modelId).toBe('tts-kokoro-en-v0_19-int8');
+    expect(selectTtsTarget('   ', settings, withTurkishInstalled).modelId).toBe('tts-piper-en-libritts-r');
   });
 
   it('does not switch when the user already configured a Turkish voice', () => {

@@ -1313,5 +1313,14 @@
     "previewFailed": "試聴を再生できませんでした",
     "local": "ローカル",
     "catalogUnavailable": "音声モデル一覧を読み込めませんでした。"
+  },
+  "themeCustomizer": {
+    "title": "テーマをカスタマイズ",
+    "reset": "リセット",
+    "primary": "アクセントカラー",
+    "background": "背景",
+    "surface": "パネル",
+    "text": "テキスト",
+    "cornerRadius": "角の丸み"
   }
 }

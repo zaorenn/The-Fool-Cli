@@ -1313,5 +1313,14 @@
     "previewFailed": "無法播放試聽",
     "local": "本機",
     "catalogUnavailable": "無法載入語音模型清單。"
+  },
+  "themeCustomizer": {
+    "title": "自訂主題",
+    "reset": "重設",
+    "primary": "強調色",
+    "background": "背景",
+    "surface": "面板",
+    "text": "文字",
+    "cornerRadius": "圓角大小"
   }
 }

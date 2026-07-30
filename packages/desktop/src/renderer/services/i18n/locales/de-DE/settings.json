@@ -1311,5 +1311,14 @@
     "previewFailed": "Vorschau nicht abspielbar",
     "local": "Lokal",
     "catalogUnavailable": "Die Liste der Sprachmodelle konnte nicht geladen werden."
+  },
+  "themeCustomizer": {
+    "title": "Design anpassen",
+    "reset": "Zurücksetzen",
+    "primary": "Akzentfarbe",
+    "background": "Hintergrund",
+    "surface": "Flächen",
+    "text": "Text",
+    "cornerRadius": "Eckenrundung"
   }
 }

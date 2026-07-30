@@ -1311,5 +1311,14 @@
     "previewFailed": "Could not play a preview",
     "local": "Local",
     "catalogUnavailable": "The voice model list could not be loaded."
+  },
+  "themeCustomizer": {
+    "title": "Customize theme",
+    "reset": "Reset",
+    "primary": "Accent colour",
+    "background": "Background",
+    "surface": "Panels",
+    "text": "Text",
+    "cornerRadius": "Corner rounding"
   }
 }
