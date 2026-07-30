@@ -38,9 +38,9 @@ describe('VoiceModelCatalog', () => {
 
   it('has required file manifests for managed entries', () => {
     const whisperEntry = VoiceModelCatalog.getManagedEntry('stt-whisper-tiny-int8-v1');
-    expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny/tiny-encoder.int8.onnx');
-    expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny/tiny-decoder.int8.onnx');
-    expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny/tiny-tokens.txt');
+    expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny.en/tiny-encoder.int8.onnx');
+    expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny.en/tiny-decoder.int8.onnx');
+    expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny.en/tiny-tokens.txt');
 
     const supertonicEntry = VoiceModelCatalog.getManagedEntry('tts-supertonic-3-int8-2026-05-11');
     expect(supertonicEntry?.expectedFiles).toContain('sherpa-onnx-supertonic-3-tts-int8-2026-05-11/tts.json');
@@ -51,8 +51,8 @@ describe('VoiceModelCatalog', () => {
 describe('built-in downloadable voices', () => {
   it.each([
     ['tts-kokoro-en-v0_19-int8', 'en', 11],
-    ['tts-piper-en-libritts-r-int8', 'en', 8],
-    ['tts-piper-tr-fettah-int8', 'tr', 1],
+    ['tts-piper-en-libritts-r', 'en', 8],
+    ['tts-piper-tr-fettah', 'tr', 1],
   ])('registers %s as a %s text-to-speech model with %i pickable voices', (modelId, language, voiceCount) => {
     const model = VoiceModelCatalog.getModels().find((entry) => entry.id === modelId);
 
@@ -67,19 +67,17 @@ describe('built-in downloadable voices', () => {
     expect(model && 'profileIds' in model ? model.profileIds : null).toEqual([]);
   });
 
-  it.each([
-    'tts-kokoro-en-v0_19-int8',
-    'tts-piper-en-libritts-r-int8',
-    'tts-piper-tr-fettah-int8',
-    'tts-zipvoice-distill-int8',
-  ])('pins a measured checksum and manifest for %s', (modelId) => {
-    const entry = VoiceModelCatalog.getManagedEntry(modelId);
+  it.each(['tts-kokoro-en-v0_19-int8', 'tts-piper-en-libritts-r', 'tts-piper-tr-fettah', 'tts-zipvoice-distill-int8'])(
+    'pins a measured checksum and manifest for %s',
+    (modelId) => {
+      const entry = VoiceModelCatalog.getManagedEntry(modelId);
 
-    expect(entry?.url.startsWith('https://github.com/k2-fsa/sherpa-onnx/releases/download/')).toBe(true);
-    expect(entry?.sha256).toMatch(/^[0-9a-f]{64}$/);
-    expect(entry?.archiveBytes).toBeGreaterThan(0);
-    expect(entry?.expectedFiles.length).toBeGreaterThan(0);
-  });
+      expect(entry?.url.startsWith('https://github.com/k2-fsa/sherpa-onnx/releases/download/')).toBe(true);
+      expect(entry?.sha256).toMatch(/^[0-9a-f]{64}$/);
+      expect(entry?.archiveBytes).toBeGreaterThan(0);
+      expect(entry?.expectedFiles.length).toBeGreaterThan(0);
+    }
+  );
 
   it('has no managed download without a matching catalog model', () => {
     const modelIds = new Set(VoiceModelCatalog.getModels().map((entry) => entry.id));

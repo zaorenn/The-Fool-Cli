@@ -2,7 +2,10 @@ import { VoicePcm16Wav } from '../../../common/types/foolVoice';
 import { AudioCodec } from './audioCodec';
 
 export class OpenAICompatibleVoiceProvider {
-  constructor(private getSettings: () => Promise<{ baseUrl: string; credentialId: string | null }>, private getCredential: (id: string) => Promise<string | null>) {}
+  constructor(
+    private getSettings: () => Promise<{ baseUrl: string; credentialId: string | null }>,
+    private getCredential: (id: string) => Promise<string | null>
+  ) {}
 
   public async getHealth(): Promise<'ready' | 'unavailable' | 'unsupported'> {
     // In a real app we might ping `/v1/models` but for now we assume ready if configured.
@@ -11,12 +14,17 @@ export class OpenAICompatibleVoiceProvider {
     return 'ready';
   }
 
-  public async transcribe(modelId: string, languageHint: string, audio: VoicePcm16Wav, signal?: AbortSignal): Promise<string> {
+  public async transcribe(
+    modelId: string,
+    languageHint: string,
+    audio: VoicePcm16Wav,
+    signal?: AbortSignal
+  ): Promise<string> {
     const settings = await this.getSettings();
     const token = settings.credentialId ? await this.getCredential(settings.credentialId) : null;
 
     const startMs = Date.now();
-    
+
     // We must send multipart/form-data
     const buffer = Buffer.from(audio.dataBase64, 'base64');
     const blob = new Blob([buffer], { type: 'audio/wav' });
@@ -27,7 +35,7 @@ export class OpenAICompatibleVoiceProvider {
     if (languageHint) {
       formData.append('language', languageHint);
     }
-    
+
     const headers: Record<string, string> = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -46,10 +54,17 @@ export class OpenAICompatibleVoiceProvider {
     return data.text;
   }
 
-  public async synthesize(modelId: string, profileId: string, language: string, speed: number, text: string, signal?: AbortSignal): Promise<{ audio: VoicePcm16Wav, durationMs: number }> {
+  public async synthesize(
+    modelId: string,
+    profileId: string,
+    language: string,
+    speed: number,
+    text: string,
+    signal?: AbortSignal
+  ): Promise<{ audio: VoicePcm16Wav; durationMs: number }> {
     const settings = await this.getSettings();
     const token = settings.credentialId ? await this.getCredential(settings.credentialId) : null;
-    
+
     const startMs = Date.now();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -75,7 +90,7 @@ export class OpenAICompatibleVoiceProvider {
 
     const arrayBuffer = await res.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    
+
     let wav: VoicePcm16Wav;
     try {
       // Decode and encode to ensure standard PCM16 format for our frontend AudioPlaybackService if needed.

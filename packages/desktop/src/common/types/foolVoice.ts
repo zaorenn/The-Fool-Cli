@@ -292,13 +292,13 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
   },
   stt: {
     providerId: 'local-sherpa',
-    modelId: 'stt-whisper-tiny-int8-v1',
-    language: 'tr',
+    modelId: 'stt-whisper-turbo',
+    language: 'auto',
   },
   tts: {
     providerId: 'local-sherpa',
-    modelId: 'tts-kokoro-en-v0_19-int8',
-    profileId: 'af_bella',
+    modelId: 'tts-piper-en-libritts-r',
+    profileId: 'libritts-p0',
     language: 'en',
     speed: 1,
   },
@@ -419,16 +419,16 @@ const settingsSchema = z
     stt: z
       .object({
         providerId: z.enum(['local-sherpa', 'openai-compatible']).default('local-sherpa'),
-        modelId: identifierSchema.default('stt-whisper-tiny-int8-v1'),
-        language: languageSchema.default('tr'),
+        modelId: identifierSchema.default('stt-whisper-turbo'),
+        language: languageSchema.default('auto'),
       })
       .strict()
       .default({}),
     tts: z
       .object({
         providerId: z.enum(['local-sherpa', 'openai-compatible']).default('local-sherpa'),
-        modelId: identifierSchema.default('tts-kokoro-en-v0_19-int8'),
-        profileId: identifierSchema.default('af_bella'),
+        modelId: identifierSchema.default('tts-piper-en-libritts-r'),
+        profileId: identifierSchema.default('libritts-p0'),
         language: languageSchema.default('en'),
         speed: z.number().min(0.5).max(2).default(1),
       })
@@ -701,6 +701,7 @@ export type VoiceHealthRequest = {
   capability?: VoiceCapability;
   modelId?: string;
 };
+/** Capture audio handed to transcription; always resampled to 16 kHz. */
 export type VoicePcm16Wav = {
   encoding: 'base64';
   mimeType: 'audio/wav';
@@ -709,6 +710,17 @@ export type VoicePcm16Wav = {
   sampleFormat: 'pcm16le';
   byteLength: number;
   dataBase64: string;
+};
+
+/**
+ * Synthesised audio, which keeps the voice model's native rate.
+ *
+ * Speech models do not all emit 16 kHz — Piper produces 22.05 kHz and Kokoro
+ * 24 kHz — so forcing the capture rate here would either reject valid audio or
+ * require a lossy downsample before playback.
+ */
+export type VoiceSynthesizedWav = Omit<VoicePcm16Wav, 'sampleRateHz'> & {
+  sampleRateHz: number;
 };
 export type VoiceTranscribeRequest = {
   operationId: string;
@@ -739,7 +751,7 @@ export type VoiceSynthesizeResponse = {
   providerId: 'local-sherpa' | 'openai-compatible';
   modelId: string;
   profileId: string;
-  audio: VoicePcm16Wav;
+  audio: VoiceSynthesizedWav;
   durationMs: number;
 };
 export type VoiceCancelRequest = { operationId: string };

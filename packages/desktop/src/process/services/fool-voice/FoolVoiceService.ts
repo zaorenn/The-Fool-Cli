@@ -2,7 +2,8 @@ import {
   FoolVoiceSettings,
   VoiceCapability,
   VoicePcm16Wav,
-  VoiceProviderId
+  VoiceProviderId,
+  VoiceSynthesizedWav,
 } from '../../../common/types/foolVoice';
 import { VoiceModelManager } from './VoiceModelManager';
 import { SherpaVoiceProvider } from './SherpaVoiceProvider';
@@ -17,7 +18,11 @@ export class FoolVoiceService {
     private openaiProvider: OpenAICompatibleVoiceProvider
   ) {}
 
-  public async getHealth(providerId: VoiceProviderId, capability?: VoiceCapability, modelId?: string): Promise<'ready' | 'unavailable' | 'unsupported'> {
+  public async getHealth(
+    providerId: VoiceProviderId,
+    capability?: VoiceCapability,
+    modelId?: string
+  ): Promise<'ready' | 'unavailable' | 'unsupported'> {
     if (providerId === 'local-sherpa') {
       if (modelId) {
         const state = await this.modelManager.getModelState(modelId);
@@ -30,7 +35,13 @@ export class FoolVoiceService {
     return 'unsupported';
   }
 
-  public async transcribe(operationId: string, providerId: VoiceProviderId, modelId: string, languageHint: string, audio: VoicePcm16Wav): Promise<{ text: string; durationMs: number }> {
+  public async transcribe(
+    operationId: string,
+    providerId: VoiceProviderId,
+    modelId: string,
+    languageHint: string,
+    audio: VoicePcm16Wav
+  ): Promise<{ text: string; durationMs: number }> {
     const controller = new AbortController();
     this.activeOperations.set(operationId, controller);
     const startMs = Date.now();
@@ -49,7 +60,15 @@ export class FoolVoiceService {
     }
   }
 
-  public async synthesize(operationId: string, providerId: VoiceProviderId, modelId: string, profileId: string, language: string, speed: number, text: string): Promise<{ audio: VoicePcm16Wav; durationMs: number }> {
+  public async synthesize(
+    operationId: string,
+    providerId: VoiceProviderId,
+    modelId: string,
+    profileId: string,
+    language: string,
+    speed: number,
+    text: string
+  ): Promise<{ audio: VoiceSynthesizedWav; durationMs: number }> {
     const controller = new AbortController();
     this.activeOperations.set(operationId, controller);
     try {

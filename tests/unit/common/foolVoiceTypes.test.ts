@@ -33,7 +33,7 @@ const state = (
   }) as VoiceTurnState;
 
 describe('Fool voice settings contract', () => {
-  it('defaults to an inactive local configuration that speaks English and listens in Turkish', () => {
+  it('defaults to an inactive local configuration with the fastest measured voices', () => {
     expect(DEFAULT_FOOL_VOICE_SETTINGS).toMatchObject({
       schemaVersion: 1,
       enabled: false,
@@ -42,11 +42,11 @@ describe('Fool voice settings contract', () => {
         talkModeEnabled: false,
         wakePhrase: { enabled: false, modelId: 'stt-phrase-v1', phrase: 'hey fool', sensitivity: 0.65 },
       },
-      stt: { providerId: 'local-sherpa', modelId: 'stt-whisper-tiny-int8-v1', language: 'tr' },
+      stt: { providerId: 'local-sherpa', modelId: 'stt-whisper-turbo', language: 'auto' },
       tts: {
         providerId: 'local-sherpa',
-        modelId: 'tts-kokoro-en-v0_19-int8',
-        profileId: 'af_bella',
+        modelId: 'tts-piper-en-libritts-r',
+        profileId: 'libritts-p0',
         language: 'en',
         speed: 1,
       },

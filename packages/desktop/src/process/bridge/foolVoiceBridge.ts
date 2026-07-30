@@ -196,7 +196,18 @@ const base64DecodedLength = (
   };
 };
 
-const validateAudio = (audio: unknown, maximumBytes: number): BridgeErrorCode | null => {
+/** Rates a speech model may legitimately emit; capture is always 16 kHz. */
+const MIN_SYNTHESIS_RATE_HZ = 8000;
+const MAX_SYNTHESIS_RATE_HZ = 48000;
+
+const isAcceptableRate = (rate: unknown, allowNativeRates: boolean): boolean => {
+  if (!allowNativeRates) return rate === 16000;
+  return (
+    typeof rate === 'number' && Number.isInteger(rate) && rate >= MIN_SYNTHESIS_RATE_HZ && rate <= MAX_SYNTHESIS_RATE_HZ
+  );
+};
+
+const validateAudio = (audio: unknown, maximumBytes: number, allowNativeRates = false): BridgeErrorCode | null => {
   if (
     !isRecord(audio) ||
     !hasExactKeys(audio, [
@@ -210,7 +221,7 @@ const validateAudio = (audio: unknown, maximumBytes: number): BridgeErrorCode | 
     ]) ||
     audio.encoding !== 'base64' ||
     audio.mimeType !== 'audio/wav' ||
-    audio.sampleRateHz !== 16000 ||
+    !isAcceptableRate(audio.sampleRateHz, allowNativeRates) ||
     audio.channels !== 1 ||
     audio.sampleFormat !== 'pcm16le'
   ) {
@@ -267,7 +278,7 @@ const validateCatalogResponse = (response: VoiceCatalogResponse): boolean =>
   response.profiles.length <= 256;
 
 const validateSynthesizeResponse = (response: VoiceSynthesizeResponse): boolean =>
-  validateAudio(response.audio, MAX_SYNTHESIS_BYTES) === null;
+  validateAudio(response.audio, MAX_SYNTHESIS_BYTES, true) === null;
 
 export function initFoolVoiceBridge(handlers: Partial<FoolVoiceBridgeHandlers> = {}): void {
   registerHandler(ipcBridge.foolVoice.catalog, validateCatalogRequest, handlers.catalog, validateCatalogResponse);

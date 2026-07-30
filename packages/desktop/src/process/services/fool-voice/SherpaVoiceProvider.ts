@@ -1,147 +1,269 @@
+/**
+ * @license
+ * Copyright 2026 AionUi (aionui.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { VoicePcm16Wav } from '../../../common/types/foolVoice';
+import { VoicePcm16Wav, VoiceSynthesizedWav } from '../../../common/types/foolVoice';
 import { VoiceModelCatalog } from './VoiceModelCatalog';
 import { AudioCodec } from './audioCodec';
+import {
+  canUseGpu,
+  ENGINE_THREADS,
+  getEngineSpec,
+  type SttEngineSpec,
+  type TtsEngineSpec,
+  type VoiceCompute,
+} from './voiceEngineSpecs';
 
 export interface SherpaModule {
-  OfflineRecognizer: any;
-  OfflineTts: any;
-  GenerationConfig?: any;
+  OfflineRecognizer: new (config: unknown) => {
+    createStream: () => {
+      acceptWaveform: (rate: number, samples: Float32Array) => void;
+      getResult: () => { text: string };
+    };
+    decode: (stream: unknown) => void;
+  };
+  OfflineTts: new (config: unknown) => {
+    generate: (request: { text: string; sid: number; speed: number }) => { samples: Float32Array; sampleRate: number };
+  };
 }
+
+/** Files a spec needs on disk, relative to the model directory. */
+const requiredFiles = (spec: TtsEngineSpec | SttEngineSpec): string[] => {
+  switch (spec.kind) {
+    case 'vits':
+      return [spec.model, 'tokens.txt'];
+    case 'kokoro':
+    case 'kitten':
+      return [spec.model, spec.voices, 'tokens.txt'];
+    case 'matcha':
+      return [spec.acousticModel, spec.vocoder, 'tokens.txt'];
+    case 'zipvoice':
+      return [spec.encoder, spec.decoder, spec.vocoder, 'tokens.txt'];
+    case 'whisper':
+      return [spec.encoder, spec.decoder, spec.tokens];
+    case 'transducer':
+      return [spec.encoder, spec.decoder, spec.joiner, spec.tokens];
+  }
+};
 
 export class SherpaVoiceProvider {
   private sherpaPromise: Promise<SherpaModule> | null = null;
-  private recognizers = new Map<string, any>();
-  private synthesizers = new Map<string, any>();
-  
-  constructor(private modelsDir: string, private sherpaLoader: () => Promise<SherpaModule> = () => {
-    // @ts-ignore
-    return import('sherpa-onnx-node');
-  }) {}
+  private recognizers = new Map<string, ReturnType<SherpaModule['OfflineRecognizer']['prototype']['constructor']>>();
+  private synthesizers = new Map<string, InstanceType<SherpaModule['OfflineTts']>>();
+
+  constructor(
+    private modelsDir: string,
+    private sherpaLoader: () => Promise<SherpaModule> = () =>
+      import('sherpa-onnx-node') as unknown as Promise<SherpaModule>,
+    /** Compute backend; `cuda` is only honoured for float models. */
+    private compute: VoiceCompute = 'cpu'
+  ) {}
+
+  /** Switches backend at runtime; cached engines are dropped so they rebuild. */
+  public setCompute(compute: VoiceCompute): void {
+    if (compute === this.compute) return;
+    this.compute = compute;
+    this.recognizers.clear();
+    this.synthesizers.clear();
+  }
+
+  public getCompute(): VoiceCompute {
+    return this.compute;
+  }
 
   private async getSherpa(): Promise<SherpaModule> {
-    if (!this.sherpaPromise) {
-      this.sherpaPromise = this.sherpaLoader();
-    }
+    this.sherpaPromise ??= this.sherpaLoader();
     return this.sherpaPromise;
   }
 
+  private modelDir(modelId: string, specDir: string): string {
+    return path.join(this.modelsDir, modelId, specDir);
+  }
+
+  /** Resolves the execution provider for a model, refusing GPU where it would hurt. */
+  private providerFor(modelId: string): VoiceCompute {
+    return this.compute === 'cuda' && canUseGpu(modelId) ? 'cuda' : 'cpu';
+  }
+
+  /**
+   * Reports readiness by checking the files the engine will actually open,
+   * rather than assuming a loadable module means a usable model.
+   */
   public async getHealth(modelId: string): Promise<'ready' | 'unavailable' | 'unsupported'> {
+    const spec = getEngineSpec(modelId);
+    if (!spec) return 'unsupported';
+
     try {
       await this.getSherpa();
-      const entry = VoiceModelCatalog.getManagedEntry(modelId);
-      if (!entry) return 'unsupported';
-      
-      // If we got here, module loaded. Real health check should verify model exists.
-      return 'ready';
     } catch {
       return 'unavailable';
     }
+
+    const base = this.modelDir(modelId, spec.engine.dir);
+    const missing = requiredFiles(spec.engine).some((file) => !existsSync(path.join(base, file)));
+    return missing ? 'unavailable' : 'ready';
   }
 
-  public async transcribe(modelId: string, languageHint: string, audio: VoicePcm16Wav, signal?: AbortSignal): Promise<string> {
+  private buildTtsConfig(modelId: string, spec: TtsEngineSpec): unknown {
+    const base = this.modelDir(modelId, spec.dir);
+    const at = (file: string) => path.join(base, file);
+    const shared = {
+      numThreads: 2,
+      provider: this.providerFor(modelId),
+      debug: 0,
+    };
+    const dataDir = at('espeak-ng-data');
+    const tokens = at('tokens.txt');
+
+    switch (spec.kind) {
+      case 'vits':
+        return {
+          model: { vits: { model: at(spec.model), tokens, dataDir }, ...shared },
+          maxNumSentences: 1,
+        };
+      case 'kokoro':
+        return {
+          model: { kokoro: { model: at(spec.model), voices: at(spec.voices), tokens, dataDir }, ...shared },
+          maxNumSentences: 1,
+        };
+      case 'kitten':
+        return {
+          model: { kitten: { model: at(spec.model), voices: at(spec.voices), tokens, dataDir }, ...shared },
+          maxNumSentences: 1,
+        };
+      case 'matcha':
+        return {
+          model: {
+            matcha: { acousticModel: at(spec.acousticModel), vocoder: at(spec.vocoder), tokens, dataDir },
+            ...shared,
+          },
+          maxNumSentences: 1,
+        };
+      case 'zipvoice':
+        return {
+          model: {
+            zipvoice: {
+              encoder: at(spec.encoder),
+              decoder: at(spec.decoder),
+              vocoder: at(spec.vocoder),
+              tokens,
+              dataDir,
+            },
+            ...shared,
+          },
+          maxNumSentences: 1,
+        };
+    }
+  }
+
+  private buildSttConfig(modelId: string, spec: SttEngineSpec): unknown {
+    const base = this.modelDir(modelId, spec.dir);
+    const at = (file: string) => path.join(base, file);
+    const shared = { numThreads: 2, provider: this.providerFor(modelId), debug: 0 };
+
+    if (spec.kind === 'whisper') {
+      return {
+        featConfig: { sampleRate: 16000, featureDim: 80 },
+        modelConfig: {
+          whisper: { encoder: at(spec.encoder), decoder: at(spec.decoder) },
+          tokens: at(spec.tokens),
+          ...shared,
+        },
+      };
+    }
+
+    return {
+      featConfig: { sampleRate: 16000, featureDim: 80 },
+      modelConfig: {
+        transducer: { encoder: at(spec.encoder), decoder: at(spec.decoder), joiner: at(spec.joiner) },
+        tokens: at(spec.tokens),
+        ...(spec.modelType ? { modelType: spec.modelType } : {}),
+        ...shared,
+      },
+    };
+  }
+
+  public async transcribe(
+    modelId: string,
+    _languageHint: string,
+    audio: VoicePcm16Wav,
+    signal?: AbortSignal
+  ): Promise<string> {
     const sherpa = await this.getSherpa();
     if (signal?.aborted) throw new Error('cancelled');
 
-    let recognizer = this.recognizers.get(modelId);
+    const spec = getEngineSpec(modelId);
+    if (!spec || spec.role !== 'speech-to-text') throw new Error(`Not a speech-to-text model: ${modelId}`);
+
+    const cacheKey = `${modelId}:${this.providerFor(modelId)}`;
+    let recognizer = this.recognizers.get(cacheKey);
     if (!recognizer) {
-      if (modelId !== 'stt-whisper-tiny-int8-v1') {
-        throw new Error('Unsupported model');
-      }
-      const modelBase = path.join(this.modelsDir, modelId, 'sherpa-onnx-whisper-tiny');
-      recognizer = new sherpa.OfflineRecognizer({
-        featConfig: {
-          sampleRate: 16000,
-          featureDim: 80,
-        },
-        modelConfig: {
-          whisper: {
-            encoder: path.join(modelBase, 'tiny-encoder.int8.onnx'),
-            decoder: path.join(modelBase, 'tiny-decoder.int8.onnx'),
-          },
-          tokens: path.join(modelBase, 'tiny-tokens.txt'),
-          numThreads: 2,
-          provider: 'cpu',
-          debug: 0,
-        },
-      });
-      this.recognizers.set(modelId, recognizer);
+      recognizer = new sherpa.OfflineRecognizer(this.buildSttConfig(modelId, spec.engine));
+      this.recognizers.set(cacheKey, recognizer);
     }
 
-    const buffer = Buffer.from(audio.dataBase64, 'base64');
-    const { samples, sampleRate } = AudioCodec.decodePcm16Wav(buffer);
-
+    const { samples, sampleRate } = AudioCodec.decodePcm16Wav(Buffer.from(audio.dataBase64, 'base64'));
     const stream = recognizer.createStream();
     stream.acceptWaveform(sampleRate, samples);
-    
+
     if (signal?.aborted) throw new Error('cancelled');
     recognizer.decode(stream);
-    
+
     return stream.getResult().text;
   }
 
-  public async synthesize(modelId: string, profileId: string, language: string, speed: number, text: string, signal?: AbortSignal): Promise<{ audio: VoicePcm16Wav, durationMs: number }> {
+  public async synthesize(
+    modelId: string,
+    profileId: string,
+    _language: string,
+    speed: number,
+    text: string,
+    signal?: AbortSignal
+  ): Promise<{ audio: VoiceSynthesizedWav; durationMs: number }> {
     const sherpa = await this.getSherpa();
     if (signal?.aborted) throw new Error('cancelled');
 
-    let synthesizer = this.synthesizers.get(modelId);
+    const spec = getEngineSpec(modelId);
+    if (!spec || spec.role !== 'text-to-speech') throw new Error(`Not a text-to-speech model: ${modelId}`);
+
+    const cacheKey = `${modelId}:${this.providerFor(modelId)}`;
+    let synthesizer = this.synthesizers.get(cacheKey);
     if (!synthesizer) {
-      if (modelId !== 'tts-supertonic-3-int8-2026-05-11') {
-        throw new Error('Unsupported model');
-      }
-      const modelBase = path.join(this.modelsDir, modelId, 'sherpa-onnx-supertonic-3-tts-int8-2026-05-11');
-      synthesizer = new sherpa.OfflineTts({
-        model: {
-          supertonic: {
-            durationPredictor: path.join(modelBase, 'duration_predictor.int8.onnx'),
-            textEncoder: path.join(modelBase, 'text_encoder.int8.onnx'),
-            vectorEstimator: path.join(modelBase, 'vector_estimator.int8.onnx'),
-            vocoder: path.join(modelBase, 'vocoder.int8.onnx'),
-          },
-          tokens: path.join(modelBase, 'tts.json'),
-          numThreads: 2,
-          provider: 'cpu',
-          debug: 0,
-        },
-        maxNumSentences: 1,
-      });
-      this.synthesizers.set(modelId, synthesizer);
+      synthesizer = new sherpa.OfflineTts(this.buildTtsConfig(modelId, spec.engine));
+      this.synthesizers.set(cacheKey, synthesizer);
     }
 
-    const speakerIdStr = profileId.replace('supertonic-speaker-', '');
-    const speakerId = parseInt(speakerIdStr, 10);
-    const sid = isNaN(speakerId) ? 0 : speakerId;
+    // The speaker index comes from the catalog rather than from parsing the
+    // profile id, so voice ids stay free-form.
+    const profile = VoiceModelCatalog.getPresetProfiles().find((entry) => entry.id === profileId);
+    const sid = profile && profile.kind === 'preset' ? profile.speakerId : 0;
 
     if (signal?.aborted) throw new Error('cancelled');
-    
+
     const startMs = Date.now();
-    // According to docs, generate config takes extra lang parameter
-    const generationConfig = {
-      sid,
-      speed,
-      extra: { lang: language === 'tr' ? 'tr' : 'en' },
-    };
-    
-    const audioData = synthesizer.generate({ text, generationConfig });
-    if (!audioData) {
-      throw new Error('Synthesis failed to produce audio data');
-    }
-
+    // Deliberately the plain `{ text, sid, speed }` form: the alternative
+    // `generationConfig` path routes to a different native entry point that
+    // this binding version does not accept.
+    const audioData = synthesizer.generate({ text, sid, speed });
+    if (!audioData?.samples?.length) throw new Error('Synthesis produced no audio');
     if (signal?.aborted) throw new Error('cancelled');
-
-    const durationMs = Date.now() - startMs;
 
     const buffer = AudioCodec.encodePcm16Wav(audioData.samples, audioData.sampleRate);
-    const wav: VoicePcm16Wav = {
-      encoding: 'base64',
-      mimeType: 'audio/wav',
-      sampleRateHz: audioData.sampleRate,
-      channels: 1,
-      sampleFormat: 'pcm16le',
-      byteLength: buffer.length,
-      dataBase64: buffer.toString('base64'),
+    return {
+      audio: {
+        encoding: 'base64',
+        mimeType: 'audio/wav',
+        sampleRateHz: audioData.sampleRate,
+        channels: 1,
+        sampleFormat: 'pcm16le',
+        byteLength: buffer.length,
+        dataBase64: buffer.toString('base64'),
+      },
+      durationMs: Date.now() - startMs,
     };
-
-    return { audio: wav, durationMs };
   }
 }

@@ -37,6 +37,57 @@ const PIPER_LIBRITTS_VOICES: readonly { id: string; displayName: string; speaker
 
 export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
   {
+    id: 'stt-whisper-turbo',
+    providerId: 'local-sherpa',
+    displayName: 'Whisper Turbo (Turkish + English)',
+    languages: ['tr', 'en'],
+    role: 'speech-to-text',
+    distribution: 'managed',
+    state: { status: 'not-installed' },
+    downloadBytes: null,
+    installedBytes: null,
+    audioInput: { container: 'wav', encoding: 'pcm16le', sampleRateHz: 16000, channels: 1 },
+  },
+  {
+    id: 'tts-piper-en-libritts-r',
+    providerId: 'local-sherpa',
+    displayName: 'Piper LibriTTS-R (English, fastest)',
+    languages: ['en'],
+    role: 'text-to-speech',
+    distribution: 'managed',
+    state: { status: 'not-installed' },
+    downloadBytes: null,
+    installedBytes: null,
+    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
+    profileIds: PIPER_LIBRITTS_VOICES.map((voice) => voice.id),
+  },
+  {
+    id: 'tts-piper-tr-fettah',
+    providerId: 'local-sherpa',
+    displayName: 'Piper Fettah (Türkçe)',
+    languages: ['tr'],
+    role: 'text-to-speech',
+    distribution: 'managed',
+    state: { status: 'not-installed' },
+    downloadBytes: null,
+    installedBytes: null,
+    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
+    profileIds: ['piper-tr-fettah-v2'],
+  },
+  {
+    id: 'tts-kitten-nano-en-v0_8',
+    providerId: 'local-sherpa',
+    displayName: 'Kitten Nano (English)',
+    languages: ['en'],
+    role: 'text-to-speech',
+    distribution: 'managed',
+    state: { status: 'not-installed' },
+    downloadBytes: null,
+    installedBytes: null,
+    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
+    profileIds: ['kitten-nano-0', 'kitten-nano-1', 'kitten-nano-2', 'kitten-nano-3'],
+  },
+  {
     id: 'stt-whisper-tiny-int8-v1',
     providerId: 'local-sherpa',
     displayName: 'Whisper Tiny (Multilingual, int8)',
@@ -66,32 +117,9 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
     audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
     profileIds: KOKORO_EN_VOICES.map((voice) => voice.id),
   },
-  {
-    id: 'tts-piper-en-libritts-r-int8',
-    providerId: 'local-sherpa',
-    displayName: 'Piper LibriTTS-R (English, int8)',
-    languages: ['en'],
-    role: 'text-to-speech',
-    distribution: 'managed',
-    state: { status: 'not-installed' },
-    downloadBytes: null,
-    installedBytes: null,
-    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
-    profileIds: PIPER_LIBRITTS_VOICES.map((voice) => voice.id),
-  },
-  {
-    id: 'tts-piper-tr-fettah-int8',
-    providerId: 'local-sherpa',
-    displayName: 'Piper Fettah (Turkish, int8)',
-    languages: ['tr'],
-    role: 'text-to-speech',
-    distribution: 'managed',
-    state: { status: 'not-installed' },
-    downloadBytes: null,
-    installedBytes: null,
-    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
-    profileIds: ['piper-tr-fettah'],
-  },
+  // The int8 Piper builds were removed after measurement: they synthesise 4x
+  // slower than the float builds above (300 ms vs 82 ms) because quantisation
+  // overhead dominates at this model size.
   {
     id: 'tts-supertonic-3-int8-2026-05-11',
     providerId: 'local-sherpa',
@@ -148,6 +176,44 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
  * stored preference survives catalog reordering.
  */
 export const FOOL_VOICE_PRESET_PROFILES: readonly VoiceProfile[] = [
+  ...PIPER_LIBRITTS_VOICES.map(
+    (voice): VoiceProfile => ({
+      id: voice.id,
+      providerId: 'local-sherpa',
+      modelId: 'tts-piper-en-libritts-r',
+      kind: 'preset',
+      state: 'unavailable',
+      displayName: voice.displayName,
+      languages: ['en'],
+      speakerId: voice.speakerId,
+      deletable: false,
+    })
+  ),
+  {
+    id: 'piper-tr-fettah-v2',
+    providerId: 'local-sherpa',
+    modelId: 'tts-piper-tr-fettah',
+    kind: 'preset',
+    state: 'unavailable',
+    displayName: 'Fettah (Türkçe)',
+    languages: ['tr'],
+    speakerId: 0,
+    deletable: false,
+  },
+  ...Array.from(
+    { length: 4 },
+    (_, index): VoiceProfile => ({
+      id: `kitten-nano-${index}`,
+      providerId: 'local-sherpa',
+      modelId: 'tts-kitten-nano-en-v0_8',
+      kind: 'preset',
+      state: 'unavailable',
+      displayName: `Kitten ${index + 1} (English)`,
+      languages: ['en'],
+      speakerId: index,
+      deletable: false,
+    })
+  ),
   ...KOKORO_EN_VOICES.map(
     (voice, index): VoiceProfile => ({
       id: voice.id,
@@ -161,30 +227,6 @@ export const FOOL_VOICE_PRESET_PROFILES: readonly VoiceProfile[] = [
       deletable: false,
     })
   ),
-  ...PIPER_LIBRITTS_VOICES.map(
-    (voice): VoiceProfile => ({
-      id: voice.id,
-      providerId: 'local-sherpa',
-      modelId: 'tts-piper-en-libritts-r-int8',
-      kind: 'preset',
-      state: 'unavailable',
-      displayName: voice.displayName,
-      languages: ['en'],
-      speakerId: voice.speakerId,
-      deletable: false,
-    })
-  ),
-  {
-    id: 'piper-tr-fettah',
-    providerId: 'local-sherpa',
-    modelId: 'tts-piper-tr-fettah-int8',
-    kind: 'preset',
-    state: 'unavailable',
-    displayName: 'Fettah (Türkçe)',
-    languages: ['tr'],
-    speakerId: 0,
-    deletable: false,
-  },
   ...Array.from(
     { length: 10 },
     (_, index): VoiceProfile => ({
@@ -214,15 +256,65 @@ export type ManagedCatalogEntry = {
  * not copied from documentation.
  */
 export const MANAGED_CATALOG_ENTRIES: Record<string, ManagedCatalogEntry> = {
+  // Multilingual transcription. Measured on this machine: 1150 ms for 5 s of
+  // audio at 8 threads (4.3x realtime), auto-detects Turkish and keeps embedded
+  // English terms.
+  'stt-whisper-turbo': {
+    modelId: 'stt-whisper-turbo',
+    url: `${RELEASE_BASE}/asr-models/sherpa-onnx-whisper-turbo.tar.bz2`,
+    sha256: 'b11acbbcd660b44a8e0df33724feb5aaa709cf65668f2823d59f656312544f22',
+    archiveBytes: 563790207,
+    expectedFiles: [
+      'sherpa-onnx-whisper-turbo/turbo-encoder.int8.onnx',
+      'sherpa-onnx-whisper-turbo/turbo-decoder.int8.onnx',
+      'sherpa-onnx-whisper-turbo/turbo-tokens.txt',
+    ],
+  },
+  // Fastest measured voice: 82 ms for a short sentence (29.6x realtime).
+  // float weights beat the int8 build here — quantisation overhead dominates at
+  // this model size.
+  'tts-piper-en-libritts-r': {
+    modelId: 'tts-piper-en-libritts-r',
+    url: `${RELEASE_BASE}/tts-models/vits-piper-en_US-libritts_r-medium.tar.bz2`,
+    sha256: '10dc268f3e371696d721486123e2705a9fc1faa113491979fde4d88dba1f1b1c',
+    archiveBytes: 82038311,
+    expectedFiles: [
+      'vits-piper-en_US-libritts_r-medium/en_US-libritts_r-medium.onnx',
+      'vits-piper-en_US-libritts_r-medium/tokens.txt',
+    ],
+  },
+  // Turkish voice: 214 ms for 5 s of speech (23.2x realtime).
+  'tts-piper-tr-fettah': {
+    modelId: 'tts-piper-tr-fettah',
+    url: `${RELEASE_BASE}/tts-models/vits-piper-tr_TR-fettah-medium.tar.bz2`,
+    sha256: '314a9910616fb17be882c77f0bcf76796a1914d4d606f3c984f9094cb9abf1e5',
+    archiveBytes: 67174342,
+    expectedFiles: [
+      'vits-piper-tr_TR-fettah-medium/tr_TR-fettah-medium.onnx',
+      'vits-piper-tr_TR-fettah-medium/tokens.txt',
+    ],
+  },
+  // Alternative English voice: 241 ms (12.3x realtime).
+  'tts-kitten-nano-en-v0_8': {
+    modelId: 'tts-kitten-nano-en-v0_8',
+    url: `${RELEASE_BASE}/tts-models/kitten-nano-en-v0_8-fp32.tar.bz2`,
+    sha256: '16092117bfe591ddcd58d078e1454603b8e1caea46f85653b2c2efae76bd883e',
+    archiveBytes: 63815222,
+    expectedFiles: [
+      'kitten-nano-en-v0_8-fp32/model.fp32.onnx',
+      'kitten-nano-en-v0_8-fp32/voices.bin',
+      'kitten-nano-en-v0_8-fp32/tokens.txt',
+    ],
+  },
   'stt-whisper-tiny-int8-v1': {
     modelId: 'stt-whisper-tiny-int8-v1',
-    url: `${RELEASE_BASE}/asr-models/sherpa-onnx-whisper-tiny.tar.bz2`,
+    url: 'https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-tiny.en.tar.bz2',
     sha256: null,
     archiveBytes: 116204861,
     expectedFiles: [
-      'sherpa-onnx-whisper-tiny/tiny-encoder.int8.onnx',
-      'sherpa-onnx-whisper-tiny/tiny-decoder.int8.onnx',
-      'sherpa-onnx-whisper-tiny/tiny-tokens.txt',
+      'sherpa-onnx-whisper-tiny.en/tiny-encoder.int8.onnx',
+      'sherpa-onnx-whisper-tiny.en/tiny-decoder.int8.onnx',
+      'sherpa-onnx-whisper-tiny.en/tiny-tokens.txt',
     ],
   },
   'tts-kokoro-en-v0_19-int8': {
@@ -234,26 +326,6 @@ export const MANAGED_CATALOG_ENTRIES: Record<string, ManagedCatalogEntry> = {
       'kokoro-int8-en-v0_19/model.int8.onnx',
       'kokoro-int8-en-v0_19/voices.bin',
       'kokoro-int8-en-v0_19/tokens.txt',
-    ],
-  },
-  'tts-piper-en-libritts-r-int8': {
-    modelId: 'tts-piper-en-libritts-r-int8',
-    url: `${RELEASE_BASE}/tts-models/vits-piper-en_US-libritts_r-medium-int8.tar.bz2`,
-    sha256: '7e4552e239988f4896872822b56e99e0e9e00958164e3f6bdf5ee14391fbe829',
-    archiveBytes: 23398348,
-    expectedFiles: [
-      'vits-piper-en_US-libritts_r-medium-int8/en_US-libritts_r-medium.onnx',
-      'vits-piper-en_US-libritts_r-medium-int8/tokens.txt',
-    ],
-  },
-  'tts-piper-tr-fettah-int8': {
-    modelId: 'tts-piper-tr-fettah-int8',
-    url: `${RELEASE_BASE}/tts-models/vits-piper-tr_TR-fettah-medium-int8.tar.bz2`,
-    sha256: '4374bfdabb88ada0f3edf9bd46eacf1c5391a8a93bdce364196495891e5bc323',
-    archiveBytes: 21186168,
-    expectedFiles: [
-      'vits-piper-tr_TR-fettah-medium-int8/tr_TR-fettah-medium.onnx',
-      'vits-piper-tr_TR-fettah-medium-int8/tokens.txt',
     ],
   },
   'tts-supertonic-3-int8-2026-05-11': {

@@ -3,10 +3,10 @@ export class AudioCodec {
     if (buffer.length < 44) {
       throw new Error('Invalid WAV: Buffer too small');
     }
-    
+
     const chunkId = buffer.toString('utf8', 0, 4);
     if (chunkId !== 'RIFF') throw new Error('Invalid WAV: Missing RIFF');
-    
+
     const format = buffer.toString('utf8', 8, 12);
     if (format !== 'WAVE') throw new Error('Invalid WAV: Missing WAVE');
 
@@ -18,7 +18,8 @@ export class AudioCodec {
     if (audioFormat !== 1) throw new Error('Invalid WAV: Only PCM supported');
     if (numChannels !== 1) throw new Error('Invalid WAV: Only mono supported');
     if (bitsPerSample !== 16) throw new Error('Invalid WAV: Only 16-bit supported');
-    if (sampleRate !== 16000 && sampleRate !== 24000) throw new Error(`Invalid WAV: Unsupported sample rate ${sampleRate}`);
+    if (sampleRate !== 16000 && sampleRate !== 24000)
+      throw new Error(`Invalid WAV: Unsupported sample rate ${sampleRate}`);
 
     let dataOffset = 12;
     let dataSize = 0;
@@ -39,7 +40,7 @@ export class AudioCodec {
 
     const numSamples = dataSize / 2;
     const samples = new Float32Array(numSamples);
-    
+
     for (let i = 0; i < numSamples; i++) {
       const pcm16 = buffer.readInt16LE(dataOffset + i * 2);
       samples[i] = pcm16 / 32768.0;

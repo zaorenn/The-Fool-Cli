@@ -131,7 +131,13 @@ export class VoiceModelManager {
           updatedAtMs: Date.now(),
         });
       } else {
-        let errorCode: 'network' | 'http-status' | 'archive-invalid' | 'manifest-mismatch' | 'security-rejected' | 'io' = 'network';
+        let errorCode:
+          | 'network'
+          | 'http-status'
+          | 'archive-invalid'
+          | 'manifest-mismatch'
+          | 'security-rejected'
+          | 'io' = 'network';
         if (err instanceof ArchiveExtractionError) {
           errorCode = err.reason as any; // Map archive errors
         } else if (err.message === 'sha256-mismatch') {
