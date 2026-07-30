@@ -23,6 +23,9 @@
     <path d="M13.7 13.5L12 12.3L13.7 11" stroke="black" stroke-width="0.7" stroke-linecap="round" fill="none"/>
     <!-- < 左箭头 -->
     <path d="M8 11L9.7 12.3L8 13.5" stroke="black" stroke-width="0.7" stroke-linecap="round" fill="none"/>
+    <!-- scar — same spot on the face in every state: head centre + (2.15, -1).
+         This head is taller (y 7..20), so the sliver sits a little lower. -->
+    <path d="M13.15 10.45 C13.55 11.75 13.55 13.25 13.15 14.55 C12.85 13.25 12.85 11.75 13.15 10.45 Z" fill="#c4123f"/>
     <!-- 右手（大圆，右侧） -->
     <path d="M16.0582 10.0631C16.6426 9.47597 17.5924 9.47377 18.1795 10.0582C18.7667 10.6426 18.7689 11.5924 18.1844 12.1795C17.6 12.7667 16.6502 12.7689 16.0631 12.1844C15.476 11.6 15.4738 10.6502 16.0582 10.0631Z" fill="#BECAFF"/>
   </g>

@@ -87,6 +87,8 @@
     <g class="pet-hat" transform="translate(11.00 7.00) rotate(0.0)"><path d="M-0.48 -0.30 C-2.20 -1.68 -4.60 -2.40 -5.80 -4.68 C-5.20 -1.80 -4.00 0.60 -2.48 0.72 C-1.60 0.72 -0.88 0.36 -0.48 -0.30 Z" fill="#c4123f"/><path d="M0.48 -0.30 C2.20 -1.68 4.60 -2.40 5.80 -4.68 C5.20 -1.80 4.00 0.60 2.48 0.72 C1.60 0.72 0.88 0.36 0.48 -0.30 Z" fill="#c4123f"/><path d="M-2.32 0.60 C-1.60 -3.30 1.60 -3.30 2.32 0.60 Z" fill="#c4123f"/><path d="M0 -6.12 C-1.20 -4.32 -1.36 -1.20 -0.80 0.60 L0.80 0.60 C1.36 -1.20 1.20 -4.32 0 -6.12 Z" fill="#c4123f"/><circle cx="-6.00" cy="-4.80" r="1.02" fill="#c4123f"/><circle cx="6.00" cy="-4.80" r="1.02" fill="#c4123f"/><circle cx="0" cy="-6.72" r="0.92" fill="#c4123f"/></g>
     <!-- 眼睛（开心眯眼，专注状） -->
     <path d="M9 11 Q11 9.5 13 11" stroke="#111827" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+    <!-- scar — same spot on the face in every state: head centre + (2.15, -1). -->
+    <path d="M13.15 8.95 C13.55 10.25 13.55 11.75 13.15 13.05 C12.85 11.75 12.85 10.25 13.15 8.95 Z" fill="#c4123f"/>
     <!-- 嘴巴（咬牙专注） -->
     <path d="M9 14 Q11 16 13 14" stroke="#111827" stroke-width="0.9" stroke-linecap="round" fill="none"/>
   </g>

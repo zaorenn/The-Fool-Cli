@@ -125,6 +125,9 @@
     <!-- ^^ arc eyes -->
     <path d="M9 10.5 Q10 9.2 11 10.5" stroke="#111827" stroke-width="1.1" stroke-linecap="round" fill="none"/>
     <path d="M11 10.5 Q12 9.2 13 10.5" stroke="#111827" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+    <!-- scar — same spot on the face in every state: head centre + (2.15, -1).
+         Drawn before the blush so the cheek colour washes over its lower tip. -->
+    <path d="M13.15 8.95 C13.55 10.25 13.55 11.75 13.15 13.05 C12.85 11.75 12.85 10.25 13.15 8.95 Z" fill="#c4123f"/>
     <!-- rosy blush cheeks -->
     <ellipse cx="8" cy="12.5" rx="1.2" ry="0.7" fill="#e08090" opacity="0.5"/>
     <ellipse cx="14" cy="12.5" rx="1.2" ry="0.7" fill="#e08090" opacity="0.5"/>

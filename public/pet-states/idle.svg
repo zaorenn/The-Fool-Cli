@@ -53,9 +53,13 @@
            eye tracking, so the blink animation on .idle-eye stays isolated. -->
       <g class="idle-eye">
         <g class="idle-pupil">
-          <rect x="10" y="10" width="2" height="2" fill="#111827"/>
+          <circle cx="11.00" cy="11.00" r="1.05" fill="#111827"/><circle cx="10.66" cy="10.62" r="0.3" fill="#f5f1e8" opacity="0.9"/>
         </g>
       </g>
+      <!-- scar — a mark on the face, so it stays outside .idle-eye (which
+           blinks) and outside .idle-pupil (which follows the cursor). Inside
+           either one it would squash shut or drift with the gaze. -->
+      <path d="M13.15 8.95 C13.55 10.25 13.55 11.75 13.15 13.05 C12.85 11.75 12.85 10.25 13.15 8.95 Z" fill="#c4123f"/>
       <!-- smile -->
       <path d="M8 13.5 Q11 16.5 14 13.5" stroke="#111827" stroke-width="1" stroke-linecap="round" fill="none"/>
     </g>

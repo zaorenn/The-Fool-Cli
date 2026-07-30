@@ -73,7 +73,11 @@
           <rect x="14" y="5" width="1" height="1" fill="#981033"/>
     </g>
     <!-- 眼睛 -->
-    <rect x="12" y="11" width="2" height="2" rx="1" fill="#111827"/>
+    <circle cx="13.00" cy="12.00" r="1.05" fill="#111827"/><circle cx="12.66" cy="11.62" r="0.3" fill="#f5f1e8" opacity="0.9"/>
+    <!-- scar — 2.15 to the right of the eye, the same gap as in idle. Kept off
+         the head centre here because this pose looks down at the laptop and the
+         hat has flopped over the right temple. -->
+    <path d="M15.15 9.95 C15.55 11.25 15.55 12.75 15.15 14.05 C14.85 12.75 14.85 11.25 15.15 9.95 Z" fill="#c4123f"/>
 
     <!-- ── 笔记本覆盖在身体下半部分上层 ── -->
     <!-- 屏幕面板 -->

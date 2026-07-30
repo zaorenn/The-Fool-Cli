@@ -69,6 +69,9 @@
     <path d="M16.3402 14.3464C17.0804 13.6028 18.2833 13.6 19.0269 14.3402C19.7705 15.0804 19.7733 16.2833 19.0331 17.0269C18.2929 17.7705 17.0901 17.7733 16.3464 17.0331C15.6028 16.2929 15.6 15.0901 16.3402 14.3464Z" fill="#B9C3EB"/>
     <!-- 闭眼横线 -->
     <path d="M8 11H11" stroke="black" stroke-linecap="round"/>
+    <!-- scar — same spot on the face in every state: head centre + (2.15, -1).
+         Matches the flat sleeping layer inside waking.svg. -->
+    <path d="M13.15 8.95 C13.55 10.25 13.55 11.75 13.15 13.05 C12.85 11.75 12.85 10.25 13.15 8.95 Z" fill="#c4123f"/>
     <!-- 安详微笑 -->
     <path d="M7 13C8.85289 15.1176 12.1471 15.1176 14 13" stroke="black" stroke-linecap="round"/>
   </g>

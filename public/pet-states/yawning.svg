@@ -23,6 +23,8 @@
     <!-- 半闭眼（向下弧线，困的感觉） -->
     <path d="M8.5 11.5 Q9.5 10.5 10.5 11.5" stroke="#111827" stroke-width="1" stroke-linecap="round" fill="none"/>
     <path d="M11.5 11.5 Q12.5 10.5 13.5 11.5" stroke="#111827" stroke-width="1" stroke-linecap="round" fill="none"/>
+    <!-- scar — same spot on the face in every state: head centre + (2.15, -1). -->
+    <path d="M13.15 8.95 C13.55 10.25 13.55 11.75 13.15 13.05 C12.85 11.75 12.85 10.25 13.15 8.95 Z" fill="#c4123f"/>
     <!-- 粉色张嘴（打哈欠） -->
     <g class="yawn-mouth">
       <ellipse cx="11" cy="14.5" rx="1.8" ry="2.2" fill="#e8a0a0"/>

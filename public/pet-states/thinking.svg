@@ -66,6 +66,9 @@
     <rect x="8" y="8" width="2" height="3" fill="white"/>
     <!-- 嘟嘴圆点 -->
     <rect x="13" y="15" width="2" height="2" rx="1" fill="black"/>
+    <!-- scar — same spot on the face in every state: head centre + (2.15, -1).
+         This head is mirrored into x 8..20, y 11..23, so its centre is (14, 17). -->
+    <path d="M16.15 13.95 C16.55 15.25 16.55 16.75 16.15 18.05 C15.85 16.75 15.85 15.25 16.15 13.95 Z" fill="#c4123f"/>
     <!-- 嘴弧 -->
     <path d="M13 18.5C12.1198 18.72 11.8162 19.8162 12.4577 20.4577L12.5 20.5" stroke="black" stroke-linecap="round"/>
   </g>
