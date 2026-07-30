@@ -2,7 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import type { VoiceDownloadProgress, VoiceModelState } from '../../../common/types/foolVoice';
-import { VoiceModelCatalog } from './VoiceModelCatalog';
+import { VoiceModelCatalog, type ManagedCatalogEntry } from './VoiceModelCatalog';
 import { extractBzip2Tar, ArchiveExtractionError } from './archive';
 
 type DownloadOperation = {
@@ -11,6 +11,36 @@ type DownloadOperation = {
   modelId: string;
   abortController: AbortController;
   progress: VoiceDownloadProgress;
+};
+
+type DownloadErrorCode = Extract<VoiceDownloadProgress, { state: 'failed' }>['errorCode'];
+
+/**
+ * Extraction bounds, derived from the archive we agreed to download.
+ *
+ * A fixed cap cannot serve models that range from 60 MB to 560 MB compressed —
+ * Whisper turbo unpacks to more than half a gigabyte and a flat 500 MB limit
+ * rejected it as a zip bomb. Sizing the limit from the known archive keeps the
+ * protection while letting every catalogued model through.
+ */
+const extractionLimits = (archiveBytes: number): { maxTotalBytes: number; maxFileSize: number } => {
+  const headroom = Math.max(archiveBytes * 4, 256 * 1024 * 1024);
+  // A single weights file can legitimately be the whole archive.
+  return { maxTotalBytes: headroom, maxFileSize: headroom };
+};
+
+/** Maps a thrown error onto the progress protocol's error codes. */
+const toErrorCode = (error: unknown): DownloadErrorCode => {
+  if (error instanceof ArchiveExtractionError) {
+    // `invalid-archive` is the extractor's wording for the same condition the
+    // progress protocol calls `archive-invalid`.
+    return error.reason === 'invalid-archive' ? 'archive-invalid' : error.reason;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  if (message === 'sha256-mismatch') return 'manifest-mismatch';
+  if (message.startsWith('http-')) return 'http-status';
+  return 'network';
 };
 
 export class VoiceModelManager {
@@ -58,8 +88,23 @@ export class VoiceModelManager {
     return { status: 'ready' };
   }
 
-  public async downloadModel(operationId: string, modelId: string): Promise<void> {
-    if (this.activeDownloads.has(modelId)) return;
+  /** Whether this model is being downloaded right now, by any caller. */
+  public isDownloading(modelId: string): boolean {
+    return this.activeDownloads.has(modelId);
+  }
+
+  /**
+   * Downloads and installs a model.
+   *
+   * Two presses of Install must never mean two downloads of the same archive, so
+   * a model already in flight is reported back rather than started again, and a
+   * model already on disk is not re-fetched at all.
+   */
+  public async downloadModel(
+    operationId: string,
+    modelId: string
+  ): Promise<'started' | 'already-running' | 'already-installed'> {
+    if (this.activeDownloads.has(modelId)) return 'already-running';
 
     const entry = VoiceModelCatalog.getManagedEntry(modelId);
     if (!entry) throw new Error('Model not found in catalog');
@@ -67,22 +112,14 @@ export class VoiceModelManager {
     const abortController = new AbortController();
     const downloadPath = path.join(this.getDownloadsDir(), `${modelId}.part`);
 
-    let downloadedBytes = 0;
-    try {
-      const stat = await fs.stat(downloadPath);
-      downloadedBytes = stat.size;
-    } catch {
-      await fs.mkdir(this.getDownloadsDir(), { recursive: true });
-    }
-
     const progress: VoiceDownloadProgress = {
-      state: 'downloading',
+      state: 'queued',
       operationId,
       providerId: 'local-sherpa',
       modelId,
       sequence: 1,
       attempt: 1,
-      downloadedBytes,
+      downloadedBytes: 0,
       totalBytes: entry.archiveBytes,
       updatedAtMs: Date.now(),
     };
@@ -95,11 +132,58 @@ export class VoiceModelManager {
       progress,
     };
 
+    // The slot is claimed before the first `await`. Checking disk state first
+    // would leave a window in which two presses both pass the guard above and
+    // two transfers of the same archive start.
     this.activeDownloads.set(modelId, operation);
-    this.updateProgress(modelId, progress);
 
     try {
-      await this.performDownload(operation, downloadPath, entry);
+      const installed = await this.getModelState(modelId);
+      if (installed.status === 'ready') {
+        // Tell the listeners so a stale "installing" button settles.
+        this.updateProgress(modelId, {
+          ...progress,
+          state: 'ready',
+          downloadedBytes: entry.archiveBytes,
+          sequence: progress.sequence + 1,
+          updatedAtMs: Date.now(),
+        });
+        return 'already-installed';
+      }
+
+      let downloadedBytes = 0;
+      try {
+        const stat = await fs.stat(downloadPath);
+        downloadedBytes = stat.size;
+      } catch {
+        await fs.mkdir(this.getDownloadsDir(), { recursive: true });
+      }
+
+      operation.progress = {
+        ...progress,
+        state: 'downloading',
+        downloadedBytes,
+        sequence: progress.sequence + 1,
+        updatedAtMs: Date.now(),
+      };
+      this.updateProgress(modelId, operation.progress);
+
+      // A part file that is already the full size only needs checking, not
+      // fetching again — re-downloading half a gigabyte the user has already
+      // pulled down is the one thing worse than a slow install.
+      const alreadyComplete =
+        downloadedBytes === entry.archiveBytes && (await this.archiveMatches(downloadPath, entry));
+
+      if (alreadyComplete) {
+        this.updateProgress(modelId, {
+          ...operation.progress,
+          state: 'validating',
+          sequence: operation.progress.sequence + 1,
+          updatedAtMs: Date.now(),
+        });
+      } else {
+        await this.performDownload(operation, downloadPath, entry);
+      }
 
       this.updateProgress(modelId, {
         ...operation.progress,
@@ -113,6 +197,7 @@ export class VoiceModelManager {
         archivePath: downloadPath,
         targetDir,
         expectedFiles: entry.expectedFiles,
+        ...extractionLimits(entry.archiveBytes),
       });
 
       this.updateProgress(modelId, {
@@ -131,20 +216,16 @@ export class VoiceModelManager {
           updatedAtMs: Date.now(),
         });
       } else {
-        let errorCode:
-          | 'network'
-          | 'http-status'
-          | 'archive-invalid'
-          | 'manifest-mismatch'
-          | 'security-rejected'
-          | 'io' = 'network';
-        if (err instanceof ArchiveExtractionError) {
-          errorCode = err.reason as any; // Map archive errors
-        } else if (err.message === 'sha256-mismatch') {
-          errorCode = 'manifest-mismatch';
+        const errorCode = toErrorCode(err);
+        if (errorCode === 'manifest-mismatch') {
+          // A wrong checksum means the bytes on disk are useless; keeping them
+          // would make every retry resume into the same failure.
           await fs.unlink(downloadPath).catch(() => {});
-        } else if (err.message.startsWith('http-')) {
-          errorCode = 'http-status';
+        }
+        if (errorCode === 'archive-invalid' || errorCode === 'security-rejected') {
+          // Half-extracted output would otherwise be reported as `invalid` for
+          // ever, with no way to retry from the UI.
+          await fs.rm(path.join(this.getModelsDir(), modelId), { recursive: true, force: true }).catch(() => {});
         }
         this.updateProgress(modelId, {
           ...operation.progress,
@@ -157,12 +238,54 @@ export class VoiceModelManager {
     } finally {
       this.activeDownloads.delete(modelId);
     }
+
+    return 'started';
   }
 
-  private async performDownload(operation: DownloadOperation, downloadPath: string, entry: any): Promise<void> {
+  /**
+   * Whether a fully-sized part file is the archive we expect.
+   *
+   * Without a published checksum size is all there is to go on; the extraction
+   * step still checks that every expected file came out.
+   */
+  private async archiveMatches(downloadPath: string, entry: ManagedCatalogEntry): Promise<boolean> {
+    if (!entry.sha256) return true;
+
+    try {
+      const hash = crypto.createHash('sha256');
+      const handle = await fs.open(downloadPath, 'r');
+      try {
+        const buffer = Buffer.alloc(8 * 1024 * 1024);
+        let position = 0;
+        for (;;) {
+          const { bytesRead } = await handle.read(buffer, 0, buffer.length, position);
+          if (bytesRead === 0) break;
+          hash.update(buffer.subarray(0, bytesRead));
+          position += bytesRead;
+        }
+      } finally {
+        await handle.close();
+      }
+      return hash.digest('hex') === entry.sha256;
+    } catch {
+      return false;
+    }
+  }
+
+  private async performDownload(
+    operation: DownloadOperation,
+    downloadPath: string,
+    entry: ManagedCatalogEntry
+  ): Promise<void> {
     const { abortController, progress } = operation;
 
     const headers: Record<string, string> = {};
+    // A part file at or past the expected size cannot be resumed from — the
+    // range request would be unsatisfiable — so start it again.
+    if (progress.downloadedBytes >= entry.archiveBytes) {
+      await fs.unlink(downloadPath).catch(() => {});
+      progress.downloadedBytes = 0;
+    }
     if (progress.downloadedBytes > 0) {
       headers['Range'] = `bytes=${progress.downloadedBytes}-`;
     }
@@ -181,12 +304,14 @@ export class VoiceModelManager {
 
     try {
       if (response.status !== 206) {
+        // The server ignored the range: the file was reopened with 'w', so the
+        // bytes already counted are gone.
         progress.downloadedBytes = 0;
         progress.attempt += 1;
         this.updateProgress(operation.modelId, progress);
       } else if (entry.sha256) {
-        // If resuming, we'd need to re-hash the existing part to check overall sha256.
-        // For simplicity in this implementation, if sha256 is strictly required we might need to read it.
+        // The checksum covers the whole archive, so the resumed part has to be
+        // folded into the hash before the new bytes arrive.
         const existingData = await fs.readFile(downloadPath);
         hash.update(existingData);
       }

@@ -30,6 +30,8 @@ import type {
   VoiceRemoveResponse,
   VoiceRequestEnvelope,
   VoiceResponseEnvelope,
+  VoiceSpeakersRequest,
+  VoiceSpeakersResponse,
   VoiceSynthesizeRequest,
   VoiceSynthesizeResponse,
   VoiceTranscribeRequest,
@@ -183,6 +185,10 @@ export const foolVoice = {
   cancel: bridge.buildProvider<VoiceResponseEnvelope<VoiceCancelResponse>, VoiceRequestEnvelope<VoiceCancelRequest>>(
     'fool.voice.cancel'
   ),
+  speakers: bridge.buildProvider<
+    VoiceResponseEnvelope<VoiceSpeakersResponse>,
+    VoiceRequestEnvelope<VoiceSpeakersRequest>
+  >('fool.voice.speakers'),
   downloadProgress: bridge.buildEmitter<VoiceEventEnvelope<VoiceDownloadProgress>>('fool.voice.download.progress'),
 };
 

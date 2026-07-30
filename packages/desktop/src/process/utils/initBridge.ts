@@ -78,11 +78,16 @@ initAllBridges({
             action: 'none',
           }) as any
       ),
-    download: (req) =>
-      modelManager.downloadModel(req.operationId, req.modelId).then(() => ({
-        operationId: req.operationId,
-        accepted: true,
-      })),
+    // Accepted immediately and run in the background: a model can be half a
+    // gigabyte, and awaiting the whole transfer here left the renderer with a
+    // pending IPC call for minutes and no way to show progress. Outcomes travel
+    // on the download-progress events instead.
+    download: (req) => {
+      void modelManager.downloadModel(req.operationId, req.modelId).catch(() => {
+        // Failures are already reported as a `failed` progress event.
+      });
+      return { operationId: req.operationId, accepted: true as const };
+    },
     remove: (req) =>
       modelManager.removeModel(req.modelId).then(() => ({
         providerId: req.providerId as any,
@@ -114,6 +119,12 @@ initAllBridges({
       voiceService.cancel(req.operationId).then((state) => ({
         operationId: req.operationId,
         state,
+      })),
+    speakers: (req) =>
+      voiceService.getSpeakerCount(req.modelId).then(({ speakerCount, source }) => ({
+        modelId: req.modelId,
+        speakerCount,
+        source,
       })),
   },
 });

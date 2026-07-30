@@ -37,10 +37,13 @@ describe('VoiceModelCatalog', () => {
   });
 
   it('has required file manifests for managed entries', () => {
+    // Names as they appear in the released archive: prefixed with the model
+    // name, `tiny.en`. The earlier `tiny-…` spelling matched no file, so the
+    // download failed its manifest check and an extracted copy read as missing.
     const whisperEntry = VoiceModelCatalog.getManagedEntry('stt-whisper-tiny-int8-v1');
-    expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny.en/tiny-encoder.int8.onnx');
-    expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny.en/tiny-decoder.int8.onnx');
-    expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny.en/tiny-tokens.txt');
+    expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny.en/tiny.en-encoder.int8.onnx');
+    expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny.en/tiny.en-decoder.int8.onnx');
+    expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny.en/tiny.en-tokens.txt');
 
     const supertonicEntry = VoiceModelCatalog.getManagedEntry('tts-supertonic-3-int8-2026-05-11');
     expect(supertonicEntry?.expectedFiles).toContain('sherpa-onnx-supertonic-3-tts-int8-2026-05-11/tts.json');

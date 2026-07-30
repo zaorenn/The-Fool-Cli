@@ -40,7 +40,9 @@ describe('Fool voice settings contract', () => {
       devices: { inputDeviceId: null, outputDeviceId: null },
       activation: {
         talkModeEnabled: false,
-        wakePhrase: { enabled: false, modelId: 'stt-phrase-v1', phrase: 'hey fool', sensitivity: 0.65 },
+        // The wake phrase ships enabled because the desktop pet is the switch:
+        // the listener only opens the microphone while the pet is on screen.
+        wakePhrase: { enabled: true, modelId: 'stt-phrase-v1', phrase: 'wake up fool', sensitivity: 0.65 },
       },
       stt: { providerId: 'local-sherpa', modelId: 'stt-whisper-turbo', language: 'auto' },
       tts: {

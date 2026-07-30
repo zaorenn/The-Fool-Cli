@@ -260,6 +260,12 @@ export type FoolVoiceSettings = {
   agentOverrides: Record<string, FoolVoiceAgentOverride>;
 };
 
+/** The phrase that starts a spoken conversation with no click. */
+export const WAKE_PHRASE_DEFAULT = 'wake up fool';
+
+/** The phrase shipped before {@link WAKE_PHRASE_DEFAULT}, upgraded on read. */
+export const WAKE_PHRASE_LEGACY_DEFAULT = 'hey fool';
+
 export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
   schemaVersion: 1,
   enabled: false,
@@ -271,9 +277,11 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     talkModeEnabled: false,
     pushToTalkShortcut: '',
     wakePhrase: {
-      enabled: false,
+      // On by default because the desktop pet is the real switch: the listener
+      // only opens the microphone while the pet is on screen.
+      enabled: true,
       modelId: 'stt-phrase-v1',
-      phrase: 'hey fool',
+      phrase: WAKE_PHRASE_DEFAULT,
       sensitivity: 0.65,
     },
   },
@@ -384,9 +392,9 @@ const settingsSchema = z
         pushToTalkShortcut: z.string().max(128).default(''),
         wakePhrase: z
           .object({
-            enabled: z.boolean().default(false),
+            enabled: z.boolean().default(true),
             modelId: z.literal('stt-phrase-v1').default('stt-phrase-v1'),
-            phrase: normalizedWakePhraseSchema.default('hey fool'),
+            phrase: normalizedWakePhraseSchema.default(WAKE_PHRASE_DEFAULT),
             sensitivity: z.number().min(0).max(1).default(0.65),
           })
           .strict()
@@ -486,9 +494,27 @@ export const loadFoolVoiceSettings = (
   onDiagnostic?: (diagnostic: FoolVoiceDiagnostic) => void
 ): FoolVoiceSettings => {
   const result = settingsSchema.safeParse(value);
-  if (result.success) return result.data as FoolVoiceSettings;
+  if (result.success) return upgradeWakePhrase(result.data as FoolVoiceSettings);
   onDiagnostic?.({ code: 'invalid-settings', key: 'fool.voice' });
   return structuredClone(DEFAULT_FOOL_VOICE_SETTINGS);
+};
+
+/**
+ * Moves settings still carrying the old wake phrase onto the current one.
+ *
+ * Only the untouched default is replaced — a phrase the user chose is theirs and
+ * is left exactly as it is.
+ */
+export const upgradeWakePhrase = (settings: FoolVoiceSettings): FoolVoiceSettings => {
+  if (settings.activation.wakePhrase.phrase.toLowerCase() !== WAKE_PHRASE_LEGACY_DEFAULT) return settings;
+
+  return {
+    ...settings,
+    activation: {
+      ...settings.activation,
+      wakePhrase: { ...settings.activation.wakePhrase, phrase: WAKE_PHRASE_DEFAULT, enabled: true },
+    },
+  };
 };
 
 type VoiceTurnPhaseState =
@@ -753,6 +779,23 @@ export type VoiceSynthesizeResponse = {
   profileId: string;
   audio: VoiceSynthesizedWav;
   durationMs: number;
+};
+export type VoiceSpeakersRequest = {
+  providerId: 'local-sherpa';
+  modelId: string;
+};
+/**
+ * How many speakers an installed model actually carries.
+ *
+ * Read from the loaded engine rather than from the catalog: LibriTTS-R ships 904
+ * of them, far too many to list by hand, and a curated subset would quietly hide
+ * most of the voices the user downloaded.
+ */
+export type VoiceSpeakersResponse = {
+  modelId: string;
+  speakerCount: number;
+  /** `engine` means the model was opened; `catalog` is the preset fallback. */
+  source: 'engine' | 'catalog';
 };
 export type VoiceCancelRequest = { operationId: string };
 export type VoiceCancelResponse = {

@@ -5,6 +5,7 @@ import type {
   VoiceSynthesizedWav,
 } from '../../../common/types/foolVoice';
 import { FoolVoiceSettings } from '../../../common/types/foolVoice';
+import { VoiceModelCatalog } from './VoiceModelCatalog';
 import type { VoiceModelManager } from './VoiceModelManager';
 import type { SherpaVoiceProvider } from './SherpaVoiceProvider';
 import type { OpenAICompatibleVoiceProvider } from './OpenAICompatibleVoiceProvider';
@@ -82,6 +83,30 @@ export class FoolVoiceService {
     } finally {
       this.activeOperations.delete(operationId);
     }
+  }
+
+  /**
+   * How many speakers an installed local model carries.
+   *
+   * Falls back to the number of preset voices when the engine cannot be opened,
+   * so the picker degrades to the catalog rather than to an empty list.
+   */
+  public async getSpeakerCount(modelId: string): Promise<{ speakerCount: number; source: 'engine' | 'catalog' }> {
+    const state = await this.modelManager.getModelState(modelId);
+    if (state.status !== 'ready') {
+      return { speakerCount: this.presetSpeakerCount(modelId), source: 'catalog' };
+    }
+
+    try {
+      return { speakerCount: await this.sherpaProvider.getSpeakerCount(modelId), source: 'engine' };
+    } catch {
+      return { speakerCount: this.presetSpeakerCount(modelId), source: 'catalog' };
+    }
+  }
+
+  private presetSpeakerCount(modelId: string): number {
+    const model = VoiceModelCatalog.getModels().find((entry) => entry.id === modelId);
+    return model?.role === 'text-to-speech' ? model.profileIds.length : 0;
   }
 
   public async cancel(operationId: string): Promise<'cancelling' | 'cancelled' | 'not-found' | 'already-terminal'> {

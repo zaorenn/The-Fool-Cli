@@ -76,14 +76,15 @@ export const VOICE_ENGINE_SPECS: Record<string, VoiceEngineSpec> = {
       tokens: 'turbo-tokens.txt',
     },
   },
+  // Names match the archive: `tiny.en-…`, after the model, not a bare `tiny-…`.
   'stt-whisper-tiny-int8-v1': {
     role: 'speech-to-text',
     engine: {
       kind: 'whisper',
       dir: 'sherpa-onnx-whisper-tiny.en',
-      encoder: 'tiny-encoder.int8.onnx',
-      decoder: 'tiny-decoder.int8.onnx',
-      tokens: 'tiny-tokens.txt',
+      encoder: 'tiny.en-encoder.int8.onnx',
+      decoder: 'tiny.en-decoder.int8.onnx',
+      tokens: 'tiny.en-tokens.txt',
     },
   },
 

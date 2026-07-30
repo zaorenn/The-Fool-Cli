@@ -306,15 +306,19 @@ export const MANAGED_CATALOG_ENTRIES: Record<string, ManagedCatalogEntry> = {
       'kitten-nano-en-v0_8-fp32/tokens.txt',
     ],
   },
+  // File names verified against the extracted archive: this build prefixes them
+  // with the model name, `tiny.en`, not a bare `tiny`. The wrong names made the
+  // download fail its manifest check and an already-extracted copy read as
+  // not-installed.
   'stt-whisper-tiny-int8-v1': {
     modelId: 'stt-whisper-tiny-int8-v1',
     url: 'https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-tiny.en.tar.bz2',
     sha256: null,
     archiveBytes: 116204861,
     expectedFiles: [
-      'sherpa-onnx-whisper-tiny.en/tiny-encoder.int8.onnx',
-      'sherpa-onnx-whisper-tiny.en/tiny-decoder.int8.onnx',
-      'sherpa-onnx-whisper-tiny.en/tiny-tokens.txt',
+      'sherpa-onnx-whisper-tiny.en/tiny.en-encoder.int8.onnx',
+      'sherpa-onnx-whisper-tiny.en/tiny.en-decoder.int8.onnx',
+      'sherpa-onnx-whisper-tiny.en/tiny.en-tokens.txt',
     ],
   },
   'tts-kokoro-en-v0_19-int8': {

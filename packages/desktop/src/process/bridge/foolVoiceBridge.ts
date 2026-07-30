@@ -18,6 +18,8 @@ import type {
   VoiceRemoveResponse,
   VoiceRequestEnvelope,
   VoiceResponseEnvelope,
+  VoiceSpeakersRequest,
+  VoiceSpeakersResponse,
   VoiceSynthesizeRequest,
   VoiceSynthesizeResponse,
   VoiceTranscribeRequest,
@@ -34,6 +36,7 @@ export type FoolVoiceBridgeHandlers = {
   transcribe: (request: VoiceTranscribeRequest) => MaybePromise<VoiceTranscribeResponse>;
   synthesize: (request: VoiceSynthesizeRequest) => MaybePromise<VoiceSynthesizeResponse>;
   cancel: (request: VoiceCancelRequest) => MaybePromise<VoiceCancelResponse>;
+  speakers: (request: VoiceSpeakersRequest) => MaybePromise<VoiceSpeakersResponse>;
 };
 
 type BridgeErrorCode = Extract<VoiceResponseEnvelope<never>, { ok: false }>['error']['code'];
@@ -123,7 +126,9 @@ const registerHandler = <Request, Response>(
   endpoint: VoiceEndpoint<Request, Response>,
   validatePayload: (payload: unknown) => BridgeErrorCode | null,
   handler?: (request: Request) => MaybePromise<Response>,
-  validateResponse?: (response: Response) => boolean
+  validateResponse?: (response: Response) => boolean,
+  /** Endpoint name used when reporting a provider failure to the log. */
+  label = 'fool.voice'
 ): void => {
   endpoint.provider(async (rawRequest) => {
     const request = validateEnvelope<Request>(rawRequest, validatePayload);
@@ -132,10 +137,18 @@ const registerHandler = <Request, Response>(
     try {
       const data = await handler(request.payload);
       if (validateResponse && !validateResponse(data)) {
+        // A response the renderer would reject is a provider fault worth naming:
+        // "the model produced nothing usable" is otherwise indistinguishable from
+        // "the model is not installed".
+        console.error(`[FoolVoice] ${label} produced a response that failed validation`);
         return failure(request.requestId, 'provider-failed');
       }
       return success(request.requestId, data);
-    } catch {
+    } catch (error) {
+      // Logged rather than swallowed: a speech engine that cannot open its model
+      // used to fail in complete silence, which left the UI saying "not usable"
+      // with no way to find out why.
+      console.error(`[FoolVoice] ${label} failed:`, error instanceof Error ? error.message : error);
       return failure(request.requestId, 'provider-failed');
     }
   });
@@ -269,6 +282,20 @@ const validateCancelRequest = (payload: unknown): BridgeErrorCode | null =>
     ? null
     : 'invalid-request';
 
+const validateSpeakersRequest = (payload: unknown): BridgeErrorCode | null =>
+  isRecord(payload) &&
+  hasExactKeys(payload, ['providerId', 'modelId']) &&
+  payload.providerId === 'local-sherpa' &&
+  isIdentifier(payload.modelId)
+    ? null
+    : 'invalid-request';
+
+/** A speaker count has to be a plausible index range, not an arbitrary number. */
+const MAX_SPEAKERS = 4096;
+
+const validateSpeakersResponse = (response: VoiceSpeakersResponse): boolean =>
+  Number.isInteger(response.speakerCount) && response.speakerCount >= 0 && response.speakerCount <= MAX_SPEAKERS;
+
 const validateCatalogResponse = (response: VoiceCatalogResponse): boolean =>
   Array.isArray(response.providers) &&
   response.providers.length <= 32 &&
@@ -281,9 +308,15 @@ const validateSynthesizeResponse = (response: VoiceSynthesizeResponse): boolean 
   validateAudio(response.audio, MAX_SYNTHESIS_BYTES, true) === null;
 
 export function initFoolVoiceBridge(handlers: Partial<FoolVoiceBridgeHandlers> = {}): void {
-  registerHandler(ipcBridge.foolVoice.catalog, validateCatalogRequest, handlers.catalog, validateCatalogResponse);
-  registerHandler(ipcBridge.foolVoice.download, validateDownloadRequest, handlers.download);
-  registerHandler(ipcBridge.foolVoice.remove, validateRemoveRequest, handlers.remove);
+  registerHandler(
+    ipcBridge.foolVoice.catalog,
+    validateCatalogRequest,
+    handlers.catalog,
+    validateCatalogResponse,
+    'catalog'
+  );
+  registerHandler(ipcBridge.foolVoice.download, validateDownloadRequest, handlers.download, undefined, 'download');
+  registerHandler(ipcBridge.foolVoice.remove, validateRemoveRequest, handlers.remove, undefined, 'remove');
   registerHandler(
     ipcBridge.foolVoice.health,
     validateHealthRequest,
@@ -294,14 +327,30 @@ export function initFoolVoiceBridge(handlers: Partial<FoolVoiceBridgeHandlers> =
         checkedAtMs: Date.now(),
         reason: 'service-not-registered',
         action: 'none',
-      }))
+      })),
+    undefined,
+    'health'
   );
-  registerHandler(ipcBridge.foolVoice.transcribe, validateTranscribeRequest, handlers.transcribe);
+  registerHandler(
+    ipcBridge.foolVoice.transcribe,
+    validateTranscribeRequest,
+    handlers.transcribe,
+    undefined,
+    'transcribe'
+  );
   registerHandler(
     ipcBridge.foolVoice.synthesize,
     validateSynthesizeRequest,
     handlers.synthesize,
-    validateSynthesizeResponse
+    validateSynthesizeResponse,
+    'synthesize'
   );
-  registerHandler(ipcBridge.foolVoice.cancel, validateCancelRequest, handlers.cancel);
+  registerHandler(ipcBridge.foolVoice.cancel, validateCancelRequest, handlers.cancel, undefined, 'cancel');
+  registerHandler(
+    ipcBridge.foolVoice.speakers,
+    validateSpeakersRequest,
+    handlers.speakers,
+    validateSpeakersResponse,
+    'speakers'
+  );
 }
