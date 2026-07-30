@@ -46,11 +46,27 @@ const voiceService = new FoolVoiceService(modelManager, sherpaProvider, openaiPr
 
 initAllBridges({
   foolVoice: {
-    catalog: (req) => ({
-      providers: ['local-sherpa', 'openai-compatible', 'transcript-wake-word'] as any,
-      models: VoiceModelCatalog.getModels() as any,
-      profiles: req.includeProfiles ? VoiceModelCatalog.getPresetProfiles() : [],
-    }),
+    catalog: async (req) => {
+      const baseModels = VoiceModelCatalog.getModels();
+      const models = await Promise.all(
+        baseModels.map(async (model) => {
+          if (model.distribution === 'managed') {
+            try {
+              const state = await modelManager.getModelState(model.id);
+              return { ...model, state };
+            } catch {
+              return model;
+            }
+          }
+          return model;
+        })
+      );
+      return {
+        providers: ['local-sherpa', 'openai-compatible', 'transcript-wake-word'] as any,
+        models: models as any,
+        profiles: req.includeProfiles ? VoiceModelCatalog.getPresetProfiles() : [],
+      };
+    },
     health: (req) =>
       voiceService.getHealth(req.providerId, req.capability, req.modelId).then(
         (status) =>

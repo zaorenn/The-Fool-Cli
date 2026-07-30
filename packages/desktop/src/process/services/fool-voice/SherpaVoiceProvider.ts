@@ -6,7 +6,7 @@
 
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { VoicePcm16Wav, VoiceSynthesizedWav } from '../../../common/types/foolVoice';
+import type { VoicePcm16Wav, VoiceSynthesizedWav } from '../../../common/types/foolVoice';
 import { VoiceModelCatalog } from './VoiceModelCatalog';
 import { AudioCodec } from './audioCodec';
 import {

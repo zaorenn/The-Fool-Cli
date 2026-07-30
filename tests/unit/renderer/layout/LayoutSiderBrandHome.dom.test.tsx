@@ -202,7 +202,7 @@ describe('Layout sider brand Home button', () => {
     const { container } = renderLayout();
 
     // The icon is the SVG-wrapping div (bg-black), separate from the wordmark.
-    const icon = container.querySelector('.bg-black') as HTMLElement;
+    const icon = container.querySelector('[data-testid="sider-brand-logo"]') as HTMLElement;
     expect(icon).toBeTruthy();
     for (let i = 0; i < 4; i++) fireEvent.click(icon);
     expect(openDevTools).toHaveBeenCalled();

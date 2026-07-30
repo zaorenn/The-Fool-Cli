@@ -1,4 +1,4 @@
-import { VoicePcm16Wav } from '../../../common/types/foolVoice';
+import type { VoicePcm16Wav } from '../../../common/types/foolVoice';
 import { AudioCodec } from './audioCodec';
 
 export class OpenAICompatibleVoiceProvider {

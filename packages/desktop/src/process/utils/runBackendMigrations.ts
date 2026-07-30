@@ -185,19 +185,21 @@ function buildDefaultMcpServers(): McpImportServer[] {
 
 async function isCommandAvailable(command: string): Promise<boolean> {
   return await new Promise((resolve) => {
-    execFile(command, ['--version'], { timeout: 3000 }, (error) => {
-      if (!error) {
+    import('child_process').then(({ exec }) => {
+      exec(`${command} --version`, { timeout: 3000 }, (error) => {
+        if (!error) {
+          resolve(true);
+          return;
+        }
+
+        const err = error as unknown as NodeJS.ErrnoException;
+        if (err.code === 'ENOENT') {
+          resolve(false);
+          return;
+        }
+
         resolve(true);
-        return;
-      }
-
-      const err = error as NodeJS.ErrnoException;
-      if (err.code === 'ENOENT') {
-        resolve(false);
-        return;
-      }
-
-      resolve(true);
+      });
     });
   });
 }

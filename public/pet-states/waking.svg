@@ -96,7 +96,7 @@
   </defs>
 
   <!-- zzz 飘出 -->
-  <use href="#wake-pz" class="wake-z1" fill="#8891b8"/>
+  <use href="#wake-pz" class="wake-z1" fill="#c4123f"/>
   <use href="#wake-pz" class="wake-z2" fill="#a0a8c8"/>
   <use href="#wake-pz" class="wake-z3" fill="#c0c8e0"/>
 
@@ -108,30 +108,30 @@
 
   <g class="wake-all">
     <!-- 手臂 -->
-    <g class="wake-arm-l"><rect x="1" y="12" width="3.5" height="3.5" rx="1.75" fill="#97A0C5" fill-opacity="0.7"/></g>
+    <g class="wake-arm-l"><rect x="1" y="12" width="3.5" height="3.5" rx="1.75" fill="#f5f1e8" fill-opacity="0.7"/></g>
     <g class="wake-arm-r"><path d="M16.34 14.35C17.08 13.6 18.28 13.6 19.03 14.34C19.77 15.08 19.77 16.28 19.03 17.03C18.29 17.77 17.09 17.77 16.35 17.03C15.6 16.29 15.6 15.09 16.34 14.35Z" fill="#B9C3EB"/></g>
 
     <!-- 扁身体层（sleeping 造型，淡出） -->
     <g class="wake-flat">
-      <rect x="3" y="7" width="16" height="10" rx="5" fill="#97A0C5"/>
-      <path d="M14.2041 6.85L7.7959 6.85L11 1.3L14.2041 6.85Z" fill="#FF5B24"/>
+      <rect x="3" y="7" width="16" height="10" rx="5" fill="#f5f1e8"/>
+      <g class="pet-hat" transform="translate(11.00 6.85) rotate(0.0)"><path d="M-0.38 -0.28 C-1.76 -1.55 -3.68 -2.22 -4.65 -4.33 C-4.17 -1.66 -3.20 0.56 -1.99 0.67 C-1.28 0.67 -0.70 0.33 -0.38 -0.28 Z" fill="#c4123f"/><path d="M0.38 -0.28 C1.76 -1.55 3.68 -2.22 4.65 -4.33 C4.17 -1.66 3.20 0.56 1.99 0.67 C1.28 0.67 0.70 0.33 0.38 -0.28 Z" fill="#c4123f"/><path d="M-1.86 0.56 C-1.28 -3.05 1.28 -3.05 1.86 0.56 Z" fill="#c4123f"/><path d="M0 -5.66 C-0.96 -4.00 -1.09 -1.11 -0.64 0.56 L0.64 0.56 C1.09 -1.11 0.96 -4.00 0 -5.66 Z" fill="#c4123f"/><circle cx="-4.81" cy="-4.44" r="0.94" fill="#c4123f"/><circle cx="4.81" cy="-4.44" r="0.94" fill="#c4123f"/><circle cx="0" cy="-6.22" r="0.85" fill="#c4123f"/></g>
       <path d="M8 11H11" stroke="black" stroke-linecap="round"/>
       <path d="M7 13C8.85 15.12 12.15 15.12 14 13" stroke="black" stroke-linecap="round"/>
     </g>
 
     <!-- 圆身体层（idle 造型，淡入 + 伸懒腰） -->
     <g class="wake-round">
-      <rect x="5" y="6" width="12" height="12" rx="6" fill="#97A0C5"/>
-      <path d="M14.2041 6.85L7.7959 6.85L11 1.3L14.2041 6.85Z" fill="#FF5B24"/>
+      <rect x="5" y="6" width="12" height="12" rx="6" fill="#f5f1e8"/>
+      <g class="pet-hat" transform="translate(11.00 6.85) rotate(0.0)"><path d="M-0.38 -0.28 C-1.76 -1.55 -3.68 -2.22 -4.65 -4.33 C-4.17 -1.66 -3.20 0.56 -1.99 0.67 C-1.28 0.67 -0.70 0.33 -0.38 -0.28 Z" fill="#c4123f"/><path d="M0.38 -0.28 C1.76 -1.55 3.68 -2.22 4.65 -4.33 C4.17 -1.66 3.20 0.56 1.99 0.67 C1.28 0.67 0.70 0.33 0.38 -0.28 Z" fill="#c4123f"/><path d="M-1.86 0.56 C-1.28 -3.05 1.28 -3.05 1.86 0.56 Z" fill="#c4123f"/><path d="M0 -5.66 C-0.96 -4.00 -1.09 -1.11 -0.64 0.56 L0.64 0.56 C1.09 -1.11 0.96 -4.00 0 -5.66 Z" fill="#c4123f"/><circle cx="-4.81" cy="-4.44" r="0.94" fill="#c4123f"/><circle cx="4.81" cy="-4.44" r="0.94" fill="#c4123f"/><circle cx="0" cy="-6.22" r="0.85" fill="#c4123f"/></g>
       <g class="wake-eye"><rect x="10" y="10" width="2" height="2" rx="1" fill="#111827"/></g>
       <path d="M8 13.5 Q11 17 14 13.5" stroke="#111827" stroke-width="1.1" stroke-linecap="round" fill="none"/>
     </g>
   </g>
 
   <!-- 星星 -->
-  <rect class="wake-star wake-star1" x="11" y="8" width="1.5" height="1.5" rx="0.4" fill="#e8714a"
+  <rect class="wake-star wake-star1" x="11" y="8" width="1.5" height="1.5" rx="0.4" fill="#981033"
         style="--tx:-8px;--ty:-10px;--tx2:-10px;--ty2:-14px;"/>
-  <rect class="wake-star wake-star2" x="11" y="8" width="1.2" height="1.2" rx="0.3" fill="#FF5B24"
+  <rect class="wake-star wake-star2" x="11" y="8" width="1.2" height="1.2" rx="0.3" fill="#981033"
         style="--tx:8px;--ty:-12px;--tx2:11px;--ty2:-16px;"/>
   <rect class="wake-star wake-star3" x="11" y="8" width="1" height="1" rx="0.25" fill="#94BDFF"
         style="--tx:-5px;--ty:-14px;--tx2:-7px;--ty2:-18px;"/>

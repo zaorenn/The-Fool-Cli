@@ -1,13 +1,13 @@
-import {
-  FoolVoiceSettings,
+import type {
   VoiceCapability,
   VoicePcm16Wav,
   VoiceProviderId,
   VoiceSynthesizedWav,
 } from '../../../common/types/foolVoice';
-import { VoiceModelManager } from './VoiceModelManager';
-import { SherpaVoiceProvider } from './SherpaVoiceProvider';
-import { OpenAICompatibleVoiceProvider } from './OpenAICompatibleVoiceProvider';
+import { FoolVoiceSettings } from '../../../common/types/foolVoice';
+import type { VoiceModelManager } from './VoiceModelManager';
+import type { SherpaVoiceProvider } from './SherpaVoiceProvider';
+import type { OpenAICompatibleVoiceProvider } from './OpenAICompatibleVoiceProvider';
 
 export class FoolVoiceService {
   private activeOperations = new Map<string, AbortController>();

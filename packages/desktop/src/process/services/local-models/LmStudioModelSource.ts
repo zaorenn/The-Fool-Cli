@@ -61,4 +61,4 @@ export const isLmStudioProvider = (baseUrl: string, port: number): boolean => {
  * currently loaded model can never drop out of the picker.
  */
 export const mergeModelIds = (backendModels: readonly string[], discovered: readonly LocalModelEntry[]): string[] =>
-  [...new Set([...backendModels, ...discovered.map((model) => model.id)])].sort();
+  [...new Set([...backendModels, ...discovered.map((model) => model.id)])].toSorted();

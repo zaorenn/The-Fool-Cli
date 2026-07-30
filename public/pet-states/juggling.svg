@@ -30,12 +30,12 @@
 
   <g class="jg-body">
     <!-- 左手（大，偏下） -->
-    <rect x="2" y="12" width="3" height="3" rx="1.5" fill="#97A0C5" fill-opacity="0.7"/>
+    <rect x="2" y="12" width="3" height="3" rx="1.5" fill="#f5f1e8" fill-opacity="0.7"/>
     <!-- 身体 -->
-    <rect x="5" y="7" width="12" height="12" rx="6" fill="#97A0C5"/>
+    <rect x="5" y="7" width="12" height="12" rx="6" fill="#f5f1e8"/>
     <!-- 帽子（歪到右上） -->
-    <path d="M15.3438 9.33833L9.28918 7.49817L13.5373 4.40143L15.3438 9.33833Z" fill="#FF5B24" stroke="#FF5B24" stroke-width="0.3"/>
-      <rect x="12" y="6" width="1" height="1" fill="#e8714a"/>
+    <g class="pet-hat" transform="translate(11.41 5.95) rotate(130.8)"><path d="M-0.32 -0.26 C-1.45 -1.45 -3.02 -2.08 -3.81 -4.05 C-3.42 -1.56 -2.63 0.52 -1.63 0.62 C-1.05 0.62 -0.58 0.31 -0.32 -0.26 Z" fill="#c4123f"/><path d="M0.32 -0.26 C1.45 -1.45 3.02 -2.08 3.81 -4.05 C3.42 -1.56 2.63 0.52 1.63 0.62 C1.05 0.62 0.58 0.31 0.32 -0.26 Z" fill="#c4123f"/><path d="M-1.52 0.52 C-1.05 -2.85 1.05 -2.85 1.52 0.52 Z" fill="#c4123f"/><path d="M0 -5.29 C-0.79 -3.74 -0.89 -1.04 -0.53 0.52 L0.53 0.52 C0.89 -1.04 0.79 -3.74 0 -5.29 Z" fill="#c4123f"/><circle cx="-3.94" cy="-4.15" r="0.88" fill="#c4123f"/><circle cx="3.94" cy="-4.15" r="0.88" fill="#c4123f"/><circle cx="0" cy="-5.81" r="0.79" fill="#c4123f"/></g>
+      <rect x="12" y="6" width="1" height="1" fill="#981033"/>
     <!-- 眼睛（单圆眼） -->
     <rect x="10" y="11" width="2" height="2" rx="1" fill="black"/>
     <!-- 弧线笑嘴 -->

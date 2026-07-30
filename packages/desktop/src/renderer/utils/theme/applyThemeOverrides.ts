@@ -8,7 +8,6 @@ import {
   THEME_COLOR_KEYS,
   THEME_COLOR_SPECS,
   colorVariables,
-  radiusVariables,
   type ThemeOverrides,
 } from '@/common/config/themeOverrides';
 
@@ -34,6 +33,4 @@ export function applyThemeOverrides(overrides: ThemeOverrides, root: Document = 
     const spec = THEME_COLOR_SPECS[key];
     for (const cssVar of [spec.cssVar, ...(spec.alsoSet ?? [])]) style.removeProperty(cssVar);
   }
-
-  for (const [cssVar, value] of radiusVariables(overrides.radiusPx)) style.setProperty(cssVar, value);
 }

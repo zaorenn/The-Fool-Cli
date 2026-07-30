@@ -5,20 +5,46 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, ColorPicker, Slider } from '@arco-design/web-react';
+import { Button, ColorPicker } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { configService } from '@/common/config/configService';
 import {
   THEME_COLOR_KEYS,
   THEME_OVERRIDES_CONFIG_KEY,
-  RADIUS_SPEC,
   defaultThemeOverrides,
   isValidHexColor,
   sanitizeThemeOverrides,
   type ThemeColorKey,
   type ThemeOverrides,
 } from '@/common/config/themeOverrides';
+import { THEME_COLOR_SPECS } from '@/common/config/themeOverrides';
 import { applyThemeOverrides } from '@/renderer/utils/theme/applyThemeOverrides';
+
+/** `rgb(18, 21, 26)` -> `#12151a`; passes through values already in hex. */
+const toHex = (value: string): string | null => {
+  const trimmed = value.trim();
+  if (isValidHexColor(trimmed)) return trimmed.toLowerCase();
+
+  const match = trimmed.match(/^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/i);
+  if (!match) return null;
+
+  const channels = match.slice(1, 4).map((part) => Number(part));
+  if (channels.some((channel) => channel < 0 || channel > 255)) return null;
+
+  return `#${channels.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
+};
+
+/** Reads what the active preset resolves each themed variable to right now. */
+const readActiveThemeColors = (): Partial<Record<ThemeColorKey, string>> => {
+  const computed = getComputedStyle(document.documentElement);
+  const colors: Partial<Record<ThemeColorKey, string>> = {};
+
+  for (const key of THEME_COLOR_KEYS) {
+    const hex = toHex(computed.getPropertyValue(THEME_COLOR_SPECS[key].cssVar));
+    if (hex) colors[key] = hex;
+  }
+  return colors;
+};
 
 /**
  * Live theme customisation layered over the selected preset.
@@ -30,10 +56,17 @@ const ThemeCustomizer: React.FC = () => {
   const { t } = useTranslation();
   const [overrides, setOverrides] = useState<ThemeOverrides>(defaultThemeOverrides);
 
+  /** Colours the active preset is currently painting with. */
+  const [presetColors, setPresetColors] = useState<Partial<Record<ThemeColorKey, string>>>({});
+
   useEffect(() => {
     const restored = sanitizeThemeOverrides(configService.get(THEME_OVERRIDES_CONFIG_KEY));
     setOverrides(restored);
     applyThemeOverrides(restored);
+
+    // Seed each swatch from what the theme actually renders, so the picker
+    // opens on the real colour instead of an empty value.
+    setPresetColors(readActiveThemeColors());
   }, []);
 
   /** Applies immediately, then persists — the preview must never lag the input. */
@@ -72,26 +105,13 @@ const ThemeCustomizer: React.FC = () => {
             <ColorPicker
               showText
               disabledAlpha
-              value={overrides.colors[key]}
+              value={overrides.colors[key] ?? presetColors[key]}
               data-testid={`theme-color-${key}`}
               onChange={(value) => handleColor(key, String(value))}
             />
           </label>
         ))}
       </div>
-
-      <label className='flex flex-col gap-4px'>
-        <span className='text-13px text-t-secondary'>
-          {t('settings.themeCustomizer.cornerRadius')} — {overrides.radiusPx}px
-        </span>
-        <Slider
-          min={RADIUS_SPEC.min}
-          max={RADIUS_SPEC.max}
-          value={overrides.radiusPx}
-          data-testid='theme-radius'
-          onChange={(value) => commit({ ...overrides, radiusPx: Array.isArray(value) ? value[0] : value })}
-        />
-      </label>
     </section>
   );
 };

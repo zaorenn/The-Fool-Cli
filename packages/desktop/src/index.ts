@@ -13,7 +13,9 @@ import { captureBackendStartupFailure, initSentry, scheduleStartupLogReport, set
 initSentry();
 
 import './process/utils/configureConsoleLog';
-import { app, BrowserWindow, ipcMain, nativeImage, powerMonitor } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeImage, powerMonitor, session } from 'electron';
+app.commandLine.appendSwitch('unsafely-treat-insecure-origin-as-secure', 'http://localhost:5173');
+app.commandLine.appendSwitch('use-fake-ui-for-media-stream');
 import fixPath from 'fix-path';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -609,6 +611,15 @@ const handleAppReady = async (): Promise<void> => {
   const t0 = performance.now();
   const mark = (label: string) => console.log(`[AionUi:ready] ${label} +${Math.round(performance.now() - t0)}ms`);
   mark('start');
+
+  session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
+    if (permission === 'media') return true;
+    return false;
+  });
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    if (permission === 'media') return callback(true);
+    callback(false);
+  });
 
   if (!app.isPackaged) {
     try {
