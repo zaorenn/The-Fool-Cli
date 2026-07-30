@@ -20,6 +20,7 @@ import {
   Robot,
   System,
   Toolkit,
+  Voice,
 } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -63,6 +64,12 @@ export function getBuiltinSettingsNavItems(isDesktop: boolean, t: TranslateFn): 
       label: t('settings.tools', { defaultValue: 'Tools' }),
       icon: <Toolkit theme='outline' size='16' />,
       path: 'tools',
+    },
+    voice: {
+      id: 'voice',
+      label: t('settings.voice.title', { defaultValue: 'Voice' }),
+      icon: <Voice theme='outline' size='16' />,
+      path: 'voice',
     },
     appearance: {
       id: 'appearance',

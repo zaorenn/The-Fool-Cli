@@ -72,8 +72,14 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
                   type='primary'
                   data-testid={`voice-model-install-${model.id}`}
                   onClick={() => onInstall(model.id)}
+                  loading={model.state.status === 'installing' || model.state.status === 'partial'}
+                  disabled={model.state.status === 'installing' || model.state.status === 'partial'}
                 >
-                  {t('settings.voice.install')}
+                  {model.state.status === 'partial'
+                    ? `${Math.round(('downloadedBytes' in model.state ? model.state.downloadedBytes : 0) / 1024 / 1024)}MB`
+                    : model.state.status === 'installing'
+                      ? t('settings.voice.installing')
+                      : t('settings.voice.install')}
                 </Button>
               )}
             </header>

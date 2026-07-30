@@ -15,6 +15,7 @@ import {
   Speed,
   System,
   Toolkit,
+  Voice,
 } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useMemo } from 'react';
@@ -29,6 +30,7 @@ export const BUILTIN_TAB_IDS = [
   'model',
   'skills',
   'tools',
+  'voice',
   'appearance',
   'webui',
   'pet',
@@ -101,6 +103,7 @@ const SettingsSider: React.FC<{ collapsed?: boolean; tooltipEnabled?: boolean }>
         icon: <Toolkit />,
         path: 'tools',
       },
+      voice: { id: 'voice', label: t('settings.voice.title'), icon: <Voice />, path: 'voice' },
       appearance: { id: 'appearance', label: t('settings.appearancePanel'), icon: <Computer />, path: 'appearance' },
       webui: {
         id: 'webui',

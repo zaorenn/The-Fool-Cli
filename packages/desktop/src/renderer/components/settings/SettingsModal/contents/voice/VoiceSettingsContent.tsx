@@ -5,7 +5,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Message, Select, Slider, Switch } from '@arco-design/web-react';
+import { Alert, Button, Message, Select, Slider, Switch } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
 import {
@@ -68,11 +68,46 @@ const VoiceSettingsContent: React.FC = () => {
 
   useEffect(() => {
     void refreshCatalog();
+
+    const unsubscribe = ipcBridge.foolVoice.downloadProgress.on((event) => {
+      const payload = event.payload as any;
+      if (payload.state === 'ready' || payload.state === 'cancelled' || payload.state === 'invalid') {
+        void refreshCatalog();
+      } else {
+        setModels((prev) =>
+          prev.map((m) => {
+            if (m.id === payload.modelId && m.distribution === 'managed') {
+              const newStatus =
+                payload.state === 'queued' ||
+                payload.state === 'downloading' ||
+                payload.state === 'extracting' ||
+                payload.state === 'validating'
+                  ? 'partial'
+                  : 'installing';
+              return {
+                ...m,
+                state: { status: newStatus, downloadedBytes: payload.downloadedBytes },
+              } as VoiceModel;
+            }
+            return m;
+          })
+        );
+      }
+    });
+
+    return () => unsubscribe();
   }, [refreshCatalog]);
 
   useEffect(() => {
     const loadDevices = async () => {
       try {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach((track) => track.stop());
+        } catch {
+          // ignore, they might not have a mic or denied it
+        }
+
         const devices = await navigator.mediaDevices.enumerateDevices();
         setInputDevices(devices.filter((device) => device.kind === 'audioinput'));
         setOutputDevices(devices.filter((device) => device.kind === 'audiooutput'));
@@ -102,6 +137,8 @@ const VoiceSettingsContent: React.FC = () => {
   const handlePreview = useCallback(
     async (profile: VoiceProfile) => {
       const language = profile.languages[0] ?? 'en';
+      // Honour the speaker chosen above, not just the system default.
+      playback.setOutputDevice(settings.devices.outputDeviceId);
       try {
         const requestId = newRequestId();
         const synthesis = unwrap(
@@ -124,7 +161,7 @@ const VoiceSettingsContent: React.FC = () => {
         Message.error(t('settings.voice.previewFailed'));
       }
     },
-    [playback, settings.tts.speed, t]
+    [playback, settings.devices.outputDeviceId, settings.tts.speed, t]
   );
 
   const handleInstall = useCallback(
@@ -217,16 +254,22 @@ const VoiceSettingsContent: React.FC = () => {
       key: 'speechToText',
       title: t('settings.voice.speechToText'),
       body: (
-        <Select
-          value={settings.stt.modelId}
-          onChange={(value: string) =>
-            setSettings((previous) => ({ ...previous, stt: { ...previous.stt, modelId: value } }))
-          }
-          options={sttModels.map((model) => ({
-            label: `${model.displayName}${model.state.status === 'ready' ? '' : ` — ${t('settings.voice.notInstalled')}`}`,
-            value: model.id,
-          }))}
-        />
+        <div className='flex gap-8px items-center'>
+          <Select
+            className='flex-1'
+            value={settings.stt.modelId}
+            onChange={(value: string) =>
+              setSettings((previous) => ({ ...previous, stt: { ...previous.stt, modelId: value } }))
+            }
+            options={sttModels.map((model) => ({
+              label: `${model.displayName}${model.state.status === 'ready' ? '' : ` — ${t('settings.voice.notInstalled')}`}`,
+              value: model.id,
+            }))}
+          />
+          {models.find((m) => m.id === settings.stt.modelId)?.state.status !== 'ready' && (
+            <Button onClick={() => handleInstall(settings.stt.modelId)}>{t('settings.voice.install')}</Button>
+          )}
+        </div>
       ),
     },
     {

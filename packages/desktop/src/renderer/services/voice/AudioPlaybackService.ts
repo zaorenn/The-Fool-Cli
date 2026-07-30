@@ -1,33 +1,71 @@
+/**
+ * @license
+ * Copyright 2026 AionUi (aionui.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import type { VoiceSynthesizedWav } from '@/common/types/foolVoice';
 
+/** `setSinkId` on AudioContext is not in every lib.dom version yet. */
+type RoutableAudioContext = AudioContext & { setSinkId?: (sinkId: string) => Promise<void> };
+
 export class AudioPlaybackService {
-  private audioContext: AudioContext | null = null;
+  private audioContext: RoutableAudioContext | null = null;
   private currentSource: AudioBufferSourceNode | null = null;
+  private outputDeviceId: string | null = null;
+  private routedDeviceId: string | null = null;
+
+  /**
+   * Chooses which speaker plays synthesised audio.
+   *
+   * Without this the picker in Voice settings has no effect — playback always
+   * lands on the system default device.
+   */
+  public setOutputDevice(deviceId: string | null): void {
+    this.outputDeviceId = deviceId;
+  }
+
+  private async routeToSelectedDevice(context: RoutableAudioContext): Promise<void> {
+    const target = this.outputDeviceId;
+    if (target === this.routedDeviceId) return;
+    if (typeof context.setSinkId !== 'function') return;
+
+    try {
+      // An empty string restores the system default.
+      await context.setSinkId(target ?? '');
+      this.routedDeviceId = target;
+    } catch {
+      // A device that vanished should degrade to the default, not kill playback.
+      this.routedDeviceId = null;
+    }
+  }
 
   public async play(audio: VoiceSynthesizedWav): Promise<void> {
     // Deliberately no explicit sampleRate: voices emit different rates (Piper
     // 22.05 kHz, Kokoro 24 kHz) and pinning the context to whichever clip
     // played first would force every later clip through that rate.
     // `decodeAudioData` resamples into the context rate for us.
-    this.audioContext ??= new window.AudioContext();
+    this.audioContext ??= new window.AudioContext() as RoutableAudioContext;
+    const context = this.audioContext;
+
+    await this.routeToSelectedDevice(context);
 
     const binaryString = window.atob(audio.dataBase64);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let index = 0; index < binaryString.length; index += 1) {
+      bytes[index] = binaryString.charCodeAt(index);
     }
-    const audioBuffer = await this.audioContext.decodeAudioData(bytes.buffer);
+    const audioBuffer = await context.decodeAudioData(bytes.buffer);
 
     this.stop();
 
-    if (this.audioContext.state === 'suspended') {
-      await this.audioContext.resume();
+    if (context.state === 'suspended') {
+      await context.resume();
     }
 
-    const source = this.audioContext.createBufferSource();
+    const source = context.createBufferSource();
     source.buffer = audioBuffer;
-    source.connect(this.audioContext.destination);
+    source.connect(context.destination);
     source.start(0);
     this.currentSource = source;
 

@@ -15,6 +15,7 @@ const AppearanceSettings = React.lazy(() => import('@renderer/pages/settings/App
 const ModeSettings = React.lazy(() => import('@renderer/pages/settings/ModeSettings'));
 const SystemSettings = React.lazy(() => import('@renderer/pages/settings/SystemSettings'));
 const WebuiSettings = React.lazy(() => import('@renderer/pages/settings/WebuiSettings'));
+const VoiceSettings = React.lazy(() => import('@renderer/pages/settings/VoiceSettings'));
 const PetSettings = React.lazy(() => import('@renderer/pages/settings/PetSettings'));
 const ExtensionSettingsPage = React.lazy(() => import('@renderer/pages/settings/ExtensionSettingsPage'));
 const LoginPage = React.lazy(() => import('@renderer/pages/login'));
@@ -90,6 +91,7 @@ const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
             element={<Navigate to='/settings/skills/import-history' replace />}
           />
           <Route path='/settings/skills-hub' element={<Navigate to='/settings/skills' replace />} />
+          <Route path='/settings/voice' element={withRouteFallback(VoiceSettings)} />
           <Route path='/settings/appearance' element={withRouteFallback(AppearanceSettings)} />
           <Route path='/settings/display' element={<Navigate to='/settings/appearance' replace />} />
           <Route path='/settings/webui' element={withRouteFallback(WebuiSettings)} />

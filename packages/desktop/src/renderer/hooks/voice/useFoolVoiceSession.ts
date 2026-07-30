@@ -292,6 +292,7 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
 
     capture.current = new MicrophoneCapture();
     playback.current ??= new AudioPlaybackService();
+    playback.current.setOutputDevice(settings.devices.outputDeviceId);
     vad.current = new AdaptiveVad(settings.vad);
 
     await capture.current.start(settings.devices.inputDeviceId);
