@@ -7,7 +7,7 @@
 import type { IDirOrFile } from '@/common/adapter/ipcBridge';
 import { getPlatformServices } from '@/common/platform';
 import { getEnvAwareName } from '@/common/config/appEnv';
-import { existsSync, lstatSync, mkdirSync, readlinkSync, realpathSync, symlinkSync, unlinkSync } from 'fs';
+import { existsSync, lstatSync, mkdirSync, readlinkSync, realpathSync, renameSync, symlinkSync, unlinkSync } from 'fs';
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
@@ -27,9 +27,15 @@ const getElectronPathOrFallback = (name: 'temp' | 'home' | 'userData'): string =
   }
 };
 
+/** The folder under userData that holds the database, conversations and sessions. */
+export const DATA_DIR_NAME = 'fool-core';
+
+/** What that folder was called before the app carried its own name. */
+export const LEGACY_DATA_DIR_NAME = 'aionui';
+
 export const getTempPath = () => {
   const rootPath = getElectronPathOrFallback('temp');
-  return path.join(rootPath, 'aionui');
+  return path.join(rootPath, DATA_DIR_NAME);
 };
 
 /**
@@ -90,27 +96,56 @@ const ensureCliSafeSymlink = (targetPath: string, symlinkName: string): string =
 };
 
 /**
+ * Moves the data folder onto its current name, once, and never at the cost of it.
+ *
+ * The rename is a single atomic operation rather than a folder merge: everything
+ * in here — the database and its write-ahead log, the conversations, the agent
+ * sessions — either moves together or does not move at all. A merge that failed
+ * halfway would leave the database in one place and its log in another, which is
+ * a far worse outcome than a folder with the old name.
+ *
+ * If the rename cannot happen — most likely because the backend is holding the
+ * database open, which Windows enforces with a file lock — the old folder is
+ * returned and used. That is the important half: the failure mode is "the name
+ * did not change", never "the app started on an empty folder", which is what
+ * losing every conversation would look like from the outside.
+ */
+export const resolveDataDir = (rootPath: string): string => {
+  const current = path.join(rootPath, DATA_DIR_NAME);
+  const legacy = path.join(rootPath, LEGACY_DATA_DIR_NAME);
+
+  if (existsSync(current)) return current;
+  if (!existsSync(legacy)) return current;
+
+  try {
+    renameSync(legacy, current);
+    return current;
+  } catch {
+    return legacy;
+  }
+};
+
+/**
  * Get data path, using CLI-safe symlink on macOS.
- * Release builds use ~/.aionui; dev builds use ~/.aionui-dev.
+ * Release builds use ~/.fool; dev builds use ~/.fool-dev.
  * 获取数据目录路径，macOS 上使用符号链接。
- * Release 使用 ~/.aionui，Dev 模式使用 ~/.aionui-dev。
  */
 export const getDataPath = (): string => {
   const rootPath = getElectronPathOrFallback('userData');
-  const dataPath = path.join(rootPath, 'aionui');
-  return ensureCliSafeSymlink(dataPath, getEnvAwareName('.aionui'));
+  const dataPath = resolveDataDir(rootPath);
+  return ensureCliSafeSymlink(dataPath, getEnvAwareName('.fool'));
 };
 
 /**
  * Get config path, using CLI-safe symlink on macOS.
- * Release builds use ~/.aionui-config; dev builds use ~/.aionui-config-dev.
+ * Release builds use ~/.fool-config; dev builds use ~/.fool-config-dev.
  * 获取配置目录路径，macOS 上使用符号链接。
- * Release 使用 ~/.aionui-config，Dev 模式使用 ~/.aionui-config-dev。
+ * Release 使用 ~/.fool-config，Dev 模式使用 ~/.fool-config-dev。
  */
 export const getConfigPath = (): string => {
   const rootPath = getElectronPathOrFallback('userData');
   const configPath = path.join(rootPath, 'config');
-  return ensureCliSafeSymlink(configPath, getEnvAwareName('.aionui-config'));
+  return ensureCliSafeSymlink(configPath, getEnvAwareName('.fool-config'));
 };
 
 /**
