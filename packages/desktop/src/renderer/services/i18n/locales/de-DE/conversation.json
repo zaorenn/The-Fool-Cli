@@ -464,7 +464,14 @@
       "startTalk": "Sprechen starten",
       "stopTalk": "Sprechen beenden",
       "installNeeded": "Installieren Sie zuerst ein Sprachmodell",
-      "wakeArmed": "Wartet auf „{{phrase}}“ — klicken, um sofort zu sprechen"
+      "wakeArmed": "Wartet auf „{{phrase}}“ — klicken, um sofort zu sprechen",
+      "stageListening": "Hört zu",
+      "stageHearing": "Ich höre dich",
+      "stageProcessing": "Verstehe",
+      "stageGenerating": "Arbeitet daran",
+      "stageSpeaking": "Antwortet",
+      "stageHint": "sag „{{phrase}}“",
+      "stagePlaceholder": "Warte, bis du sprichst…"
     }
   },
   "sideQuestion": {

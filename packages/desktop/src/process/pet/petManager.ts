@@ -6,11 +6,13 @@
 
 import path from 'node:path';
 import { app, BrowserWindow, ipcMain, Menu, screen } from 'electron';
+import { ipcBridge } from '@/common';
 import i18n from '@process/services/i18n';
 import { PetStateMachine } from './petStateMachine';
 import { PetIdleTicker } from './petIdleTicker';
 import { PetEventBridge } from './petEventBridge';
 import { setPetNotifyHook } from '../../common/adapter/main';
+import { setPetStageBridge } from '@process/voice/voiceStageHub';
 import {
   initPetConfirmManager,
   updateAnchorBounds,
@@ -184,6 +186,28 @@ export function createPetWindow(): void {
 
   idleTicker.setPetBounds(x, y, currentSize, currentSize);
 
+  // Hand the voice stage hub a way to reach this pet: the label it shows and the
+  // pose it takes both come from the voice loop, so neither can drift from what
+  // the microphone is really doing.
+  setPetStageBridge({
+    send: (event) => {
+      if (petWindow && !petWindow.isDestroyed()) {
+        petWindow.webContents.send('pet:voice-stage', {
+          stage: event.stage,
+          stageLabel: event.stageLabel,
+          accent: event.accent,
+        });
+      }
+    },
+    pose: (state) => {
+      // forceState, not requestState: returning to idle after a conversation is a
+      // step *down* in priority, which the ambient state machine would refuse.
+      stateMachine?.forceState(state);
+      if (state !== 'idle') idleTicker?.resetIdle();
+    },
+    isMuted: () => stateMachine?.getDnd() ?? false,
+  });
+
   setPetNotifyHook((name: string, data: unknown) => {
     if (eventBridge) {
       eventBridge.handleBridgeMessage(name, data);
@@ -215,6 +239,10 @@ export function createPetWindow(): void {
 export function destroyPetWindow(): void {
   clearDragTimer();
   stopHitIgnoreWatchdog();
+
+  // The hub keeps publishing while the app runs; without a pet it simply has one
+  // fewer surface to reach.
+  setPetStageBridge(null);
 
   // Destroy confirm manager
   destroyPetConfirmManager();
@@ -470,6 +498,15 @@ function registerIpcHandlers(): void {
         checked: stateMachine?.getDnd() ?? false,
         click: (menuItem) => {
           stateMachine?.setDnd(menuItem.checked);
+        },
+      },
+      { type: 'separator' },
+      {
+        // Voice turns keep going to the same chat until this is used, so a long
+        // conversation stays in one place and a new subject can start cleanly.
+        label: i18n.t('pet.newSessionFromNextWake'),
+        click: () => {
+          ipcBridge.foolVoice.newSessionOnNextWake.emit();
         },
       },
       { type: 'separator' },

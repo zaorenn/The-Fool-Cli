@@ -1,0 +1,121 @@
+/**
+ * @license
+ * Copyright 2026 AionUi (aionui.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { ipcBridge } from '@/common';
+import { VOICE_STAGE_OFF, type VoiceStage, type VoiceStageEvent } from '@/common/types/voiceStage';
+import i18next from 'i18next';
+
+/**
+ * Tells the rest of the app what the voice loop is doing.
+ *
+ * The pet window and the caption strip have no voice code; they draw whatever
+ * arrives here. Publishing from one place means the pose, the label and the
+ * transcript are always the same moment rather than three near-misses.
+ *
+ * Level updates arrive per audio frame — roughly eight times a second — so they
+ * are coalesced: a stage change goes out immediately, a level change rides the
+ * next animation frame.
+ */
+
+type StageInput = {
+  stage: VoiceStage;
+  level?: number;
+  transcript?: string;
+  phrase?: string;
+  /** True once the wake phrase has been heard, so the strip may show itself. */
+  awake?: boolean;
+};
+
+/** The word shown over the pet and on the strip for each stage. */
+const STAGE_KEYS: Record<VoiceStage, string> = {
+  off: '',
+  listening: 'conversation.chat.voice.stageListening',
+  hearing: 'conversation.chat.voice.stageHearing',
+  processing: 'conversation.chat.voice.stageProcessing',
+  generating: 'conversation.chat.voice.stageGenerating',
+  speaking: 'conversation.chat.voice.stageSpeaking',
+};
+
+let current: VoiceStageEvent = VOICE_STAGE_OFF;
+let queued: VoiceStageEvent | null = null;
+let frame: number | null = null;
+
+/** Reads the accent the app is painting with right now, custom colours included. */
+const readAccent = (): string => {
+  if (typeof document === 'undefined') return VOICE_STAGE_OFF.accent;
+  const value = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+  return /^#[0-9a-f]{3,8}$/i.test(value) ? value : VOICE_STAGE_OFF.accent;
+};
+
+const send = (event: VoiceStageEvent): void => {
+  current = event;
+  // The pet and the caption strip are desktop windows. In the browser build — and
+  // anywhere the bridge is not wired — there is nothing to tell, and voice must
+  // keep working regardless.
+  const emitter = ipcBridge.foolVoice?.stage;
+  if (typeof emitter?.emit !== 'function') return;
+  emitter.emit(event);
+};
+
+const flush = (): void => {
+  frame = null;
+  if (queued) {
+    send(queued);
+    queued = null;
+  }
+};
+
+export const publishVoiceStage = (input: StageInput): void => {
+  const phrase = input.phrase ?? current.phrase;
+  const key = STAGE_KEYS[input.stage];
+
+  const event: VoiceStageEvent = {
+    stage: input.stage,
+    level: input.level ?? 0,
+    transcript: input.transcript ?? '',
+    phrase,
+    accent: readAccent(),
+    // Translated here rather than in the other windows: they have no i18n
+    // runtime, and this is the window that knows the chosen language.
+    stageLabel: key ? i18next.t(key) : '',
+    hint: input.stage === 'listening' ? i18next.t('conversation.chat.voice.stageHint', { phrase }) : '',
+    placeholder: i18next.t('conversation.chat.voice.stagePlaceholder'),
+    awake: input.awake ?? false,
+  };
+
+  // A different stage, or new words, is news: send it now.
+  const isNews =
+    event.stage !== current.stage ||
+    event.transcript !== current.transcript ||
+    event.stageLabel !== current.stageLabel ||
+    event.awake !== current.awake;
+
+  if (isNews) {
+    queued = null;
+    if (frame !== null) {
+      cancelAnimationFrame(frame);
+      frame = null;
+    }
+    send(event);
+    return;
+  }
+
+  // Only the level moved: let it ride the next frame.
+  queued = event;
+  frame ??= requestAnimationFrame(flush);
+};
+
+export const peekVoiceStage = (): VoiceStageEvent => current;
+
+/** Used when a session ends, so no surface is left claiming to listen. */
+export const publishVoiceStageOff = (): void => {
+  queued = null;
+  if (frame !== null) {
+    cancelAnimationFrame(frame);
+    frame = null;
+  }
+  send({ ...VOICE_STAGE_OFF, accent: readAccent() });
+};

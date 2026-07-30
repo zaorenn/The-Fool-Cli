@@ -463,7 +463,14 @@
       "startTalk": "开始语音对话",
       "stopTalk": "停止语音对话",
       "installNeeded": "请先安装语音模型",
-      "wakeArmed": "正在等待“{{phrase}}” — 点击立即说话"
+      "wakeArmed": "正在等待“{{phrase}}” — 点击立即说话",
+      "stageListening": "正在聆听",
+      "stageHearing": "听到你了",
+      "stageProcessing": "正在理解",
+      "stageGenerating": "正在处理",
+      "stageSpeaking": "正在回答",
+      "stageHint": "说“{{phrase}}”",
+      "stagePlaceholder": "等你说话…"
     }
   },
   "sideQuestion": {

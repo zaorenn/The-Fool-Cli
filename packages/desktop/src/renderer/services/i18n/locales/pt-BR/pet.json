@@ -13,5 +13,6 @@
   "resetPosition": "Redefinir Posição",
   "hide": "Ocultar",
   "showHide": "Mostrar/Ocultar",
-  "desktopOnly": "O Mascote de Mesa está disponível apenas no aplicativo para desktop. Ele não pode ser usado no modo navegador WebUI."
+  "desktopOnly": "O Mascote de Mesa está disponível apenas no aplicativo para desktop. Ele não pode ser usado no modo navegador WebUI.",
+  "newSessionFromNextWake": "Nova sessão no próximo despertar"
 }

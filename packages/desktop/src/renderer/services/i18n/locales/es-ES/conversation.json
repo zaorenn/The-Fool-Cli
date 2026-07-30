@@ -464,7 +464,14 @@
       "startTalk": "Empezar a hablar",
       "stopTalk": "Dejar de hablar",
       "installNeeded": "Instale primero un modelo de voz",
-      "wakeArmed": "Esperando «{{phrase}}» — haz clic para hablar ya"
+      "wakeArmed": "Esperando «{{phrase}}» — haz clic para hablar ya",
+      "stageListening": "Escuchando",
+      "stageHearing": "Te oigo",
+      "stageProcessing": "Entendiendo",
+      "stageGenerating": "Trabajando en ello",
+      "stageSpeaking": "Respondiendo",
+      "stageHint": "di «{{phrase}}»",
+      "stagePlaceholder": "Esperando que hables…"
     }
   },
   "sideQuestion": {

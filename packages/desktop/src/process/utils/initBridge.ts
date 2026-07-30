@@ -15,6 +15,7 @@ import {
   VoiceModelCatalog,
 } from '../services/fool-voice';
 import { registerLocalModelsBridge } from '../services/local-models';
+import { initVoiceStageHub } from '../voice/voiceStageHub';
 import { ipcBridge } from '@/common';
 import { ConfigStorage } from '@/common/config/storage';
 
@@ -130,3 +131,7 @@ initAllBridges({
 });
 
 registerLocalModelsBridge();
+
+// Fans the voice stage out to the pet and the caption strip. Registered here with
+// the other bridges so it is listening before the first wake word.
+initVoiceStageHub();

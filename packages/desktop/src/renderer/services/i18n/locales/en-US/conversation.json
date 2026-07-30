@@ -463,7 +463,14 @@
       "startTalk": "Start talking",
       "stopTalk": "Stop talking",
       "installNeeded": "Install a speech model first",
-      "wakeArmed": "Listening for “{{phrase}}” — click to talk now"
+      "wakeArmed": "Listening for “{{phrase}}” — click to talk now",
+      "stageListening": "Listening",
+      "stageHearing": "Hearing you",
+      "stageProcessing": "Understanding",
+      "stageGenerating": "Working on it",
+      "stageSpeaking": "Answering",
+      "stageHint": "say “{{phrase}}”",
+      "stagePlaceholder": "Waiting for you to speak…"
     }
   },
   "sideQuestion": {

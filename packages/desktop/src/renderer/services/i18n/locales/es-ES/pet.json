@@ -13,5 +13,6 @@
   "resetPosition": "Restablecer posición",
   "hide": "Ocultar",
   "showHide": "Mostrar/Ocultar",
-  "desktopOnly": "La mascota de escritorio solo está disponible en la aplicación de escritorio. No se puede usar en modo navegador WebUI."
+  "desktopOnly": "La mascota de escritorio solo está disponible en la aplicación de escritorio. No se puede usar en modo navegador WebUI.",
+  "newSessionFromNextWake": "Nueva sesión al próximo despertar"
 }

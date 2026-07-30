@@ -43,6 +43,16 @@ export class AdaptiveVad {
     this.config = config;
   }
 
+  /**
+   * Whether speech is arriving right now.
+   *
+   * Exposed so the caption strip can draw the live waveform for exactly as long
+   * as there is something to draw, rather than guessing from frame levels.
+   */
+  public isSpeaking(): boolean {
+    return this.announcedStart;
+  }
+
   /** Discards the current utterance and ambient baseline. */
   public reset(): void {
     this.calibrationStartMs = null;

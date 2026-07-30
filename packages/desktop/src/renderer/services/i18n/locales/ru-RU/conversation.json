@@ -463,7 +463,14 @@
       "startTalk": "Начать разговор",
       "stopTalk": "Остановить разговор",
       "installNeeded": "Сначала установите речевую модель",
-      "wakeArmed": "Слушаю «{{phrase}}» — нажмите, чтобы говорить сейчас"
+      "wakeArmed": "Слушаю «{{phrase}}» — нажмите, чтобы говорить сейчас",
+      "stageListening": "Слушаю",
+      "stageHearing": "Слышу вас",
+      "stageProcessing": "Разбираю",
+      "stageGenerating": "Работаю",
+      "stageSpeaking": "Отвечаю",
+      "stageHint": "скажите «{{phrase}}»",
+      "stagePlaceholder": "Жду, когда вы заговорите…"
     }
   },
   "sideQuestion": {

@@ -20,6 +20,12 @@ export const PET_STATES = [
   'juggling',
   'building',
   'carrying',
+  // Voice poses. Unlike every other state these are never chosen at random: the
+  // voice loop drives them, so what the pet is doing is what is actually
+  // happening to the microphone and the answer.
+  'voice-listening',
+  'voice-thinking',
+  'voice-speaking',
 ] as const;
 
 export type PetState = (typeof PET_STATES)[number];
@@ -44,6 +50,11 @@ export type EyeMoveData = {
 
 export const STATE_PRIORITY: Record<PetState, number> = {
   dragging: 10,
+  // Above every ambient state: while a conversation is happening, the pet must
+  // show that and nothing else. Only being dragged outranks it.
+  'voice-speaking': 9,
+  'voice-thinking': 9,
+  'voice-listening': 9,
   error: 8,
   notification: 7,
   sweeping: 6,
@@ -67,6 +78,11 @@ export const STATE_PRIORITY: Record<PetState, number> = {
 };
 
 export const MIN_DISPLAY_MS: Partial<Record<PetState, number>> = {
+  // Long enough that a quick stage change still reads, short enough that the
+  // pose never lags behind what the voice loop is really doing.
+  'voice-listening': 400,
+  'voice-thinking': 600,
+  'voice-speaking': 600,
   done: 3500,
   happy: 3000,
   error: 5000,

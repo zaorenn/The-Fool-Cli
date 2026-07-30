@@ -13,5 +13,6 @@
   "resetPosition": "重設位置",
   "hide": "隱藏",
   "showHide": "顯示/隱藏",
-  "desktopOnly": "桌面寵物僅在桌面應用中可用，無法在 WebUI 瀏覽器模式下使用。"
+  "desktopOnly": "桌面寵物僅在桌面應用中可用，無法在 WebUI 瀏覽器模式下使用。",
+  "newSessionFromNextWake": "下次喚醒時新建工作階段"
 }

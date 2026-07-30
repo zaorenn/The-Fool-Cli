@@ -18,20 +18,26 @@ import { MicrophoneCapture } from '@renderer/services/voice/MicrophoneCapture';
 import { EMPTY_EVIDENCE, narrate, type RunEvidence } from '@renderer/services/voice/FoolNarrator';
 import { createRunEvidenceCollector } from '@renderer/services/voice/RunEvidenceCollector';
 import { selectTtsTarget } from '@renderer/services/voice/selectTtsTarget';
+import { publishVoiceStage, publishVoiceStageOff } from '@renderer/services/voice/publishVoiceStage';
+import {
+  VOICE_REPLY_EVENT,
+  VOICE_TURN_EVENT,
+  type VoiceReplyDetail,
+  type VoiceSubmitDetail,
+} from '@renderer/services/voice/voiceEvents';
 import { findWakePhrase } from '@renderer/services/voice/wakePhrase';
 
-/** Dispatched with the transcript so the mounted SendBox owns submission. */
-export const VOICE_SUBMIT_EVENT = 'fool:voice-submit';
-
-/**
- * Dispatched by the conversation when a turn finishes, carrying the answer and
- * the run evidence the spoken brief is built from.
- */
-export const VOICE_REPLY_EVENT = 'fool:voice-reply';
-
-export type VoiceSubmitDetail = { text: string };
-
-export type VoiceReplyDetail = { answer: string; evidence?: RunEvidence };
+// The event names live in a module with no dependencies, so a composer can listen
+// for them without importing the voice session, the IPC bridge and the i18n
+// runtime along the way.
+export {
+  VOICE_HOME_SUBMIT_EVENT,
+  VOICE_REPLY_EVENT,
+  VOICE_SUBMIT_EVENT,
+  VOICE_TURN_EVENT,
+  type VoiceReplyDetail,
+  type VoiceSubmitDetail,
+} from '@renderer/services/voice/voiceEvents';
 
 export type FoolVoiceSession = {
   state: VoiceTurnState;
@@ -144,26 +150,28 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     vad.current?.reset();
     capture.current?.beginUtterance();
     utteranceStartedAtRef.current = Date.now();
+    publishVoiceStage({ stage: 'listening', phrase: settings.activation.wakePhrase.phrase, awake: true });
     enter({
       phase: 'command-listening',
       sessionId,
       clientTurnId: crypto.randomUUID(),
       condition: { status: 'normal' },
     });
-  }, [enter, sessionId]);
+  }, [enter, sessionId, settings.activation.wakePhrase.phrase]);
 
   /** Back to waiting for the phrase, with the microphone still open. */
   const listenForWake = useCallback(() => {
     vad.current?.reset();
     capture.current?.beginUtterance();
     utteranceStartedAtRef.current = Date.now();
+    publishVoiceStage({ stage: 'listening', phrase: settings.activation.wakePhrase.phrase, awake: false });
     enter({ phase: 'wake-listening', sessionId, condition: { status: 'normal' } });
-  }, [enter, sessionId]);
+  }, [enter, sessionId, settings.activation.wakePhrase.phrase]);
 
   const isAwake = useCallback(() => Date.now() < awakeUntilRef.current, []);
 
   const submit = useCallback((text: string) => {
-    window.dispatchEvent(new CustomEvent<VoiceSubmitDetail>(VOICE_SUBMIT_EVENT, { detail: { text } }));
+    window.dispatchEvent(new CustomEvent<VoiceSubmitDetail>(VOICE_TURN_EVENT, { detail: { text } }));
   }, []);
 
   const transcribe = useCallback(
@@ -218,6 +226,15 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
         }
 
         awakeUntilRef.current = Date.now() + AWAKE_WINDOW_MS;
+        // A short chime is the fastest possible "yes, I heard you" — it lands
+        // before any window has repainted.
+        void playback.current?.playWakeChime().catch((): void => undefined);
+        publishVoiceStage({
+          stage: 'processing',
+          transcript: heard,
+          phrase: settings.activation.wakePhrase.phrase,
+          awake: true,
+        });
         enter({
           phase: 'wake-detected',
           sessionId,
@@ -231,6 +248,7 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
         return;
       }
 
+      publishVoiceStage({ stage: 'processing', phrase: settings.activation.wakePhrase.phrase, awake: true });
       const text = await transcribe(audio, 'command');
       if (text.length === 0) {
         if (wakeModeRef.current && !isAwake()) listenForWake();
@@ -242,6 +260,12 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
       // phrase again between turns.
       if (wakeModeRef.current) awakeUntilRef.current = Date.now() + AWAKE_WINDOW_MS;
 
+      publishVoiceStage({
+        stage: 'generating',
+        transcript: text,
+        phrase: settings.activation.wakePhrase.phrase,
+        awake: true,
+      });
       submit(text);
       listen();
     },
@@ -256,6 +280,17 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
 
       // Barge-in: the user speaking cancels whatever is being said.
       if (event === 'speech-started') playback.current?.stop();
+
+      // While speech is arriving, the caption strip draws this level as the
+      // waveform: what is on screen is the sound in the room.
+      if (event === 'speech-started' || vad.current.isSpeaking()) {
+        publishVoiceStage({
+          stage: 'hearing',
+          level: rms * 4,
+          phrase: settings.activation.wakePhrase.phrase,
+          awake: !wakeModeRef.current || isAwake(),
+        });
+      }
 
       if (event !== 'utterance-ended' && event !== 'utterance-truncated') return;
       if (busyRef.current) return;
@@ -305,6 +340,7 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
       const target = selectTtsTarget(narration.spokenText, settings, installed);
       const operationId = newOperationId();
 
+      publishVoiceStage({ stage: 'speaking', phrase: settings.activation.wakePhrase.phrase, awake: true });
       enter({
         phase: 'speaking',
         sessionId,
@@ -387,6 +423,8 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     capture.current = null;
     vad.current = null;
     if (wasManual) setManualSessionActive(false);
+    // No surface should be left claiming to listen after the microphone closes.
+    publishVoiceStageOff();
     setState(idleState());
   }, []);
 

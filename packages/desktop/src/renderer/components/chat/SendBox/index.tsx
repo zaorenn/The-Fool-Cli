@@ -43,7 +43,7 @@ import UploadProgressBar from '@renderer/components/media/UploadProgressBar';
 import { allSupportedExts } from '@renderer/services/FileService';
 import SpeechInputButton from '@/renderer/components/chat/SpeechInputButton';
 import VoiceTalkButton from '@/renderer/components/chat/VoiceTalkButton';
-import { VOICE_SUBMIT_EVENT, type VoiceSubmitDetail } from '@/renderer/hooks/voice/useFoolVoiceSession';
+import { VOICE_SUBMIT_EVENT, type VoiceSubmitDetail } from '@/renderer/services/voice/voiceEvents';
 import { appendSpeechTranscript } from '@/renderer/hooks/system/useSpeechInput';
 import { createChainedDispatch, useLiveTranscriptInsertion } from '@/renderer/hooks/system/useLiveTranscriptInsertion';
 import { getConversationInputHistory, isCaretOnFirstLine } from '@/renderer/utils/chat/messageHistory';

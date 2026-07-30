@@ -463,7 +463,14 @@
       "startTalk": "開始語音對話",
       "stopTalk": "停止語音對話",
       "installNeeded": "請先安裝語音模型",
-      "wakeArmed": "正在等待「{{phrase}}」— 點擊立即說話"
+      "wakeArmed": "正在等待「{{phrase}}」— 點擊立即說話",
+      "stageListening": "正在聆聽",
+      "stageHearing": "聽到你了",
+      "stageProcessing": "正在理解",
+      "stageGenerating": "正在處理",
+      "stageSpeaking": "正在回答",
+      "stageHint": "說「{{phrase}}」",
+      "stagePlaceholder": "等你說話…"
     }
   },
   "sideQuestion": {

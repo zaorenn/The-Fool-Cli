@@ -110,3 +110,16 @@ window.petAPI.onEyeMove(({ eyeDx, eyeDy, bodyDx, bodyRotate }) => {
   // which is the head center for the idle pose.
   if (track) track.setAttribute('transform', `translate(${bodyDx} 0) rotate(${bodyRotate} 11 12)`);
 });
+
+// ── the voice stage label ────────────────────────────────────────────────────
+// The pose says what is happening; this says it in words. Both come from the
+// same event, so they cannot disagree.
+const stageLabel = document.getElementById('stage');
+
+window.petAPI.onVoiceStage(({ stage, stageLabel: text, accent }) => {
+  if (!stageLabel) return;
+  const live = stage !== 'off' && text.length > 0;
+  stageLabel.textContent = text;
+  stageLabel.style.setProperty('--stage-accent', accent || '#c4123f');
+  stageLabel.classList.toggle('shown', live);
+});

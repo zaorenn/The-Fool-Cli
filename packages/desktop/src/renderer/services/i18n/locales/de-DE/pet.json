@@ -13,5 +13,6 @@
   "resetPosition": "Position zurücksetzen",
   "hide": "Ausblenden",
   "showHide": "Anzeigen/Ausblenden",
-  "desktopOnly": "Desktop-Begleiter ist nur in der Desktop-Anwendung verfügbar. Er kann nicht im WebUI-Browser-Modus verwendet werden."
+  "desktopOnly": "Desktop-Begleiter ist nur in der Desktop-Anwendung verfügbar. Er kann nicht im WebUI-Browser-Modus verwendet werden.",
+  "newSessionFromNextWake": "Neue Sitzung beim nächsten Aufwecken"
 }

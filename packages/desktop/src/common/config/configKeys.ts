@@ -11,6 +11,8 @@ export type ConfigKeyMap = {
   'ui.fontSize.markdown': number | undefined;
   'ui.fontSize.code': number | undefined;
   'ui.themeOverrides': ThemeOverrides | undefined;
+  /** The chat that spoken turns go to, until the user asks for a new one. */
+  'voice.boundConversationId': string | undefined;
   'window.bounds': { x?: number; y?: number; width: number; height: number } | undefined;
   'webui.desktop.enabled': boolean | undefined;
   'webui.desktop.allowRemote': boolean | undefined;

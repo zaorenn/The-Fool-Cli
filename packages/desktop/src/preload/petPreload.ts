@@ -16,4 +16,11 @@ contextBridge.exposeInMainWorld('petAPI', {
   onResize: (cb: (size: number) => void) => {
     ipcRenderer.on('pet:resize', (_e, size: number) => cb(size));
   },
+  /**
+   * What the voice loop is doing, so the pet can say it in words as well as in
+   * its pose. Text arrives already translated.
+   */
+  onVoiceStage: (cb: (data: { stage: string; stageLabel: string; accent: string }) => void) => {
+    ipcRenderer.on('pet:voice-stage', (_e, data) => cb(data));
+  },
 });

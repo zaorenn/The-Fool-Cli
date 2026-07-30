@@ -37,6 +37,7 @@ import type {
   VoiceTranscribeRequest,
   VoiceTranscribeResponse,
 } from '@/common/types/foolVoice';
+import type { VoiceStageEvent } from '@/common/types/voiceStage';
 import type { OpenDialogOptions } from 'electron';
 import type {
   ICssTheme,
@@ -190,6 +191,16 @@ export const foolVoice = {
     VoiceRequestEnvelope<VoiceSpeakersRequest>
   >('fool.voice.speakers'),
   downloadProgress: bridge.buildEmitter<VoiceEventEnvelope<VoiceDownloadProgress>>('fool.voice.download.progress'),
+  /**
+   * What the voice loop is doing, published by the main window.
+   *
+   * The pet window and the caption window have no voice code of their own; they
+   * render whatever arrives here, which keeps "what the pet is doing" and "what
+   * is happening to the microphone" the same statement.
+   */
+  stage: bridge.buildEmitter<VoiceStageEvent>('fool.voice.stage'),
+  /** Asks the next wake word to open a fresh conversation. */
+  newSessionOnNextWake: bridge.buildEmitter<void>('fool.voice.new-session-next-wake'),
 };
 
 // ---------------------------------------------------------------------------

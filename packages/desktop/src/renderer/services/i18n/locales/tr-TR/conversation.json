@@ -448,7 +448,14 @@
       "startTalk": "Konuşmayı başlat",
       "stopTalk": "Konuşmayı durdur",
       "installNeeded": "Önce bir konuşma modeli kurun",
-      "wakeArmed": "“{{phrase}}” için dinliyor — hemen konuşmak için tıkla"
+      "wakeArmed": "“{{phrase}}” için dinliyor — hemen konuşmak için tıkla",
+      "stageListening": "Dinliyor",
+      "stageHearing": "Seni duyuyor",
+      "stageProcessing": "Anlıyor",
+      "stageGenerating": "Üzerinde çalışıyor",
+      "stageSpeaking": "Yanıtlıyor",
+      "stageHint": "“{{phrase}}” de",
+      "stagePlaceholder": "Konuşmanı bekliyor…"
     }
   },
   "sideQuestion": {

@@ -30,6 +30,7 @@ import { useTypewriterPlaceholder } from './hooks/useTypewriterPlaceholder';
 import { ensureBackendMcpCatalog } from '@/renderer/hooks/mcp/catalog';
 import { resolveGuidAssistantDefaults } from './utils/assistantDefaults';
 import SpeechInputButton from '@/renderer/components/chat/SpeechInputButton';
+import { VOICE_HOME_SUBMIT_EVENT, type VoiceSubmitDetail } from '@/renderer/services/voice/voiceEvents';
 import { chatFileRefPath, uploadFileRef } from '@/common/types/chatFile';
 import { useOpenFileSelector } from '@/renderer/hooks/file/useOpenFileSelector';
 import { appendSpeechTranscript } from '@/renderer/hooks/system/useSpeechInput';
@@ -315,6 +316,27 @@ const GuidPage: React.FC = () => {
     },
     [agentSelection.setSelectedAssistantId]
   );
+
+  // A spoken turn with no chat to go to lands here: the wake word opens a new
+  // conversation through exactly the same path as typing, so it inherits the
+  // agent, model and workspace the user last chose.
+  const sendRef = useRef(send.sendMessageHandler);
+  sendRef.current = send.sendMessageHandler;
+  const setInputRef = useRef(guidInput.setInput);
+  setInputRef.current = guidInput.setInput;
+
+  useEffect(() => {
+    const handleVoiceSubmit = (event: Event) => {
+      const { text } = (event as CustomEvent<VoiceSubmitDetail>).detail;
+      if (!text.trim()) return;
+      setInputRef.current(text);
+      // Let the controlled input commit before the send handler reads it.
+      requestAnimationFrame(() => sendRef.current());
+    };
+
+    window.addEventListener(VOICE_HOME_SUBMIT_EVENT, handleVoiceSubmit);
+    return () => window.removeEventListener(VOICE_HOME_SUBMIT_EVENT, handleVoiceSubmit);
+  }, []);
 
   // Typewriter placeholder
   const typewriterPlaceholder = useTypewriterPlaceholder(t('conversation.welcome.placeholder'));

@@ -1,0 +1,298 @@
+<svg viewBox="-18 -18 58 58" width="500" height="500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Heard you, working on it: a double nod, then a beat, then again — the
+         "mm-hm" a person gives when they have understood and are thinking. The
+         eye half-closes on the down beat, which is what makes a nod read as
+         thought rather than as a bounce. -->
+    <style>
+      /* ==PET-CORE== */
+      /* Anchor transforms at each shape's own box so the numbers read as intent
+         rather than as viewBox arithmetic. */
+      .pet-body,
+      .pet-head,
+      .pet-hat,
+      .pet-eye,
+      .pet-pupil,
+      .pet-lid,
+      .pet-shadow,
+      .pet-arm-l,
+      .pet-arm-r {
+        transform-box: fill-box;
+      }
+
+      /* Breath scales from the feet, never from the centre. */
+      .pet-body {
+        transform-origin: 50% 100%;
+        animation: pet-breathe 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      }
+
+      /* A slow lean, offset from the breath so the two never sync up. */
+      .pet-lean {
+        animation: pet-sway 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+      }
+
+      /* The head is carried, it does not drive: it follows a beat late. */
+      .pet-head {
+        transform-origin: 50% 100%;
+        animation: pet-bob 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+        animation-delay: 0.22s;
+      }
+
+      /* The bells trail further behind again. */
+      .pet-hat {
+        transform-origin: 50% 100%;
+        animation: pet-hat-swing 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+        animation-delay: 0.38s;
+      }
+
+      /* The lid is the blink. In its own group so the pupil underneath can go on
+         tracking the cursor while the eye is shut. */
+      .pet-lid {
+        transform-origin: 50% 0%;
+        animation: pet-blink 4.3s cubic-bezier(0.3, 0, 0.2, 1) infinite;
+      }
+
+      /* Involuntary flicks between rests, as eyes actually move. */
+      .pet-saccade {
+        transform-origin: 50% 50%;
+        animation: pet-saccade 11s steps(1, end) infinite;
+      }
+
+      .pet-shine {
+        animation: pet-shine 4.3s ease-in-out infinite;
+      }
+
+      /* Tied to the breath, so contact with the ground stays believable. */
+      .pet-shadow {
+        transform-origin: 50% 50%;
+        animation: pet-shadow 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      }
+
+      .pet-arm-l {
+        transform-origin: 100% 0%;
+        animation: pet-arm-l 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+        animation-delay: 0.3s;
+      }
+
+      .pet-arm-r {
+        transform-origin: 0% 0%;
+        animation: pet-arm-r 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+        animation-delay: 0.46s;
+      }
+
+      /* The rise is quicker than the fall, like a real breath. */
+      @keyframes pet-breathe {
+        0% { transform: scale(1, 1) translateY(0); }
+        38% { transform: scale(0.988, 1.014) translateY(-0.16px); }
+        100% { transform: scale(1, 1) translateY(0); }
+      }
+
+      @keyframes pet-sway {
+        0%, 100% { transform: rotate(0deg) translateX(0); }
+        27% { transform: rotate(1.15deg) translateX(0.1px); }
+        52% { transform: rotate(0.1deg) translateX(0); }
+        78% { transform: rotate(-1.15deg) translateX(-0.1px); }
+      }
+
+      @keyframes pet-bob {
+        0% { transform: translateY(0) rotate(0deg); }
+        38% { transform: translateY(-0.22px) rotate(-0.5deg); }
+        100% { transform: translateY(0) rotate(0deg); }
+      }
+
+      @keyframes pet-hat-swing {
+        0%, 100% { transform: rotate(0deg); }
+        27% { transform: rotate(3.4deg); }
+        55% { transform: rotate(-0.6deg); }
+        80% { transform: rotate(-3.4deg); }
+      }
+
+      /* Down fast, up slower, then a second flick: the shape of a real blink
+         rather than an on/off frame. */
+      @keyframes pet-blink {
+        0%, 88% { transform: scaleY(0); }
+        90.5% { transform: scaleY(1); }
+        93% { transform: scaleY(0.08); }
+        95.5% { transform: scaleY(1); }
+        98% { transform: scaleY(0); }
+      }
+
+      @keyframes pet-saccade {
+        0%, 34% { transform: translate(0, 0); }
+        36%, 55% { transform: translate(0.42px, -0.12px); }
+        57%, 72% { transform: translate(-0.36px, 0.08px); }
+        74%, 100% { transform: translate(0, 0); }
+      }
+
+      @keyframes pet-shine {
+        0%, 100% { transform: translate(0, 0); opacity: 0.9; }
+        45% { transform: translate(0.12px, 0.06px); opacity: 0.72; }
+      }
+
+      @keyframes pet-shadow {
+        0% { transform: scaleX(1); opacity: 0.34; }
+        38% { transform: scaleX(0.955); opacity: 0.26; }
+        100% { transform: scaleX(1); opacity: 0.34; }
+      }
+
+      @keyframes pet-arm-l {
+        0%, 100% { transform: rotate(0deg); }
+        27% { transform: rotate(-5deg); }
+        78% { transform: rotate(4deg); }
+      }
+
+      @keyframes pet-arm-r {
+        0%, 100% { transform: rotate(0deg); }
+        27% { transform: rotate(5deg); }
+        78% { transform: rotate(-4deg); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .pet-body,
+        .pet-lean,
+        .pet-head,
+        .pet-hat,
+        .pet-lid,
+        .pet-saccade,
+        .pet-shine,
+        .pet-shadow,
+        .pet-arm-l,
+        .pet-arm-r {
+          animation: none;
+        }
+      }
+      /* ==/PET-CORE== */
+
+      .pet-head {
+        animation: nod-head 2.4s cubic-bezier(0.35, 0, 0.4, 1) infinite;
+      }
+
+      /* Chest follows the nod slightly, so the head is not hinged in mid-air. */
+      .pet-body {
+        animation:
+          pet-breathe 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite,
+          nod-body 2.4s cubic-bezier(0.35, 0, 0.4, 1) infinite;
+      }
+
+      /* Lid dips with the nod instead of blinking on its own clock. */
+      .pet-lid {
+        animation: nod-lid 2.4s cubic-bezier(0.35, 0, 0.4, 1) infinite;
+      }
+
+      /* The eye drifts down-left, the way people look away while thinking. */
+      .pet-saccade {
+        animation: nod-gaze 4.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      .nod-dot {
+        transform-origin: 50% 50%;
+        transform-box: fill-box;
+        animation: nod-dot 1.2s ease-in-out infinite;
+      }
+      .nod-dot-2 { animation-delay: 0.16s; }
+      .nod-dot-3 { animation-delay: 0.32s; }
+
+      @keyframes nod-head {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        12% { transform: translateY(0.5px) rotate(2.6deg); }
+        24% { transform: translateY(-0.1px) rotate(-0.6deg); }
+        36% { transform: translateY(0.42px) rotate(2.2deg); }
+        48% { transform: translateY(0) rotate(0deg); }
+      }
+
+      @keyframes nod-body {
+        0%, 100% { transform: translateY(0); }
+        12% { transform: translateY(0.16px); }
+        36% { transform: translateY(0.12px); }
+        48% { transform: translateY(0); }
+      }
+
+      @keyframes nod-lid {
+        0%, 100% { transform: scaleY(0); }
+        10%, 16% { transform: scaleY(0.55); }
+        34%, 40% { transform: scaleY(0.45); }
+        50% { transform: scaleY(0); }
+      }
+
+      @keyframes nod-gaze {
+        0%, 100% { transform: translate(0, 0); }
+        30%, 60% { transform: translate(-0.45px, 0.3px); }
+      }
+
+      @keyframes nod-dot {
+        0%, 100% { transform: translateY(0); opacity: 0.35; }
+        50% { transform: translateY(-0.7px); opacity: 1; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .nod-dot {
+          animation: none;
+        }
+      }
+    </style>
+
+    <clipPath id="voice-thinking-head-clip">
+      <rect x="5" y="6" width="12" height="12" rx="6" />
+    </clipPath>
+    <clipPath id="voice-thinking-eye-clip">
+      <circle cx="11" cy="11" r="1.35" />
+    </clipPath>
+  </defs>
+
+  <ellipse class="pet-shadow" cx="11" cy="22.5" rx="4.1" ry="0.62" fill="#0b0d10" opacity="0.34" />
+
+  <!-- Working dots, in the accent colour, clear of the hat's tallest bell. -->
+  <g fill="#c4123f">
+    <circle class="nod-dot" cx="8.4" cy="-3.4" r="0.7" />
+    <circle class="nod-dot nod-dot-2" cx="11" cy="-3.4" r="0.7" />
+    <circle class="nod-dot nod-dot-3" cx="13.6" cy="-3.4" r="0.7" />
+  </g>
+
+  <g class="pet-track">
+    <g class="pet-lean">
+      <g class="pet-body">
+        <g class="pet-arm-l">
+          <rect x="2" y="9.6" width="3" height="3" rx="0.8" fill="#c4123f" opacity="0.72" transform="rotate(45 3.5 11.1)" />
+        </g>
+        <g class="pet-arm-r">
+          <rect x="17" y="9.6" width="3" height="3" rx="0.8" fill="#c4123f" opacity="0.72" transform="rotate(45 18.5 11.1)" />
+        </g>
+
+        <g class="pet-head">
+          <rect x="5" y="6" width="12" height="12" rx="6" fill="#f5f1e8" />
+
+          <g transform="translate(11.00 7.00)">
+            <g class="pet-hat">
+              <path d="M-0.48 -0.30 C-2.20 -1.68 -4.60 -2.40 -5.80 -4.68 C-5.20 -1.80 -4.00 0.60 -2.48 0.72 C-1.60 0.72 -0.88 0.36 -0.48 -0.30 Z" fill="#c4123f" />
+              <path d="M0.48 -0.30 C2.20 -1.68 4.60 -2.40 5.80 -4.68 C5.20 -1.80 4.00 0.60 2.48 0.72 C1.60 0.72 0.88 0.36 0.48 -0.30 Z" fill="#c4123f" />
+              <path d="M-2.32 0.60 C-1.60 -3.30 1.60 -3.30 2.32 0.60 Z" fill="#c4123f" />
+              <path d="M0 -6.12 C-1.20 -4.32 -1.36 -1.20 -0.80 0.60 L0.80 0.60 C1.36 -1.20 1.20 -4.32 0 -6.12 Z" fill="#c4123f" />
+              <circle cx="-6.00" cy="-4.80" r="1.02" fill="#c4123f" />
+              <circle cx="6.00" cy="-4.80" r="1.02" fill="#c4123f" />
+              <circle cx="0" cy="-6.72" r="0.92" fill="#c4123f" />
+              <rect x="-1" y="-5" width="1" height="1" fill="#981033" />
+            </g>
+          </g>
+
+          <g class="pet-eye" clip-path="url(#voice-thinking-head-clip)">
+            <g class="pet-pupil">
+              <g class="pet-saccade">
+                <g clip-path="url(#voice-thinking-eye-clip)">
+                  <circle cx="11" cy="11" r="1.15" fill="#111827" />
+                  <circle class="pet-shine" cx="10.62" cy="10.58" r="0.34" fill="#f5f1e8" opacity="0.9" />
+                  <rect class="pet-lid" x="9.6" y="9.6" width="2.8" height="2.8" fill="#f5f1e8" />
+                </g>
+                <path d="M13.35 8.6 C13.85 9.9 13.8 12.1 13.3 13.4 C13.0 12.05 13.02 9.95 13.35 8.6 Z" fill="#c4123f" />
+                <path d="M13.0 9.55 L13.9 9.9" stroke="#981033" stroke-width="0.22" stroke-linecap="round" opacity="0.85" />
+                <path d="M13.0 12.2 L13.85 12.5" stroke="#981033" stroke-width="0.22" stroke-linecap="round" opacity="0.85" />
+              </g>
+            </g>
+          </g>
+
+          <!-- A considering mouth: pressed, slightly to one side. -->
+          <path d="M9.4 14.4 Q11 14.9 12.6 14.2" stroke="#111827" stroke-width="0.95" stroke-linecap="round" fill="none" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

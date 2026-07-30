@@ -463,7 +463,14 @@
       "startTalk": "شروع گفتگو",
       "stopTalk": "توقف گفتگو",
       "installNeeded": "ابتدا یک مدل گفتار نصب کنید",
-      "wakeArmed": "در انتظار «{{phrase}}» — برای صحبت فوری کلیک کنید"
+      "wakeArmed": "در انتظار «{{phrase}}» — برای صحبت فوری کلیک کنید",
+      "stageListening": "در حال شنیدن",
+      "stageHearing": "صدایت را می‌شنوم",
+      "stageProcessing": "در حال فهمیدن",
+      "stageGenerating": "در حال کار",
+      "stageSpeaking": "در حال پاسخ",
+      "stageHint": "بگو «{{phrase}}»",
+      "stagePlaceholder": "در انتظار صحبت شما…"
     }
   },
   "sideQuestion": {

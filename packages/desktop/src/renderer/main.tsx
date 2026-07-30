@@ -95,6 +95,7 @@ import Router from './components/layout/Router';
 import Sider from './components/layout/Sider';
 import { useAuth } from './hooks/context/AuthContext';
 import { ConversationHistoryProvider } from './hooks/context/ConversationHistoryContext';
+import { useVoiceSessionRouter } from './hooks/voice/useVoiceSessionRouter';
 import { useWakeWordListener } from './hooks/voice/useWakeWordListener';
 import HOC from './utils/ui/HOC';
 import type { BackendStartupFailureInfo } from '@/common/types/platform/electron';
@@ -290,9 +291,11 @@ const Main = () => {
   const { ready } = useAuth();
   const [configReady, setConfigReady] = useState(false);
 
-  // Listens for the wake phrase whenever the desktop pet is up. Mounted here, at
-  // the app root, so it survives navigation between conversations.
+  // Listens for the wake phrase whenever the desktop pet is up, and routes each
+  // spoken turn to the chat it belongs to. Mounted here, at the app root, so both
+  // survive navigation between conversations.
   useWakeWordListener();
+  useVoiceSessionRouter();
 
   useEffect(() => {
     if (!ready) return;

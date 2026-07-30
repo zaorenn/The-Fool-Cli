@@ -118,6 +118,57 @@ export class AudioPlaybackService {
     });
   }
 
+  /**
+   * The sound that says "I heard the wake word".
+   *
+   * Two short notes a fifth apart, rising: unmistakably an acknowledgement
+   * rather than an alert, and over before the user has finished the sentence
+   * they are already speaking. Sine waves with a soft attack, so it does not
+   * click and does not sound like a system error.
+   */
+  public async playWakeChime(volume = 0.16): Promise<void> {
+    this.audioContext ??= new window.AudioContext() as RoutableAudioContext;
+    const context = this.audioContext;
+
+    await this.routeToSelectedDevice(context);
+    if (context.state === 'suspended') await context.resume();
+
+    const start = context.currentTime + 0.01;
+    const notes = [
+      { frequencyHz: 784, at: 0, durationMs: 90 },
+      { frequencyHz: 1175, at: 0.085, durationMs: 150 },
+    ];
+
+    let last: OscillatorNode | null = null;
+    for (const note of notes) {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = note.frequencyHz;
+
+      const noteStart = start + note.at;
+      const noteEnd = noteStart + note.durationMs / 1000;
+      gain.gain.setValueAtTime(0, noteStart);
+      gain.gain.linearRampToValueAtTime(Math.max(0, Math.min(1, volume)), noteStart + 0.012);
+      // Exponential tail: a struck note, not a square pulse.
+      gain.gain.exponentialRampToValueAtTime(0.0001, noteEnd);
+
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(noteStart);
+      oscillator.stop(noteEnd);
+      last = oscillator;
+    }
+
+    return new Promise((resolve) => {
+      if (!last) {
+        resolve();
+        return;
+      }
+      last.onended = () => resolve();
+    });
+  }
+
   public stop(): void {
     if (this.currentSource) {
       this.currentSource.stop();

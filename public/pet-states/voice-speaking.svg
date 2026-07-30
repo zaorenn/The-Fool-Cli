@@ -1,0 +1,332 @@
+<svg viewBox="-18 -18 58 58" width="500" height="500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Answering. The mouth is the point of this pose: four shapes cycling on
+         an uneven rhythm, because speech is not a metronome. A jaw shadow moves
+         with it so the lower face reads as opening rather than as a shape
+         appearing. -->
+    <style>
+      /* ==PET-CORE== */
+      /* Anchor transforms at each shape's own box so the numbers read as intent
+         rather than as viewBox arithmetic. */
+      .pet-body,
+      .pet-head,
+      .pet-hat,
+      .pet-eye,
+      .pet-pupil,
+      .pet-lid,
+      .pet-shadow,
+      .pet-arm-l,
+      .pet-arm-r {
+        transform-box: fill-box;
+      }
+
+      /* Breath scales from the feet, never from the centre. */
+      .pet-body {
+        transform-origin: 50% 100%;
+        animation: pet-breathe 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      }
+
+      /* A slow lean, offset from the breath so the two never sync up. */
+      .pet-lean {
+        animation: pet-sway 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+      }
+
+      /* The head is carried, it does not drive: it follows a beat late. */
+      .pet-head {
+        transform-origin: 50% 100%;
+        animation: pet-bob 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+        animation-delay: 0.22s;
+      }
+
+      /* The bells trail further behind again. */
+      .pet-hat {
+        transform-origin: 50% 100%;
+        animation: pet-hat-swing 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+        animation-delay: 0.38s;
+      }
+
+      /* The lid is the blink. In its own group so the pupil underneath can go on
+         tracking the cursor while the eye is shut. */
+      .pet-lid {
+        transform-origin: 50% 0%;
+        animation: pet-blink 4.3s cubic-bezier(0.3, 0, 0.2, 1) infinite;
+      }
+
+      /* Involuntary flicks between rests, as eyes actually move. */
+      .pet-saccade {
+        transform-origin: 50% 50%;
+        animation: pet-saccade 11s steps(1, end) infinite;
+      }
+
+      .pet-shine {
+        animation: pet-shine 4.3s ease-in-out infinite;
+      }
+
+      /* Tied to the breath, so contact with the ground stays believable. */
+      .pet-shadow {
+        transform-origin: 50% 50%;
+        animation: pet-shadow 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      }
+
+      .pet-arm-l {
+        transform-origin: 100% 0%;
+        animation: pet-arm-l 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+        animation-delay: 0.3s;
+      }
+
+      .pet-arm-r {
+        transform-origin: 0% 0%;
+        animation: pet-arm-r 6.1s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+        animation-delay: 0.46s;
+      }
+
+      /* The rise is quicker than the fall, like a real breath. */
+      @keyframes pet-breathe {
+        0% { transform: scale(1, 1) translateY(0); }
+        38% { transform: scale(0.988, 1.014) translateY(-0.16px); }
+        100% { transform: scale(1, 1) translateY(0); }
+      }
+
+      @keyframes pet-sway {
+        0%, 100% { transform: rotate(0deg) translateX(0); }
+        27% { transform: rotate(1.15deg) translateX(0.1px); }
+        52% { transform: rotate(0.1deg) translateX(0); }
+        78% { transform: rotate(-1.15deg) translateX(-0.1px); }
+      }
+
+      @keyframes pet-bob {
+        0% { transform: translateY(0) rotate(0deg); }
+        38% { transform: translateY(-0.22px) rotate(-0.5deg); }
+        100% { transform: translateY(0) rotate(0deg); }
+      }
+
+      @keyframes pet-hat-swing {
+        0%, 100% { transform: rotate(0deg); }
+        27% { transform: rotate(3.4deg); }
+        55% { transform: rotate(-0.6deg); }
+        80% { transform: rotate(-3.4deg); }
+      }
+
+      /* Down fast, up slower, then a second flick: the shape of a real blink
+         rather than an on/off frame. */
+      @keyframes pet-blink {
+        0%, 88% { transform: scaleY(0); }
+        90.5% { transform: scaleY(1); }
+        93% { transform: scaleY(0.08); }
+        95.5% { transform: scaleY(1); }
+        98% { transform: scaleY(0); }
+      }
+
+      @keyframes pet-saccade {
+        0%, 34% { transform: translate(0, 0); }
+        36%, 55% { transform: translate(0.42px, -0.12px); }
+        57%, 72% { transform: translate(-0.36px, 0.08px); }
+        74%, 100% { transform: translate(0, 0); }
+      }
+
+      @keyframes pet-shine {
+        0%, 100% { transform: translate(0, 0); opacity: 0.9; }
+        45% { transform: translate(0.12px, 0.06px); opacity: 0.72; }
+      }
+
+      @keyframes pet-shadow {
+        0% { transform: scaleX(1); opacity: 0.34; }
+        38% { transform: scaleX(0.955); opacity: 0.26; }
+        100% { transform: scaleX(1); opacity: 0.34; }
+      }
+
+      @keyframes pet-arm-l {
+        0%, 100% { transform: rotate(0deg); }
+        27% { transform: rotate(-5deg); }
+        78% { transform: rotate(4deg); }
+      }
+
+      @keyframes pet-arm-r {
+        0%, 100% { transform: rotate(0deg); }
+        27% { transform: rotate(5deg); }
+        78% { transform: rotate(-4deg); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .pet-body,
+        .pet-lean,
+        .pet-head,
+        .pet-hat,
+        .pet-lid,
+        .pet-saccade,
+        .pet-shine,
+        .pet-shadow,
+        .pet-arm-l,
+        .pet-arm-r {
+          animation: none;
+        }
+      }
+      /* ==/PET-CORE== */
+
+      /* Slight head motion with the emphasis of speech. */
+      .pet-head {
+        animation:
+          pet-bob 3.7s cubic-bezier(0.45, 0, 0.55, 1) infinite,
+          talk-head 1.55s cubic-bezier(0.4, 0, 0.5, 1) infinite;
+      }
+
+      /* Open vowels: the wide shape. */
+      .talk-open {
+        transform-origin: 50% 0%;
+        transform-box: fill-box;
+        animation: talk-open 0.62s cubic-bezier(0.35, 0, 0.4, 1) infinite;
+      }
+
+      /* Rounded vowels: a narrower shape that trades off with the wide one. */
+      .talk-round {
+        transform-origin: 50% 50%;
+        transform-box: fill-box;
+        animation: talk-round 0.62s cubic-bezier(0.35, 0, 0.4, 1) infinite;
+      }
+
+      /* Consonant closures: the line that shows between sounds. */
+      .talk-closed {
+        animation: talk-closed 0.62s steps(1, end) infinite;
+      }
+
+      .talk-jaw {
+        transform-origin: 50% 0%;
+        transform-box: fill-box;
+        animation: talk-jaw 0.62s cubic-bezier(0.35, 0, 0.4, 1) infinite;
+      }
+
+      /* Sound leaving the pet, on the side it speaks towards. */
+      .talk-wave {
+        transform-origin: 3px 12px;
+        animation: talk-wave 1.4s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+      }
+      .talk-wave-2 { animation-delay: 0.46s; }
+      .talk-wave-3 { animation-delay: 0.92s; }
+
+      @keyframes talk-head {
+        0%, 100% { transform: rotate(0deg) translateY(0); }
+        30% { transform: rotate(-1.1deg) translateY(-0.12px); }
+        65% { transform: rotate(1deg) translateY(0.08px); }
+      }
+
+      /* The three mouth shapes hand over to each other across one cycle. */
+      @keyframes talk-open {
+        0%, 14% { transform: scaleY(0.12); opacity: 0; }
+        22% { transform: scaleY(1); opacity: 1; }
+        44% { transform: scaleY(0.62); opacity: 1; }
+        52%, 100% { transform: scaleY(0.12); opacity: 0; }
+      }
+
+      @keyframes talk-round {
+        0%, 52% { transform: scale(0.2); opacity: 0; }
+        62% { transform: scale(1); opacity: 1; }
+        74% { transform: scale(0.78); opacity: 1; }
+        82%, 100% { transform: scale(0.2); opacity: 0; }
+      }
+
+      @keyframes talk-closed {
+        0%, 13% { opacity: 1; }
+        14%, 51% { opacity: 0; }
+        52%, 61% { opacity: 1; }
+        62%, 81% { opacity: 0; }
+        82%, 100% { opacity: 1; }
+      }
+
+      @keyframes talk-jaw {
+        0%, 14% { transform: scaleY(0); opacity: 0; }
+        22% { transform: scaleY(1); opacity: 0.16; }
+        44% { transform: scaleY(0.6); opacity: 0.12; }
+        52%, 100% { transform: scaleY(0); opacity: 0; }
+      }
+
+      @keyframes talk-wave {
+        0% { transform: scale(0.4); opacity: 0; }
+        20% { opacity: 0.7; }
+        100% { transform: scale(1.8); opacity: 0; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .talk-open,
+        .talk-round,
+        .talk-jaw,
+        .talk-wave {
+          animation: none;
+        }
+        .talk-closed {
+          animation: none;
+          opacity: 1;
+        }
+      }
+    </style>
+
+    <clipPath id="voice-speaking-head-clip">
+      <rect x="5" y="6" width="12" height="12" rx="6" />
+    </clipPath>
+    <clipPath id="voice-speaking-eye-clip">
+      <circle cx="11" cy="11" r="1.35" />
+    </clipPath>
+  </defs>
+
+  <ellipse class="pet-shadow" cx="11" cy="22.5" rx="4.1" ry="0.62" fill="#0b0d10" opacity="0.34" />
+
+  <!-- Sound going out to the listener's side. -->
+  <g fill="none" stroke="#c4123f" stroke-linecap="round">
+    <path class="talk-wave" d="M3 9.6 A3.2 3.2 0 0 0 3 14.4" stroke-width="0.7" />
+    <path class="talk-wave talk-wave-2" d="M3 9.6 A3.2 3.2 0 0 0 3 14.4" stroke-width="0.7" />
+    <path class="talk-wave talk-wave-3" d="M3 9.6 A3.2 3.2 0 0 0 3 14.4" stroke-width="0.7" />
+  </g>
+
+  <g class="pet-track">
+    <g class="pet-lean">
+      <g class="pet-body">
+        <g class="pet-arm-l">
+          <rect x="2" y="9" width="3" height="3" rx="0.8" fill="#c4123f" opacity="0.72" transform="rotate(45 3.5 10.5)" />
+        </g>
+        <g class="pet-arm-r">
+          <rect x="17" y="9" width="3" height="3" rx="0.8" fill="#c4123f" opacity="0.72" transform="rotate(45 18.5 10.5)" />
+        </g>
+
+        <g class="pet-head">
+          <rect x="5" y="6" width="12" height="12" rx="6" fill="#f5f1e8" />
+
+          <g transform="translate(11.00 7.00)">
+            <g class="pet-hat">
+              <path d="M-0.48 -0.30 C-2.20 -1.68 -4.60 -2.40 -5.80 -4.68 C-5.20 -1.80 -4.00 0.60 -2.48 0.72 C-1.60 0.72 -0.88 0.36 -0.48 -0.30 Z" fill="#c4123f" />
+              <path d="M0.48 -0.30 C2.20 -1.68 4.60 -2.40 5.80 -4.68 C5.20 -1.80 4.00 0.60 2.48 0.72 C1.60 0.72 0.88 0.36 0.48 -0.30 Z" fill="#c4123f" />
+              <path d="M-2.32 0.60 C-1.60 -3.30 1.60 -3.30 2.32 0.60 Z" fill="#c4123f" />
+              <path d="M0 -6.12 C-1.20 -4.32 -1.36 -1.20 -0.80 0.60 L0.80 0.60 C1.36 -1.20 1.20 -4.32 0 -6.12 Z" fill="#c4123f" />
+              <circle cx="-6.00" cy="-4.80" r="1.02" fill="#c4123f" />
+              <circle cx="6.00" cy="-4.80" r="1.02" fill="#c4123f" />
+              <circle cx="0" cy="-6.72" r="0.92" fill="#c4123f" />
+              <rect x="-1" y="-5" width="1" height="1" fill="#981033" />
+            </g>
+          </g>
+
+          <g class="pet-eye" clip-path="url(#voice-speaking-head-clip)">
+            <g class="pet-pupil">
+              <g class="pet-saccade">
+                <g clip-path="url(#voice-speaking-eye-clip)">
+                  <circle cx="11" cy="11" r="1.15" fill="#111827" />
+                  <circle class="pet-shine" cx="10.62" cy="10.58" r="0.34" fill="#f5f1e8" opacity="0.9" />
+                  <rect class="pet-lid" x="9.6" y="9.6" width="2.8" height="2.8" fill="#f5f1e8" />
+                </g>
+                <path d="M13.35 8.6 C13.85 9.9 13.8 12.1 13.3 13.4 C13.0 12.05 13.02 9.95 13.35 8.6 Z" fill="#c4123f" />
+                <path d="M13.0 9.55 L13.9 9.9" stroke="#981033" stroke-width="0.22" stroke-linecap="round" opacity="0.85" />
+                <path d="M13.0 12.2 L13.85 12.5" stroke="#981033" stroke-width="0.22" stroke-linecap="round" opacity="0.85" />
+              </g>
+            </g>
+          </g>
+
+          <!-- ── the talking mouth ─────────────────────────────────────────
+               Three shapes stacked in one place, each fading in on its own beat:
+               closed line, open oval, rounded oval. The jaw shading sits under
+               them so the chin darkens as the mouth opens. -->
+          <ellipse class="talk-jaw" cx="11" cy="14.2" rx="2.4" ry="1.9" fill="#111827" opacity="0" />
+          <ellipse class="talk-open" cx="11" cy="14.2" rx="1.85" ry="1.5" fill="#111827" />
+          <ellipse class="talk-round" cx="11" cy="14.4" rx="1.05" ry="1.15" fill="#111827" />
+          <path class="talk-closed" d="M9.2 14.3 Q11 15.2 12.8 14.3" stroke="#111827" stroke-width="0.95" stroke-linecap="round" fill="none" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
