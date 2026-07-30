@@ -74,7 +74,10 @@
     "removeProjectConfirm": "確定要移除專案「{{name}}」嗎？專案下的 {{count}} 個對話也會被一起移除。",
     "newConversationInProject": "在此專案中新建對話",
     "deleting": "刪除中...",
-    "reorderPinned": "拖動以調整置頂會話順序"
+    "reorderPinned": "拖動以調整置頂會話順序",
+    "setVoiceSession": "語音對話到此工作階段",
+    "unsetVoiceSession": "取消語音對話到此工作階段",
+    "voiceSessionActive": "喚醒詞會與此工作階段對話"
   },
   "historySearch": {
     "tooltip": "搜尋訊息",

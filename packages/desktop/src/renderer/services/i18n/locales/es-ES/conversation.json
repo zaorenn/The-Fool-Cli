@@ -74,7 +74,10 @@
     "removeProjectConfirm": "¿Quitar el proyecto \"{{name}}\"? Sus {{count}} conversación(es) también se quitarán.",
     "newConversationInProject": "Nuevo chat en este proyecto",
     "deleting": "Eliminando...",
-    "reorderPinned": "Arrastra para reordenar la conversación fijada"
+    "reorderPinned": "Arrastra para reordenar la conversación fijada",
+    "setVoiceSession": "Hablar con esta conversación",
+    "unsetVoiceSession": "Dejar de hablar con esta conversación",
+    "voiceSessionActive": "La palabra de activación habla con esta conversación"
   },
   "historySearch": {
     "tooltip": "Buscar mensajes",

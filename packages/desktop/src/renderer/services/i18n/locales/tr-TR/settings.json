@@ -1357,7 +1357,12 @@
     "modelInherit": "Ajanın kendi modeli",
     "agentHint": "Sesli bir tur, ana sayfa ne seçili olursa olsun her zaman bu ajan ve modelle açılır. Ayrıca pencere küçültülmüşken de çalışır: sohbet ana sayfaya yazılmak yerine doğrudan oluşturulur.",
     "agentNeedsModel": "Bu ajan için burada bir model seçilmeli, yoksa sesli tur başlayamaz.",
-    "agentMissing": "Seçilen ajan artık yok, bu yüzden sesli turlar ana sayfaya düşüyor."
+    "agentMissing": "Seçilen ajan artık yok, bu yüzden sesli turlar ana sayfaya düşüyor.",
+    "shortcut": "Her yerden kısayol",
+    "shortcutHint": "Hangi pencere önde olursa olsun bas ve konuş. Konuşmayı bıraktığında ya da tuşa tekrar bastığında gönderilir.",
+    "shortcutRegistered": "Tuş senin.",
+    "shortcutTaken": "Bu masaüstünde başka bir şey o tuşu tutuyor.",
+    "shortcutInvalid": "Bu, kullanılabilecek bir tuş birleşimi değil."
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

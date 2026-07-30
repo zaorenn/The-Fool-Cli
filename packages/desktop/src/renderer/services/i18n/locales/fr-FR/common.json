@@ -156,5 +156,6 @@
   "unit": {
     "minute_short": "m",
     "second_short": "s"
-  }
+  },
+  "tray.wakeListening": "Écouter le mot de réveil"
 }

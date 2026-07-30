@@ -74,7 +74,10 @@
     "removeProjectConfirm": "Projekt \"{{name}}\" entfernen? Die {{count}} zugehörige(n) Unterhaltung(en) werden ebenfalls entfernt.",
     "newConversationInProject": "Neuer Chat in diesem Projekt",
     "deleting": "Wird gelöscht...",
-    "reorderPinned": "Ziehen, um angeheftete Unterhaltung neu anzuordnen"
+    "reorderPinned": "Ziehen, um angeheftete Unterhaltung neu anzuordnen",
+    "setVoiceSession": "Mit diesem Chat sprechen",
+    "unsetVoiceSession": "Nicht mehr mit diesem Chat sprechen",
+    "voiceSessionActive": "Das Weckwort spricht mit diesem Chat"
   },
   "historySearch": {
     "tooltip": "Nachrichten durchsuchen",

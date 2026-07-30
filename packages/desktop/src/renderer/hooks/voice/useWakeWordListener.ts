@@ -15,6 +15,7 @@ import {
   useFoolVoiceSession,
 } from '@renderer/hooks/voice/useFoolVoiceSession';
 import { useFoolVoiceSettings } from '@renderer/hooks/voice/useFoolVoiceSettings';
+import { usePushToTalkShortcut } from '@renderer/hooks/voice/usePushToTalkShortcut';
 
 export type WakeListenerState = 'off' | 'listening' | 'awake';
 
@@ -91,6 +92,16 @@ export const useWakeWordListener = (): void => {
 
   useEffect(() => subscribeManualVoiceSession(setManualActive), []);
 
+  // The desktop-wide shortcut takes a turn on this same session, so it never
+  // competes with the wake listener for the microphone — and with the pet off, it
+  // opens capture for that one turn and closes it again afterwards.
+  usePushToTalkShortcut(settings.activation.pushToTalkShortcut, () => {
+    void sessionRef.current.awakenNow().catch((): void => {
+      // A refused microphone leaves the shortcut a no-op rather than raising an
+      // error over an app the user may not even be looking at.
+    });
+  });
+
   // Before listening, make sure the configured recogniser is one that exists on
   // this machine — otherwise the wake word waits for a model nobody installed
   // while an installed one sits unused. Runs once per launch.
@@ -112,7 +123,34 @@ export const useWakeWordListener = (): void => {
       });
   }, [petEnabled, ready, settings, update]);
 
-  const shouldListen = ready && petEnabled && settings.activation.wakePhrase.enabled && !manualActive;
+  const wakeEnabled = settings.activation.wakePhrase.enabled;
+
+  // The tray shows whether the microphone is open and offers to close it — an
+  // always-on microphone should be switchable off without opening the app, and
+  // that is also how it stops competing with the push-to-talk shortcut.
+  useEffect(() => {
+    ipcBridge.foolVoice?.wakeListening?.emit?.({ listening: ready && wakeEnabled });
+  }, [ready, wakeEnabled]);
+
+  const updateRef = useRef(update);
+  updateRef.current = update;
+
+  useEffect(() => {
+    const toggle = () => {
+      updateRef.current((previous) => ({
+        ...previous,
+        activation: {
+          ...previous.activation,
+          wakePhrase: { ...previous.activation.wakePhrase, enabled: !previous.activation.wakePhrase.enabled },
+        },
+      }));
+    };
+
+    window.addEventListener('tray:toggle-wake-listening', toggle);
+    return () => window.removeEventListener('tray:toggle-wake-listening', toggle);
+  }, []);
+
+  const shouldListen = ready && petEnabled && wakeEnabled && !manualActive;
 
   useEffect(() => {
     if (!shouldListen) {

@@ -36,6 +36,8 @@ import type {
   VoiceSummarizeResponse,
   VoiceSummaryPlanRequest,
   VoiceSummaryPlanResponse,
+  VoiceShortcutRequest,
+  VoiceShortcutResponse,
   VoiceSynthesizeRequest,
   VoiceSynthesizeResponse,
   VoiceTranscribeRequest,
@@ -215,6 +217,20 @@ export const foolVoice = {
   stage: bridge.buildEmitter<VoiceStageEvent>('fool.voice.stage'),
   /** Asks the next wake word to open a fresh conversation. */
   newSessionOnNextWake: bridge.buildEmitter<void>('fool.voice.new-session-next-wake'),
+  /** Claims (or releases) the desktop-wide shortcut that starts a spoken turn. */
+  shortcut: bridge.buildProvider<
+    VoiceResponseEnvelope<VoiceShortcutResponse>,
+    VoiceRequestEnvelope<VoiceShortcutRequest>
+  >('fool.voice.shortcut'),
+  /** Raised when that shortcut is pressed, wherever the user was. */
+  pushToTalk: bridge.buildEmitter<void>('fool.voice.push-to-talk'),
+  /**
+   * Whether the wake word is holding the microphone.
+   *
+   * Published by the renderer so the tray can show — and switch off — an
+   * always-open microphone without the user opening the app.
+   */
+  wakeListening: bridge.buildEmitter<{ listening: boolean }>('fool.voice.wake-listening'),
 };
 
 // ---------------------------------------------------------------------------

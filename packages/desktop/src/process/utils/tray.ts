@@ -21,6 +21,15 @@ let closeToTrayEnabled = false;
 let isQuitting = false;
 let mainWindowRef: BrowserWindow | null = null;
 let cachedActiveCount = 0;
+/**
+ * Whether the wake word currently holds the microphone.
+ *
+ * Mirrored from the renderer, which owns the setting, so the tray can show the
+ * real state rather than a guess. An always-open microphone should be visible and
+ * switchable off from outside the app — which is the whole point of it being here
+ * rather than three clicks into settings.
+ */
+let cachedWakeListening = false;
 
 export const setTrayMainWindow = (win: BrowserWindow): void => {
   mainWindowRef = win;
@@ -167,6 +176,17 @@ const buildTrayContextMenu = async (): Promise<Electron.Menu> => {
 
   template.push({ type: 'separator' });
   template.push({
+    label: i18n.t('common.tray.wakeListening'),
+    type: 'checkbox',
+    checked: cachedWakeListening,
+    click: () => {
+      // Not shown and focused first: switching the microphone off is exactly the
+      // thing you want to do without the app taking over your screen.
+      mainWindowRef?.webContents.send('tray:toggle-wake-listening');
+    },
+  });
+  template.push({ type: 'separator' });
+  template.push({
     label: `🐾 ${i18n.t('pet.desktopPet')}`,
     submenu: [
       {
@@ -293,6 +313,18 @@ export const createOrUpdateTray = (): void => {
 const rebuildTrayMenu = (): void => {
   if (!tray) return;
   void buildTrayContextMenu().then((menu) => tray?.setContextMenu(menu));
+};
+
+/**
+ * Mirrors the renderer's wake-word setting into the tray's checkbox.
+ *
+ * Rebuilds only on a real change: the menu is torn down and rebuilt each time,
+ * and doing that on every settings write would fight with an open menu.
+ */
+export const setTrayWakeListening = (listening: boolean): void => {
+  if (listening === cachedWakeListening) return;
+  cachedWakeListening = listening;
+  rebuildTrayMenu();
 };
 
 /**

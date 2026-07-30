@@ -158,5 +158,6 @@
     "second_short": "ث"
   },
   "selectedCount": "{{count}} انتخاب‌شده",
-  "selectedSkills": "مهارت‌های انتخاب‌شده"
+  "selectedSkills": "مهارت‌های انتخاب‌شده",
+  "tray.wakeListening": "گوش دادن به واژهٔ بیدارباش"
 }

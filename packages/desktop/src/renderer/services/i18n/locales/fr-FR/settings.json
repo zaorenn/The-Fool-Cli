@@ -1357,7 +1357,12 @@
     "modelInherit": "Le modèle propre à l'agent",
     "agentHint": "Un tour parlé s'ouvre toujours avec cet agent et ce modèle, quoi que la page d'accueil ait sélectionné. Cela permet aussi au mot de réveil de fonctionner fenêtre réduite : la conversation est créée directement, et non saisie sur la page d'accueil.",
     "agentNeedsModel": "Cet agent a besoin d'un modèle choisi ici, sinon un tour parlé ne peut pas démarrer.",
-    "agentMissing": "L'agent choisi n'existe plus, les tours parlés reviennent donc à la page d'accueil."
+    "agentMissing": "L'agent choisi n'existe plus, les tours parlés reviennent donc à la page d'accueil.",
+    "shortcut": "Raccourci depuis n'importe où",
+    "shortcutHint": "Appuyez dessus avec n'importe quelle fenêtre au premier plan pour commencer un tour. C'est envoyé quand vous arrêtez de parler, ou quand vous appuyez de nouveau.",
+    "shortcutRegistered": "La touche est à vous.",
+    "shortcutTaken": "Autre chose sur ce bureau utilise déjà cette touche.",
+    "shortcutInvalid": "Ce n'est pas une combinaison de touches utilisable."
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

@@ -12,7 +12,7 @@ import { resolveConversationLeadingMark } from '@/renderer/pages/conversation/ut
 import { cleanupSiderTooltips, getSiderTooltipProps } from '@/renderer/utils/ui/siderTooltip';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { Checkbox, Dropdown, Menu, Spin, Tooltip } from '@arco-design/web-react';
-import { DeleteOne, EditOne, Export, MessageOne, MoreOne, Pushpin, Robot, Timer } from '@icon-park/react';
+import { DeleteOne, EditOne, Export, MessageOne, MoreOne, Pushpin, Robot, Timer, VolumeNotice } from '@icon-park/react';
 import classNames from 'classnames';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -33,6 +33,7 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
     menuVisible,
     dimIcon = false,
     dragHandle,
+    isVoiceSession = false,
   } = props;
   const logos = useAgentLogos();
   const layout = useLayoutContext();
@@ -47,6 +48,7 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
     onDelete,
     onExport,
     onTogglePin,
+    onToggleVoiceSession,
     getJobStatus,
   } = props;
   const { t } = useTranslation();
@@ -198,6 +200,20 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
           </Tooltip>
         </FlexFullContainer>
 
+        {/* The chat the voice talks to, said on the row rather than only in the
+            menu: with the wake word armed it matters which one this is. */}
+        {isVoiceSession && !batchMode && (
+          <Tooltip content={t('conversation.history.voiceSessionActive')} mini position='top'>
+            <span
+              data-testid={`conversation-row-voice-${conversation.id}`}
+              className='flex-center shrink-0 text-[rgb(var(--primary-6))] collapsed-hidden group-hover:hidden'
+              style={{ lineHeight: 0 }}
+            >
+              <VolumeNotice theme='outline' size='14' fill='currentColor' />
+            </span>
+          </Tooltip>
+        )}
+
         {renderCompletionUnreadDot()}
         {!batchMode && (
           <div
@@ -232,6 +248,10 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
                       onExport?.(conversation);
                       return;
                     }
+                    if (key === 'voiceSession') {
+                      onToggleVoiceSession?.(conversation);
+                      return;
+                    }
                     if (key === 'delete') {
                       onDelete(conversation.id);
                     }
@@ -260,6 +280,18 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
                       <div className='flex items-center gap-8px'>
                         <Export theme='outline' size='14' />
                         <span>{t('conversation.history.export')}</span>
+                      </div>
+                    </Menu.Item>
+                  )}
+                  {onToggleVoiceSession && (
+                    <Menu.Item key='voiceSession'>
+                      <div className='flex items-center gap-8px'>
+                        <VolumeNotice theme='outline' size='14' />
+                        <span>
+                          {isVoiceSession
+                            ? t('conversation.history.unsetVoiceSession')
+                            : t('conversation.history.setVoiceSession')}
+                        </span>
                       </div>
                     </Menu.Item>
                   )}

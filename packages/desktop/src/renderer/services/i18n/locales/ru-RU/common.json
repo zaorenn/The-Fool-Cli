@@ -158,5 +158,6 @@
     "second_short": "с"
   },
   "selectedCount": "Выбрано {{count}}",
-  "selectedSkills": "Выбранные навыки"
+  "selectedSkills": "Выбранные навыки",
+  "tray.wakeListening": "Слушать ключевую фразу"
 }

@@ -52,6 +52,14 @@ export type FoolVoiceSession = {
    * Used by the always-on listener that runs while the desktop pet is up.
    */
   startWakeListening: () => Promise<void>;
+  /**
+   * Takes a turn without the wake phrase, opening the microphone if it is shut.
+   *
+   * This is what the global shortcut calls. Pressed again while the turn is still
+   * being spoken it ends the utterance and sends it, so a quiet room does not
+   * leave the turn waiting on silence that has already arrived.
+   */
+  awakenNow: () => Promise<void>;
   stop: () => void;
 };
 
@@ -161,6 +169,15 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
   const holdRef = useRef(false);
   /** Releases the hold if the answer never arrives. */
   const holdTimer = useRef<number | null>(null);
+  /**
+   * True when the shortcut opened the microphone with nothing else listening.
+   *
+   * Such a session belongs to that one turn: it closes when the answer has been
+   * spoken rather than staying open over a desktop nobody asked to be heard on.
+   */
+  const oneShotRef = useRef(false);
+  /** Set below, so the speaking path can close a one-shot session. */
+  const stopRef = useRef<() => void>(() => undefined);
 
   const sessionId = useMemo(() => crypto.randomUUID(), []);
 
@@ -331,6 +348,47 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     [enter, hold, isAwake, listen, listenForWake, sessionId, settings.activation.wakePhrase.phrase, submit, transcribe]
   );
 
+  /**
+   * Closes the current utterance and runs it, wherever the decision came from.
+   *
+   * Two callers: the detector deciding the speaker has stopped, and the global
+   * shortcut being pressed a second time to say the same thing deliberately.
+   */
+  const processUtterance = useCallback(() => {
+    if (!activeRef.current || !capture.current) return;
+    if (busyRef.current || holdRef.current) return;
+
+    const audio = capture.current.takeUtteranceWav();
+    const spokenMs = Date.now() - utteranceStartedAtRef.current;
+    capture.current.beginUtterance();
+    utteranceStartedAtRef.current = Date.now();
+    if (!audio) return;
+
+    busyRef.current = true;
+    void handleUtterance(audio, spokenMs)
+      .catch(() => {
+        // A failed transcription must not end an always-on listener; drop back
+        // to whichever mode this session is in.
+        if (wakeModeRef.current && !isAwake()) {
+          enter({
+            phase: 'wake-listening',
+            sessionId,
+            condition: { status: 'error', code: 'transcribe-failed', recoverable: true },
+          });
+          return;
+        }
+        enter({
+          phase: 'command-listening',
+          sessionId,
+          clientTurnId: crypto.randomUUID(),
+          condition: { status: 'error', code: 'transcribe-failed', recoverable: true },
+        });
+      })
+      .finally(() => {
+        busyRef.current = false;
+      });
+  }, [enter, handleUtterance, isAwake, sessionId]);
+
   const onFrame = useCallback(
     ({ rms }: { rms: number }) => {
       if (!activeRef.current || !vad.current || !capture.current) return;
@@ -355,39 +413,9 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
       }
 
       if (event !== 'utterance-ended' && event !== 'utterance-truncated') return;
-      if (busyRef.current) return;
-
-      const audio = capture.current.takeUtteranceWav();
-      const spokenMs = Date.now() - utteranceStartedAtRef.current;
-      capture.current.beginUtterance();
-      utteranceStartedAtRef.current = Date.now();
-      if (!audio) return;
-
-      busyRef.current = true;
-      void handleUtterance(audio, spokenMs)
-        .catch(() => {
-          // A failed transcription must not end an always-on listener; drop back
-          // to whichever mode this session is in.
-          if (wakeModeRef.current && !isAwake()) {
-            enter({
-              phase: 'wake-listening',
-              sessionId,
-              condition: { status: 'error', code: 'transcribe-failed', recoverable: true },
-            });
-            return;
-          }
-          enter({
-            phase: 'command-listening',
-            sessionId,
-            clientTurnId: crypto.randomUUID(),
-            condition: { status: 'error', code: 'transcribe-failed', recoverable: true },
-          });
-        })
-        .finally(() => {
-          busyRef.current = false;
-        });
+      processUtterance();
     },
-    [enter, handleUtterance, isAwake, sessionId]
+    [isAwake, processUtterance, settings.activation.wakePhrase.phrase]
   );
 
   const speak = useCallback(
@@ -455,6 +483,12 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
         })
         .finally((): void => {
           if (!activeRef.current) return;
+          // A microphone the shortcut opened is the shortcut's to close: nothing
+          // else was listening before it, and nothing should be after.
+          if (oneShotRef.current) {
+            stopRef.current();
+            return;
+          }
           // An always-on listener whose follow-up window has closed goes back to
           // waiting for the phrase rather than treating the room as input.
           if (wakeModeRef.current && !isAwake()) listenForWake();
@@ -492,6 +526,7 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     busyRef.current = false;
     wakeModeRef.current = false;
     awakeUntilRef.current = 0;
+    oneShotRef.current = false;
     release();
     playback.current?.stop();
     capture.current?.stop();
@@ -502,6 +537,10 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     publishVoiceStageOff();
     setState(idleState());
   }, [release]);
+
+  // `speakThenListen` is defined above `stop` and has to be able to call it; a ref
+  // keeps that one direction of the cycle from becoming a dependency loop.
+  stopRef.current = stop;
 
   /**
    * Checks the models, then opens capture and playback.
@@ -571,11 +610,35 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     if (!(await openMicrophone({ requireSpeechOutput: true }))) return;
 
     wakeModeRef.current = false;
+    oneShotRef.current = false;
     // Started by hand, so no phrase is needed before the first sentence.
     awakeUntilRef.current = Date.now() + AWAKE_WINDOW_MS;
     setManualSessionActive(true);
     listen();
   }, [listen, openMicrophone, stop]);
+
+  const awakenNow = useCallback(async () => {
+    // Pressed again during the same turn: the user has said what they meant to
+    // say and would rather not wait for the detector to agree.
+    if (activeRef.current && isAwake() && !holdRef.current && !busyRef.current) {
+      processUtterance();
+      return;
+    }
+
+    if (!activeRef.current) {
+      // Nothing was listening — the pet is off, or the app is minimised with no
+      // session. Open the microphone for this one turn.
+      if (!(await openMicrophone({ requireSpeechOutput: true }))) return;
+      wakeModeRef.current = false;
+      oneShotRef.current = true;
+    }
+
+    awakeUntilRef.current = Date.now() + AWAKE_WINDOW_MS;
+    // The same chime the wake phrase gives: the fastest possible "I am listening",
+    // and the only feedback there is when the window is not on screen.
+    void playback.current?.playWakeChime().catch((): void => undefined);
+    listen();
+  }, [isAwake, listen, openMicrophone, processUtterance]);
 
   const startWakeListening = useCallback(async () => {
     // Already listening, or the user is deliberately talking: leave the
@@ -585,11 +648,12 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     if (!(await openMicrophone({ requireSpeechOutput: false }))) return;
 
     wakeModeRef.current = true;
+    oneShotRef.current = false;
     awakeUntilRef.current = 0;
     listenForWake();
   }, [listenForWake, openMicrophone]);
 
   useEffect(() => stop, [stop]);
 
-  return { state, missingModelId, isActive: activeRef.current, start, startWakeListening, stop };
+  return { state, missingModelId, isActive: activeRef.current, start, startWakeListening, awakenNow, stop };
 };

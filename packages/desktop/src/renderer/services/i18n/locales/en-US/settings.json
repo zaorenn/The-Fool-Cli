@@ -1357,7 +1357,12 @@
     "modelInherit": "The agent's own model",
     "agentHint": "A spoken turn always opens on this agent and model, whatever the home page is set to. It also means a wake word works with the window minimised — the chat is created directly rather than typed into the home page.",
     "agentNeedsModel": "This agent needs a model chosen here, or a spoken turn cannot start.",
-    "agentMissing": "The chosen agent no longer exists, so spoken turns fall back to the home page."
+    "agentMissing": "The chosen agent no longer exists, so spoken turns fall back to the home page.",
+    "shortcut": "Shortcut from anywhere",
+    "shortcutHint": "Press it with any window in front to start a turn. Say what you want; it is sent when you stop speaking, or when you press the key again.",
+    "shortcutRegistered": "The key is yours.",
+    "shortcutTaken": "Something else on this desktop already holds that key.",
+    "shortcutInvalid": "That is not a key combination this can use."
   },
   "themeCustomizer": {
     "title": "Customize theme",

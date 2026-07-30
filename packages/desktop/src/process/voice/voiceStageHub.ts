@@ -38,6 +38,7 @@ type PetBridge = {
 
 let petBridge: PetBridge | null = null;
 let unsubscribe: (() => void) | null = null;
+let unsubscribeWakeListening: (() => void) | null = null;
 let lastStage: VoiceStage = 'off';
 /** The pose currently asked for, so a repeated stage does not re-request it. */
 let lastPose: PetState | 'idle' | null = null;
@@ -84,11 +85,20 @@ const handle = (event: VoiceStageEvent): void => {
 export function initVoiceStageHub(): void {
   unsubscribe?.();
   unsubscribe = ipcBridge.foolVoice.stage.on(handle);
+
+  // The tray shows whether the microphone is open and offers to close it. The
+  // renderer owns the setting, so it says; this only relays.
+  unsubscribeWakeListening?.();
+  unsubscribeWakeListening = ipcBridge.foolVoice.wakeListening.on(({ listening }) => {
+    void import('@process/utils/tray').then(({ setTrayWakeListening }) => setTrayWakeListening(listening));
+  });
 }
 
 export function disposeVoiceStageHub(): void {
   unsubscribe?.();
   unsubscribe = null;
+  unsubscribeWakeListening?.();
+  unsubscribeWakeListening = null;
   destroyCaptionWindow();
   lastStage = VOICE_STAGE_OFF.stage;
   lastPose = null;

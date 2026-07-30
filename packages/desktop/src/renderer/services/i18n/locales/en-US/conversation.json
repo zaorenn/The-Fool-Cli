@@ -74,7 +74,10 @@
     "removeProjectConfirm": "Remove project \"{{name}}\"? Its {{count}} conversation(s) will be removed too.",
     "newConversationInProject": "New chat in this project",
     "deleting": "Deleting...",
-    "reorderPinned": "Drag to reorder pinned conversation"
+    "reorderPinned": "Drag to reorder pinned conversation",
+    "setVoiceSession": "Talk to this chat",
+    "unsetVoiceSession": "Stop talking to this chat",
+    "voiceSessionActive": "The wake word talks to this chat"
   },
   "historySearch": {
     "tooltip": "Search messages",

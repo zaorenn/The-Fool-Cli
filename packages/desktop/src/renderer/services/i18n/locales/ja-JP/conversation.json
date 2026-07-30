@@ -74,7 +74,10 @@
     "removeProjectConfirm": "プロジェクト「{{name}}」を削除しますか？プロジェクト内の {{count}} 件の会話も削除されます。",
     "newConversationInProject": "このプロジェクト内で新しい会話",
     "deleting": "削除中...",
-    "reorderPinned": "ドラッグしてピン留め会話の順序を変更"
+    "reorderPinned": "ドラッグしてピン留め会話の順序を変更",
+    "setVoiceSession": "この会話に話しかける",
+    "unsetVoiceSession": "この会話に話しかけるのをやめる",
+    "voiceSessionActive": "ウェイクワードはこの会話に話しかけます"
   },
   "historySearch": {
     "tooltip": "メッセージを検索",

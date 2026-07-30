@@ -8,6 +8,8 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_FOOL_VOICE_SETTINGS,
   FOOL_VOICE_PROVIDERS,
+  FOOL_VOICE_SCHEMA_VERSION,
+  PUSH_TO_TALK_DEFAULT,
   isVoiceDownloadProgressTransitionAllowed,
   isVoiceTurnTransitionAllowed,
   loadFoolVoiceSettings,
@@ -35,11 +37,12 @@ const state = (
 describe('Fool voice settings contract', () => {
   it('defaults to an inactive local configuration with the fastest measured voices', () => {
     expect(DEFAULT_FOOL_VOICE_SETTINGS).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: FOOL_VOICE_SCHEMA_VERSION,
       enabled: false,
       devices: { inputDeviceId: null, outputDeviceId: null },
       activation: {
         talkModeEnabled: false,
+        pushToTalkShortcut: PUSH_TO_TALK_DEFAULT,
         // The wake phrase ships enabled because the desktop pet is the switch:
         // the listener only opens the microphone while the pet is on screen.
         wakePhrase: { enabled: true, modelId: 'stt-phrase-v1', phrase: 'wake up fool', sensitivity: 0.65 },
@@ -119,6 +122,30 @@ describe('Fool voice settings contract', () => {
 
     expect(settings).toEqual(DEFAULT_FOOL_VOICE_SETTINGS);
     expect(diagnostic).toHaveBeenCalledWith({ code: 'invalid-settings', key: 'fool.voice' });
+  });
+
+  it('gives a shortcut to a record written before the shortcut did anything', () => {
+    // Every stored empty string predates the field being read, so it means
+    // "never chosen" rather than "deliberately cleared".
+    const settings = loadFoolVoiceSettings({ schemaVersion: 1, activation: { pushToTalkShortcut: '' } });
+
+    expect(settings.activation.pushToTalkShortcut).toBe(PUSH_TO_TALK_DEFAULT);
+    expect(settings.schemaVersion).toBe(FOOL_VOICE_SCHEMA_VERSION);
+  });
+
+  it('leaves a shortcut the user chose alone', () => {
+    const settings = loadFoolVoiceSettings({ schemaVersion: 1, activation: { pushToTalkShortcut: 'Control+Alt+K' } });
+
+    expect(settings.activation.pushToTalkShortcut).toBe('Control+Alt+K');
+  });
+
+  it('lets a shortcut cleared after the upgrade stay cleared', () => {
+    const settings = loadFoolVoiceSettings({
+      schemaVersion: FOOL_VOICE_SCHEMA_VERSION,
+      activation: { pushToTalkShortcut: '' },
+    });
+
+    expect(settings.activation.pushToTalkShortcut).toBe('');
   });
 });
 

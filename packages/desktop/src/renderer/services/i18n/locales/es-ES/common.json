@@ -158,5 +158,6 @@
   },
   "goBack": "Back",
   "selectedCount": "{{count}} seleccionado(s)",
-  "selectedSkills": "Habilidades seleccionadas"
+  "selectedSkills": "Habilidades seleccionadas",
+  "tray.wakeListening": "Escuchar la palabra de activación"
 }

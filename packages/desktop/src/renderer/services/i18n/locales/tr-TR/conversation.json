@@ -74,7 +74,10 @@
     "removeProjectConfirm": "\"{{name}}\" projesi kaldırılsın mı? Projedeki {{count}} konuşma da kaldırılacak.",
     "newConversationInProject": "Bu projede yeni konuşma",
     "deleting": "Siliniyor...",
-    "reorderPinned": "Sabitlenmiş sohbetin sırasını değiştirmek için sürükleyin"
+    "reorderPinned": "Sabitlenmiş sohbetin sırasını değiştirmek için sürükleyin",
+    "setVoiceSession": "Bu sohbetle konuş",
+    "unsetVoiceSession": "Bu sohbetle konuşmayı bırak",
+    "voiceSessionActive": "Uyandırma sözcüğü bu sohbetle konuşuyor"
   },
   "historySearch": {
     "tooltip": "Mesajları ara",

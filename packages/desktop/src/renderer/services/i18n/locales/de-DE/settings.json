@@ -1357,7 +1357,12 @@
     "modelInherit": "Das eigene Modell des Agenten",
     "agentHint": "Ein gesprochener Zug beginnt immer mit diesem Agenten und Modell, unabhängig davon, was die Startseite eingestellt hat. Damit funktioniert das Weckwort auch bei minimiertem Fenster — der Chat wird direkt erstellt und nicht auf der Startseite eingetippt.",
     "agentNeedsModel": "Dieser Agent braucht hier ein ausgewähltes Modell, sonst kann kein gesprochener Zug beginnen.",
-    "agentMissing": "Der gewählte Agent existiert nicht mehr, deshalb fallen gesprochene Züge auf die Startseite zurück."
+    "agentMissing": "Der gewählte Agent existiert nicht mehr, deshalb fallen gesprochene Züge auf die Startseite zurück.",
+    "shortcut": "Tastenkürzel von überall",
+    "shortcutHint": "Drücken Sie es mit einem beliebigen Fenster im Vordergrund, um einen Zug zu beginnen. Gesendet wird, wenn Sie aufhören zu sprechen oder die Taste erneut drücken.",
+    "shortcutRegistered": "Die Taste gehört Ihnen.",
+    "shortcutTaken": "Etwas anderes auf diesem Desktop belegt diese Taste bereits.",
+    "shortcutInvalid": "Das ist keine verwendbare Tastenkombination."
   },
   "themeCustomizer": {
     "title": "Design anpassen",

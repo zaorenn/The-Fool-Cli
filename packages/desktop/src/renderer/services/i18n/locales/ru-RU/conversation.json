@@ -74,7 +74,10 @@
     "removeProjectConfirm": "Удалить проект «{{name}}»? Беседы в проекте тоже будут удалены: {{count}}.",
     "newConversationInProject": "Новая беседа в этом проекте",
     "deleting": "Удаление...",
-    "reorderPinned": "Перетащите, чтобы изменить порядок закреплённых бесед"
+    "reorderPinned": "Перетащите, чтобы изменить порядок закреплённых бесед",
+    "setVoiceSession": "Говорить с этим чатом",
+    "unsetVoiceSession": "Перестать говорить с этим чатом",
+    "voiceSessionActive": "Ключевая фраза говорит с этим чатом"
   },
   "historySearch": {
     "tooltip": "Поиск сообщений",

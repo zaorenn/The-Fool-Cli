@@ -8,6 +8,7 @@ import type { TChatConversation } from '@/common/config/storage';
 import AionModal from '@/renderer/components/base/AionModal';
 import DirectorySelectionModal from '@/renderer/components/settings/DirectorySelectionModal';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
+import { useVoiceBoundConversation } from '@/renderer/hooks/voice/useVoiceBoundConversation';
 import { useCronJobsMap } from '@/renderer/pages/cron';
 import { restrictToVerticalAxis } from '@/renderer/utils/ui/dndModifiers';
 import { DndContext, closestCenter } from '@dnd-kit/core';
@@ -160,6 +161,14 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     collapsed,
   });
 
+  // Which chat the voice talks to. Exactly one holds it, so setting a chat here
+  // releases whichever held it before.
+  const voiceSession = useVoiceBoundConversation();
+  const handleToggleVoiceSession = useCallback(
+    (conversation: TChatConversation) => voiceSession.toggle(conversation.id),
+    [voiceSession]
+  );
+
   const getConversationRowProps = useCallback(
     (conversation: TChatConversation): ConversationRowProps => ({
       conversation,
@@ -183,6 +192,8 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
       // underlying handleExportConversation logic from useExport is kept for a
       // future per-platform re-enable.
       onTogglePin: handleTogglePin,
+      isVoiceSession: voiceSession.isBound(conversation.id),
+      onToggleVoiceSession: handleToggleVoiceSession,
       getJobStatus,
     }),
     [
@@ -202,6 +213,8 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
       handleCreateCronTask,
       handleDeleteClick,
       handleTogglePin,
+      handleToggleVoiceSession,
+      voiceSession,
       getJobStatus,
     ]
   );

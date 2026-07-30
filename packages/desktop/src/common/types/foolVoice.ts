@@ -198,7 +198,7 @@ export type FoolVoiceAgentOverride = {
 };
 
 export type FoolVoiceSettings = {
-  schemaVersion: 1;
+  schemaVersion: number;
   enabled: boolean;
   devices: {
     inputDeviceId: string | null;
@@ -206,6 +206,11 @@ export type FoolVoiceSettings = {
   };
   activation: {
     talkModeEnabled: boolean;
+    /**
+     * A desktop-wide shortcut that starts a spoken turn with no window focused.
+     *
+     * Empty means none. Electron's accelerator syntax, e.g. `Control+Alt+V`.
+     */
     pushToTalkShortcut: string;
     wakePhrase: {
       enabled: boolean;
@@ -295,11 +300,28 @@ export type FoolVoiceSettings = {
 /** The phrase that starts a spoken conversation with no click. */
 export const WAKE_PHRASE_DEFAULT = 'wake up fool';
 
+/**
+ * The shipped desktop-wide shortcut for starting a spoken turn.
+ *
+ * Chosen for being unclaimed: Windows, macOS and the common editors all leave
+ * Control/Command+Alt+V alone. Anything already taken is reported rather than
+ * silently doing nothing.
+ */
+export const PUSH_TO_TALK_DEFAULT = 'Control+Alt+V';
+
+/**
+ * The shape of a stored settings record.
+ *
+ * 1 — as shipped before the shortcut did anything.
+ * 2 — the shortcut is live, so a record that never chose one is given the default.
+ */
+export const FOOL_VOICE_SCHEMA_VERSION = 2;
+
 /** The phrase shipped before {@link WAKE_PHRASE_DEFAULT}, upgraded on read. */
 export const WAKE_PHRASE_LEGACY_DEFAULT = 'hey fool';
 
 export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
-  schemaVersion: 1,
+  schemaVersion: FOOL_VOICE_SCHEMA_VERSION,
   enabled: false,
   devices: {
     inputDeviceId: null,
@@ -307,7 +329,7 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
   },
   activation: {
     talkModeEnabled: false,
-    pushToTalkShortcut: '',
+    pushToTalkShortcut: PUSH_TO_TALK_DEFAULT,
     wakePhrase: {
       // On by default because the desktop pet is the real switch: the listener
       // only opens the microphone while the pet is on screen.
@@ -423,7 +445,7 @@ const overrideSchema = z
 
 const settingsSchema = z
   .object({
-    schemaVersion: z.literal(1).default(1),
+    schemaVersion: z.number().int().min(1).max(1000).default(FOOL_VOICE_SCHEMA_VERSION),
     enabled: z.boolean().default(false),
     devices: z
       .object({
@@ -435,7 +457,7 @@ const settingsSchema = z
     activation: z
       .object({
         talkModeEnabled: z.boolean().default(false),
-        pushToTalkShortcut: z.string().max(128).default(''),
+        pushToTalkShortcut: z.string().max(128).default(PUSH_TO_TALK_DEFAULT),
         wakePhrase: z
           .object({
             enabled: z.boolean().default(true),
@@ -558,10 +580,36 @@ export const loadFoolVoiceSettings = (
   onDiagnostic?: (diagnostic: FoolVoiceDiagnostic) => void
 ): FoolVoiceSettings => {
   const result = settingsSchema.safeParse(value);
-  if (result.success) return upgradeWakePhrase(result.data as FoolVoiceSettings);
+  if (result.success) return upgradeSettings(result.data as FoolVoiceSettings);
   onDiagnostic?.({ code: 'invalid-settings', key: 'fool.voice' });
   return structuredClone(DEFAULT_FOOL_VOICE_SETTINGS);
 };
+
+/**
+ * Fills in a shortcut for settings written before there was one.
+ *
+ * A schema default only applies to an absent key, and these records already carry
+ * `pushToTalkShortcut: ""` from when the field existed but nothing read it. Every
+ * one of those empty strings means "never chosen", not "deliberately cleared" —
+ * so it is filled in once, and the version bump is what keeps it to once. A
+ * shortcut the user later clears stays cleared.
+ */
+const upgradeShortcut = (settings: FoolVoiceSettings): FoolVoiceSettings => {
+  if (settings.schemaVersion >= FOOL_VOICE_SCHEMA_VERSION) return settings;
+
+  return {
+    ...settings,
+    schemaVersion: FOOL_VOICE_SCHEMA_VERSION,
+    activation: {
+      ...settings.activation,
+      pushToTalkShortcut: settings.activation.pushToTalkShortcut || PUSH_TO_TALK_DEFAULT,
+    },
+  };
+};
+
+/** Brings a stored record up to what this version of the app expects. */
+export const upgradeSettings = (settings: FoolVoiceSettings): FoolVoiceSettings =>
+  upgradeShortcut(upgradeWakePhrase(settings));
 
 /**
  * Moves settings still carrying the old wake phrase onto the current one.
@@ -912,6 +960,24 @@ export type VoiceSummarizeResponse = {
   translated: boolean;
   /** Why the model was not used. Absent when it was. */
   reason?: 'no-model' | 'unreachable' | 'timeout' | 'empty-output';
+};
+
+/**
+ * The shortcut that starts a spoken turn from anywhere on the desktop.
+ *
+ * Registered in the main process, because the point of it is to work while the
+ * app is not the focused window. An empty accelerator unregisters.
+ */
+export type VoiceShortcutRequest = { accelerator: string };
+export type VoiceShortcutResponse = {
+  accelerator: string;
+  registered: boolean;
+  /**
+   * `invalid` — not an accelerator Electron accepts.
+   * `taken` — something else on the desktop already holds it.
+   * `unsupported` — no global shortcuts on this platform or build.
+   */
+  reason?: 'invalid' | 'taken' | 'unsupported';
 };
 
 export type VoiceCancelRequest = { operationId: string };

@@ -17,6 +17,7 @@ import {
 import { registerLocalModelsBridge } from '../services/local-models';
 import { handleSummarize, handleSummaryPlan } from '../services/voice-summary';
 import { initVoiceStageHub } from '../voice/voiceStageHub';
+import { handleVoiceShortcut } from '../voice/pushToTalkShortcut';
 import { ipcBridge } from '@/common';
 import { ConfigStorage } from '@/common/config/storage';
 
@@ -130,6 +131,7 @@ initAllBridges({
       })),
     summaryPlan: handleSummaryPlan,
     summarize: handleSummarize,
+    shortcut: handleVoiceShortcut,
   },
 });
 

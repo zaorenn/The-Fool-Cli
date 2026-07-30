@@ -9,7 +9,12 @@ import { Button, Input, Switch, Tag } from '@arco-design/web-react';
 import { Check, CloseOne } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
-import type { FoolVoiceSettings, VoiceModel, VoicePcm16Wav } from '@/common/types/foolVoice';
+import {
+  PUSH_TO_TALK_DEFAULT,
+  type FoolVoiceSettings,
+  type VoiceModel,
+  type VoicePcm16Wav,
+} from '@/common/types/foolVoice';
 import { AdaptiveVad } from '@renderer/services/voice/AdaptiveVad';
 import { MicrophoneCapture } from '@renderer/services/voice/MicrophoneCapture';
 import { findWakePhrase } from '@renderer/services/voice/wakePhrase';
@@ -38,22 +43,64 @@ const MIN_PHRASE_LENGTH = 2;
 
 const newRequestId = () => `wake-test-${crypto.randomUUID()}`;
 
+/** What the desktop reported about the shortcut the last time it was claimed. */
+type ShortcutState = 'idle' | 'checking' | 'registered' | 'taken' | 'invalid';
+
 /**
- * The wake word, and a way to prove it.
+ * The two ways a spoken turn starts, and a way to prove each of them.
  *
  * Typing a phrase here changes what the listener waits for — it is the same
  * stored value the always-on listener reads, and it restarts on a change. The
  * check is the honest part: it opens the microphone, waits for one utterance,
  * runs it through the same transcription model and the same matcher the listener
- * uses, and reports what it heard and whether that counted. A phrase that does
- * not work is therefore visible here rather than at 2am with the pet ignoring
+ * uses, and reports what it heard and whether that counted.
+ *
+ * The shortcut is the other way in, for when the wake word is off or the room is
+ * loud, and it has the same problem: a key another application already holds
+ * registers as silence. So it is claimed on demand and the answer is shown. Both
+ * failures are therefore visible here rather than at 2am with the pet ignoring
  * you.
  */
 const WakeWordSection: React.FC<WakeWordSectionProps> = ({ settings, listenModel, onChange, onInstallModel }) => {
   const { t } = useTranslation();
   const [test, setTest] = useState<TestState>({ status: 'idle' });
+  const [shortcut, setShortcut] = useState<ShortcutState>('idle');
   const capture = useRef<MicrophoneCapture | null>(null);
   const timer = useRef<number | null>(null);
+
+  const accelerator = settings.activation.pushToTalkShortcut;
+
+  // Typing a new key does not claim it; the answer to "is this one free" only
+  // means anything once it has been asked for.
+  useEffect(() => setShortcut('idle'), [accelerator]);
+
+  /**
+   * Asks the desktop for the key and says what came back.
+   *
+   * A shortcut another application already holds registers silently as nothing at
+   * all, which is the failure that would otherwise be found at 2am.
+   */
+  const claim = useCallback(async () => {
+    setShortcut('checking');
+    try {
+      const response = await ipcBridge.foolVoice.shortcut.invoke({
+        version: 1,
+        requestId: newRequestId(),
+        payload: { accelerator },
+      });
+      if (response.ok === false) {
+        setShortcut('invalid');
+        return;
+      }
+      if (response.data.registered) {
+        setShortcut('registered');
+        return;
+      }
+      setShortcut(response.data.reason === 'taken' ? 'taken' : 'invalid');
+    } catch {
+      setShortcut('invalid');
+    }
+  }, [accelerator]);
 
   const phrase = settings.activation.wakePhrase.phrase;
   const modelReady = listenModel?.state.status === 'ready';
@@ -248,6 +295,52 @@ const WakeWordSection: React.FC<WakeWordSectionProps> = ({ settings, listenModel
           {t('settings.voice.wakeWordNeedsModel')}
         </span>
       )}
+
+      {/* The other way to start a turn: a key that works with the app behind
+          everything else, for when the wake word is off or the room is loud. */}
+      <label className='flex flex-col gap-4px'>
+        <span className='text-13px text-t-secondary'>{t('settings.voice.shortcut')}</span>
+        <div className='flex gap-8px items-center'>
+          <Input
+            className='flex-1'
+            data-testid='voice-shortcut'
+            value={settings.activation.pushToTalkShortcut}
+            maxLength={64}
+            placeholder={PUSH_TO_TALK_DEFAULT}
+            onChange={(value: string) =>
+              onChange((previous) => ({
+                ...previous,
+                activation: { ...previous.activation, pushToTalkShortcut: value.slice(0, 64) },
+              }))
+            }
+          />
+          <Button
+            data-testid='voice-shortcut-check'
+            loading={shortcut === 'checking'}
+            // Nothing to claim, and nothing to report about it.
+            disabled={accelerator.trim().length === 0 || shortcut === 'checking'}
+            onClick={() => void claim()}
+          >
+            {t('settings.voice.check')}
+          </Button>
+        </div>
+      </label>
+      {shortcut === 'registered' && (
+        <span className='text-12px text-success' data-testid='voice-shortcut-ok'>
+          {t('settings.voice.shortcutRegistered')}
+        </span>
+      )}
+      {shortcut === 'taken' && (
+        <span className='text-12px text-danger' data-testid='voice-shortcut-taken'>
+          {t('settings.voice.shortcutTaken')}
+        </span>
+      )}
+      {shortcut === 'invalid' && (
+        <span className='text-12px text-danger' data-testid='voice-shortcut-invalid'>
+          {t('settings.voice.shortcutInvalid')}
+        </span>
+      )}
+      <span className='text-12px text-t-secondary'>{t('settings.voice.shortcutHint')}</span>
     </div>
   );
 };

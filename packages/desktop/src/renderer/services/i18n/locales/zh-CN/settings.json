@@ -1358,7 +1358,12 @@
     "modelInherit": "智能体自带的模型",
     "agentHint": "无论首页选了什么，语音对话都会用这里指定的智能体和模型开始。这也让唤醒词在窗口最小化时依然可用——会话是直接创建的，而不是写入首页输入框。",
     "agentNeedsModel": "该智能体需要在此处选择模型，否则语音对话无法开始。",
-    "agentMissing": "所选智能体已不存在，语音对话将回退到首页。"
+    "agentMissing": "所选智能体已不存在，语音对话将回退到首页。",
+    "shortcut": "全局快捷键",
+    "shortcutHint": "无论哪个窗口在前台，按下即可开始说话。停止说话或再次按键时发送。",
+    "shortcutRegistered": "快捷键已注册。",
+    "shortcutTaken": "该快捷键已被此桌面上的其他程序占用。",
+    "shortcutInvalid": "这不是可用的按键组合。"
   },
   "themeCustomizer": {
     "title": "自定义主题",

@@ -158,5 +158,6 @@
     "second_short": "sn"
   },
   "selectedCount": "{{count}} seçili",
-  "selectedSkills": "Seçili beceriler"
+  "selectedSkills": "Seçili beceriler",
+  "tray.wakeListening": "Uyandırma sözcüğünü dinle"
 }

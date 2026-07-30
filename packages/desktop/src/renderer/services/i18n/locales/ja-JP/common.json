@@ -158,5 +158,6 @@
     "second_short": "秒"
   },
   "selectedCount": "選択済み {{count}}",
-  "selectedSkills": "選択済みスキル"
+  "selectedSkills": "選択済みスキル",
+  "tray.wakeListening": "ウェイクワードを待ち受ける"
 }

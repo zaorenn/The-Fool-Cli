@@ -1359,7 +1359,12 @@
     "modelInherit": "智慧體自帶的模型",
     "agentHint": "無論首頁選了什麼，語音對話都會用這裡指定的智慧體和模型開始。這也讓喚醒詞在視窗最小化時依然可用——工作階段是直接建立的，而不是寫入首頁輸入框。",
     "agentNeedsModel": "該智慧體需要在此處選擇模型，否則語音對話無法開始。",
-    "agentMissing": "所選智慧體已不存在，語音對話將回退到首頁。"
+    "agentMissing": "所選智慧體已不存在，語音對話將回退到首頁。",
+    "shortcut": "全域快速鍵",
+    "shortcutHint": "無論哪個視窗在前景，按下即可開始說話。停止說話或再次按鍵時送出。",
+    "shortcutRegistered": "快速鍵已註冊。",
+    "shortcutTaken": "該快速鍵已被此桌面上的其他程式佔用。",
+    "shortcutInvalid": "這不是可用的按鍵組合。"
   },
   "themeCustomizer": {
     "title": "自訂主題",

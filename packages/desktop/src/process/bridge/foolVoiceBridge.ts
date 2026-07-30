@@ -24,6 +24,8 @@ import type {
   VoiceSummarizeResponse,
   VoiceSummaryPlanRequest,
   VoiceSummaryPlanResponse,
+  VoiceShortcutRequest,
+  VoiceShortcutResponse,
   VoiceSynthesizeRequest,
   VoiceSynthesizeResponse,
   VoiceTranscribeRequest,
@@ -43,6 +45,7 @@ export type FoolVoiceBridgeHandlers = {
   speakers: (request: VoiceSpeakersRequest) => MaybePromise<VoiceSpeakersResponse>;
   summaryPlan: (request: VoiceSummaryPlanRequest) => MaybePromise<VoiceSummaryPlanResponse>;
   summarize: (request: VoiceSummarizeRequest) => MaybePromise<VoiceSummarizeResponse>;
+  shortcut: (request: VoiceShortcutRequest) => MaybePromise<VoiceShortcutResponse>;
 };
 
 type BridgeErrorCode = Extract<VoiceResponseEnvelope<never>, { ok: false }>['error']['code'];
@@ -342,6 +345,22 @@ const validateSummarizeRequest = (payload: unknown): BridgeErrorCode | null => {
   return [...payload.text].length > MAX_SUMMARY_CODE_POINTS ? 'payload-too-large' : null;
 };
 
+/**
+ * Accepts an Electron accelerator and nothing that could be a command.
+ *
+ * This string reaches `globalShortcut.register`, so it is checked against the
+ * shape an accelerator actually has rather than merely for length.
+ */
+const ACCELERATOR_PATTERN = /^[A-Za-z0-9+ ]{1,64}$/;
+
+const validateShortcutRequest = (payload: unknown): BridgeErrorCode | null =>
+  isRecord(payload) &&
+  hasExactKeys(payload, ['accelerator']) &&
+  typeof payload.accelerator === 'string' &&
+  (payload.accelerator.length === 0 || ACCELERATOR_PATTERN.test(payload.accelerator))
+    ? null
+    : 'invalid-request';
+
 /** A speaker count has to be a plausible index range, not an arbitrary number. */
 const MAX_SPEAKERS = 4096;
 
@@ -429,4 +448,5 @@ export function initFoolVoiceBridge(handlers: Partial<FoolVoiceBridgeHandlers> =
     validateSummarizeResponse,
     'summarize'
   );
+  registerHandler(ipcBridge.foolVoice.shortcut, validateShortcutRequest, handlers.shortcut, undefined, 'shortcut');
 }

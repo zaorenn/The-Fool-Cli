@@ -1357,7 +1357,12 @@
     "modelInherit": "El modelo propio del agente",
     "agentHint": "Un turno hablado siempre se abre con este agente y modelo, sea lo que sea que tenga seleccionado la página de inicio. También hace que la palabra de activación funcione con la ventana minimizada: la conversación se crea directamente, no se escribe en la página de inicio.",
     "agentNeedsModel": "Este agente necesita un modelo elegido aquí, o un turno hablado no puede empezar.",
-    "agentMissing": "El agente elegido ya no existe, así que los turnos hablados vuelven a la página de inicio."
+    "agentMissing": "El agente elegido ya no existe, así que los turnos hablados vuelven a la página de inicio.",
+    "shortcut": "Atajo desde cualquier sitio",
+    "shortcutHint": "Púlsalo con cualquier ventana delante para empezar un turno. Se envía cuando dejas de hablar, o cuando vuelves a pulsar la tecla.",
+    "shortcutRegistered": "La tecla es tuya.",
+    "shortcutTaken": "Otra cosa en este escritorio ya usa esa tecla.",
+    "shortcutInvalid": "Esa no es una combinación de teclas utilizable."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",
