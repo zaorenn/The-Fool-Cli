@@ -10,6 +10,7 @@ import * as ipcBridge from '@/common/adapter/ipcBridge';
 import { initFoolVoiceBridge, type FoolVoiceBridgeHandlers } from '@/process/bridge/foolVoiceBridge';
 import type {
   VoiceCatalogRequest,
+  VoiceCloneSaveRequest,
   VoiceDownloadRequest,
   VoiceHealthRequest,
   VoiceRemoveRequest,
@@ -64,6 +65,22 @@ const synthesizeRequest = request<VoiceSynthesizeRequest>('synthesize-1', {
   text: 'Merhaba',
 });
 const cancelRequest = request('cancel-1', { operationId: 'download-op' });
+const cloneVoiceRequest = request<VoiceCloneSaveRequest>('clone-1', {
+  operationId: 'clone-op',
+  voiceId: 'ultron',
+  displayName: 'Ultron',
+  languages: ['en'],
+  referenceText: 'How is humanity saved.',
+  audio: {
+    encoding: 'base64',
+    mimeType: 'audio/wav',
+    sampleRateHz: 24000,
+    channels: 1,
+    sampleFormat: 'pcm16le',
+    byteLength: 4,
+    dataBase64: 'UklGRg==',
+  },
+});
 
 const connectLoopback = (): Array<{ name: string; data: unknown }> => {
   let incoming: { emit: (name: string, data: unknown) => unknown } | undefined;
@@ -97,11 +114,12 @@ describe('Fool voice bridge shell', () => {
       ipcBridge.foolVoice.remove.invoke(removeRequest),
       ipcBridge.foolVoice.health.invoke(healthRequest),
       ipcBridge.foolVoice.transcribe.invoke(transcribeRequest),
+      ipcBridge.foolVoice.cloneVoice.invoke(cloneVoiceRequest),
       ipcBridge.foolVoice.synthesize.invoke(synthesizeRequest),
       ipcBridge.foolVoice.cancel.invoke(cancelRequest),
     ]);
 
-    expect(outbound.filter(({ name }) => name.startsWith('subscribe-fool.voice.'))).toHaveLength(7);
+    expect(outbound.filter(({ name }) => name.startsWith('subscribe-fool.voice.'))).toHaveLength(8);
   });
 
   it('reports genuine unavailable health rather than fake readiness', async () => {
@@ -127,6 +145,7 @@ describe('Fool voice bridge shell', () => {
     ['download', () => ipcBridge.foolVoice.download.invoke(downloadRequest), 'download-1'],
     ['remove', () => ipcBridge.foolVoice.remove.invoke(removeRequest), 'remove-1'],
     ['transcribe', () => ipcBridge.foolVoice.transcribe.invoke(transcribeRequest), 'transcribe-1'],
+    ['cloneVoice', () => ipcBridge.foolVoice.cloneVoice.invoke(cloneVoiceRequest), 'clone-1'],
     ['synthesize', () => ipcBridge.foolVoice.synthesize.invoke(synthesizeRequest), 'synthesize-1'],
     ['cancel', () => ipcBridge.foolVoice.cancel.invoke(cancelRequest), 'cancel-1'],
   ])('resolves the unavailable %s operation with its request ID', async (_name, invoke, requestId) => {
@@ -178,6 +197,72 @@ describe('Fool voice bridge shell', () => {
       error: { code: 'payload-too-large', retryable: false },
     });
     expect(transcribe).not.toHaveBeenCalled();
+  });
+
+  it('saves a cloned voice and hands back its profile id', async () => {
+    const cloneVoice = vi.fn().mockReturnValue({ operationId: 'clone-op', profileId: 'cloned:ultron' });
+    initFoolVoiceBridge({ cloneVoice });
+
+    await expect(ipcBridge.foolVoice.cloneVoice.invoke(cloneVoiceRequest)).resolves.toEqual({
+      version: 1,
+      requestId: 'clone-1',
+      ok: true,
+      data: { operationId: 'clone-op', profileId: 'cloned:ultron' },
+    });
+    expect(cloneVoice).toHaveBeenCalledWith(cloneVoiceRequest.payload);
+  });
+
+  // `voiceId` becomes a directory name on disk — the one field here that is a
+  // security boundary, not just a shape check.
+  it('rejects a voice id that could escape the cloned-voices directory before invoking a provider handler', async () => {
+    const cloneVoice = vi.fn();
+    initFoolVoiceBridge({ cloneVoice });
+    const escaping = { ...cloneVoiceRequest, payload: { ...cloneVoiceRequest.payload, voiceId: '../../escape' } };
+
+    await expect(ipcBridge.foolVoice.cloneVoice.invoke(escaping)).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'invalid-request' },
+    });
+    expect(cloneVoice).not.toHaveBeenCalled();
+  });
+
+  // A reference the engine actually reads is 16 or 24 kHz, never the
+  // wider native-rate range synthesised playback audio is allowed.
+  it('rejects a clone reference at a rate that is neither 16 nor 24 kHz', async () => {
+    const cloneVoice = vi.fn();
+    initFoolVoiceBridge({ cloneVoice });
+    const wrongRate = {
+      ...cloneVoiceRequest,
+      payload: { ...cloneVoiceRequest.payload, audio: { ...cloneVoiceRequest.payload.audio, sampleRateHz: 22050 } },
+    };
+
+    await expect(ipcBridge.foolVoice.cloneVoice.invoke(wrongRate)).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'invalid-request' },
+    });
+    expect(cloneVoice).not.toHaveBeenCalled();
+  });
+
+  it('rejects an empty reference text before invoking a provider handler', async () => {
+    const cloneVoice = vi.fn();
+    initFoolVoiceBridge({ cloneVoice });
+    const blank = { ...cloneVoiceRequest, payload: { ...cloneVoiceRequest.payload, referenceText: '   ' } };
+
+    await expect(ipcBridge.foolVoice.cloneVoice.invoke(blank)).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'invalid-request' },
+    });
+    expect(cloneVoice).not.toHaveBeenCalled();
+  });
+
+  it('rejects a response whose profile id was not built from the cloned-voice prefix', async () => {
+    const cloneVoice = vi.fn().mockReturnValue({ operationId: 'clone-op', profileId: 'libritts-p0' });
+    initFoolVoiceBridge({ cloneVoice });
+
+    await expect(ipcBridge.foolVoice.cloneVoice.invoke(cloneVoiceRequest)).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'provider-failed' },
+    });
   });
 
   it('rejects malformed Base64 and byte-length mismatches at the bridge boundary', async () => {

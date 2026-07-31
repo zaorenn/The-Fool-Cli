@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { CLONING_MODEL_ID, type VoiceProfile } from '../../../common/types/foolVoice';
 
@@ -48,6 +48,16 @@ export type ClonedVoice = {
 };
 
 export const clonedProfileId = (voiceId: string): string => `${CLONED_PROFILE_PREFIX}${voiceId}`;
+
+/**
+ * What a voice id may look like once it becomes a directory name under
+ * {@link ClonedVoiceStore.root}. The whole point of the check: this string
+ * reaches the filesystem, so `..` or a path separator in it would let a
+ * caller write outside the cloned-voices directory entirely.
+ */
+const VOICE_ID_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
+
+export const isValidVoiceId = (voiceId: string): boolean => VOICE_ID_PATTERN.test(voiceId);
 
 export const parseClonedProfileId = (profileId: string): string | null =>
   profileId.startsWith(CLONED_PROFILE_PREFIX) ? profileId.slice(CLONED_PROFILE_PREFIX.length) : null;
@@ -100,6 +110,35 @@ export class ClonedVoiceStore {
 
   public find(voiceId: string): ClonedVoice | null {
     return readVoice(this.root, voiceId);
+  }
+
+  /**
+   * Writes a voice cloned from a recording the user just supplied — the same
+   * two files a manual `%APPDATA%` copy would have produced, so nothing
+   * downstream (the catalog, the picker, `synthesize`) needs to know this
+   * voice arrived through the UI rather than by hand.
+   *
+   * Re-saving an id that already exists overwrites it in place: that is how a
+   * user re-records a voice they were not happy with, and there is no
+   * separate "update" entry point to keep in step with this one.
+   */
+  public save(
+    voiceId: string,
+    displayName: string,
+    languages: readonly string[],
+    referenceText: string,
+    wav: Buffer
+  ): void {
+    if (!isValidVoiceId(voiceId)) {
+      throw new Error(`invalid cloned voice id: ${voiceId}`);
+    }
+    const directory = path.join(this.root, voiceId);
+    mkdirSync(directory, { recursive: true });
+    writeFileSync(path.join(directory, 'reference.wav'), wav);
+    writeFileSync(
+      path.join(directory, 'voice.json'),
+      JSON.stringify({ id: voiceId, displayName, languages, referenceText }, null, 2)
+    );
   }
 
   /**

@@ -1364,7 +1364,18 @@
     "shortcutTaken": "Otra cosa en este escritorio ya usa esa tecla.",
     "shortcutInvalid": "Esa no es una combinación de teclas utilizable.",
     "attachScreenshot": "Enviar la pantalla con lo que digo",
-    "attachScreenshotHint": "Un modelo que puede mirar imágenes recibe una foto de esta ventana en cada turno hablado, para que no tengas que describir lo que hay en ella. Los modelos de solo texto no reciben nada."
+    "attachScreenshotHint": "Un modelo que puede mirar imágenes recibe una foto de esta ventana en cada turno hablado, para que no tengas que describir lo que hay en ella. Los modelos de solo texto no reciben nada.",
+    "cloneDropHint": "Drag an audio file here to clone a voice from it, or click to choose one.",
+    "cloneDecoding": "Reading the audio…",
+    "cloneDecodeFailed": "Could not read that audio file.",
+    "cloneSaveFailed": "Could not save the cloned voice.",
+    "cloneNamePlaceholder": "Voice name",
+    "cloneTextPlaceholder": "What is said in the recording — check this matches before saving.",
+    "cloneSaveAndVerify": "Save & Verify",
+    "cloneCancel": "Cancel",
+    "cloneAnother": "Clone another",
+    "cloneSavedUsable": "{{name}} saved and verified — it speaks.",
+    "cloneSavedUnusable": "{{name}} saved, but verification failed. Try a clearer recording."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",
@@ -1374,5 +1385,23 @@
     "surface": "Paneles",
     "text": "Texto",
     "cornerRadius": "Redondeo de esquinas"
+  },
+  "overview": {
+    "title": "Overview",
+    "subtitle": "A snapshot of provider health, MCP tools, scheduled tasks, and running conversations — the same one the Jester sees when asked to check.",
+    "refresh": "Refresh",
+    "loadFailed": "Could not load the overview. Check that the backend is running.",
+    "sectionProviders": "Model providers",
+    "sectionMcp": "MCP servers",
+    "sectionCron": "Scheduled tasks",
+    "sectionConversations": "Running conversations",
+    "providersHealthy": "All configured providers are healthy.",
+    "providersUnhealthy": "{{count}} model(s) reporting unhealthy",
+    "mcpHealthy": "Every enabled MCP server has tools registered.",
+    "mcpNoTools": "{{count}} server(s) enabled with no tools",
+    "cronHealthy": "No scheduled tasks are failing.",
+    "cronFailing": "{{count}} scheduled task(s) failing",
+    "conversationsNone": "No conversations are currently running.",
+    "conversationsRunning": "{{count}} conversation(s) running"
   }
 }

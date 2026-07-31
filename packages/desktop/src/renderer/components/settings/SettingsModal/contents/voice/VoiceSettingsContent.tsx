@@ -13,6 +13,7 @@ import { useFoolVoiceSettings } from '@renderer/hooks/voice/useFoolVoiceSettings
 import { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybackService';
 import { reconcileVoiceModels } from '@renderer/services/voice/reconcileVoiceModels';
 import AudioDeviceSection from './AudioDeviceSection';
+import CloneVoiceUpload from './CloneVoiceUpload';
 import SpeakerBrowser from './SpeakerBrowser';
 import SummarySection from './SummarySection';
 import VoiceAgentSection from './VoiceAgentSection';
@@ -251,19 +252,22 @@ const VoiceSettingsContent: React.FC = () => {
       key: 'textToSpeech',
       title: t('settings.voice.textToSpeech'),
       body: (
-        <VoicePicker
-          models={catalog.models}
-          profiles={catalog.profiles}
-          selectedProfileId={settings.tts.profileId}
-          selectedModelId={settings.tts.modelId}
-          installs={catalog.installs}
-          verifications={catalog.verifications}
-          onSelect={handleSelectVoice}
-          onPreview={handlePreview}
-          onInstall={catalog.install}
-          onVerify={catalog.verify}
-          onBrowseSpeakers={handleBrowseSpeakers}
-        />
+        <>
+          <VoicePicker
+            models={catalog.models}
+            profiles={catalog.profiles}
+            selectedProfileId={settings.tts.profileId}
+            selectedModelId={settings.tts.modelId}
+            installs={catalog.installs}
+            verifications={catalog.verifications}
+            onSelect={handleSelectVoice}
+            onPreview={handlePreview}
+            onInstall={catalog.install}
+            onVerify={catalog.verify}
+            onBrowseSpeakers={handleBrowseSpeakers}
+          />
+          <CloneVoiceUpload models={catalog.models} onSaved={() => void catalog.refresh()} />
+        </>
       ),
     },
   ];

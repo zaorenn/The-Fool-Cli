@@ -1366,7 +1366,18 @@
     "shortcutTaken": "このデスクトップの別のアプリがそのキーを使っています。",
     "shortcutInvalid": "これは使えるキーの組み合わせではありません。",
     "attachScreenshot": "話すときに画面も送る",
-    "attachScreenshotHint": "画像を扱えるモデルには、音声のやり取りごとにこのウィンドウの画像が送られます。画面の内容を説明する必要はありません。テキストのみのモデルには何も送られません。"
+    "attachScreenshotHint": "画像を扱えるモデルには、音声のやり取りごとにこのウィンドウの画像が送られます。画面の内容を説明する必要はありません。テキストのみのモデルには何も送られません。",
+    "cloneDropHint": "Drag an audio file here to clone a voice from it, or click to choose one.",
+    "cloneDecoding": "Reading the audio…",
+    "cloneDecodeFailed": "Could not read that audio file.",
+    "cloneSaveFailed": "Could not save the cloned voice.",
+    "cloneNamePlaceholder": "Voice name",
+    "cloneTextPlaceholder": "What is said in the recording — check this matches before saving.",
+    "cloneSaveAndVerify": "Save & Verify",
+    "cloneCancel": "Cancel",
+    "cloneAnother": "Clone another",
+    "cloneSavedUsable": "{{name}} saved and verified — it speaks.",
+    "cloneSavedUnusable": "{{name}} saved, but verification failed. Try a clearer recording."
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",
@@ -1376,5 +1387,23 @@
     "surface": "パネル",
     "text": "テキスト",
     "cornerRadius": "角の丸み"
+  },
+  "overview": {
+    "title": "Overview",
+    "subtitle": "A snapshot of provider health, MCP tools, scheduled tasks, and running conversations — the same one the Jester sees when asked to check.",
+    "refresh": "Refresh",
+    "loadFailed": "Could not load the overview. Check that the backend is running.",
+    "sectionProviders": "Model providers",
+    "sectionMcp": "MCP servers",
+    "sectionCron": "Scheduled tasks",
+    "sectionConversations": "Running conversations",
+    "providersHealthy": "All configured providers are healthy.",
+    "providersUnhealthy": "{{count}} model(s) reporting unhealthy",
+    "mcpHealthy": "Every enabled MCP server has tools registered.",
+    "mcpNoTools": "{{count}} server(s) enabled with no tools",
+    "cronHealthy": "No scheduled tasks are failing.",
+    "cronFailing": "{{count}} scheduled task(s) failing",
+    "conversationsNone": "No conversations are currently running.",
+    "conversationsRunning": "{{count}} conversation(s) running"
   }
 }

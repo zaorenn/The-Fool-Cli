@@ -112,6 +112,16 @@ initAllBridges({
           text: res.text,
           durationMs: res.durationMs,
         })),
+    cloneVoice: (req) => {
+      const { profileId } = voiceService.saveClonedVoice(
+        req.voiceId,
+        req.displayName,
+        req.languages,
+        req.referenceText,
+        req.audio
+      );
+      return { operationId: req.operationId, profileId };
+    },
     synthesize: (req) =>
       voiceService
         .synthesize(req.operationId, req.providerId, req.modelId, req.profileId, req.language, req.speed, req.text)

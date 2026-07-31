@@ -952,6 +952,30 @@ export type VoiceTranscribeResponse = {
   detectedLanguage?: string;
   durationMs: number;
 };
+
+/**
+ * Reference audio for a cloned voice.
+ *
+ * A wider band than {@link VoicePcm16Wav}: the cloning engine reads this
+ * straight off disk rather than through a capture path fixed at 16 kHz, and
+ * the same 16-or-24 kHz split this app's own references already use — a rate
+ * outside it is rejected rather than resampled again on the way in.
+ */
+export type VoiceCloneReferenceWav = Omit<VoicePcm16Wav, 'sampleRateHz'> & { sampleRateHz: 16000 | 24000 };
+
+export type VoiceCloneSaveRequest = {
+  operationId: string;
+  /** Becomes the on-disk folder name and the `cloned:<voiceId>` profile id — see `isValidVoiceId`. */
+  voiceId: string;
+  displayName: string;
+  languages: string[];
+  referenceText: string;
+  audio: VoiceCloneReferenceWav;
+};
+export type VoiceCloneSaveResponse = {
+  operationId: string;
+  profileId: string;
+};
 export type VoiceSynthesizeRequest = {
   operationId: string;
   providerId: 'local-sherpa' | 'openai-compatible';

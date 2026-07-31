@@ -4,11 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { ClonedVoiceStore, clonedProfileId, parseClonedProfileId } from '@process/services/fool-voice/ClonedVoiceStore';
+import {
+  ClonedVoiceStore,
+  clonedProfileId,
+  isValidVoiceId,
+  parseClonedProfileId,
+} from '@process/services/fool-voice/ClonedVoiceStore';
 
 let root: string;
 
@@ -97,6 +102,64 @@ describe('ClonedVoiceStore', () => {
 
     expect(profiles).toHaveLength(1);
     expect(profiles[0].modelId).toBe('tts-pocket-int8-2026-01-26');
+  });
+});
+
+describe('ClonedVoiceStore.save — the drag-and-drop clone flow lands here', () => {
+  beforeEach(() => {
+    root = mkdtempSync(path.join(tmpdir(), 'cloned-voices-save-'));
+  });
+
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it('writes a reference and a manifest the store can read straight back', () => {
+    const store = new ClonedVoiceStore(root);
+    const wav = Buffer.from([1, 2, 3, 4]);
+
+    store.save('ultron', 'Ultron', ['en'], 'How is humanity saved.', wav);
+
+    const [voice] = store.list();
+    expect(voice.id).toBe('ultron');
+    expect(voice.displayName).toBe('Ultron');
+    expect(voice.referenceText).toBe('How is humanity saved.');
+    expect(readFileSync(voice.referenceWavPath)).toEqual(wav);
+  });
+
+  it('overwrites an existing voice in place rather than creating a second copy', () => {
+    const store = new ClonedVoiceStore(root);
+    store.save('ultron', 'Ultron', ['en'], 'First take.', Buffer.from([1]));
+    store.save('ultron', 'Ultron', ['en'], 'Second, better take.', Buffer.from([2, 2]));
+
+    const all = store.list();
+    expect(all).toHaveLength(1);
+    expect(all[0].referenceText).toBe('Second, better take.');
+    expect(readFileSync(all[0].referenceWavPath)).toEqual(Buffer.from([2, 2]));
+  });
+
+  it('refuses a voice id that would escape the cloned-voices directory', () => {
+    const store = new ClonedVoiceStore(root);
+
+    expect(() => store.save('../../evil', 'Evil', ['en'], 'text', Buffer.from([1]))).toThrow();
+    expect(() => store.save('a/b', 'Slash', ['en'], 'text', Buffer.from([1]))).toThrow();
+    // Nothing was written outside the directory this store owns.
+    expect(existsSync(path.join(root, '..', '..', 'evil'))).toBe(false);
+  });
+});
+
+describe('isValidVoiceId', () => {
+  it('accepts an ordinary slug', () => {
+    expect(isValidVoiceId('ultron')).toBe(true);
+    expect(isValidVoiceId('my-voice_2')).toBe(true);
+  });
+
+  it('rejects anything that could change which directory gets written', () => {
+    expect(isValidVoiceId('../escape')).toBe(false);
+    expect(isValidVoiceId('a/b')).toBe(false);
+    expect(isValidVoiceId('a\\b')).toBe(false);
+    expect(isValidVoiceId('')).toBe(false);
+    expect(isValidVoiceId('.hidden')).toBe(false);
   });
 });
 

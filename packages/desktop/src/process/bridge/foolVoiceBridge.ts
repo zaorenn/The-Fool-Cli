@@ -5,11 +5,14 @@
  */
 
 import { ipcBridge } from '@/common';
+import { isValidVoiceId } from '@process/services/fool-voice/ClonedVoiceStore';
 import type {
   VoiceCancelRequest,
   VoiceCancelResponse,
   VoiceCatalogRequest,
   VoiceCatalogResponse,
+  VoiceCloneSaveRequest,
+  VoiceCloneSaveResponse,
   VoiceDownloadRequest,
   VoiceDownloadResponse,
   VoiceHealth,
@@ -40,6 +43,7 @@ export type FoolVoiceBridgeHandlers = {
   remove: (request: VoiceRemoveRequest) => MaybePromise<VoiceRemoveResponse>;
   health: (request: VoiceHealthRequest) => MaybePromise<VoiceHealth>;
   transcribe: (request: VoiceTranscribeRequest) => MaybePromise<VoiceTranscribeResponse>;
+  cloneVoice: (request: VoiceCloneSaveRequest) => MaybePromise<VoiceCloneSaveResponse>;
   synthesize: (request: VoiceSynthesizeRequest) => MaybePromise<VoiceSynthesizeResponse>;
   cancel: (request: VoiceCancelRequest) => MaybePromise<VoiceCancelResponse>;
   speakers: (request: VoiceSpeakersRequest) => MaybePromise<VoiceSpeakersResponse>;
@@ -65,6 +69,12 @@ const MAX_IDENTIFIER_LENGTH = 128;
 const MAX_TRANSCRIPTION_BYTES = 4 * 1024 * 1024;
 const MAX_SYNTHESIS_BYTES = 16 * 1024 * 1024;
 const MAX_SYNTHESIS_CODE_POINTS = 4000;
+/** A minute of mono 24 kHz PCM16, generous for a cloning reference — upstream
+ * guidance tops out around 30 s, and nothing here asks for more than that. */
+const MAX_CLONE_REFERENCE_BYTES = 24000 * 2 * 60;
+const MAX_DISPLAY_NAME_LENGTH = 64;
+const MAX_REFERENCE_TEXT_CODE_POINTS = 1000;
+const MAX_LANGUAGE_COUNT = 8;
 const PROVIDER_IDS = new Set(['local-sherpa', 'openai-compatible', 'transcript-wake-word']);
 const CAPABILITIES = new Set([
   'transcribe',
@@ -267,6 +277,61 @@ const validateTranscribeRequest = (payload: unknown): BridgeErrorCode | null => 
   return validateAudio(payload.audio, MAX_TRANSCRIPTION_BYTES);
 };
 
+/**
+ * Reference audio validation, distinct from {@link validateAudio}: a cloning
+ * reference is read straight off disk by the engine rather than captured at a
+ * fixed 16 kHz, so it is allowed the same 16-or-24 kHz split this app's own
+ * references already use — no other rate, and no upstream-native range.
+ */
+const validateCloneAudio = (audio: unknown): BridgeErrorCode | null => {
+  if (
+    !isRecord(audio) ||
+    !hasExactKeys(audio, [
+      'encoding',
+      'mimeType',
+      'sampleRateHz',
+      'channels',
+      'sampleFormat',
+      'byteLength',
+      'dataBase64',
+    ]) ||
+    audio.encoding !== 'base64' ||
+    audio.mimeType !== 'audio/wav' ||
+    (audio.sampleRateHz !== 16000 && audio.sampleRateHz !== 24000) ||
+    audio.channels !== 1 ||
+    audio.sampleFormat !== 'pcm16le'
+  ) {
+    return 'invalid-request';
+  }
+  return base64DecodedLength(audio.dataBase64, audio.byteLength, MAX_CLONE_REFERENCE_BYTES).code;
+};
+
+const validateCloneSaveRequest = (payload: unknown): BridgeErrorCode | null => {
+  if (
+    !isRecord(payload) ||
+    !hasExactKeys(payload, ['operationId', 'voiceId', 'displayName', 'languages', 'referenceText', 'audio']) ||
+    !isIdentifier(payload.operationId) ||
+    typeof payload.voiceId !== 'string' ||
+    !isValidVoiceId(payload.voiceId) ||
+    typeof payload.displayName !== 'string' ||
+    payload.displayName.trim().length === 0 ||
+    payload.displayName.length > MAX_DISPLAY_NAME_LENGTH ||
+    !Array.isArray(payload.languages) ||
+    payload.languages.length === 0 ||
+    payload.languages.length > MAX_LANGUAGE_COUNT ||
+    !payload.languages.every((lang) => typeof lang === 'string' && lang.length > 0 && lang.length <= 32) ||
+    typeof payload.referenceText !== 'string' ||
+    payload.referenceText.trim().length === 0 ||
+    [...payload.referenceText].length > MAX_REFERENCE_TEXT_CODE_POINTS
+  ) {
+    return 'invalid-request';
+  }
+  return validateCloneAudio(payload.audio);
+};
+
+const validateCloneSaveResponse = (response: VoiceCloneSaveResponse): boolean =>
+  typeof response.profileId === 'string' && response.profileId.startsWith('cloned:');
+
 const validateSynthesizeRequest = (payload: unknown): BridgeErrorCode | null =>
   isRecord(payload) &&
   hasExactKeys(payload, ['operationId', 'providerId', 'modelId', 'profileId', 'language', 'speed', 'text']) &&
@@ -418,6 +483,13 @@ export function initFoolVoiceBridge(handlers: Partial<FoolVoiceBridgeHandlers> =
     handlers.transcribe,
     undefined,
     'transcribe'
+  );
+  registerHandler(
+    ipcBridge.foolVoice.cloneVoice,
+    validateCloneSaveRequest,
+    handlers.cloneVoice,
+    validateCloneSaveResponse,
+    'cloneVoice'
   );
   registerHandler(
     ipcBridge.foolVoice.synthesize,

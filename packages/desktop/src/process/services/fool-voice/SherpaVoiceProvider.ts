@@ -8,7 +8,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { cpus } from 'node:os';
 import path from 'node:path';
 import type { VoicePcm16Wav, VoiceProfile, VoiceSynthesizedWav } from '../../../common/types/foolVoice';
-import { ClonedVoiceStore, parseClonedProfileId } from './ClonedVoiceStore';
+import { ClonedVoiceStore, clonedProfileId, parseClonedProfileId } from './ClonedVoiceStore';
 import { VoiceModelCatalog } from './VoiceModelCatalog';
 import { AudioCodec } from './audioCodec';
 import {
@@ -417,6 +417,27 @@ export class SherpaVoiceProvider {
   /** The cloned voices, as profiles the catalog can offer. */
   public clonedProfiles(): VoiceProfile[] {
     return this.clonedVoices().profiles();
+  }
+
+  /**
+   * Writes a new cloned voice (or overwrites one with the same id) and hands
+   * back the profile id it can be selected and verified under.
+   *
+   * Nothing here decodes or resamples: the caller (the renderer, which alone
+   * has the Web Audio decoder) has already turned whatever file the user
+   * dropped into mono 16-bit PCM at a rate the engine reads correctly.
+   */
+  public saveClonedVoice(
+    voiceId: string,
+    displayName: string,
+    languages: readonly string[],
+    referenceText: string,
+    wav: Buffer
+  ): string {
+    this.clonedVoices().save(voiceId, displayName, languages, referenceText, wav);
+    // A re-save changes reference.wav's mtime and size, so `referenceFor`'s
+    // existing stamp check already reloads it — nothing to invalidate here.
+    return clonedProfileId(voiceId);
   }
 
   private clampSpeaker(speakerIndex: number, speakerCount: number): number {

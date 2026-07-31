@@ -1,5 +1,6 @@
 import type {
   VoiceCapability,
+  VoiceCloneReferenceWav,
   VoicePcm16Wav,
   VoiceProviderId,
   VoiceSynthesizedWav,
@@ -107,6 +108,23 @@ export class FoolVoiceService {
   private presetSpeakerCount(modelId: string): number {
     const model = VoiceModelCatalog.getModels().find((entry) => entry.id === modelId);
     return model?.role === 'text-to-speech' ? model.profileIds.length : 0;
+  }
+
+  /**
+   * Persists a voice cloned from a recording the renderer has already decoded
+   * and normalised. Cloning has only ever had one engine that can use it
+   * (Pocket, via `local-sherpa`), so unlike `transcribe`/`synthesize` there is
+   * no provider branch here to keep in step.
+   */
+  public saveClonedVoice(
+    voiceId: string,
+    displayName: string,
+    languages: readonly string[],
+    referenceText: string,
+    audio: VoiceCloneReferenceWav
+  ): { profileId: string } {
+    const wav = Buffer.from(audio.dataBase64, 'base64');
+    return { profileId: this.sherpaProvider.saveClonedVoice(voiceId, displayName, languages, referenceText, wav) };
   }
 
   public async cancel(operationId: string): Promise<'cancelling' | 'cancelled' | 'not-found' | 'already-terminal'> {

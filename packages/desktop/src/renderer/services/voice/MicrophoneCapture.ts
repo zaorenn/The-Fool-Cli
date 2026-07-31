@@ -60,7 +60,7 @@ export const encodeWav = (samples: Float32Array, sampleRate: number): ArrayBuffe
  */
 const BASE64_BLOCK_BYTES = 0x8000;
 
-const toBase64 = (buffer: ArrayBuffer): string => {
+export const toBase64 = (buffer: ArrayBuffer): string => {
   const bytes = new Uint8Array(buffer);
   const blocks: string[] = [];
   for (let offset = 0; offset < bytes.length; offset += BASE64_BLOCK_BYTES) {

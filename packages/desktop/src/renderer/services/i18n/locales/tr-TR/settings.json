@@ -1364,7 +1364,18 @@
     "shortcutTaken": "Bu masaüstünde başka bir şey o tuşu tutuyor.",
     "shortcutInvalid": "Bu, kullanılabilecek bir tuş birleşimi değil.",
     "attachScreenshot": "Söylediklerimle birlikte ekranı da gönder",
-    "attachScreenshotHint": "Görsel işleyebilen bir model, her sesli turda bu pencerenin görüntüsünü de alır; ekranda ne olduğunu anlatmak zorunda kalmazsın. Yalnızca metin işleyen modellere hiçbir şey gönderilmez."
+    "attachScreenshotHint": "Görsel işleyebilen bir model, her sesli turda bu pencerenin görüntüsünü de alır; ekranda ne olduğunu anlatmak zorunda kalmazsın. Yalnızca metin işleyen modellere hiçbir şey gönderilmez.",
+    "cloneDropHint": "Bir ses dosyasından ses klonlamak için buraya sürükleyin, veya seçmek için tıklayın.",
+    "cloneDecoding": "Ses okunuyor…",
+    "cloneDecodeFailed": "Bu ses dosyası okunamadı.",
+    "cloneSaveFailed": "Klonlanan ses kaydedilemedi.",
+    "cloneNamePlaceholder": "Ses adı",
+    "cloneTextPlaceholder": "Kayıtta söylenen metin — kaydetmeden önce doğruluğunu kontrol edin.",
+    "cloneSaveAndVerify": "Kaydet ve Denetle",
+    "cloneCancel": "Vazgeç",
+    "cloneAnother": "Başka bir ses klonla",
+    "cloneSavedUsable": "{{name}} kaydedildi ve doğrulandı — konuşuyor.",
+    "cloneSavedUnusable": "{{name}} kaydedildi ama doğrulama başarısız. Daha net bir kayıt deneyin."
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",
@@ -1374,5 +1385,23 @@
     "surface": "Paneller",
     "text": "Yazı",
     "cornerRadius": "Köşe yuvarlaklığı"
+  },
+  "overview": {
+    "title": "Genel Bakış",
+    "subtitle": "Sağlayıcı sağlığı, MCP araçları, zamanlanmış görevler ve çalışan konuşmaların anlık görüntüsü — Jester'a sorulduğunda gördüğü aynı özet.",
+    "refresh": "Yenile",
+    "loadFailed": "Genel bakış yüklenemedi. Arka ucun çalıştığını kontrol edin.",
+    "sectionProviders": "Model sağlayıcıları",
+    "sectionMcp": "MCP sunucuları",
+    "sectionCron": "Zamanlanmış görevler",
+    "sectionConversations": "Çalışan konuşmalar",
+    "providersHealthy": "Yapılandırılmış tüm sağlayıcılar sağlıklı.",
+    "providersUnhealthy": "{{count}} model sağlıksız bildiriyor",
+    "mcpHealthy": "Etkin her MCP sunucusunun kayıtlı aracı var.",
+    "mcpNoTools": "{{count}} sunucu etkin ama aracı yok",
+    "cronHealthy": "Başarısız olan zamanlanmış görev yok.",
+    "cronFailing": "{{count}} zamanlanmış görev başarısız",
+    "conversationsNone": "Şu anda çalışan bir konuşma yok.",
+    "conversationsRunning": "{{count}} konuşma çalışıyor"
   }
 }

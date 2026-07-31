@@ -20,6 +20,8 @@ import type {
   VoiceCancelResponse,
   VoiceCatalogRequest,
   VoiceCatalogResponse,
+  VoiceCloneSaveRequest,
+  VoiceCloneSaveResponse,
   VoiceDownloadProgress,
   VoiceDownloadRequest,
   VoiceDownloadResponse,
@@ -185,6 +187,10 @@ export const foolVoice = {
     VoiceResponseEnvelope<VoiceTranscribeResponse>,
     VoiceRequestEnvelope<VoiceTranscribeRequest>
   >('fool.voice.transcribe'),
+  cloneVoice: bridge.buildProvider<
+    VoiceResponseEnvelope<VoiceCloneSaveResponse>,
+    VoiceRequestEnvelope<VoiceCloneSaveRequest>
+  >('fool.voice.cloneVoice'),
   synthesize: bridge.buildProvider<
     VoiceResponseEnvelope<VoiceSynthesizeResponse>,
     VoiceRequestEnvelope<VoiceSynthesizeRequest>
