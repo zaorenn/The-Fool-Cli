@@ -58,4 +58,26 @@ describe('clean Windows install', () => {
     expect(builder).toContain('resources/bundled-foolcore');
     expect(builder).toMatch(/node_modules\/sherpa-onnx-node/);
   });
+
+  it('stages the runtime and the manifest, which cargo cannot produce', () => {
+    // The backend release zip carried a Node runtime, the agent CLIs and a
+    // bundle manifest alongside the binary. Building the backend from source
+    // removed the download, not the app's need for them, and `afterPack.js`
+    // refuses to package without all three.
+    const buildScript = read('scripts/buildFoolcore.js');
+
+    expect(buildScript).toContain('managed-resources');
+    expect(buildScript).toContain('manifest.json');
+  });
+
+  it('leaves nothing the packer verifies missing from the staged bundle', () => {
+    const stageDir = resolve(projectRoot, 'resources/bundled-foolcore/win32-x64');
+    if (!existsSync(resolve(stageDir, 'foolcore.exe'))) {
+      // Nothing to check until `scripts/buildFoolcore.js` has run.
+      return;
+    }
+
+    expect(existsSync(resolve(stageDir, 'manifest.json'))).toBe(true);
+    expect(existsSync(resolve(stageDir, 'managed-resources', 'manifest.json'))).toBe(true);
+  });
 });
