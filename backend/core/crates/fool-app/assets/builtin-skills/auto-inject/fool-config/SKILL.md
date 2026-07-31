@@ -423,6 +423,12 @@ JSON
 Supported patch fields: `language`, `notification_enabled`, `cron_notification_enabled`,
 `command_queue_enabled`, `save_upload_to_workspace`. Unknown fields are silently ignored.
 
+**These are backend rows, not what the desktop app reads.** The app takes its language,
+its notification switches and everything else the user can see from the client preferences
+below. `settings patch` succeeds and reads back changed, and the window does not move —
+`{"language": "tr-TR"}` sent here leaves the interface in English. Use `settings client put`
+for anything the user will look at, and treat `settings patch` as the server-side copy.
+
 Read or update client preferences:
 
 ```bash
@@ -437,8 +443,90 @@ Read or update client preferences:
 JSON
 ```
 
-Client preferences are a free-form key-value map. Pass `null` to remove a key. Ask the
-user or read back first to discover keys in use — there is no fixed schema.
+Client preferences are where the desktop app keeps every setting the user can see.
+`put` merges: keys you do not send are left alone, and `null` removes a key so it falls
+back to its default.
+
+The store itself accepts any key, so a typo is written happily and silently does nothing.
+`get` only returns keys that already hold a value, which on a fresh install is almost
+none — so it cannot tell you what exists. The catalogue below is the list; use it rather
+than guessing a name.
+
+### Appearance
+
+| Key                    | Type                                   | Meaning                                                                                                                                                             |
+| ---------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `theme.activeId`       | string                                 | Id of the applied theme. This is what changes how the app looks.                                                                                                    |
+| `theme.userThemes`     | array of theme objects                 | Themes the user owns. See **Themes** below.                                                                                                                         |
+| `ui.themeOverrides`    | `{"colors": {...}}`                    | Per-colour overrides on top of the active theme. Keys: `primary`, `background`, `surface`, `text`; values are CSS colours. Absent keys keep the theme's own colour. |
+| `ui.zoomFactor`        | number                                 | App-wide zoom. `1` is 100%.                                                                                                                                         |
+| `ui.fontSize.chat`     | number (px)                            | Chat text size.                                                                                                                                                     |
+| `ui.fontSize.markdown` | number (px)                            | Rendered-markdown text size.                                                                                                                                        |
+| `ui.fontSize.code`     | number (px)                            | Code-block text size.                                                                                                                                               |
+| `language`             | string, e.g. `en-US`, `tr-TR`, `zh-CN` | Interface language. **This one, not `settings patch`.**                                                                                                             |
+
+### System behaviour
+
+| Key                              | Type    | Meaning                                                       |
+| -------------------------------- | ------- | ------------------------------------------------------------- |
+| `system.closeToTray`             | boolean | Closing the window minimises to the tray instead of quitting. |
+| `system.notificationEnabled`     | boolean | System notification when a task finishes.                     |
+| `system.cronNotificationEnabled` | boolean | System notification when a scheduled task finishes.           |
+| `system.keepAwake`               | boolean | Keep the machine awake so scheduled tasks can run.            |
+| `system.autoPreviewOfficeFiles`  | boolean | Open newly created Office files in the workspace preview.     |
+| `skillsMarket.enabled`           | boolean | Whether the external skills market is offered.                |
+
+### Workspace and uploads
+
+| Key                      | Type    | Meaning                                                                   |
+| ------------------------ | ------- | ------------------------------------------------------------------------- |
+| `upload.saveToWorkspace` | boolean | Uploads land in the workspace directory rather than the cache.            |
+| `workspace.pasteConfirm` | boolean | `true` stops asking for confirmation when pasting files into a workspace. |
+
+### Desktop pet
+
+| Key                  | Type                      | Meaning                                                                         |
+| -------------------- | ------------------------- | ------------------------------------------------------------------------------- |
+| `pet.enabled`        | boolean                   | Whether the desktop pet is shown.                                               |
+| `pet.size`           | number: `200`/`280`/`360` | Pet size in pixels. Other values are not offered by the UI.                     |
+| `pet.dnd`            | boolean                   | Do not disturb — the pet stays idle and ignores AI events.                      |
+| `pet.confirmEnabled` | boolean                   | Tool-call confirmations appear in the pet's bubble rather than the chat window. |
+
+### Remote access (WebUI)
+
+| Key                         | Type    | Meaning                                                    |
+| --------------------------- | ------- | ---------------------------------------------------------- |
+| `webui.desktop.enabled`     | boolean | Whether the WebUI service is started at launch.            |
+| `webui.desktop.allowRemote` | boolean | Accept connections from other machines, not just this one. |
+| `webui.desktop.port`        | number  | Port the WebUI listens on.                                 |
+
+These three are read once, when the app starts. Writing `webui.desktop.enabled` records
+the user's intent but does not start the service in the running app — only the next launch
+does. So this is not a way around Mode 5's rule: to turn WebUI on _now_, still send the
+user to **Settings → WebUI**.
+
+### Assistants and agents
+
+| Key                       | Type             | Meaning                                                      |
+| ------------------------- | ---------------- | ------------------------------------------------------------ |
+| `assistants.enabledOrder` | array of strings | Assistant ids, in the order the user arranged them.          |
+| `acp.promptTimeout`       | number (seconds) | How long to wait on a model call before giving up.           |
+| `acp.agentIdleTimeout`    | number (minutes) | Idle time before an agent process is stopped to free memory. |
+
+### Owned by other commands — do not write directly
+
+`mcp.config` (use `config mcp servers`), `tools.imageGenerationModel` and
+`tools.speechToText` (Tools settings), `fool.voice` (Voice settings), `google.config`.
+Writing these by hand replaces the whole structure and loses whatever else it held.
+
+### Internal bookkeeping — never write
+
+`window.bounds`, `guid.lastAssistantId`, `system.firstRunGreeted`,
+`voice.boundConversationId`, `voice.summaryModelId`,
+`migration.providersMigrated_v1`, `migration.assistantsMigrated_v1`.
+
+Deprecated and migrated away from — read only, to understand an old install:
+`theme`, `colorScheme`, `customCss`, `css.themes`, `css.activeThemeId`.
 
 ## Themes
 
