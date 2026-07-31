@@ -1350,6 +1350,8 @@
     "summaryModelCold": "هنوز بارگذاری نشده — نخستین پاسخ کند خواهد بود",
     "summaryNoModel": "هیچ مدلی روی این دستگاه نمی‌تواند خلاصه کند، بنابراین پاسخ‌ها همان‌گونه که نوشته شده خوانده می‌شوند.",
     "summaryChecking": "در حال جست‌وجوی مدل…",
+    "summaryModelPick": "Model",
+    "summaryModelAuto": "Choose automatically",
     "agentSection": "عامل برای صدا",
     "agent": "عامل",
     "agentModel": "مدل",

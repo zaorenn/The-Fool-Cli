@@ -1351,6 +1351,8 @@
     "summaryModelCold": "尚未加载 — 第一次回答会比较慢",
     "summaryNoModel": "本机没有可用于摘要的模型，因此回复将按原文朗读。",
     "summaryChecking": "正在查找模型…",
+    "summaryModelPick": "Model",
+    "summaryModelAuto": "Choose automatically",
     "agentSection": "语音使用的智能体",
     "agent": "智能体",
     "agentModel": "模型",

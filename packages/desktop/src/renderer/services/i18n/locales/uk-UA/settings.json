@@ -1351,6 +1351,8 @@
     "summaryModelCold": "ще не завантажена — перша відповідь буде повільною",
     "summaryNoModel": "На цій машині немає моделі для резюме, тому відповіді читаються як є.",
     "summaryChecking": "Шукаємо модель…",
+    "summaryModelPick": "Model",
+    "summaryModelAuto": "Choose automatically",
     "agentSection": "Агент для голосу",
     "agent": "Агент",
     "agentModel": "Модель",

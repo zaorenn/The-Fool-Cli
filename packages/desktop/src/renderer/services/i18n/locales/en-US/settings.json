@@ -1350,6 +1350,8 @@
     "summaryModelCold": "not loaded yet — the first answer will be slow",
     "summaryNoModel": "No model on this machine can summarise, so replies are spoken as written.",
     "summaryChecking": "Looking for a model…",
+    "summaryModelPick": "Model",
+    "summaryModelAuto": "Choose automatically",
     "agentSection": "Agent for voice",
     "agent": "Agent",
     "agentModel": "Model",

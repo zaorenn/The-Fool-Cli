@@ -1353,6 +1353,8 @@
     "summaryModelCold": "ainda não carregado — a primeira resposta será lenta",
     "summaryNoModel": "Nenhum modelo nesta máquina pode resumir, então as respostas são lidas como estão.",
     "summaryChecking": "Procurando um modelo…",
+    "summaryModelPick": "Model",
+    "summaryModelAuto": "Choose automatically",
     "agentSection": "Agente para voz",
     "agent": "Agente",
     "agentModel": "Modelo",

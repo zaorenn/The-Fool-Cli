@@ -1350,6 +1350,8 @@
     "summaryModelCold": "noch nicht geladen — die erste Antwort wird langsam sein",
     "summaryNoModel": "Auf diesem Rechner kann kein Modell zusammenfassen, deshalb werden Antworten unverändert vorgelesen.",
     "summaryChecking": "Suche ein Modell…",
+    "summaryModelPick": "Model",
+    "summaryModelAuto": "Choose automatically",
     "agentSection": "Agent für Sprache",
     "agent": "Agent",
     "agentModel": "Modell",

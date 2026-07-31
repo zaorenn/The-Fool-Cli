@@ -1350,6 +1350,8 @@
     "summaryModelCold": "ещё не загружена — первый ответ будет медленным",
     "summaryNoModel": "На этой машине нет модели для сводки, поэтому ответы читаются как есть.",
     "summaryChecking": "Ищем модель…",
+    "summaryModelPick": "Model",
+    "summaryModelAuto": "Choose automatically",
     "agentSection": "Агент для голоса",
     "agent": "Агент",
     "agentModel": "Модель",

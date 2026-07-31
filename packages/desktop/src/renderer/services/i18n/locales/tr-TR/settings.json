@@ -1350,6 +1350,8 @@
     "summaryModelCold": "henüz yüklü değil — ilk cevap yavaş olacak",
     "summaryNoModel": "Bu makinede özetleyebilecek bir model yok, bu yüzden cevaplar yazıldığı gibi okunuyor.",
     "summaryChecking": "Model aranıyor…",
+    "summaryModelPick": "Model",
+    "summaryModelAuto": "Otomatik seç",
     "agentSection": "Ses için ajan",
     "agent": "Ajan",
     "agentModel": "Model",

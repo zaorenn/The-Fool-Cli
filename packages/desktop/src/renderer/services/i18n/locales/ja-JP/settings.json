@@ -1352,6 +1352,8 @@
     "summaryModelCold": "まだ読み込まれていません — 最初の返答は遅くなります",
     "summaryNoModel": "このマシンには要約できるモデルがないため、返答はそのまま読み上げられます。",
     "summaryChecking": "モデルを探しています…",
+    "summaryModelPick": "Model",
+    "summaryModelAuto": "Choose automatically",
     "agentSection": "音声で使うエージェント",
     "agent": "エージェント",
     "agentModel": "モデル",

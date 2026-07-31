@@ -1352,6 +1352,8 @@
     "summaryModelCold": "아직 로드되지 않음 — 첫 답변이 느립니다",
     "summaryNoModel": "이 컴퓨터에는 요약할 수 있는 모델이 없어 답변을 그대로 읽습니다.",
     "summaryChecking": "모델을 찾고 있습니다…",
+    "summaryModelPick": "Model",
+    "summaryModelAuto": "Choose automatically",
     "agentSection": "음성용 에이전트",
     "agent": "에이전트",
     "agentModel": "모델",
