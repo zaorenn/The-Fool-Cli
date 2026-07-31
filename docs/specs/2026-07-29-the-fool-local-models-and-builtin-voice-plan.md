@@ -130,7 +130,7 @@ Expected: FAIL — module `@process/services/local-models/lmsCli` not found.
 ```ts
 /**
  * @license
- * Copyright 2026 AionUi (aionui.com)
+ * Copyright 2026 The Fool contributors
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -256,7 +256,7 @@ Expected: FAIL — module not found.
 ```ts
 /**
  * @license
- * Copyright 2026 AionUi (aionui.com)
+ * Copyright 2026 The Fool contributors
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -410,7 +410,7 @@ Expected: FAIL — module not found.
 ```ts
 /**
  * @license
- * Copyright 2026 AionUi (aionui.com)
+ * Copyright 2026 The Fool contributors
  * SPDX-License-Identifier: Apache-2.0
  */
 

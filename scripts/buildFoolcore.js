@@ -107,13 +107,16 @@ if (skipCompile) {
  *
  * Cargo cannot produce this one: it is a Node runtime and the agent CLIs, which
  * the backend release zip used to carry. Preference order is an explicit
- * override, then the bundle this fork was cut from, then an installed copy of
- * the app on this machine.
+ * override, then the upstream bundle this fork was cut from, then an installed
+ * copy of the app on this machine.
+ *
+ * Only reached when nothing is staged yet — see the caller below — so the
+ * already-staged tree is deliberately not a candidate here.
  */
 function resolveManagedResourcesSource() {
   const candidates = [
     process.env.FOOL_MANAGED_RESOURCES_DIR,
-    path.join(projectRoot, 'resources', 'bundled-aioncore', runtimeKey, 'managed-resources'),
+    path.join(projectRoot, 'resources', 'bundled-upstream', runtimeKey, 'managed-resources'),
     process.env.LOCALAPPDATA &&
       path.join(
         process.env.LOCALAPPDATA,

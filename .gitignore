@@ -204,10 +204,10 @@ worktrees/
 docs/superpowers/
 resources/bundled-bun
 resources/bundled-foolcore
-# The old downloader's output, left on disk from before the backend was built
-# here. The rename pass rewrote this path too, which un-ignored the directory
-# that actually exists and nearly committed 890 MB of upstream binaries.
-resources/bundled-aioncore
+# The upstream release bundle this fork was cut from, kept on disk as the only
+# source of the Node runtime and agent CLIs that cargo cannot build. The rename
+# pass once rewrote this path, un-ignoring 890 MB of binaries it nearly committed.
+resources/bundled-upstream
 resources/hub
 /resources/windows/support/_sentry-dsn.generated.nsh
 
