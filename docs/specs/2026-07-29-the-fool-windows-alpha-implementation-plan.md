@@ -4,15 +4,15 @@
 
 **Goal:** Deliver a Windows 10/11 x64 installable alpha of The Fool with complete product branding, a dark crimson default theme, agent-independent local/cloud voice, natural spoken run briefs, ACP agent routing, inspectable local memory, and authenticated LAN phone control.
 
-**Architecture:** Keep AionUi's Electron renderer/main and AionCore boundaries intact. Audio capture, VAD, playback, and visible voice state live in the renderer; native local inference, model files, downloads, and memory persistence live in isolated Electron main-process services reached through the existing typed bridge. The active conversation remains AionCore/ACP-owned, so OpenClaw, Hermes, and other ACP agents share the same Fool Voice and Fool Memory layers.
+**Architecture:** Keep The Fool's Electron renderer/main and FoolCore boundaries intact. Audio capture, VAD, playback, and visible voice state live in the renderer; native local inference, model files, downloads, and memory persistence live in isolated Electron main-process services reached through the existing typed bridge. The active conversation remains FoolCore/ACP-owned, so OpenClaw, Hermes, and other ACP agents share the same Fool Voice and Fool Memory layers.
 
 **Tech Stack:** Electron 37, React 19, TypeScript 5.8 strict mode, Arco Design, UnoCSS, Vitest 4, Playwright, `sherpa-onnx-node`, `better-sqlite3`, `sharp`, `qrcode.react`, electron-builder/NSIS.
 
 ## Global Constraints
 
-- Work only in `C:\Fool-AionUI` on `feat/the-fool-windows-alpha`; never modify `C:\Fool`.
+- Work only in `C:\Fool-The Fool` on `feat/the-fool-windows-alpha`; never modify `C:\Fool`.
 - Preserve Apache-2.0 headers, upstream attribution, and third-party notices.
-- Do not rename internal AionCore protocol fields or `AIONUI_*` compatibility environment variables in this alpha.
+- Do not rename internal FoolCore protocol fields or `FOOL_*` compatibility environment variables in this alpha.
 - Keep each source directory at ten or fewer direct children and follow `AGENTS.md`.
 - Use Arco components for interactive UI and semantic theme tokens outside theme preset files.
 - Add every user-visible key to all languages listed by `packages/desktop/src/common/config/i18n-config.json`.
@@ -35,7 +35,7 @@
 - [x] Install Bun on the workstation, then record `node --version`, `bun --version`, `rustc --version`, `openclaw --version`, and `hermes --version` in `docs/testing/the-fool-alpha-baseline.md`.
 - [x] Run `bun install` and verify that the lockfile is unchanged before feature dependencies are added.
 - [x] Run `bun run test`, `bunx tsc --noEmit`, and `bun run package`; record command, exit code, duration, and any upstream-only failures.
-- [x] Run `bun run build-win:x64:fast` and record the unmodified AionUi artifact path and whether Windows Defender or file locking affects the build.
+- [x] Run `bun run build-win:x64:fast` and record the unmodified The Fool artifact path and whether Windows Defender or file locking affects the build.
 - [x] Add a concise "The Fool alpha development" section to `README.md` with the branch, Windows prerequisites, and exact validation commands.
 - [x] Commit with `docs(build): record The Fool alpha baseline`.
 
@@ -59,12 +59,12 @@
 - Test: `tests/unit/process/trayToggle.test.ts`
 - Test: `tests/integration/branding-metadata.test.ts`
 
-- [x] Write failing tests asserting `PRODUCT_NAME === 'The Fool'`, `PRODUCT_SLUG === 'the-fool'`, installer metadata uses The Fool, and primary UI files import centralized brand values instead of hard-coding AionUi.
+- [x] Write failing tests asserting `PRODUCT_NAME === 'The Fool'`, `PRODUCT_SLUG === 'the-fool'`, installer metadata uses The Fool, and primary UI files import centralized brand values instead of hard-coding The Fool.
 - [x] Use the approved jester-mask JPEG as an image-generation reference to create a transparent, simplified crimson/white/onyx master mark and a single-color tray mark; visually inspect both at full size and 24 px.
 - [x] Add `png-to-ico` as a development dependency and implement `scripts/generate-fool-brand-assets.ts` using `sharp` to emit deterministic 16, 24, 32, 48, 64, 128, 192, 256, and 512 px PNGs plus `resources/app.ico`.
 - [x] Add `packages/desktop/src/common/brand.ts` with product name, short name, slug, protocol label, legal attribution, and neutral support/update states; do not invent a The Fool website or repository URL.
 - [x] Change package, Electron builder, NSIS, executable, shortcut, protocol, browser title, tray tooltip, visible layout wordmark, and About identity to The Fool.
-- [x] Keep "Based on AionUi — Apache-2.0" in About/legal notices and disable upstream auto-update actions for this private alpha.
+- [x] Keep "Based on AionUi — Apache-2.0" in About/legal notices. (Auto-update was disabled for the private alpha; it is now enabled and points at this project's own repository.)
 - [x] Run the brand asset generator, the three targeted tests, `bun run format`, and `bunx tsc --noEmit`.
 - [x] Commit with `feat(brand): establish The Fool product identity`.
 
@@ -192,7 +192,7 @@
 - [ ] Implement hands-free looping: capture, VAD stop, transcribe, wake match, capture/send command, wait for turn completion, narrate, speak, then return to wake listening.
 - [ ] Add barge-in so detected speech immediately aborts `AudioPlaybackService` before opening the next capture.
 - [ ] Add microphone/speaker device switching that cancels active resources and explicitly reinitializes the selected device.
-- [ ] Add a typed `fool:voice-submit` event consumed by the currently mounted generic `SendBox`, preserving all ACP/Aionrs routing and permission behavior.
+- [ ] Add a typed `fool:voice-submit` event consumed by the currently mounted generic `SendBox`, preserving all ACP/Foolrs routing and permission behavior.
 - [ ] Run targeted tests with fake media devices and clocks, then perform a manual quiet-room Turkish wake/VAD test.
 - [ ] Commit with `feat(voice): add hands-free Fool conversation`.
 
@@ -260,7 +260,7 @@
 - Create: `packages/desktop/src/renderer/components/settings/SettingsModal/contents/memory/MemorySettingsContent.tsx`
 - Modify: `packages/desktop/src/renderer/components/settings/SettingsModal/index.tsx`
 - Modify: `packages/desktop/src/renderer/pages/conversation/platforms/acp/AcpSendBox.tsx`
-- Modify: `packages/desktop/src/renderer/pages/conversation/platforms/aionrs/AionrsSendBox.tsx`
+- Modify: `packages/desktop/src/renderer/pages/conversation/platforms/foolrs/FoolrsSendBox.tsx`
 - Modify: `packages/desktop/src/renderer/services/i18n/locales/*/settings.json`
 - Modify: `packages/desktop/src/renderer/services/i18n/locales/*/conversation.json`
 - Test: `tests/unit/process/foolMemoryRepository.test.ts`
@@ -270,11 +270,11 @@
 - Test: `tests/integration/renderer/memoryInjection.test.ts`
 
 - [ ] Write failing repository tests for typed records, provenance, enabled state, project/global scope, edit/delete, and database reopening.
-- [ ] Store memory in `<userData>/fool/fool-memory.sqlite` so it is local, agent-independent, and isolated from AionCore schema migrations.
+- [ ] Store memory in `<userData>/fool/fool-memory.sqlite` so it is local, agent-independent, and isolated from FoolCore schema migrations.
 - [ ] Write failing relevance tests for token overlap, recency tie-breaking, disabled/deleted exclusion, project scoping, duplicate suppression, and a strict context size limit.
 - [ ] Implement explicit candidate approval; no run or correction may write memory without a user confirmation.
 - [ ] Add a Memory settings tab to view, add, edit, enable/disable, scope, and delete preferences, corrections, project facts, procedures, and failure lessons.
-- [ ] Add relevant enabled memories to outbound ACP/Aionrs prompts inside a bounded `<!-- THE_FOOL_MEMORY ... -->` context envelope while leaving the user's visible message unchanged.
+- [ ] Add relevant enabled memories to outbound ACP/Foolrs prompts inside a bounded `<!-- THE_FOOL_MEMORY ... -->` context envelope while leaving the user's visible message unchanged.
 - [ ] Add candidate creation from explicit "remember/hatırla" commands and narrator-detected corrections; show source and exact proposed text before approval.
 - [ ] Run memory tests, i18n generation/checks, formatting, lint, and type checking.
 - [ ] Commit with `feat(memory): add inspectable shared Fool Memory`.
@@ -362,7 +362,7 @@
 ## Final Review Gate
 
 - [ ] Inspect `git diff --check`, `git status --short`, and the complete commit list; confirm no changes exist in `C:\Fool`.
-- [ ] Search primary product surfaces for `AionUi|AionUI` and classify every remaining result as internal compatibility, license attribution, or a defect to fix.
+- [x] Search primary product surfaces for `AionUi|AionUI` and classify every remaining result as internal compatibility, license attribution, or a defect to fix. (Done: tracked references went 1637 → 82; what remains is third-party dependency URLs (OfficeCLI, AionHub), byte-frozen sqlx migrations, required Apache-2.0 attribution, and test assertions guarding against regressions.)
 - [ ] Search new source and docs for `TODO|FIXME|placeholder|coming soon|fake|mock` and remove any product-facing non-functional behavior.
 - [ ] Confirm all bridge request/response types match their service implementations and no `any` was introduced.
 - [ ] Confirm every cloud action is labeled before use and no logs contain secrets or raw microphone audio.
