@@ -6,7 +6,9 @@
 
 import type { IProvider } from '@/common/config/storage';
 import type { VoiceSummaryModelOrigin } from '@/common/types/foolVoice';
-import { CAPABILITY_PATTERNS, getBaseModelName } from '@/common/utils/modelCapabilities';
+import { isChatCapableModel } from '@/common/utils/modelCapabilities';
+
+export { isChatCapableModel } from '@/common/utils/modelCapabilities';
 
 /** An OpenAI-compatible chat endpoint a summary can be asked of. */
 export type SummaryEndpoint = {
@@ -45,18 +47,6 @@ export type SummaryModelInput = {
 const NON_OPENAI_PLATFORMS = new Set(['anthropic', 'bedrock', 'gemini', 'gemini-vertex-ai']);
 
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
-
-/**
- * Whether a model is one that can hold a conversation at all.
- *
- * An embedding or reranking model will answer a chat request with something, and
- * that something is never a summary — so they are excluded before a choice is
- * made rather than discovered when the pet reads out a vector.
- */
-export const isChatCapableModel = (modelId: string): boolean => {
-  const base = getBaseModelName(modelId);
-  return !CAPABILITY_PATTERNS.embedding.test(base) && !CAPABILITY_PATTERNS.rerank.test(base);
-};
 
 const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
 

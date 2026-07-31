@@ -62,6 +62,18 @@ export const getBaseModelName = (modelName: string): string => {
     .replace(/^-|-$/g, '');
 };
 
+/**
+ * Whether a model is one that can hold a conversation at all.
+ *
+ * An embedding or reranking model will answer a chat request with something,
+ * and that something is never a summary — so they are excluded before a
+ * choice is made rather than discovered when the pet reads out a vector.
+ */
+export const isChatCapableModel = (modelId: string): boolean => {
+  const base = getBaseModelName(modelId);
+  return !CAPABILITY_PATTERNS.embedding.test(base) && !CAPABILITY_PATTERNS.rerank.test(base);
+};
+
 export type ModelOpenAiApiModeChoice = ModelOpenAiApiMode | 'auto';
 export type ModelImageInputChoice = ModelImageInputCapability | 'auto';
 
