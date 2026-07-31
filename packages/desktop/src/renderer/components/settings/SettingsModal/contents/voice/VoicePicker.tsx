@@ -5,8 +5,8 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { Button, Tag, Tooltip } from '@arco-design/web-react';
-import { Attention, Check, CloseOne, PlayOne, VolumeUp } from '@icon-park/react';
+import { Button, Popconfirm, Tag, Tooltip } from '@arco-design/web-react';
+import { Attention, Check, CloseOne, Delete, PlayOne, VolumeUp } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import type { VoiceModel, VoiceProfile } from '@/common/types/foolVoice';
 import type { InstallState, VerificationState } from './useVoiceCatalog';
@@ -36,6 +36,7 @@ export type VoicePickerProps = {
   onVerify: (modelId: string) => void;
   /** Opens the full speaker list for models that carry more voices than presets. */
   onBrowseSpeakers: (modelId: string) => void;
+  onDelete: (profile: VoiceProfile) => void;
 };
 
 const isInstalled = (model: VoiceModel): boolean => model.state.status === 'ready';
@@ -61,6 +62,7 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
   onInstall,
   onVerify,
   onBrowseSpeakers,
+  onDelete,
 }) => {
   const { t } = useTranslation();
   const [previewingId, setPreviewingId] = useState<string | null>(null);
@@ -204,6 +206,31 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
                           }}
                         />
                       </Tooltip>
+                      {profile.deletable && (
+                        <Popconfirm
+                          title={t('settings.voice.deleteClonedConfirm', { name: profile.displayName })}
+                          okText={t('common.confirm')}
+                          cancelText={t('common.cancel')}
+                          onOk={(event) => {
+                            event?.stopPropagation();
+                            onDelete(profile);
+                          }}
+                          onCancel={(event) => event?.stopPropagation()}
+                        >
+                          <Tooltip content={t('settings.voice.deleteCloned')} mini>
+                            <Button
+                              type='text'
+                              size='mini'
+                              shape='circle'
+                              status='danger'
+                              aria-label={t('settings.voice.deleteCloned')}
+                              data-testid={`voice-delete-${profile.id}`}
+                              icon={<Delete theme='outline' size='14' />}
+                              onClick={(event) => event.stopPropagation()}
+                            />
+                          </Tooltip>
+                        </Popconfirm>
+                      )}
                     </span>
                   </div>
                 );

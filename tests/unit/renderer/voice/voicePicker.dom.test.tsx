@@ -27,7 +27,12 @@ const model = (id: string, installed: boolean): VoiceModel =>
     profileIds: [],
   }) as VoiceModel;
 
-const profile = (id: string, modelId: string, displayName: string): VoiceProfile => ({
+const profile = (
+  id: string,
+  modelId: string,
+  displayName: string,
+  overrides: Partial<VoiceProfile> = {}
+): VoiceProfile => ({
   id,
   providerId: 'local-sherpa',
   modelId,
@@ -37,6 +42,7 @@ const profile = (id: string, modelId: string, displayName: string): VoiceProfile
   languages: ['en'],
   speakerId: 0,
   deletable: false,
+  ...overrides,
 });
 
 const setup = (installed = true, overrides: Partial<React.ComponentProps<typeof VoicePicker>> = {}) => {
@@ -45,6 +51,7 @@ const setup = (installed = true, overrides: Partial<React.ComponentProps<typeof 
   const onInstall = vi.fn();
   const onVerify = vi.fn();
   const onBrowseSpeakers = vi.fn();
+  const onDelete = vi.fn();
 
   render(
     <VoicePicker
@@ -59,11 +66,12 @@ const setup = (installed = true, overrides: Partial<React.ComponentProps<typeof 
       onInstall={onInstall}
       onVerify={onVerify}
       onBrowseSpeakers={onBrowseSpeakers}
+      onDelete={onDelete}
       {...overrides}
     />
   );
 
-  return { onSelect, onPreview, onInstall, onVerify, onBrowseSpeakers };
+  return { onSelect, onPreview, onInstall, onVerify, onBrowseSpeakers, onDelete };
 };
 
 describe('VoicePicker', () => {
@@ -115,6 +123,7 @@ describe('VoicePicker', () => {
         onInstall={vi.fn()}
         onVerify={vi.fn()}
         onBrowseSpeakers={vi.fn()}
+        onDelete={vi.fn()}
       />
     );
 
@@ -131,6 +140,59 @@ describe('VoicePicker', () => {
 
     expect(onPreview).toHaveBeenCalledWith(expect.objectContaining({ id: 'am_adam' }));
     expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('offers deletion only for a voice that is deletable', () => {
+    render(
+      <VoicePicker
+        models={[model('pocket', true)]}
+        profiles={[
+          profile('cloned:ultron', 'pocket', 'Ultron', { kind: 'cloned', deletable: true }),
+          profile('af_bella', 'pocket', 'Bella'),
+        ]}
+        selectedProfileId='cloned:ultron'
+        selectedModelId='pocket'
+        installs={{}}
+        verifications={{}}
+        onSelect={vi.fn()}
+        onPreview={vi.fn()}
+        onInstall={vi.fn()}
+        onVerify={vi.fn()}
+        onBrowseSpeakers={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('voice-delete-cloned:ultron')).toBeTruthy();
+    expect(screen.queryByTestId('voice-delete-af_bella')).toBeNull();
+  });
+
+  it('asks for confirmation before deleting, and does not select the card in the process', () => {
+    const onDelete = vi.fn();
+    const onSelect = vi.fn();
+    render(
+      <VoicePicker
+        models={[model('pocket', true)]}
+        profiles={[profile('cloned:ultron', 'pocket', 'Ultron', { kind: 'cloned', deletable: true })]}
+        selectedProfileId=''
+        selectedModelId=''
+        installs={{}}
+        verifications={{}}
+        onSelect={onSelect}
+        onPreview={vi.fn()}
+        onInstall={vi.fn()}
+        onVerify={vi.fn()}
+        onBrowseSpeakers={vi.fn()}
+        onDelete={onDelete}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('voice-delete-cloned:ultron'));
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(onSelect).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText('common.confirm'));
+    expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: 'cloned:ultron' }));
   });
 
   it('offers an install action and refuses selection when the model is missing', () => {
@@ -159,6 +221,7 @@ describe('VoicePicker', () => {
         onInstall={vi.fn()}
         onVerify={vi.fn()}
         onBrowseSpeakers={vi.fn()}
+        onDelete={vi.fn()}
       />
     );
 
