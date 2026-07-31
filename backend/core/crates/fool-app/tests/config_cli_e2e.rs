@@ -33,6 +33,7 @@ async fn fake_context_conversation(Path(id): Path<String>) -> axum::Json<serde_j
         "data": {
             "id": id,
             "name": "Current conversation",
+            "project_id": "project-current",
             "assistant": {
                 "id": "assistant-current",
                 "source": "user",
@@ -294,6 +295,47 @@ async fn fake_agent_management_list() -> axum::Json<serde_json::Value> {
     }))
 }
 
+async fn fake_kanban_board(Path(project_id): Path<String>) -> axum::Json<serde_json::Value> {
+    axum::Json(json!({
+        "success": true,
+        "data": { "columns": [{ "column_id": "col-todo", "name": "To do", "order_index": 1024, "cards": [] }], "project_id": project_id }
+    }))
+}
+
+async fn fake_kanban_card_create(
+    State(capture): State<SharedCapture>,
+    Path(project_id): Path<String>,
+    axum::Json(payload): axum::Json<serde_json::Value>,
+) -> axum::Json<serde_json::Value> {
+    *capture.lock().unwrap() = Some(Capture {
+        resource_id: Some(project_id),
+        payload: Some(payload.clone()),
+        ..Capture::default()
+    });
+    axum::Json(json!({
+        "success": true,
+        "data": { "card_id": "card-1", "column_id": payload["column_id"], "title": payload["title"], "body": "" }
+    }))
+}
+
+async fn fake_agent_health_check(
+    State(capture): State<SharedCapture>,
+    Path(agent_id): Path<String>,
+) -> axum::Json<serde_json::Value> {
+    *capture.lock().unwrap() = Some(Capture {
+        resource_id: Some(agent_id.clone()),
+        ..Capture::default()
+    });
+    axum::Json(json!({
+        "success": true,
+        "data": {
+            "id": agent_id,
+            "name": "Hermes",
+            "status": "online"
+        }
+    }))
+}
+
 async fn fake_cron_job_skill_save(
     State(capture): State<SharedCapture>,
     Path(job_id): Path<String>,
@@ -386,6 +428,9 @@ async fn spawn_config_probe_server(capture: SharedCapture) -> (String, tokio::ta
         )
         .route("/api/agents/management", get(fake_agent_management_list))
         .route("/api/agents/custom/{agent_id}", put(fake_agent_custom_update))
+        .route("/api/agents/{agent_id}/health-check", post(fake_agent_health_check))
+        .route("/api/projects/{project_id}/kanban", get(fake_kanban_board))
+        .route("/api/projects/{project_id}/kanban/cards", post(fake_kanban_card_create))
         .route("/api/cron/jobs", get(fake_cron_jobs_list).post(fake_cron_job_create))
         .route(
             "/api/cron/jobs/{job_id}/skill",
@@ -826,6 +871,112 @@ async fn config_agent_custom_update_reads_agent_id_from_stdin() {
     assert_eq!(captured.resource_id.as_deref(), Some("agent/custom"));
     let payload = captured.payload.unwrap();
     assert!(payload.get("agent_id").is_none());
+}
+
+/// `"project_id": "current"` must resolve from the conversation the
+/// runtime context names, the same way `"conversation_id": "current"` already
+/// does elsewhere — and the field must not leak into the card-create body,
+/// which the route does not expect it in.
+#[tokio::test]
+async fn config_kanban_cards_create_resolves_current_project_from_the_conversation() {
+    let capture = Arc::new(Mutex::new(None));
+    let (base_url, handle) = spawn_config_probe_server(capture.clone()).await;
+
+    let mut child = config_command()
+        .args(["kanban", "cards", "create"])
+        .env("FOOL_BASE_URL", &base_url)
+        .env("FOOL_CONVERSATION_ID", "conv-kanban")
+        .env("FOOL_USER_ID", "user-kanban")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    child
+        .stdin
+        .as_mut()
+        .unwrap()
+        .write_all(br#"{ "project_id": "current", "column_id": "col-todo", "title": "Ship it", "body": "" }"#)
+        .await
+        .unwrap();
+    drop(child.stdin.take());
+
+    let output = child.wait_with_output().await.unwrap();
+
+    handle.abort();
+    assert!(
+        output.status.success(),
+        "kanban cards create failed\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let captured = capture
+        .lock()
+        .unwrap()
+        .take()
+        .expect("server should receive the card create POST");
+    // The path used the conversation's project, not the literal string "current".
+    assert_eq!(captured.resource_id.as_deref(), Some("project-current"));
+    let payload = captured.payload.unwrap();
+    assert!(
+        payload.get("project_id").is_none(),
+        "project_id must not leak into the request body"
+    );
+
+    let stdout: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(stdout["data"]["title"], "Ship it");
+    assert_eq!(stdout["meta"]["resolved_selectors"]["project_id"], "project-current");
+}
+
+/// `list` reads a cached verdict; `recheck` must re-probe instead — the whole
+/// reason it exists is a CLI that list still calls missing after the user
+/// installed it, or put it on PATH, since the last check.
+#[tokio::test]
+async fn config_agents_recheck_reads_agent_id_from_stdin_and_posts_to_health_check() {
+    let capture = Arc::new(Mutex::new(None));
+    let (base_url, handle) = spawn_config_probe_server(capture.clone()).await;
+
+    let mut child = config_command()
+        .args(["agents", "recheck"])
+        .env("FOOL_BASE_URL", &base_url)
+        .env("FOOL_CONVERSATION_ID", "conv-agent")
+        .env("FOOL_USER_ID", "user-agent")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    child
+        .stdin
+        .as_mut()
+        .unwrap()
+        .write_all(br#"{ "agent_id": "hermes" }"#)
+        .await
+        .unwrap();
+    drop(child.stdin.take());
+
+    let output = child.wait_with_output().await.unwrap();
+
+    handle.abort();
+    assert!(
+        output.status.success(),
+        "agents recheck failed\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let captured = capture
+        .lock()
+        .unwrap()
+        .take()
+        .expect("server should receive the health-check POST");
+    assert_eq!(captured.resource_id.as_deref(), Some("hermes"));
+
+    let stdout: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(stdout["data"]["status"], "online");
+    // Readback against the collection, same shape every other agents command uses.
+    assert!(stdout["meta"]["before"].is_array());
+    assert!(stdout["meta"]["after"].is_array());
 }
 
 #[tokio::test]

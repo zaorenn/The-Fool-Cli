@@ -311,6 +311,47 @@ pub(crate) enum ConfigCommand {
     Agents(ConfigAgentsArgs),
     /// Manage scheduled tasks.
     Cron(ConfigCronArgs),
+    /// Manage the current project's Kanban board.
+    Kanban(ConfigKanbanArgs),
+}
+
+#[derive(Args, Debug, Clone)]
+pub(crate) struct ConfigKanbanArgs {
+    #[command(subcommand)]
+    pub command: ConfigKanbanCommand,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub(crate) enum ConfigKanbanCommand {
+    /// The whole board: columns in order, each with its cards.
+    Board,
+    Columns(ConfigKanbanColumnsArgs),
+    Cards(ConfigKanbanCardsArgs),
+}
+
+#[derive(Args, Debug, Clone)]
+pub(crate) struct ConfigKanbanColumnsArgs {
+    #[command(subcommand)]
+    pub command: ConfigKanbanColumnsCommand,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub(crate) enum ConfigKanbanColumnsCommand {
+    Create,
+    Delete,
+}
+
+#[derive(Args, Debug, Clone)]
+pub(crate) struct ConfigKanbanCardsArgs {
+    #[command(subcommand)]
+    pub command: ConfigKanbanCardsCommand,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub(crate) enum ConfigKanbanCardsCommand {
+    Create,
+    Update,
+    Delete,
 }
 
 #[derive(Args, Debug, Clone)]
@@ -503,6 +544,7 @@ pub(crate) struct ConfigAgentsArgs {
 pub(crate) enum ConfigAgentsCommand {
     List,
     Enable,
+    Recheck,
     Overrides(ConfigAgentOverridesArgs),
     Custom(ConfigAgentCustomArgs),
 }

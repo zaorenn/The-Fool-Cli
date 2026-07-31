@@ -123,6 +123,7 @@ pub(crate) fn data() -> Value {
             domain("agents", &[
                 no_input_redacted(&["agents", "list"], "List agent catalog and custom agents.", false, &["env"]),
                 stdin_redacted(&["agents", "enable"], "Enable or disable an agent.", &["agent_id", "enabled"], &[], true, false, &["env"]),
+                stdin_redacted(&["agents", "recheck"], "Re-probe one agent's CLI on $PATH now, instead of reading the cached verdict from the last check.", &["agent_id"], &[], true, false, &["env"]),
                 stdin_redacted(&["agents", "overrides", "get"], "Read agent overrides.", &["agent_id"], &[], false, false, &["env", "secret overrides"]),
                 stdin_redacted(&["agents", "overrides", "set"], "Set agent overrides.", &["agent_id"], &[], true, false, &["env", "secret overrides"]),
                 stdin_redacted(&["agents", "custom", "create"], "Create a custom agent.", &["name", "command"], &[], true, false, &["env"]),
@@ -143,6 +144,14 @@ pub(crate) fn data() -> Value {
                 no_input(&["cron", "current", "list"], "List scheduled tasks for the current conversation.", false),
                 stdin(&["cron", "current", "create"], "Create the scheduled task for the current conversation.", &["name", "schedule", "schedule_description", "message"], &["conversation_id"], true, false),
                 stdin(&["cron", "current", "update"], "Update the scheduled task for the current conversation.", &["job_id"], &["conversation_id"], true, false),
+            ]),
+            domain("kanban", &[
+                stdin(&["kanban", "board"], "Read the current project's Kanban board: columns in order, each with its cards.", &["project_id"], &["project_id"], false, false),
+                stdin(&["kanban", "columns", "create"], "Add a column to the board.", &["project_id", "name"], &["project_id"], true, false),
+                stdin(&["kanban", "columns", "delete"], "Delete a column. Refuses while it still holds cards.", &["project_id", "column_id"], &["project_id"], true, true),
+                stdin(&["kanban", "cards", "create"], "Add a card to a column.", &["project_id", "column_id", "title", "body"], &["project_id"], true, false),
+                stdin(&["kanban", "cards", "update"], "Edit a card, move it to another column, or reposition it after a named card.", &["project_id", "card_id", "title", "body", "assignee", "due_at", "conversation_id", "column_id", "after_card_id"], &["project_id"], true, false),
+                stdin(&["kanban", "cards", "delete"], "Delete a card.", &["project_id", "card_id"], &["project_id"], true, true),
             ]),
         ]
     })

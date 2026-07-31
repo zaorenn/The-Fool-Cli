@@ -11,10 +11,11 @@ use crate::cli::{
     ConfigAgentCustomCommand, ConfigAgentOverridesCommand, ConfigAgentsArgs, ConfigAgentsCommand, ConfigArgs,
     ConfigAssistantTextCommand, ConfigAssistantsArgs, ConfigAssistantsCommand, ConfigCommand, ConfigConversationArgs,
     ConfigConversationCommand, ConfigCronArgs, ConfigCronCommand, ConfigCronCurrentArgs, ConfigCronCurrentCommand,
-    ConfigCronJobSkillCommand, ConfigCronJobsArgs, ConfigCronJobsCommand, ConfigMcpArgs, ConfigMcpCommand,
-    ConfigMcpOauthCommand, ConfigMcpServersCommand, ConfigProviderModelsCommand, ConfigProvidersArgs,
-    ConfigProvidersCommand, ConfigSettingsArgs, ConfigSettingsClientCommand, ConfigSettingsCommand, ConfigSkillsArgs,
-    ConfigSkillsCommand, ConfigSkillsExternalPathsCommand, ConfigSkillsMarketCommand,
+    ConfigCronJobSkillCommand, ConfigCronJobsArgs, ConfigCronJobsCommand, ConfigKanbanArgs, ConfigKanbanCardsCommand,
+    ConfigKanbanColumnsCommand, ConfigKanbanCommand, ConfigMcpArgs, ConfigMcpCommand, ConfigMcpOauthCommand,
+    ConfigMcpServersCommand, ConfigProviderModelsCommand, ConfigProvidersArgs, ConfigProvidersCommand,
+    ConfigSettingsArgs, ConfigSettingsClientCommand, ConfigSettingsCommand, ConfigSkillsArgs, ConfigSkillsCommand,
+    ConfigSkillsExternalPathsCommand, ConfigSkillsMarketCommand,
 };
 use crate::commands::config_capabilities;
 
@@ -47,6 +48,7 @@ async fn run(args: ConfigArgs) -> Result<(), ConfigError> {
         ConfigCommand::Settings(args) => run_settings(&client, args).await,
         ConfigCommand::Agents(args) => run_agents(&client, args).await,
         ConfigCommand::Cron(args) => run_cron(&client, args).await,
+        ConfigCommand::Kanban(args) => run_kanban(&client, args).await,
     }
 }
 
@@ -739,6 +741,21 @@ async fn run_agents(client: &reqwest::Client, args: ConfigAgentsArgs) -> Result<
             )
             .await
         }
+        ConfigAgentsCommand::Recheck => {
+            // The cached row `list` returns can predate an install: a CLI put
+            // on PATH after the app last started stays "missing" until this
+            // runs. This is the only agents command that re-probes the CLI
+            // rather than reading what a previous probe already found.
+            run_id_no_body_request_with_collection_readback(
+                client,
+                "config agents recheck",
+                Method::POST,
+                IdRoute::new("/api/agents", "/health-check", "agent_id"),
+                "/api/agents/management",
+                true,
+            )
+            .await
+        }
         ConfigAgentsCommand::Overrides(args) => match args.command {
             ConfigAgentOverridesCommand::Get => {
                 run_id_no_body_request(
@@ -982,6 +999,149 @@ async fn run_cron_current_update(client: &reqwest::Client) -> Result<(), ConfigE
     extra.insert("before".into(), redact_meta_value(before));
     extra.insert("after".into(), redact_meta_value(after));
     print_envelope(data, meta_from_map(extra), command)
+}
+
+async fn run_kanban(client: &reqwest::Client, args: ConfigKanbanArgs) -> Result<(), ConfigError> {
+    match args.command {
+        ConfigKanbanCommand::Board => run_kanban_board(client).await,
+        ConfigKanbanCommand::Columns(args) => match args.command {
+            ConfigKanbanColumnsCommand::Create => run_kanban_column_create(client).await,
+            ConfigKanbanColumnsCommand::Delete => run_kanban_column_delete(client).await,
+        },
+        ConfigKanbanCommand::Cards(args) => match args.command {
+            ConfigKanbanCardsCommand::Create => run_kanban_card_create(client).await,
+            ConfigKanbanCardsCommand::Update => run_kanban_card_update(client).await,
+            ConfigKanbanCardsCommand::Delete => run_kanban_card_delete(client).await,
+        },
+    }
+}
+
+/// Takes `project_id` off the payload (it is never a field the routes expect
+/// in the body) and resolves it: `"current"` or an absent field asks for the
+/// project the current conversation is bound to; anything else is used as-is.
+async fn resolve_project_id(
+    client: &reqwest::Client,
+    env: &ConfigEnv,
+    command: &str,
+    payload: &mut Value,
+    selectors: &mut SelectorMeta,
+) -> Result<String, ConfigError> {
+    let object = payload.as_object_mut().ok_or_else(|| {
+        ConfigError::new(
+            ConfigErrorCode::PayloadInvalid,
+            command,
+            "JSON payload must be an object",
+        )
+        .field("field", "stdin")
+    })?;
+    let raw = object.remove("project_id");
+
+    if raw.is_none() || raw.as_ref().and_then(Value::as_str) == Some("current") {
+        let conversation = fetch_current_conversation(client, env, command).await?;
+        let project_id = conversation
+            .get("project_id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| {
+                ConfigError::new(
+                    ConfigErrorCode::PayloadInvalid,
+                    command,
+                    "the current conversation has no project; open one inside a project first",
+                )
+                .field("field", "project_id")
+            })?
+            .to_owned();
+        selectors.insert("project_id", project_id.clone());
+        return Ok(project_id);
+    }
+
+    raw.as_ref().and_then(Value::as_str).map(str::to_owned).ok_or_else(|| {
+        ConfigError::new(ConfigErrorCode::PayloadInvalid, command, "project_id must be a string")
+            .field("field", "project_id")
+    })
+}
+
+async fn run_kanban_board(client: &reqwest::Client) -> Result<(), ConfigError> {
+    let command = "config kanban board";
+    let env = ConfigEnv::from_env(command)?;
+    let mut payload = read_stdin_payload(command)?;
+    let mut selectors = SelectorMeta::default();
+    let project_id = resolve_project_id(client, &env, command, &mut payload, &mut selectors).await?;
+    let path = format!("/api/projects/{}/kanban", encode_path_segment(&project_id));
+    let data = request_json(client, &env, Method::GET, &path, None, command).await?;
+    print_envelope(data, meta(Some(selectors)), command)
+}
+
+async fn run_kanban_column_create(client: &reqwest::Client) -> Result<(), ConfigError> {
+    let command = "config kanban columns create";
+    let env = ConfigEnv::from_env(command)?;
+    let mut payload = read_stdin_payload(command)?;
+    let mut selectors = SelectorMeta::default();
+    let project_id = resolve_project_id(client, &env, command, &mut payload, &mut selectors).await?;
+    let board_path = format!("/api/projects/{}/kanban", encode_path_segment(&project_id));
+    let create_path = format!("{board_path}/columns");
+    let before = request_json(client, &env, Method::GET, &board_path, None, command).await?;
+    let data = request_json(client, &env, Method::POST, &create_path, Some(payload), command).await?;
+    let after = request_json(client, &env, Method::GET, &board_path, None, command).await?;
+    print_config_output(data, readback_meta(selectors.into_map(), before, after), command, false)
+}
+
+async fn run_kanban_column_delete(client: &reqwest::Client) -> Result<(), ConfigError> {
+    let command = "config kanban columns delete";
+    let env = ConfigEnv::from_env(command)?;
+    let mut payload = read_stdin_payload(command)?;
+    let mut selectors = SelectorMeta::default();
+    let project_id = resolve_project_id(client, &env, command, &mut payload, &mut selectors).await?;
+    let column_id = take_required_string_field(&mut payload, "column_id", command)?;
+    let board_path = format!("/api/projects/{}/kanban", encode_path_segment(&project_id));
+    let delete_path = format!("{board_path}/columns/{}", encode_path_segment(&column_id));
+    let before = request_json(client, &env, Method::GET, &board_path, None, command).await?;
+    let data = request_json(client, &env, Method::DELETE, &delete_path, None, command).await?;
+    let after = request_json(client, &env, Method::GET, &board_path, None, command).await?;
+    print_config_output(data, readback_meta(selectors.into_map(), before, after), command, false)
+}
+
+async fn run_kanban_card_create(client: &reqwest::Client) -> Result<(), ConfigError> {
+    let command = "config kanban cards create";
+    let env = ConfigEnv::from_env(command)?;
+    let mut payload = read_stdin_payload(command)?;
+    let mut selectors = SelectorMeta::default();
+    let project_id = resolve_project_id(client, &env, command, &mut payload, &mut selectors).await?;
+    let board_path = format!("/api/projects/{}/kanban", encode_path_segment(&project_id));
+    let create_path = format!("{board_path}/cards");
+    let before = request_json(client, &env, Method::GET, &board_path, None, command).await?;
+    let data = request_json(client, &env, Method::POST, &create_path, Some(payload), command).await?;
+    let after = request_json(client, &env, Method::GET, &board_path, None, command).await?;
+    print_config_output(data, readback_meta(selectors.into_map(), before, after), command, false)
+}
+
+async fn run_kanban_card_update(client: &reqwest::Client) -> Result<(), ConfigError> {
+    let command = "config kanban cards update";
+    let env = ConfigEnv::from_env(command)?;
+    let mut payload = read_stdin_payload(command)?;
+    let mut selectors = SelectorMeta::default();
+    let project_id = resolve_project_id(client, &env, command, &mut payload, &mut selectors).await?;
+    let card_id = take_required_string_field(&mut payload, "card_id", command)?;
+    let board_path = format!("/api/projects/{}/kanban", encode_path_segment(&project_id));
+    let update_path = format!("{board_path}/cards/{}", encode_path_segment(&card_id));
+    let before = request_json(client, &env, Method::GET, &board_path, None, command).await?;
+    let data = request_json(client, &env, Method::PATCH, &update_path, Some(payload), command).await?;
+    let after = request_json(client, &env, Method::GET, &board_path, None, command).await?;
+    print_config_output(data, readback_meta(selectors.into_map(), before, after), command, false)
+}
+
+async fn run_kanban_card_delete(client: &reqwest::Client) -> Result<(), ConfigError> {
+    let command = "config kanban cards delete";
+    let env = ConfigEnv::from_env(command)?;
+    let mut payload = read_stdin_payload(command)?;
+    let mut selectors = SelectorMeta::default();
+    let project_id = resolve_project_id(client, &env, command, &mut payload, &mut selectors).await?;
+    let card_id = take_required_string_field(&mut payload, "card_id", command)?;
+    let board_path = format!("/api/projects/{}/kanban", encode_path_segment(&project_id));
+    let delete_path = format!("{board_path}/cards/{}", encode_path_segment(&card_id));
+    let before = request_json(client, &env, Method::GET, &board_path, None, command).await?;
+    let data = request_json(client, &env, Method::DELETE, &delete_path, None, command).await?;
+    let after = request_json(client, &env, Method::GET, &board_path, None, command).await?;
+    print_config_output(data, readback_meta(selectors.into_map(), before, after), command, false)
 }
 
 async fn run_no_input_request(

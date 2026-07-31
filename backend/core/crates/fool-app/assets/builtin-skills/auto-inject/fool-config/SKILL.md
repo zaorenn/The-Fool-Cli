@@ -592,6 +592,24 @@ Enable or disable an agent:
 JSON
 ```
 
+`list` shows the verdict from the last check, not the current truth. An agent's CLI
+installed (or put on PATH) after the app last checked still reads `missing` here — the
+row is cached, not live. If the user says an agent they just installed is not showing up,
+or asks you to look again, re-probe it instead of trusting `list`:
+
+```bash
+"$FOOL_HELPER_BIN" config agents recheck <<'JSON'
+{
+  "agent_id": "hermes"
+}
+JSON
+```
+
+This runs the same PATH lookup the app runs at startup, right now, and reports what it
+finds. If it still reports the CLI missing, tell the user plainly that this app's own
+process could not find the command on its PATH — a terminal seeing it does not guarantee
+this app's process does, since a GUI app's PATH is not always the same as a terminal's.
+
 Read or set per-agent overrides:
 
 ```bash
@@ -746,6 +764,82 @@ JSON
 }
 JSON
 ```
+
+## Kanban
+
+Every project has a board — columns of cards the user tracks work with. Read
+it, add cards to it, and move them, the same way you would for the user if
+they asked in words: "put a card on the board for this" is a real, normal
+request.
+
+Read the board:
+
+```bash
+"$FOOL_HELPER_BIN" config kanban board <<'JSON'
+{
+  "project_id": "current"
+}
+JSON
+```
+
+`"project_id": "current"` resolves from the project the current conversation
+is bound to — the common case. Omitting `project_id` does the same. If the
+conversation has no project, the command fails and says so; ask the user
+which project before trying a literal id.
+
+The response is the whole board — every column, each with its cards, in
+display order. The first read of a project creates its three default columns
+(`To do`, `Doing`, `Done`) if none exist yet; there is nothing to set up
+first.
+
+Add a card:
+
+```bash
+"$FOOL_HELPER_BIN" config kanban cards create <<'JSON'
+{
+  "project_id": "current",
+  "column_id": "<column_id from the board>",
+  "title": "Ship the installer",
+  "body": "Optional longer description, markdown."
+}
+JSON
+```
+
+Move a card — to another column, to a position after a named card within its
+current column, or both in the same call:
+
+```bash
+"$FOOL_HELPER_BIN" config kanban cards update <<'JSON'
+{
+  "project_id": "current",
+  "card_id": "<card_id>",
+  "column_id": "<destination column_id>",
+  "after_card_id": "<card_id to place it just after, or omit for the front>"
+}
+JSON
+```
+
+`cards update` also edits `title`, `body`, `assignee`, `due_at` (epoch ms), and
+`conversation_id` (links the card to a chat) — send only the fields that are
+changing. Sending `column_id` or `after_card_id` is what moves a card;
+sending neither leaves its position untouched even while other fields change.
+
+Delete a card or an empty column:
+
+```bash
+"$FOOL_HELPER_BIN" config kanban cards delete <<'JSON'
+{ "project_id": "current", "card_id": "<card_id>" }
+JSON
+```
+
+```bash
+"$FOOL_HELPER_BIN" config kanban columns delete <<'JSON'
+{ "project_id": "current", "column_id": "<column_id>" }
+JSON
+```
+
+A column that still has cards refuses to delete. Move or delete its cards
+first, or ask the user which they want.
 
 ## Safety
 
