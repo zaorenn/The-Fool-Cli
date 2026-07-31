@@ -10,6 +10,7 @@ import type { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybac
 import { summarizeForSpeech } from '@renderer/services/voice/narration/englishSummary';
 import { splitForSpeech } from '@renderer/services/voice/narration/speechChunks';
 import { selectTtsTarget } from '@renderer/services/voice/selectTtsTarget';
+import { createSpeechClipQueue } from '@renderer/services/voice/speechClipQueue';
 
 /**
  * Reading one passage aloud, wherever the request came from.
@@ -176,25 +177,15 @@ export const speakText = async (request: SpeakTextRequest): Promise<SpeakOutcome
   // still queued behind it are dropped rather than spoken over the silence the
   // user just asked for.
   playback.stop();
-  const sequence = playback.currentGeneration();
 
   const chunks = splitForSpeech(spoken);
-  // Rendering of the next clip is started before the current one plays, so the
-  // engine works through the answer while the speakers are busy with it.
-  let pending = synthesize(chunks[0]);
-
-  for (let index = 0; index < chunks.length; index += 1) {
-    const audio = await pending;
-    if (!playback.isCurrent(sequence) || request.shouldContinue?.() === false) return { spoken: true };
-
-    const next = chunks[index + 1];
-    pending = next === undefined ? pending : synthesize(next);
-
-    if (index === 0) request.onPlaybackStart?.();
-    request.onClipStart?.();
-    await playback.play(audio);
-    if (!playback.isCurrent(sequence) || request.shouldContinue?.() === false) return { spoken: true };
-  }
+  const queue = createSpeechClipQueue(playback, synthesize, {
+    onPlaybackStart: request.onPlaybackStart,
+    onClipStart: request.onClipStart,
+    shouldContinue: request.shouldContinue,
+  });
+  for (const chunk of chunks) queue.push(chunk);
+  await queue.finish();
 
   return { spoken: true };
 };
