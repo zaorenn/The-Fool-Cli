@@ -36,7 +36,7 @@ const nativeAutoUpdaterMock = vi.hoisted(() => ({
 const appMock = vi.hoisted(() => ({
   isPackaged: false,
   getVersion: vi.fn(() => '2.1.13'),
-  getPath: vi.fn(() => '/tmp/aionui-test'),
+  getPath: vi.fn(() => '/tmp/fool-test'),
   exit: vi.fn(),
 }));
 
@@ -87,11 +87,11 @@ describe('AutoUpdaterService', () => {
     autoUpdaterMock.allowPrerelease = false;
     autoUpdaterMock.allowDowngrade = false;
     autoUpdaterMock.channel = undefined;
-    appMock.getPath.mockImplementation(() => '/tmp/aionui-test');
+    appMock.getPath.mockImplementation(() => '/tmp/fool-test');
     delete (autoUpdaterMock as { updateInfoAndProvider?: unknown }).updateInfoAndProvider;
     appMock.isPackaged = false;
-    delete process.env.AIONUI_FORCE_DEV_AUTO_UPDATE;
-    delete process.env.AIONUI_DEBUG_AUTO_UPDATE_CURRENT_VERSION;
+    delete process.env.FOOL_FORCE_DEV_AUTO_UPDATE;
+    delete process.env.FOOL_DEBUG_AUTO_UPDATE_CURRENT_VERSION;
     nativeAutoUpdaterMock.on.mockReset();
     nativeAutoUpdaterMock.removeListener.mockReset();
     Object.defineProperty(autoUpdaterMock, 'currentVersion', {
@@ -111,8 +111,8 @@ describe('AutoUpdaterService', () => {
       isUpdateAvailable: true,
       updateInfo: {
         version: '2.1.14',
-        files: [{ url: 'AionUi-2.1.14-mac-arm64.dmg', sha512: 'sha512-value' }],
-        path: 'AionUi-2.1.14-mac-arm64.dmg',
+        files: [{ url: 'TheFool-2.1.14-mac-arm64.dmg', sha512: 'sha512-value' }],
+        path: 'TheFool-2.1.14-mac-arm64.dmg',
         sha512: 'sha512-value',
         releaseDate: '2026-06-08T00:00:00.000Z',
       },
@@ -129,21 +129,21 @@ describe('AutoUpdaterService', () => {
     expect(autoUpdaterMock.checkForUpdates).not.toHaveBeenCalled();
   });
 
-  it('configures electron-updater to read stable metadata from the CDN', async () => {
+  it('configures electron-updater to read stable metadata from our own releases', async () => {
     const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
-    const { CdnGenericProvider } = await import('@/process/services/cdnGenericProvider');
+    const { PRODUCT_REPO_NAME, PRODUCT_REPO_OWNER } = await import('@/common/brand');
 
     autoUpdaterService.resetForTest();
 
     expect(autoUpdaterMock.setFeedURL).toHaveBeenCalledWith({
-      provider: 'custom',
-      url: 'https://static.aionui.com/releases',
-      updateProvider: CdnGenericProvider,
+      provider: 'github',
+      owner: PRODUCT_REPO_OWNER,
+      repo: PRODUCT_REPO_NAME,
     });
   });
 
   it('enables forced updater checks in unpacked dev builds when requested', async () => {
-    process.env.AIONUI_FORCE_DEV_AUTO_UPDATE = '1';
+    process.env.FOOL_FORCE_DEV_AUTO_UPDATE = '1';
 
     await import('@/process/services/autoUpdaterService');
 
@@ -151,8 +151,8 @@ describe('AutoUpdaterService', () => {
   });
 
   it('overrides the updater current version only for forced unpacked dev checks', async () => {
-    process.env.AIONUI_FORCE_DEV_AUTO_UPDATE = '1';
-    process.env.AIONUI_DEBUG_AUTO_UPDATE_CURRENT_VERSION = '2.1.12';
+    process.env.FOOL_FORCE_DEV_AUTO_UPDATE = '1';
+    process.env.FOOL_DEBUG_AUTO_UPDATE_CURRENT_VERSION = '2.1.12';
 
     await import('@/process/services/autoUpdaterService');
 
@@ -161,8 +161,8 @@ describe('AutoUpdaterService', () => {
 
   it('ignores forced updater debug env in packaged builds', async () => {
     appMock.isPackaged = true;
-    process.env.AIONUI_FORCE_DEV_AUTO_UPDATE = '1';
-    process.env.AIONUI_DEBUG_AUTO_UPDATE_CURRENT_VERSION = '2.1.12';
+    process.env.FOOL_FORCE_DEV_AUTO_UPDATE = '1';
+    process.env.FOOL_DEBUG_AUTO_UPDATE_CURRENT_VERSION = '2.1.12';
 
     await import('@/process/services/autoUpdaterService');
 
@@ -295,16 +295,16 @@ describe('AutoUpdaterService', () => {
   it('restores a completed cached auto-update when the downloaded package validates', async () => {
     const updateInfo = {
       version: '2.1.14',
-      files: [{ url: 'AionUi-2.1.14-mac.zip', sha512: 'sha512-value' }],
-      path: 'AionUi-2.1.14-mac.zip',
+      files: [{ url: 'TheFool-2.1.14-mac.zip', sha512: 'sha512-value' }],
+      path: 'TheFool-2.1.14-mac.zip',
       sha512: 'sha512-value',
       releaseDate: '2026-06-08T00:00:00.000Z',
     };
     const fileInfo = {
-      url: new URL('https://static.aionui.com/releases/2.1.14/AionUi-2.1.14-mac.zip'),
-      info: { url: 'AionUi-2.1.14-mac.zip', sha512: 'sha512-value' },
+      url: new URL('https://github.com/zaorenn/The-Fool-Cli/releases/download/v2.1.14/TheFool-2.1.14-mac.zip'),
+      info: { url: 'TheFool-2.1.14-mac.zip', sha512: 'sha512-value' },
     };
-    const cachedUpdatePath = path.join('/cache/pending', 'AionUi-2.1.14-mac.zip');
+    const cachedUpdatePath = path.join('/cache/pending', 'TheFool-2.1.14-mac.zip');
     const validateDownloadedPath = vi.fn().mockResolvedValue(cachedUpdatePath);
 
     autoUpdaterMock.checkForUpdates.mockImplementation(async () => {
@@ -339,14 +339,14 @@ describe('AutoUpdaterService', () => {
   it('does not restore a cached auto-update when the downloaded package is missing or invalid', async () => {
     const updateInfo = {
       version: '2.1.14',
-      files: [{ url: 'AionUi-2.1.14-mac.zip', sha512: 'sha512-value' }],
-      path: 'AionUi-2.1.14-mac.zip',
+      files: [{ url: 'TheFool-2.1.14-mac.zip', sha512: 'sha512-value' }],
+      path: 'TheFool-2.1.14-mac.zip',
       sha512: 'sha512-value',
       releaseDate: '2026-06-08T00:00:00.000Z',
     };
     const fileInfo = {
-      url: new URL('https://static.aionui.com/releases/2.1.14/AionUi-2.1.14-mac.zip'),
-      info: { url: 'AionUi-2.1.14-mac.zip', sha512: 'sha512-value' },
+      url: new URL('https://github.com/zaorenn/The-Fool-Cli/releases/download/v2.1.14/TheFool-2.1.14-mac.zip'),
+      info: { url: 'TheFool-2.1.14-mac.zip', sha512: 'sha512-value' },
     };
     const validateDownloadedPath = vi.fn().mockResolvedValue(null);
 
@@ -562,10 +562,10 @@ describe('AutoUpdaterService', () => {
 
   it('moves the process cwd to temp before the Windows updater handoff', async () => {
     setPlatform('win32');
-    const tempRoot = path.join(process.env.TEMP || process.cwd(), `aionui-updater-cwd-test-${process.pid}`);
-    const expectedCwd = path.join(tempRoot, 'aionui-updater-cwd');
+    const tempRoot = path.join(process.env.TEMP || process.cwd(), `fool-updater-cwd-test-${process.pid}`);
+    const expectedCwd = path.join(tempRoot, 'fool-updater-cwd');
     const chdir = vi.spyOn(process, 'chdir').mockImplementation(() => undefined);
-    appMock.getPath.mockImplementation((name: string) => (name === 'temp' ? tempRoot : '/tmp/aionui-test'));
+    appMock.getPath.mockImplementation((name: string) => (name === 'temp' ? tempRoot : '/tmp/fool-test'));
 
     try {
       const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');

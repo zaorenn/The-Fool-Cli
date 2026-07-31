@@ -5,6 +5,7 @@
  */
 
 import { ipcBridge } from '@/common';
+import { PRODUCT_NAME, PRODUCT_REPO } from '@/common/brand';
 import type {
   AutoUpdateReadyResult,
   UpdateCheckResult,
@@ -59,13 +60,15 @@ interface AutoUpdateCheckParams {
   includePrerelease?: boolean;
 }
 
-const DEFAULT_REPO = 'iOfficeAI/AionUi';
-const DEFAULT_USER_AGENT = 'AionUi';
+const DEFAULT_REPO = PRODUCT_REPO;
+const DEFAULT_USER_AGENT = PRODUCT_NAME;
 const ALLOWED_ASSET_EXTS = new Set(['.exe', '.msi', '.dmg', '.zip', '.deb', '.rpm']);
-const CDN_HOST = 'static.aionui.com';
-const CDN_BASE_URL = `https://${CDN_HOST}/releases`;
+/**
+ * Releases are served straight from GitHub. Upstream put a CDN in front of its
+ * own releases and rewrote every asset URL to it; that CDN only ever carried
+ * their builds, so pointing at it from here would 404 on our very first update.
+ */
 const ALLOWED_DOWNLOAD_HOSTS = new Set<string>([
-  CDN_HOST,
   'github.com',
   'objects.githubusercontent.com',
   'github-releases.githubusercontent.com',
@@ -86,18 +89,9 @@ const normalizeTagToSemver = (tag: string): string | null => {
   return semver.valid(withoutV);
 };
 
-/**
- * Rewrite a GitHub release asset URL to the CDN URL for faster download.
- * The CDN path follows the fixed convention `{base}/{version}/{original-filename}`,
- * matching electron-builder's artifactName output, so no name conversion is needed.
- */
-const rewriteAssetUrlToCDN = (assetName: string, version: string): string => {
-  return `${CDN_BASE_URL}/${version}/${assetName}`;
-};
-
-const mapAsset = (asset: GitHubReleaseApiAsset, version: string): GitHubReleaseAsset => ({
+const mapAsset = (asset: GitHubReleaseApiAsset): GitHubReleaseAsset => ({
   name: asset.name,
-  url: rewriteAssetUrlToCDN(asset.name, version),
+  url: asset.browser_download_url,
   fallbackUrl: asset.browser_download_url,
   size: asset.size,
   contentType: asset.content_type,
@@ -198,7 +192,7 @@ export const pickRecommendedAsset = (
 };
 
 const resolveRepo = (requestRepo?: string): string => {
-  const envRepo = process.env.AIONUI_GITHUB_REPO?.trim();
+  const envRepo = process.env.FOOL_GITHUB_REPO?.trim();
   const repo = (requestRepo || envRepo || DEFAULT_REPO).trim();
   return repo || DEFAULT_REPO;
 };
@@ -290,7 +284,7 @@ const mapRelease = (rel: GitHubReleaseApi): UpdateReleaseInfo | null => {
   const assets = (rel.assets || [])
     .filter((asset) => asset && asset.name && asset.browser_download_url)
     .filter((asset) => isAllowedAssetName(asset.name))
-    .map((asset) => mapAsset(asset, version));
+    .map((asset) => mapAsset(asset));
 
   return {
     tagName: rel.tag_name,
@@ -325,7 +319,7 @@ const sanitizeFileName = (name: string): string => {
   // Keep only base name and trim weird whitespace.
   const base = path.basename(name).trim();
   // Avoid empty names.
-  return base || `AionUi-update-${Date.now()}`;
+  return base || `The Fool-update-${Date.now()}`;
 };
 
 const ensureUniquePath = (target: string): string => {

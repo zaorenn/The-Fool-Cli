@@ -11,8 +11,8 @@ describe('classifyBackendStartupFailure', () => {
     error.details = {
       stage: 'early_exit',
       stderrTail:
-        "/opt/AionUi/resources/bundled-foolcore/linux-x64/foolcore.bin: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.34' not found\n" +
-        "/opt/AionUi/resources/bundled-foolcore/linux-x64/foolcore.bin: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.32' not found",
+        "/opt/The Fool/resources/bundled-foolcore/linux-x64/foolcore.bin: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.34' not found\n" +
+        "/opt/The Fool/resources/bundled-foolcore/linux-x64/foolcore.bin: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.32' not found",
     };
 
     expect(classifyBackendStartupFailure(error)).toEqual({
@@ -42,8 +42,8 @@ describe('classifyBackendStartupFailure', () => {
     };
     error.details = {
       stage: 'spawn',
-      workDir: 'D:\\ai\\AionUI\\工作目录',
-      causeMessage: 'ENOENT: no such file or directory, mkdir D:\\ai\\AionUI\\工作目录',
+      workDir: 'D:\\ai\\The Fool\\工作目录',
+      causeMessage: 'ENOENT: no such file or directory, mkdir D:\\ai\\The Fool\\工作目录',
     };
 
     expect(classifyBackendStartupFailure(error)).toEqual({
@@ -58,8 +58,8 @@ describe('classifyBackendStartupFailure', () => {
     };
     error.details = {
       stage: 'spawn',
-      workDir: 'D:\\ai\\AionUI\\工作目录',
-      causeMessage: 'EPERM: operation not permitted, mkdir D:\\ai\\AionUI\\工作目录',
+      workDir: 'D:\\ai\\The Fool\\工作目录',
+      causeMessage: 'EPERM: operation not permitted, mkdir D:\\ai\\The Fool\\工作目录',
     };
 
     expect(classifyBackendStartupFailure(error)).toEqual({
@@ -74,8 +74,8 @@ describe('classifyBackendStartupFailure', () => {
     };
     error.details = {
       stage: 'spawn_error',
-      binaryPath: 'D:\\apps\\AionUi\\resources\\bundled-foolcore\\win32-x64\\foolcore.exe',
-      causeMessage: 'spawn D:\\apps\\AionUi\\resources\\bundled-foolcore\\win32-x64\\foolcore.exe ENOENT',
+      binaryPath: 'D:\\apps\\The Fool\\resources\\bundled-foolcore\\win32-x64\\foolcore.exe',
+      causeMessage: 'spawn D:\\apps\\The Fool\\resources\\bundled-foolcore\\win32-x64\\foolcore.exe ENOENT',
     };
 
     expect(classifyBackendStartupFailure(error)).toEqual({
@@ -112,7 +112,7 @@ describe('classifyBackendStartupFailure', () => {
       backendBoundaryCode: 'BOOTSTRAP_DATA_INIT_FAILED',
       backendBoundaryStage: 'database.migration',
       stderrTail:
-        'BOOTSTRAP_DATA_INIT_FAILED stage=database.migration databasePath=/db/aionui-backend.db: failed to initialize application data',
+        'BOOTSTRAP_DATA_INIT_FAILED stage=database.migration databasePath=/db/fool-backend.db: failed to initialize application data',
     };
 
     expect(classifyBackendStartupFailure(error)).toEqual({
@@ -131,7 +131,7 @@ describe('classifyBackendStartupFailure', () => {
       backendBoundaryCode: 'BOOTSTRAP_DATA_INIT_FAILED',
       backendBoundaryStage: 'database.recoverable_corruption',
       stderrTail:
-        'BOOTSTRAP_DATA_INIT_FAILED stage=database.recoverable_corruption databasePath=/db/aionui-backend.db: failed to initialize application data',
+        'BOOTSTRAP_DATA_INIT_FAILED stage=database.recoverable_corruption databasePath=/db/fool-backend.db: failed to initialize application data',
     };
 
     expect(classifyBackendStartupFailure(error)).toEqual({
@@ -240,7 +240,7 @@ describe('classifyBackendStartupFailure', () => {
       reason: 'backend_incomplete_installation',
       incompleteInstallationKind: 'missing_directory_resources',
       missingBackendBinary: true,
-      missingBundledAioncoreDir: true,
+      missingBundledFoolcoreDir: true,
       missingHubDir: true,
       missingPetStatesDir: true,
       missingPwaDir: true,
@@ -280,7 +280,7 @@ describe('classifyBackendStartupFailure', () => {
       reason: 'backend_incomplete_installation',
       incompleteInstallationKind: 'missing_directory_resources',
       missingBackendBinary: true,
-      missingBundledAioncoreDir: false,
+      missingBundledFoolcoreDir: false,
       missingHubDir: false,
       missingPetStatesDir: false,
       missingPwaDir: false,
@@ -290,7 +290,7 @@ describe('classifyBackendStartupFailure', () => {
   });
 
   it('classifies packaged macOS architecture mismatches separately from generic startup failures', () => {
-    const error = new Error('AionUi package architecture does not match this Mac') as Error & {
+    const error = new Error('The Fool package architecture does not match this Mac') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
@@ -368,13 +368,15 @@ describe('detectStartupArchitectureMismatch', () => {
 });
 
 describe('getInstallationIntegrityModalActions', () => {
-  it('exposes diagnostics without an upstream download action for blocking dialogs', () => {
+  it('offers a reinstall alongside diagnostics for blocking dialogs', () => {
     const t = (key: string) => key;
     const onReportDiagnostics = vi.fn();
 
     const actions = getInstallationIntegrityModalActions(t, { onReportDiagnostics });
 
-    expect(actions.downloadText).toBeUndefined();
+    // A broken install is exactly when a download link earns its place, now
+    // that it leads to our own releases rather than upstream's.
+    expect(actions.downloadText).toBe('common.backendStartup.incompleteInstallation.downloadLatest');
     expect(actions.reportText).toBe('common.backendStartup.incompleteInstallation.sendDiagnostics');
 
     actions.onReportDiagnostics();

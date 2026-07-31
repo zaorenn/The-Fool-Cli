@@ -24,10 +24,11 @@ import {
   recordAutoUpdateQuitAndInstall,
   recordAutoUpdateStatus,
 } from './autoUpdateDiagnostics';
-import { buildCdnFeedOptions } from './updateFeed';
+import { buildUpdateFeedOptions } from './updateFeed';
+import { APP_ID } from '@/common/brand';
 
-const FORCE_DEV_AUTO_UPDATE_ENV = 'AIONUI_FORCE_DEV_AUTO_UPDATE';
-const DEBUG_AUTO_UPDATE_CURRENT_VERSION_ENV = 'AIONUI_DEBUG_AUTO_UPDATE_CURRENT_VERSION';
+const FORCE_DEV_AUTO_UPDATE_ENV = 'FOOL_FORCE_DEV_AUTO_UPDATE';
+const DEBUG_AUTO_UPDATE_CURRENT_VERSION_ENV = 'FOOL_DEBUG_AUTO_UPDATE_CURRENT_VERSION';
 const MAC_NATIVE_INSTALL_READY_TIMEOUT_MS = 60_000;
 
 /**
@@ -131,7 +132,7 @@ class AutoUpdaterService extends EventEmitter {
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = true;
     this.configureDevAutoUpdateDebug();
-    const cdnFeedOptions = buildCdnFeedOptions();
+    const feedOptions = buildUpdateFeedOptions();
 
     // Set the correct update channel based on platform and architecture before
     // any update checks are performed
@@ -140,11 +141,12 @@ class AutoUpdaterService extends EventEmitter {
       autoUpdater.channel = channel;
       log.info(`Update channel set to: ${channel}`);
     }
-    autoUpdater.setFeedURL(cdnFeedOptions);
-    log.info('Update feed set to CDN provider');
-    log.debug('[auto-update] CDN feed configured', {
-      provider: cdnFeedOptions.provider,
-      url: cdnFeedOptions.url,
+    autoUpdater.setFeedURL(feedOptions);
+    log.info(`Update feed set to ${feedOptions.owner}/${feedOptions.repo}`);
+    log.debug('[auto-update] feed configured', {
+      provider: feedOptions.provider,
+      owner: feedOptions.owner,
+      repo: feedOptions.repo,
       channel: channel ?? 'latest',
       platform: process.platform,
       arch: process.arch,
@@ -194,11 +196,14 @@ class AutoUpdaterService extends EventEmitter {
    */
   private ensureDevUpdateConfig(): void {
     try {
-      const cdnFeedOptions = buildCdnFeedOptions();
+      const feedOptions = buildUpdateFeedOptions();
       const devConfig = [
-        'provider: generic',
-        `url: ${cdnFeedOptions.url}`,
-        'updaterCacheDirName: com.aionui.app',
+        `provider: ${feedOptions.provider}`,
+        `owner: ${feedOptions.owner}`,
+        `repo: ${feedOptions.repo}`,
+        // Must match the packaged value — electron-builder defaults it to the
+        // appId, and a mismatch silently splits the download cache in two.
+        `updaterCacheDirName: ${APP_ID}`,
         '',
       ].join('\n');
       const configPath = path.join(app.getPath('userData'), 'dev-app-update.yml');
@@ -216,7 +221,7 @@ class AutoUpdaterService extends EventEmitter {
     }
 
     try {
-      const safeCwd = path.join(app.getPath('temp'), 'aionui-updater-cwd');
+      const safeCwd = path.join(app.getPath('temp'), 'fool-updater-cwd');
       fs.mkdirSync(safeCwd, { recursive: true });
       process.chdir(safeCwd);
       log.info('[auto-update] Moved process cwd before Windows installer handoff', { cwd: safeCwd });
@@ -458,7 +463,7 @@ class AutoUpdaterService extends EventEmitter {
 
   /**
    * In dev mode the running shell is the stock Electron bundle (com.github.Electron),
-   * while the downloaded archive contains the packaged app (com.aionui.app). Squirrel.Mac
+   * while the downloaded archive contains the packaged app (com.fool.app). Squirrel.Mac
    * looks for a bundle matching the *running* id, fails to find it, and reports
    * "Could not locate update bundle". This is expected in dev and cannot be reproduced
    * without a packaged build, so surface a clearer message instead of the raw error.

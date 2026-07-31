@@ -71,28 +71,29 @@ const makeGitHubReleaseResponse = () => [
     tag_name: 'v1.9.22',
     name: 'v1.9.22',
     body: 'release notes',
-    html_url: 'https://github.com/iOfficeAI/AionUi/releases/tag/v1.9.22',
+    html_url: 'https://github.com/zaorenn/The-Fool-Cli/releases/tag/v1.9.22',
     published_at: '2026-04-29T00:00:00Z',
     prerelease: false,
     draft: false,
     assets: [
       {
-        name: 'AionUi-1.9.22-mac-arm64.dmg',
+        name: 'TheFool-1.9.22-mac-arm64.dmg',
         browser_download_url:
-          'https://github.com/iOfficeAI/AionUi/releases/download/v1.9.22/AionUi-1.9.22-mac-arm64.dmg',
+          'https://github.com/zaorenn/The-Fool-Cli/releases/download/v1.9.22/TheFool-1.9.22-mac-arm64.dmg',
         size: 123,
         content_type: 'application/x-apple-diskimage',
       },
       {
-        name: 'AionUi-1.9.22-win-x64.exe',
-        browser_download_url: 'https://github.com/iOfficeAI/AionUi/releases/download/v1.9.22/AionUi-1.9.22-win-x64.exe',
+        name: 'TheFool-1.9.22-win-x64.exe',
+        browser_download_url:
+          'https://github.com/zaorenn/The-Fool-Cli/releases/download/v1.9.22/TheFool-1.9.22-win-x64.exe',
         size: 456,
         content_type: 'application/vnd.microsoft.portable-executable',
       },
       {
-        name: 'AionUi-1.9.22-linux-amd64.deb',
+        name: 'TheFool-1.9.22-linux-amd64.deb',
         browser_download_url:
-          'https://github.com/iOfficeAI/AionUi/releases/download/v1.9.22/AionUi-1.9.22-linux-amd64.deb',
+          'https://github.com/zaorenn/The-Fool-Cli/releases/download/v1.9.22/TheFool-1.9.22-linux-amd64.deb',
         size: 789,
       },
     ],
@@ -134,12 +135,12 @@ const makeDeferred = () => {
   return { promise, resolve, reject };
 };
 
-describe('updateBridge CDN URL rewriting', () => {
+describe('updateBridge release assets', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('rewrites asset.url to the CDN path and keeps GitHub URL in fallbackUrl', async () => {
+  it('serves the GitHub download URL directly', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => makeGitHubReleaseResponse(),
@@ -148,28 +149,30 @@ describe('updateBridge CDN URL rewriting', () => {
 
     try {
       const handler = await getCheckHandler();
-      const result = await handler({ repo: 'iOfficeAI/AionUi' });
+      const result = await handler({ repo: 'zaorenn/The-Fool-Cli' });
 
       expect(result.success).toBe(true);
       expect(result.data?.currentVersion).toBe('1.0.0');
       const assets = result.data?.latest?.assets ?? [];
       expect(assets.length).toBe(3);
 
-      const macAsset = assets.find((a: { name: string }) => a.name === 'AionUi-1.9.22-mac-arm64.dmg');
+      const macAsset = assets.find((a: { name: string }) => a.name === 'TheFool-1.9.22-mac-arm64.dmg');
       expect(macAsset).toBeDefined();
-      expect(macAsset?.url).toBe('https://static.aionui.com/releases/1.9.22/AionUi-1.9.22-mac-arm64.dmg');
-      expect(macAsset?.fallbackUrl).toBe(
-        'https://github.com/iOfficeAI/AionUi/releases/download/v1.9.22/AionUi-1.9.22-mac-arm64.dmg'
+      expect(macAsset?.url).toBe(
+        'https://github.com/zaorenn/The-Fool-Cli/releases/download/v1.9.22/TheFool-1.9.22-mac-arm64.dmg'
       );
+      expect(macAsset?.fallbackUrl).toBe(macAsset?.url);
 
-      const linuxAsset = assets.find((a: { name: string }) => a.name === 'AionUi-1.9.22-linux-amd64.deb');
-      expect(linuxAsset?.url).toBe('https://static.aionui.com/releases/1.9.22/AionUi-1.9.22-linux-amd64.deb');
+      const linuxAsset = assets.find((a: { name: string }) => a.name === 'TheFool-1.9.22-linux-amd64.deb');
+      expect(linuxAsset?.url).toBe(
+        'https://github.com/zaorenn/The-Fool-Cli/releases/download/v1.9.22/TheFool-1.9.22-linux-amd64.deb'
+      );
     } finally {
       vi.unstubAllGlobals();
     }
   });
 
-  it('uses the normalized version (no v prefix) in the CDN path', async () => {
+  it('never points an asset at the upstream release CDN', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => makeGitHubReleaseResponse(),
@@ -178,18 +181,19 @@ describe('updateBridge CDN URL rewriting', () => {
 
     try {
       const handler = await getCheckHandler();
-      const result = await handler({ repo: 'iOfficeAI/AionUi' });
-      const asset = result.data?.latest?.assets?.[0];
-      expect(asset?.url).toMatch(/^https:\/\/static\.aionui\.com\/releases\/1\.9\.22\//);
-      expect(asset?.url).not.toMatch(/\/v1\.9\.22\//);
+      const result = await handler({ repo: 'zaorenn/The-Fool-Cli' });
+      for (const asset of result.data?.latest?.assets ?? []) {
+        expect(asset.url).not.toContain('aionui');
+        expect(asset.fallbackUrl).not.toContain('aionui');
+      }
     } finally {
       vi.unstubAllGlobals();
     }
   });
 });
 
-describe('updateBridge allowlist includes CDN host', () => {
-  it('accepts static.aionui.com URLs for download', async () => {
+describe('updateBridge download allowlist', () => {
+  it('accepts GitHub release URLs for download', async () => {
     vi.resetModules();
     vi.clearAllMocks();
 
@@ -217,8 +221,8 @@ describe('updateBridge allowlist includes CDN host', () => {
 
       const result = await handler({
         downloadId: 'manual-download-1',
-        url: 'https://static.aionui.com/releases/1.9.22/AionUi-1.9.22-mac-arm64.dmg',
-        file_name: 'AionUi-1.9.22-mac-arm64.dmg',
+        url: 'https://github.com/zaorenn/The-Fool-Cli/releases/download/v1.9.22/TheFool-1.9.22-mac-arm64.dmg',
+        file_name: 'TheFool-1.9.22-mac-arm64.dmg',
       });
 
       expect(result.success).toBe(true);

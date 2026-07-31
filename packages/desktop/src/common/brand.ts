@@ -13,7 +13,18 @@ export const APP_ID = 'com.thefool.app' as const;
 export const LEGAL_ATTRIBUTION = 'Based on AionUi — Apache-2.0' as const;
 export const UPSTREAM_SOURCE_URL = 'https://github.com/iOfficeAI/AionUi' as const;
 
-// This private alpha has no public The Fool release channel yet.
-export const AUTO_UPDATE_ENABLED = false as const;
-export const PRODUCT_SUPPORT_URL: string | null = null;
-export const PRODUCT_UPDATE_URL: string | null = null;
+/**
+ * The repository releases are published to and pulled from.
+ *
+ * Everything about updating — the electron-updater feed, the GitHub release
+ * listing, the download host allowlist — resolves from this one constant, so a
+ * fork only has to change it here.
+ */
+export const PRODUCT_REPO_OWNER = 'zaorenn' as const;
+export const PRODUCT_REPO_NAME = 'The-Fool-Cli' as const;
+export const PRODUCT_REPO = `${PRODUCT_REPO_OWNER}/${PRODUCT_REPO_NAME}` as const;
+export const PRODUCT_REPO_URL = `https://github.com/${PRODUCT_REPO}` as const;
+
+export const AUTO_UPDATE_ENABLED = true as const;
+export const PRODUCT_SUPPORT_URL: string | null = `${PRODUCT_REPO_URL}/issues`;
+export const PRODUCT_UPDATE_URL: string | null = `${PRODUCT_REPO_URL}/releases/latest`;

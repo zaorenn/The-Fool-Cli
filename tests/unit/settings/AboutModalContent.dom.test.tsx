@@ -56,12 +56,14 @@ describe('AboutModalContent private alpha identity', () => {
     vi.unstubAllGlobals();
   });
 
-  it('shows The Fool attribution without exposing upstream update actions', () => {
+  it('shows The Fool attribution alongside the update action', () => {
     render(<AboutModalContent />);
 
     expect(screen.getByRole('heading', { name: 'The Fool' })).toBeInTheDocument();
     expect(screen.getAllByText(LEGAL_ATTRIBUTION)).toHaveLength(2);
-    expect(screen.queryByRole('button', { name: 'settings.checkForUpdates' })).toBeNull();
+    // Updates come from our own releases, so the action belongs here — but
+    // nothing may fire until the user actually asks for it.
+    expect(screen.getByRole('button', { name: 'settings.checkForUpdates' })).toBeInTheDocument();
     expect(mocks.updateCheck).not.toHaveBeenCalled();
     expect(mocks.quitAndInstall).not.toHaveBeenCalled();
   });
