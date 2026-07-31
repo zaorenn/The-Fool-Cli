@@ -5,10 +5,12 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Switch, Tag } from '@arco-design/web-react';
+import { Select, Switch, Tag } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
 import type { FoolVoiceSettings, VoiceSummaryPlanResponse } from '@/common/types/foolVoice';
+import { isChatCapableModel } from '@/common/utils/modelCapabilities';
+import { useModelProviderList } from '@renderer/hooks/agent/useModelProviderList';
 
 export type SummarySectionProps = {
   settings: FoolVoiceSettings;
@@ -28,6 +30,7 @@ const SummarySection: React.FC<SummarySectionProps> = ({ settings, onChange }) =
   const { t } = useTranslation();
   const [plan, setPlan] = useState<VoiceSummaryPlanResponse | null>(null);
   const [checking, setChecking] = useState(false);
+  const { providers } = useModelProviderList();
 
   const enabled = settings.summary.translateToEnglish;
 
@@ -75,6 +78,36 @@ const SummarySection: React.FC<SummarySectionProps> = ({ settings, onChange }) =
     );
   };
 
+  const picker = (): React.ReactNode => {
+    if (!enabled) return null;
+    return (
+      <Select
+        size='small'
+        data-testid='voice-summary-model-picker'
+        value={settings.summary.modelId || ''}
+        onChange={(value: string) =>
+          onChange((previous) => ({
+            ...previous,
+            summary: { ...previous.summary, modelId: value },
+          }))
+        }
+      >
+        <Select.Option value=''>{t('settings.voice.summaryModelAuto')}</Select.Option>
+        {providers.map((provider) => (
+          <Select.OptGroup key={provider.id} label={provider.name}>
+            {(provider.models ?? [])
+              .filter((modelId) => isChatCapableModel(modelId) && provider.model_enabled?.[modelId] !== false)
+              .map((modelId) => (
+                <Select.Option key={`${provider.id}:${modelId}`} value={modelId}>
+                  {modelId}
+                </Select.Option>
+              ))}
+          </Select.OptGroup>
+        ))}
+      </Select>
+    );
+  };
+
   return (
     <div className='flex flex-col gap-12px'>
       <label className='flex items-center justify-between gap-12px'>
@@ -92,6 +125,7 @@ const SummarySection: React.FC<SummarySectionProps> = ({ settings, onChange }) =
       </label>
       <span className='text-12px text-t-secondary'>{t('settings.voice.summaryEnglishHint')}</span>
       {model()}
+      {picker()}
     </div>
   );
 };
