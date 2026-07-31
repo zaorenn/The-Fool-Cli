@@ -36,6 +36,7 @@ fool-team.workspace = true
 fool-team-prompts.workspace = true
 fool-cron.workspace = true
 fool-project.workspace = true
+fool-kanban.workspace = true
 fool-assistant.workspace = true
 fool-runtime.workspace = true
 fool-process.workspace = true

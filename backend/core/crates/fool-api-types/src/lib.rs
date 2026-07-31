@@ -17,6 +17,7 @@ mod cron;
 mod custom_agent;
 mod extension;
 mod file;
+mod kanban;
 mod lifecycle;
 mod mcp;
 mod office;
@@ -112,6 +113,10 @@ pub use file::{
     RenameRequest, RenameResponse, SnapshotBaselineRequest, SnapshotCompareResponse, SnapshotDiscardRequest,
     SnapshotInfoResponse, SnapshotMode, SnapshotStageRequest, SnapshotWorkspaceRequest, WorkspaceFlatFileResponse,
     WorkspaceOfficeWatchRequest, WriteFileRequest, ZipFileEntry, ZipRequest,
+};
+pub use kanban::{
+    CreateKanbanCardRequest, CreateKanbanColumnRequest, KanbanBoardResponse, KanbanCardResponse, KanbanColumnResponse,
+    UpdateKanbanCardRequest, UpdateKanbanColumnRequest,
 };
 pub use lifecycle::{GitHubReleaseAsset, SystemInfoResponse, UpdateCheckRequest, UpdateCheckResult, UpdateReleaseInfo};
 pub use mcp::{

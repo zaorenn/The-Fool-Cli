@@ -1,0 +1,10 @@
+{
+  "boardTitle": "Board",
+  "filesTitle": "Files",
+  "loadFailed": "Could not load the board.",
+  "addCardFailed": "Could not add the card.",
+  "moveCardFailed": "Could not move the card.",
+  "deleteCardFailed": "Could not delete the card.",
+  "deleteCardConfirm": "Delete this card?",
+  "addCardPlaceholder": "Add a card…"
+}

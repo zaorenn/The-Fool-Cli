@@ -22,6 +22,7 @@ members = [
   "crates/fool-team-prompts",
   "crates/fool-team",
   "crates/fool-project",
+  "crates/fool-kanban",
   "crates/fool-cron",
   "crates/fool-assistant",
   "crates/fool-app",
@@ -55,6 +56,7 @@ fool-channel = { path = "crates/fool-channel" }
 fool-team-prompts = { path = "crates/fool-team-prompts" }
 fool-team = { path = "crates/fool-team" }
 fool-project = { path = "crates/fool-project" }
+fool-kanban = { path = "crates/fool-kanban" }
 fool-cron = { path = "crates/fool-cron" }
 fool-assistant = { path = "crates/fool-assistant" }
 fool-app = { path = "crates/fool-app" }

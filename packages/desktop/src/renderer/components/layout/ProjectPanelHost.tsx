@@ -25,12 +25,14 @@
  * mount) is the live-test proof it is not remounted across switches or collapse.
  */
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 
 import { ExpandRight } from '@icon-park/react';
+import { useTranslation } from 'react-i18next';
 
 import { ExplorerContainer } from '@/renderer/pages/conversation/explorer/ExplorerContainer';
 import { useCurrentProject } from '@/renderer/pages/conversation/explorer/currentProjectStore';
+import { KanbanBoard } from '@/renderer/pages/conversation/kanban/KanbanBoard';
 
 export type ProjectPanelHostProps = {
   /** Rendered width in px (clamped by Layout against the chat+preview reserve). */
@@ -48,6 +50,8 @@ export type ProjectPanelHostProps = {
   dragHandle?: React.ReactNode;
 };
 
+type PanelTab = 'files' | 'board';
+
 export const ProjectPanelHost: React.FC<ProjectPanelHostProps> = ({
   widthPx,
   collapsed,
@@ -55,9 +59,14 @@ export const ProjectPanelHost: React.FC<ProjectPanelHostProps> = ({
   showChevron,
   dragHandle,
 }) => {
+  const { t } = useTranslation();
   const projectId = useCurrentProject();
   const mountIdRef = useRef<string>('');
   if (mountIdRef.current === '') mountIdRef.current = `pec-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  // Files by default: this is the tab every existing user already expects to
+  // see, and switching tabs must not remount either side — both stay mounted,
+  // the inactive one only hidden, the same way collapse never unmounts either.
+  const [tab, setTab] = useState<PanelTab>('files');
 
   // No active project (no-project conversation / non-chat route) → no host.
   if (!projectId) return null;
@@ -68,7 +77,7 @@ export const ProjectPanelHost: React.FC<ProjectPanelHostProps> = ({
       data-explorer-column
       data-mount-id={mountIdRef.current}
       data-collapsed={collapsed ? 'true' : 'false'}
-      className='!bg-1 h-full flex-shrink-0 overflow-hidden relative'
+      className='!bg-1 h-full flex-shrink-0 overflow-hidden relative flex flex-col'
       style={{
         width: collapsed ? '0px' : `${widthPx}px`,
         borderLeft: collapsed ? 'none' : '1px solid var(--bg-3)',
@@ -85,8 +94,37 @@ export const ProjectPanelHost: React.FC<ProjectPanelHostProps> = ({
           <ExpandRight size={16} />
         </button>
       )}
-      {/* Hosted project component (this round: Explorer). Seam = projectId only. */}
-      <ExplorerContainer projectId={projectId} />
+      {!collapsed && (
+        <div className='flex items-center gap-4px px-8px pt-8px shrink-0' data-project-panel-tabs>
+          <button
+            type='button'
+            data-project-panel-tab='files'
+            aria-pressed={tab === 'files'}
+            className={`text-12px px-8px py-4px rd-6px ${tab === 'files' ? 'bg-fill-3 text-t-primary' : 'text-t-tertiary'}`}
+            onClick={() => setTab('files')}
+          >
+            {t('kanban.filesTitle')}
+          </button>
+          <button
+            type='button'
+            data-project-panel-tab='board'
+            aria-pressed={tab === 'board'}
+            className={`text-12px px-8px py-4px rd-6px ${tab === 'board' ? 'bg-fill-3 text-t-primary' : 'text-t-tertiary'}`}
+            onClick={() => setTab('board')}
+          >
+            {t('kanban.boardTitle')}
+          </button>
+        </div>
+      )}
+      {/* Both stay mounted; the inactive one is only hidden, matching the
+          "switching does not remount" contract this host already keeps for
+          collapse. */}
+      <div className='flex-1 min-h-0' style={{ display: tab === 'files' ? 'block' : 'none' }}>
+        <ExplorerContainer projectId={projectId} />
+      </div>
+      <div className='flex-1 min-h-0' style={{ display: tab === 'board' ? 'block' : 'none' }}>
+        <KanbanBoard projectId={projectId} />
+      </div>
     </div>
   );
 };

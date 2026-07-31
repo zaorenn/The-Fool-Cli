@@ -8,9 +8,12 @@ import React from 'react';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Stub the heavy tree; the column test only covers host chrome (gating, collapse).
+// Stub the heavy trees; the column test only covers host chrome (gating, collapse, tabs).
 vi.mock('@/renderer/pages/conversation/explorer/ExplorerContainer', () => ({
   ExplorerContainer: ({ projectId }: { projectId: string }) => <div data-testid='explorer'>{projectId}</div>,
+}));
+vi.mock('@/renderer/pages/conversation/kanban/KanbanBoard', () => ({
+  KanbanBoard: ({ projectId }: { projectId: string }) => <div data-testid='kanban-board'>{projectId}</div>,
 }));
 
 import { ProjectPanelHost } from '@/renderer/components/layout/ProjectPanelHost';
@@ -64,5 +67,27 @@ describe('ProjectPanelHost (Layout-level host chrome)', () => {
     setCurrentProject('proj-9');
     render(<ProjectPanelHost widthPx={280} collapsed={false} onToggle={noop} showChevron={false} />);
     expect(screen.queryByLabelText('Collapse explorer')).not.toBeInTheDocument();
+  });
+
+  it('defaults to the Files tab, with Board mounted but hidden', () => {
+    setCurrentProject('proj-9');
+    render(<ProjectPanelHost widthPx={280} collapsed={false} onToggle={noop} showChevron />);
+
+    expect(screen.getByTestId('explorer').parentElement).toHaveStyle({ display: 'block' });
+    expect(screen.getByTestId('kanban-board').parentElement).toHaveStyle({ display: 'none' });
+    expect(document.querySelector('[data-project-panel-tab="files"]')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('switches to the Board tab without unmounting either side', () => {
+    setCurrentProject('proj-9');
+    render(<ProjectPanelHost widthPx={280} collapsed={false} onToggle={noop} showChevron />);
+
+    fireEvent.click(document.querySelector('[data-project-panel-tab="board"]') as HTMLElement);
+
+    expect(screen.getByTestId('kanban-board').parentElement).toHaveStyle({ display: 'block' });
+    expect(screen.getByTestId('explorer').parentElement).toHaveStyle({ display: 'none' });
+    // Still in the document — a tab switch hides, it does not tear down.
+    expect(screen.getByTestId('explorer')).toBeInTheDocument();
+    expect(document.querySelector('[data-project-panel-tab="board"]')).toHaveAttribute('aria-pressed', 'true');
   });
 });

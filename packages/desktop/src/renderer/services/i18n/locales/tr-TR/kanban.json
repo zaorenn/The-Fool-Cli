@@ -1,0 +1,10 @@
+{
+  "boardTitle": "Pano",
+  "filesTitle": "Dosyalar",
+  "loadFailed": "Pano yüklenemedi.",
+  "addCardFailed": "Kart eklenemedi.",
+  "moveCardFailed": "Kart taşınamadı.",
+  "deleteCardFailed": "Kart silinemedi.",
+  "deleteCardConfirm": "Bu kart silinsin mi?",
+  "addCardPlaceholder": "Kart ekle…"
+}

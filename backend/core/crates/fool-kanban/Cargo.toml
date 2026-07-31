@@ -1,0 +1,18 @@
+[package]
+name = "fool-kanban"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+fool-api-types.workspace = true
+fool-common.workspace = true
+fool-db.workspace = true
+fool-auth.workspace = true
+fool-realtime.workspace = true
+axum.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

@@ -29,6 +29,7 @@ use fool_extension::{
     resolve_scan_paths_for_data_dir, resolve_state_file_path,
 };
 use fool_file::{BrowseRoots, FileRouterState, FileService, FileWatchService, SnapshotService};
+use fool_kanban::{KanbanRouterState, KanbanService};
 use fool_mcp::{
     ClaudeAdapter, CodeBuddyAdapter, CodexAdapter, FoolAdapter, FoolrsAdapter, GeminiAdapter, McpAgentAdapter,
     McpConfigService, McpConnectionTestService, McpRouterState, McpSyncService, OpencodeAdapter, QwenAdapter,
@@ -131,6 +132,7 @@ pub struct ModuleStates {
     pub connection_test: ConnectionTestRouterState,
     pub file: FileRouterState,
     pub project: ProjectRouterState,
+    pub kanban: KanbanRouterState,
     pub mcp: McpRouterState,
     pub extension: ExtensionRouterState,
     pub hub: HubRouterState,
@@ -311,6 +313,7 @@ pub async fn build_module_states(
         connection_test: build_module_state_phase(&boot, "connection_test", build_connection_test_state),
         file: build_module_state_phase(&boot, "file", || build_file_state(services))?,
         project: build_module_state_phase(&boot, "project", || build_project_state(services)),
+        kanban: build_module_state_phase(&boot, "kanban", || build_kanban_state(services)),
         mcp: build_module_state_phase(&boot, "mcp", || build_mcp_state(services)),
         extension: ext_state,
         hub: hub_state,
@@ -497,6 +500,16 @@ fn file_watch_init_error(error: fool_file::FileError) -> RouterBuildError {
 pub fn build_project_state(services: &AppServices) -> ProjectRouterState {
     ProjectRouterState {
         project: Arc::new(services.project_service.clone()),
+    }
+}
+
+/// Build the default `KanbanRouterState` from application services.
+pub fn build_kanban_state(services: &AppServices) -> KanbanRouterState {
+    let pool = services.database.pool().clone();
+    let repo: Arc<dyn fool_db::IKanbanRepository> = Arc::new(fool_db::SqliteKanbanRepository::new(pool));
+    let service = KanbanService::new(repo).with_broadcaster(services.event_bus.clone());
+    KanbanRouterState {
+        service: Arc::new(service),
     }
 }
 

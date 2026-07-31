@@ -31,6 +31,7 @@ use fool_conversation::{conversation_ops_routes, conversation_routes};
 use fool_cron::cron_routes;
 use fool_extension::{extension_routes, hub_routes, skill_routes};
 use fool_file::file_routes;
+use fool_kanban::kanban_routes;
 use fool_mcp::mcp_routes;
 use fool_office::{office_proxy_routes, office_routes};
 use fool_project::project_routes;
@@ -291,6 +292,10 @@ pub fn create_router_with_all_state(services: &AppServices, states: ModuleStates
     let project_authenticated =
         project_routes(states.project).route_layer(from_fn_with_state(auth_mw_state.clone(), auth_middleware));
 
+    // Kanban routes protected by auth middleware
+    let kanban_authenticated =
+        kanban_routes(states.kanban).route_layer(from_fn_with_state(auth_mw_state.clone(), auth_middleware));
+
     // MCP routes protected by auth middleware
     let mcp_authenticated =
         mcp_routes(states.mcp).route_layer(from_fn_with_state(auth_mw_state.clone(), auth_middleware));
@@ -361,6 +366,7 @@ pub fn create_router_with_all_state(services: &AppServices, states: ModuleStates
         .merge(connection_test_authenticated)
         .merge(file_authenticated)
         .merge(project_authenticated)
+        .merge(kanban_authenticated)
         .merge(mcp_authenticated)
         .merge(extension_authenticated)
         .merge(hub_authenticated)

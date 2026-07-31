@@ -1,7 +1,9 @@
 # Project Kanban Design
 
 **Date:** 2026-07-31
-**Status:** Design for review; not yet approved for implementation
+**Status:** First vertical slice implemented (migration, repository, service, routes, `config kanban` CLI, a
+non-drag renderer UI in the project panel). Full drag-and-drop, column reordering, and the conversation link
+(§7.3) remain as designed but unbuilt — see the note at the end of §7 and §7.3.
 **Base:** The Fool v2.1.43, branch `feat/the-fool-windows-alpha`
 **Depends on:** the project bind chain (migration `028_project_bind.sql`) and the project panel host
 
@@ -205,35 +207,47 @@ subscription and the scroll position, and the flicker is visible.
 
 New files under `packages/desktop/src/renderer/pages/conversation/kanban/`:
 
-| File                  | Responsibility                                                    |
-| --------------------- | ----------------------------------------------------------------- |
-| `KanbanContainer.tsx` | Data wiring: fetch the board, hold the mutations, own the errors. |
-| `KanbanBoard.tsx`     | Columns and drag/drop.                                            |
-| `KanbanCard.tsx`      | One card.                                                         |
-| `CardEditor.tsx`      | Create and edit, in an Arco `Modal`.                              |
-| `kanbanStore.ts`      | Optimistic local order, reconciled against server reads.          |
-| `useKanbanBoard.ts`   | The hook the container uses; subscribes to `kanban.boardChanged`. |
+| File              | Responsibility                                                                                 |
+| ----------------- | ---------------------------------------------------------------------------------------------- |
+| `KanbanBoard.tsx` | Fetch the board, render columns and cards, add/move/delete — everything, for this first slice. |
 
-Six files, one concern each, within the ten-child directory limit.
+**Built as one file for this slice, not the six above.** Drag-and-drop, the
+optimistic-move store, and a modal card editor are real work each; shipping
+them half-done would have been worse than shipping a plainer version that
+works end to end. What is built: fetching, rendering, adding a card, moving a
+card between columns (a `Select` per card, not a drag handle), deleting a
+card and a column, and a live refetch on `kanban.boardChanged` — the same
+event an agent's write fires. The six-file split above is still where this
+goes if drag-and-drop is built next; nothing here forecloses it.
 
 ### 7.2 Interaction
+
+**As built:** moving a card is a column picker on the card, not a drag — see
+the note above. A `kanban.boardChanged` event refetches the whole board, so
+two windows and an agent stay in view of each other's changes.
+
+**As designed, not yet built:**
 
 - Drag is optimistic: the card moves under the cursor, the `PATCH` follows, and a failure snaps it
   back with an Arco `Message`. A board that waits for a round trip before the card moves feels
   broken on a slow machine, and this one talks to a local backend where the round trip is short
   enough that the snap-back is rare.
-- A `kanban.boardChanged` event refetches the board. Any drag in flight wins until its own response
-  lands, so an agent moving one card cannot yank the card under the user's cursor.
+- Any drag in flight should win until its own response lands, so an agent moving one card cannot
+  yank the card under the user's cursor. The current plain refetch does not yet make this
+  guarantee — a `kanban.boardChanged` mid-drag will refetch and could move the card being dragged.
 - Arco components only — `Modal`, `Input`, `Button`, `Select`, `DatePicker`. No raw interactive
-  HTML. Icons from `@icon-park/react`.
+  HTML. Icons from `@icon-park/react`. (This part is already true of what shipped.)
 - Colours come from semantic tokens; column and card surfaces use `--color-bg-2` / `--color-bg-3`
-  so a user theme restyles the board without the board knowing about themes.
+  so a user theme restyles the board without the board knowing about themes. (Also already true.)
 
-### 7.3 The conversation link
+### 7.3 The conversation link — not yet built
 
-A card carries an optional conversation. From the card: **Open chat** when it has one, **Start
-work** when it does not — the latter creates a conversation in the project, seeds the first message
-with the card's title and body, and stores the id on the card.
+A card carries an optional `conversation_id` in the data model and the API already (§4, §5.1), and
+`cards update` can set or clear it. What is **not** built is the renderer side: a card does not yet
+show an "Open chat" / "Start work" affordance, and nothing creates a conversation seeded from a
+card's title and body. This is the one piece of the design with a real backend readiness gap: an
+agent can link a card to a conversation right now via `config kanban cards update`; a person cannot
+yet do the equivalent from the board itself.
 
 Automatic movement — a card that walks itself to Done when the agent finishes — is deliberately out
 of this round. The signal exists (`turn.completed` already carries the conversation), but "the turn
