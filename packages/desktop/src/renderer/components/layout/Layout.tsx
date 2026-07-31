@@ -30,6 +30,7 @@ import { dispatchWorkspaceToggleEvent } from '@renderer/utils/workspace/workspac
 import { MIN_PREVIEW_PANEL_PX } from '@renderer/pages/conversation/utils/layoutCalc';
 import { PreviewPanel } from '@renderer/pages/conversation/Preview';
 import { ExpandLeft } from '@icon-park/react';
+import BrowserPanel from '@renderer/components/browser/BrowserPanel';
 import { LayoutContext } from '@renderer/hooks/context/LayoutContext';
 import { NavigationHistoryProvider } from '@renderer/hooks/context/NavigationHistoryContext';
 import { useDeepLink } from '@renderer/hooks/system/useDeepLink';
@@ -121,6 +122,8 @@ const Layout: React.FC<{
   onSessionClick?: () => void;
 }> = ({ sider, onSessionClick: _onSessionClick }) => {
   const [collapsed, setCollapsed] = useState(false);
+  /** The in-app browser panel, opened from the titlebar. */
+  const [browserOpen, setBrowserOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [viewportWidth, setViewportWidth] = useState<number>(() =>
     typeof window === 'undefined' ? 390 : window.innerWidth
@@ -407,7 +410,11 @@ const Layout: React.FC<{
     <LayoutContext.Provider value={{ isMobile, siderCollapsed: collapsed, setSiderCollapsed: setCollapsed }}>
       <NavigationHistoryProvider>
         <div className='app-shell flex flex-col size-full min-h-0'>
-          <Titlebar workspaceAvailable={workspaceAvailable} />
+          <Titlebar
+            workspaceAvailable={workspaceAvailable}
+            browserOpen={browserOpen}
+            onToggleBrowser={() => setBrowserOpen((open) => !open)}
+          />
           {/* 移动端左侧边栏蒙板 / Mobile left sider backdrop */}
           {isMobile && !collapsed && (
             <div className='fixed inset-0 bg-black/30 z-90' onClick={() => setCollapsed(true)} aria-hidden='true' />
@@ -535,6 +542,15 @@ const Layout: React.FC<{
                   <UpdateModal />
                 </Suspense>
               </ArcoLayout.Content>
+              {/* The in-app browser sits beside the route content rather than
+                  over it, so a page can be read while the conversation stays
+                  visible. It keeps its own session — see browserSession.ts. */}
+              <div
+                className='browser-panel-region flex-shrink-0 border-l border-[var(--border-base)]'
+                style={{ width: browserOpen ? 'clamp(360px, 42%, 900px)' : 0, display: browserOpen ? 'block' : 'none' }}
+              >
+                <BrowserPanel open={browserOpen} onClose={() => setBrowserOpen(false)} />
+              </div>
               {/* Hoisted preview region (project conversations only). Structurally
                   persistent: lives above the per-conversation subtree, so a
                   same-project conversation switch does not remount it. */}

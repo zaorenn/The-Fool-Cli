@@ -1,6 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
-import { ArrowCircleLeft, ArrowLeft, ArrowRight, ExpandLeft, ExpandRight, Peoples, Search } from '@icon-park/react';
+import {
+  ArrowCircleLeft,
+  ArrowLeft,
+  ArrowRight,
+  Browser,
+  ExpandLeft,
+  ExpandRight,
+  Peoples,
+  Search,
+} from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -21,6 +30,8 @@ import './titlebar.css';
 
 interface TitlebarProps {
   workspaceAvailable: boolean;
+  browserOpen?: boolean;
+  onToggleBrowser?: () => void;
 }
 
 // Bug-report icon: a speech bubble with a centred "?" mark, reading as "report an
@@ -95,7 +106,7 @@ const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size =
   </svg>
 );
 
-const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
+const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable, browserOpen, onToggleBrowser }) => {
   const { t } = useTranslation();
   const appTitle = PRODUCT_NAME;
   const [workspaceCollapsed, setWorkspaceCollapsed] = useState(true);
@@ -408,6 +419,20 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
       </div>
       <div ref={toolbarRef} className='app-titlebar__toolbar'>
         {layout?.isMobile && <div id='app-titlebar-actions-slot' className='app-titlebar__actions-slot' />}
+        {onToggleBrowser && (
+          <button
+            type='button'
+            className={classNames('app-titlebar__button', layout?.isMobile && 'app-titlebar__button--mobile', {
+              'app-titlebar__button--active': browserOpen,
+            })}
+            onClick={onToggleBrowser}
+            aria-label={t('common.browser.toggle')}
+            aria-pressed={browserOpen}
+            title={t('common.browser.toggle')}
+          >
+            <Browser theme='outline' size={iconSize} fill='currentColor' strokeWidth={desktopIconStroke} />
+          </button>
+        )}
         <button
           type='button'
           className={classNames('app-titlebar__button', layout?.isMobile && 'app-titlebar__button--mobile')}

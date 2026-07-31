@@ -175,6 +175,18 @@
   background-color: rgba(255, 255, 255, 0.16);
 }
 
+/* Toggle buttons that hold a state — the browser, for one — need to look held
+   down while their panel is open, not just while the pointer is on them. */
+.app-titlebar__button--active,
+.app-titlebar__button--active:hover {
+  background-color: rgba(0, 0, 0, 0.14);
+}
+
+[data-theme='dark'] .app-titlebar__button--active,
+[data-theme='dark'] .app-titlebar__button--active:hover {
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
 .app-titlebar__button:disabled,
 .app-titlebar__button[disabled] {
   opacity: 0.35;
