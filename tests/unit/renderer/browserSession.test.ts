@@ -43,4 +43,18 @@ describe('browser address input', () => {
   it('does not turn a non-http scheme into a search', () => {
     expect(resolveBrowserInput('about:blank')).toBe('about:blank');
   });
+
+  it('refuses to load local files', () => {
+    // The address bar is reachable by anything that can steer this browser.
+    // `file://` would turn it into a reader for the machine's disk, so a
+    // file path is treated as text to search for, never as somewhere to go.
+    expect(resolveBrowserInput('file:///C:/Users/someone/.ssh/id_rsa')).toMatch(/^https:\/\/duckduckgo\.com\/\?q=/);
+    expect(resolveBrowserInput('file:///etc/passwd')).toMatch(/^https:\/\/duckduckgo\.com\/\?q=/);
+  });
+
+  it('refuses schemes that are not the web', () => {
+    for (const input of ['ftp://example.com/x', 'chrome://settings', 'app://local/index.html']) {
+      expect(resolveBrowserInput(input)).toMatch(/^https:\/\/duckduckgo\.com\/\?q=/);
+    }
+  });
 });

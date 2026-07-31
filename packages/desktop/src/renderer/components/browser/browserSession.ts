@@ -26,15 +26,20 @@ export const BROWSER_HOME_URL = 'https://duckduckgo.com/' as const;
 /**
  * Turn whatever the user typed into something a browser can load.
  *
- * Anything that already looks like a URL is left alone. A bare host like
+ * Anything that already looks like a web URL is left alone. A bare host like
  * `example.com` gets https. Everything else is a search, because silently
  * failing to navigate is worse than searching for what they typed.
+ *
+ * Only the web is a destination. `file://` in particular would make this
+ * address bar a reader for the machine's own disk — and the address bar is
+ * reachable by anything that can steer the browser, not just by someone
+ * typing into it. A path is something to search for, not somewhere to go.
  */
 export const resolveBrowserInput = (raw: string): string => {
   const input = raw.trim();
   if (!input) return BROWSER_HOME_URL;
 
-  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(input)) return input;
+  if (/^https?:\/\//i.test(input)) return input;
   if (/^(about|data|blob):/i.test(input)) return input;
 
   // A single token with a dot and no space reads as a hostname.

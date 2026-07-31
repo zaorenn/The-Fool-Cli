@@ -472,9 +472,13 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
     [currentUrl]
   );
 
-  // Build webview attributes
+  // Build webview attributes.
+  //
+  // `allowpopups` is deliberately absent rather than set to "false": Electron
+  // reads it with `hasAttribute`, so any value at all — including the string
+  // "false" — switches popups on. Omission is the only way to keep a guest page
+  // from opening windows this app never configured.
   const webviewAttrs: Record<string, string> = {
-    allowpopups: 'false',
     webpreferences: 'contextIsolation=no, nodeIntegration=no, nativeWindowOpen=no',
   };
   if (partition) {
