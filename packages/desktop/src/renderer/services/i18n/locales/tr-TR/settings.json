@@ -1377,7 +1377,10 @@
     "cloneCancel": "Vazgeç",
     "cloneAnother": "Başka bir ses klonla",
     "cloneSavedUsable": "{{name}} kaydedildi ve doğrulandı — konuşuyor.",
-    "cloneSavedUnusable": "{{name}} kaydedildi ama doğrulama başarısız. Daha net bir kayıt deneyin."
+    "cloneSavedUnusable": "{{name}} kaydedildi ama doğrulama başarısız. Daha net bir kayıt deneyin.",
+    "deleteCloned": "Bu sesi sil",
+    "deleteClonedConfirm": "{{name}} silinsin mi? Bu kayıt dosyasını kaldırır — aynı dosyadan tekrar klonlayabilirsiniz.",
+    "deleteClonedFailed": "O ses silinemedi."
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

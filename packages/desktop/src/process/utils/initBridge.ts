@@ -122,6 +122,10 @@ initAllBridges({
       );
       return { operationId: req.operationId, profileId };
     },
+    deleteClonedVoice: (req) => {
+      voiceService.deleteClonedVoice(req.voiceId);
+      return { voiceId: req.voiceId, deleted: true as const };
+    },
     synthesize: (req) =>
       voiceService
         .synthesize(req.operationId, req.providerId, req.modelId, req.profileId, req.language, req.speed, req.text)

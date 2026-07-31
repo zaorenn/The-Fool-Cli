@@ -440,6 +440,11 @@ export class SherpaVoiceProvider {
     return clonedProfileId(voiceId);
   }
 
+  /** Removes a voice cloned from a recording. A missing id is not an error. */
+  public deleteClonedVoice(voiceId: string): void {
+    this.clonedVoices().delete(voiceId);
+  }
+
   private clampSpeaker(speakerIndex: number, speakerCount: number): number {
     if (!Number.isFinite(speakerCount) || speakerCount <= 0) return 0;
     return Math.max(0, Math.min(speakerCount - 1, speakerIndex));

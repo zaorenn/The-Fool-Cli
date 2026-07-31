@@ -113,6 +113,25 @@ const VoiceSettingsContent: React.FC = () => {
     [speak, t]
   );
 
+  const handleDeleteClonedVoice = useCallback(
+    async (profile: VoiceProfile) => {
+      const voiceId = profile.id.startsWith('cloned:') ? profile.id.slice('cloned:'.length) : profile.id;
+      try {
+        unwrap(
+          await ipcBridge.foolVoice.deleteClonedVoice.invoke({
+            version: 1,
+            requestId: newRequestId(),
+            payload: { voiceId },
+          })
+        );
+        void catalog.refresh();
+      } catch {
+        Message.error(t('settings.voice.deleteClonedFailed'));
+      }
+    },
+    [catalog, t]
+  );
+
   const handleBrowseSpeakers = useCallback((modelId: string) => {
     setSpeakerCount(null);
     setBrowsingModelId(modelId);
@@ -265,6 +284,7 @@ const VoiceSettingsContent: React.FC = () => {
             onInstall={catalog.install}
             onVerify={catalog.verify}
             onBrowseSpeakers={handleBrowseSpeakers}
+            onDelete={handleDeleteClonedVoice}
           />
           <CloneVoiceUpload models={catalog.models} onSaved={() => void catalog.refresh()} />
         </>

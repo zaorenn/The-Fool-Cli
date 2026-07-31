@@ -22,6 +22,8 @@ import type {
   VoiceCatalogResponse,
   VoiceCloneSaveRequest,
   VoiceCloneSaveResponse,
+  VoiceDeleteClonedRequest,
+  VoiceDeleteClonedResponse,
   VoiceDownloadProgress,
   VoiceDownloadRequest,
   VoiceDownloadResponse,
@@ -191,6 +193,10 @@ export const foolVoice = {
     VoiceResponseEnvelope<VoiceCloneSaveResponse>,
     VoiceRequestEnvelope<VoiceCloneSaveRequest>
   >('fool.voice.cloneVoice'),
+  deleteClonedVoice: bridge.buildProvider<
+    VoiceResponseEnvelope<VoiceDeleteClonedResponse>,
+    VoiceRequestEnvelope<VoiceDeleteClonedRequest>
+  >('fool.voice.deleteClonedVoice'),
   synthesize: bridge.buildProvider<
     VoiceResponseEnvelope<VoiceSynthesizeResponse>,
     VoiceRequestEnvelope<VoiceSynthesizeRequest>

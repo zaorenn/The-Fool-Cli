@@ -11,6 +11,7 @@ import { initFoolVoiceBridge, type FoolVoiceBridgeHandlers } from '@/process/bri
 import type {
   VoiceCatalogRequest,
   VoiceCloneSaveRequest,
+  VoiceDeleteClonedRequest,
   VoiceDownloadRequest,
   VoiceHealthRequest,
   VoiceRemoveRequest,
@@ -81,6 +82,7 @@ const cloneVoiceRequest = request<VoiceCloneSaveRequest>('clone-1', {
     dataBase64: 'UklGRg==',
   },
 });
+const deleteClonedVoiceRequest = request<VoiceDeleteClonedRequest>('req-delete-1', { voiceId: 'ultron' });
 
 const connectLoopback = (): Array<{ name: string; data: unknown }> => {
   let incoming: { emit: (name: string, data: unknown) => unknown } | undefined;
@@ -115,11 +117,12 @@ describe('Fool voice bridge shell', () => {
       ipcBridge.foolVoice.health.invoke(healthRequest),
       ipcBridge.foolVoice.transcribe.invoke(transcribeRequest),
       ipcBridge.foolVoice.cloneVoice.invoke(cloneVoiceRequest),
+      ipcBridge.foolVoice.deleteClonedVoice.invoke(deleteClonedVoiceRequest),
       ipcBridge.foolVoice.synthesize.invoke(synthesizeRequest),
       ipcBridge.foolVoice.cancel.invoke(cancelRequest),
     ]);
 
-    expect(outbound.filter(({ name }) => name.startsWith('subscribe-fool.voice.'))).toHaveLength(8);
+    expect(outbound.filter(({ name }) => name.startsWith('subscribe-fool.voice.'))).toHaveLength(9);
   });
 
   it('reports genuine unavailable health rather than fake readiness', async () => {
@@ -146,6 +149,7 @@ describe('Fool voice bridge shell', () => {
     ['remove', () => ipcBridge.foolVoice.remove.invoke(removeRequest), 'remove-1'],
     ['transcribe', () => ipcBridge.foolVoice.transcribe.invoke(transcribeRequest), 'transcribe-1'],
     ['cloneVoice', () => ipcBridge.foolVoice.cloneVoice.invoke(cloneVoiceRequest), 'clone-1'],
+    ['deleteClonedVoice', () => ipcBridge.foolVoice.deleteClonedVoice.invoke(deleteClonedVoiceRequest), 'req-delete-1'],
     ['synthesize', () => ipcBridge.foolVoice.synthesize.invoke(synthesizeRequest), 'synthesize-1'],
     ['cancel', () => ipcBridge.foolVoice.cancel.invoke(cancelRequest), 'cancel-1'],
   ])('resolves the unavailable %s operation with its request ID', async (_name, invoke, requestId) => {
@@ -253,6 +257,34 @@ describe('Fool voice bridge shell', () => {
       error: { code: 'invalid-request' },
     });
     expect(cloneVoice).not.toHaveBeenCalled();
+  });
+
+  it('deletes a cloned voice by id', async () => {
+    const deleteClonedVoice = vi.fn().mockReturnValue({ voiceId: 'ultron', deleted: true as const });
+    initFoolVoiceBridge({ deleteClonedVoice });
+
+    const response = await ipcBridge.foolVoice.deleteClonedVoice.invoke(deleteClonedVoiceRequest);
+
+    expect(deleteClonedVoice).toHaveBeenCalledWith({ voiceId: 'ultron' });
+    expect(response).toEqual({
+      version: 1,
+      requestId: 'req-delete-1',
+      ok: true,
+      data: { voiceId: 'ultron', deleted: true },
+    });
+  });
+
+  it('rejects a delete request whose voiceId would escape the cloned-voices directory', async () => {
+    const deleteClonedVoice = vi.fn();
+    initFoolVoiceBridge({ deleteClonedVoice });
+
+    const response = await ipcBridge.foolVoice.deleteClonedVoice.invoke({
+      ...deleteClonedVoiceRequest,
+      payload: { voiceId: '../../evil' },
+    });
+
+    expect(deleteClonedVoice).not.toHaveBeenCalled();
+    expect(response).toMatchObject({ ok: false, error: { code: 'invalid-request' } });
   });
 
   it('rejects a response whose profile id was not built from the cloned-voice prefix', async () => {

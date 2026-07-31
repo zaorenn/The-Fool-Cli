@@ -13,6 +13,8 @@ import type {
   VoiceCatalogResponse,
   VoiceCloneSaveRequest,
   VoiceCloneSaveResponse,
+  VoiceDeleteClonedRequest,
+  VoiceDeleteClonedResponse,
   VoiceDownloadRequest,
   VoiceDownloadResponse,
   VoiceHealth,
@@ -44,6 +46,7 @@ export type FoolVoiceBridgeHandlers = {
   health: (request: VoiceHealthRequest) => MaybePromise<VoiceHealth>;
   transcribe: (request: VoiceTranscribeRequest) => MaybePromise<VoiceTranscribeResponse>;
   cloneVoice: (request: VoiceCloneSaveRequest) => MaybePromise<VoiceCloneSaveResponse>;
+  deleteClonedVoice: (request: VoiceDeleteClonedRequest) => MaybePromise<VoiceDeleteClonedResponse>;
   synthesize: (request: VoiceSynthesizeRequest) => MaybePromise<VoiceSynthesizeResponse>;
   cancel: (request: VoiceCancelRequest) => MaybePromise<VoiceCancelResponse>;
   speakers: (request: VoiceSpeakersRequest) => MaybePromise<VoiceSpeakersResponse>;
@@ -332,6 +335,14 @@ const validateCloneSaveRequest = (payload: unknown): BridgeErrorCode | null => {
 const validateCloneSaveResponse = (response: VoiceCloneSaveResponse): boolean =>
   typeof response.profileId === 'string' && response.profileId.startsWith('cloned:');
 
+const validateDeleteClonedRequest = (payload: unknown): BridgeErrorCode | null =>
+  isRecord(payload) &&
+  hasExactKeys(payload, ['voiceId']) &&
+  typeof payload.voiceId === 'string' &&
+  isValidVoiceId(payload.voiceId)
+    ? null
+    : 'invalid-request';
+
 const validateSynthesizeRequest = (payload: unknown): BridgeErrorCode | null =>
   isRecord(payload) &&
   hasExactKeys(payload, ['operationId', 'providerId', 'modelId', 'profileId', 'language', 'speed', 'text']) &&
@@ -490,6 +501,13 @@ export function initFoolVoiceBridge(handlers: Partial<FoolVoiceBridgeHandlers> =
     handlers.cloneVoice,
     validateCloneSaveResponse,
     'cloneVoice'
+  );
+  registerHandler(
+    ipcBridge.foolVoice.deleteClonedVoice,
+    validateDeleteClonedRequest,
+    handlers.deleteClonedVoice,
+    undefined,
+    'deleteClonedVoice'
   );
   registerHandler(
     ipcBridge.foolVoice.synthesize,
