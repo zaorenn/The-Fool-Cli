@@ -1,0 +1,32 @@
+[package]
+name = "foolrs-cli"
+description = "CLI binary for foolrs — a multi-provider AI agent with tool orchestration"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["ai", "agent", "cli", "llm", "anthropic"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "foolrs"
+path = "src/main.rs"
+
+[dependencies]
+foolrs-agent.workspace = true
+foolrs-compact.workspace = true
+foolrs-config.workspace = true
+foolrs-memory.workspace = true
+foolrs-providers.workspace = true
+foolrs-tools.workspace = true
+foolrs-mcp.workspace = true
+foolrs-protocol.workspace = true
+foolrs-skills.workspace = true
+foolrs-types.workspace = true
+
+tokio.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+workspace-hack.workspace = true

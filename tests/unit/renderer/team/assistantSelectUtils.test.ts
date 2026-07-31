@@ -15,15 +15,15 @@ describe('assistantSelectUtils', () => {
   it('localizes assistant option names for the active locale', () => {
     const bareAssistant = makeAssistant({
       id: 'bare-foolrs',
-      name: 'Aion CLI',
-      name_i18n: { 'zh-CN': 'Aion 命令行' },
+      name: 'Fool CLI',
+      name_i18n: { 'zh-CN': 'Fool 命令行' },
       source: 'generated',
       preset_agent_type: 'foolrs',
     });
 
     const option = assistantToOption(bareAssistant, 'zh-CN');
 
-    expect(option.name).toBe('Aion 命令行');
+    expect(option.name).toBe('Fool 命令行');
   });
 
   it('preserves backend-provided team availability for selectable assistants', () => {

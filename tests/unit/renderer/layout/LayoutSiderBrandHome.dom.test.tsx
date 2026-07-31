@@ -106,7 +106,7 @@ describe('Layout sider brand Home button', () => {
 
   it('navigates to the recorded last non-settings path when clicked in a settings route', () => {
     currentPathname = '/settings/about';
-    sessionStorage.setItem('aion:last-non-settings-path', '/conversation/abc');
+    sessionStorage.setItem('fool:last-non-settings-path', '/conversation/abc');
     renderLayout();
 
     fireEvent.click(screen.getByLabelText(BACK_KEY));
@@ -123,7 +123,7 @@ describe('Layout sider brand Home button', () => {
 
   it('falls back to /guid when the recorded path is itself a settings path', () => {
     currentPathname = '/settings/about';
-    sessionStorage.setItem('aion:last-non-settings-path', '/settings/system');
+    sessionStorage.setItem('fool:last-non-settings-path', '/settings/system');
     renderLayout();
 
     fireEvent.click(screen.getByLabelText(BACK_KEY));
@@ -132,7 +132,7 @@ describe('Layout sider brand Home button', () => {
 
   it('activates via keyboard (Enter and Space) in a settings route', () => {
     currentPathname = '/settings/about';
-    sessionStorage.setItem('aion:last-non-settings-path', '/conversation/abc');
+    sessionStorage.setItem('fool:last-non-settings-path', '/conversation/abc');
     renderLayout();
 
     const brand = screen.getByLabelText(BACK_KEY);
@@ -144,7 +144,7 @@ describe('Layout sider brand Home button', () => {
 
   it('ignores non-activation keys in a settings route', () => {
     currentPathname = '/settings/about';
-    sessionStorage.setItem('aion:last-non-settings-path', '/conversation/abc');
+    sessionStorage.setItem('fool:last-non-settings-path', '/conversation/abc');
     renderLayout();
 
     const brand = screen.getByLabelText(BACK_KEY);
@@ -198,7 +198,7 @@ describe('Layout sider brand Home button', () => {
 
   it('clicking the logo icon counts toward the devtools easter-egg and never navigates', () => {
     currentPathname = '/settings/about';
-    sessionStorage.setItem('aion:last-non-settings-path', '/conversation/abc');
+    sessionStorage.setItem('fool:last-non-settings-path', '/conversation/abc');
     const { container } = renderLayout();
 
     // The icon is the SVG-wrapping div (bg-black), separate from the wordmark.
@@ -212,7 +212,7 @@ describe('Layout sider brand Home button', () => {
   it('opens the update notification directly for tray update checks', () => {
     platformMocks.isElectronDesktopMock.mockReturnValue(true);
     const openListener = vi.fn();
-    window.addEventListener('aionui-open-update-modal', openListener);
+    window.addEventListener('fool-open-update-modal', openListener);
 
     try {
       renderLayout();
@@ -224,7 +224,7 @@ describe('Layout sider brand Home button', () => {
       const event = openListener.mock.calls[0][0] as CustomEvent;
       expect(event.detail).toEqual({ source: 'tray' });
     } finally {
-      window.removeEventListener('aionui-open-update-modal', openListener);
+      window.removeEventListener('fool-open-update-modal', openListener);
     }
   });
 });

@@ -20,13 +20,13 @@ training knowledge, or how you _think_ it probably works. Every claim about an a
 MUST be backed by one of these approved sources, cited explicitly by path:
 
 1. **Captured real data** — actual sampled wire traffic under
-   `~/aion/protocols/samples/` (e.g. `codex-cli/<ver>/`, `claude-cli/<ver>/`, `codex-acp/`,
+   `~/fool/protocols/samples/` (e.g. `codex-cli/<ver>/`, `claude-cli/<ver>/`, `codex-acp/`,
    `opencode/`, `capture/`). This is ground truth for what the CLI actually emitted.
 2. **The ACP library source** — `agent-client-protocol` (main crate + `agent-client-protocol-schema`),
    vendored at `~/.cargo/registry/src/*/agent-client-protocol-*` — for the canonical ACP wire types
    and semantics we translate to.
 3. **An official adapter's code** — the codex `app-server` machine-generated JSON schema under
-   `~/aion/protocols/samples/codex-cli/<ver>/schema-full/` (ground truth from the codex binary
+   `~/fool/protocols/samples/codex-cli/<ver>/schema-full/` (ground truth from the codex binary
    itself), the official claude-code / claude-code-acp adapter source, or an equivalent
    first-party adapter — for inferring a CLI's contract from the reference implementation.
 
@@ -56,7 +56,7 @@ Enforced behaviors:
 4. **Trace to the break, don't guess the layer.** For a cross-layer bug (backend→wire→frontend), follow the actual data through every link and locate where it diverges from expected. Do not attribute the break to a layer by plausibility.
 5. **Calibrate language to evidence.** Say "verified: <file:line>", "not yet checked", or "a sub-agent claims X (unverified)". Never launder an unverified lead into a flat assertion.
 
-See also the standing discipline in the root `AGENTS.md` / memory `aioncore-verification-blindspot-g6`: self-consistent-all-green ≠ correct — verify outward (against a real agent) AND against the old/reference implementation, not just against your own happy path.
+See also the standing discipline in the root `AGENTS.md` / memory `foolcore-verification-blindspot-g6`: self-consistent-all-green ≠ correct — verify outward (against a real agent) AND against the old/reference implementation, not just against your own happy path.
 
 ## Logging
 
@@ -101,9 +101,9 @@ Every domain crate must follow:
 - Route prefix: `/api/`
 - Resource names: kebab-case
 - Response format: `ApiResponse<T>` (success) / `ErrorResponse` (failure)
-- All request/response types defined in `aionui-api-types`
-- `aionui-api-types` must NOT depend on axum/tower or any HTTP framework
-- Use `aionui_common::ApiError` only at API/HTTP boundaries such as routes and middleware. Service/domain code must prefer crate-owned errors (`ConversationError`, `TeamError`, etc.) and map them to `ApiError` in route modules.
+- All request/response types defined in `fool-api-types`
+- `fool-api-types` must NOT depend on axum/tower or any HTTP framework
+- Use `fool_common::ApiError` only at API/HTTP boundaries such as routes and middleware. Service/domain code must prefer crate-owned errors (`ConversationError`, `TeamError`, etc.) and map them to `ApiError` in route modules.
 
 ### WebSocket Events
 
@@ -113,9 +113,9 @@ Every domain crate must follow:
 
 ### Data Layer
 
-- Repository traits in `aionui-db`, prefixed with `I`
+- Repository traits in `fool-db`, prefixed with `I`
 - Concrete implementations prefixed with `Sqlite`
-- Row models in `aionui-db/src/models/`
+- Row models in `fool-db/src/models/`
 - Params objects co-located in repository files
 - Migrations: `NNN_descriptive_name.sql`, no manual DB modifications
 - Services depend on traits, never on concrete implementations
@@ -124,7 +124,7 @@ Every domain crate must follow:
 
 - `AppServices` is the sole service construction center
 - Domain crates only define RouterState, never construct their own dependencies
-- All assembly happens in `aionui-app`'s `build_*_state()` functions
+- All assembly happens in `fool-app`'s `build_*_state()` functions
 
 ### Security
 
@@ -145,7 +145,7 @@ Every domain crate must follow:
 
 ### Subprocess Spawning
 
-New subprocess spawn sites must go through `aionui_runtime`'s spawn Builder — never raw `tokio::process::Command`. See [ARCHITECTURE.md § Runtime Infrastructure](./ARCHITECTURE.md#runtime-infrastructure) for the correct constructor and details.
+New subprocess spawn sites must go through `fool_runtime`'s spawn Builder — never raw `tokio::process::Command`. See [ARCHITECTURE.md § Runtime Infrastructure](./ARCHITECTURE.md#runtime-infrastructure) for the correct constructor and details.
 
 ### Pushing Code
 
@@ -155,20 +155,20 @@ Supports the same arguments as `git push` (e.g. `just push -u origin feat/branch
 
 ### Add Endpoint to Existing Crate
 
-1. Request/response types → `aionui-api-types/src/{domain}.rs`
-2. Handler function → `crates/aionui-{domain}/src/routes.rs`
-3. Business logic → `crates/aionui-{domain}/src/service.rs`
+1. Request/response types → `fool-api-types/src/{domain}.rs`
+2. Handler function → `crates/fool-{domain}/src/routes.rs`
+3. Business logic → `crates/fool-{domain}/src/service.rs`
 4. Register route in `domain_routes()` function
-5. Add test → `crates/aionui-{domain}/tests/` or `crates/aionui-app/tests/`
+5. Add test → `crates/fool-{domain}/tests/` or `crates/fool-app/tests/`
 
 ### Add Migration
 
-1. Next number → `ls crates/aionui-db/migrations/`
+1. Next number → `ls crates/fool-db/migrations/`
 2. Create `NNN_descriptive_name.sql` with `IF NOT EXISTS`
 
 ### Add WebSocket Event
 
-1. Event type → `aionui-api-types`
+1. Event type → `fool-api-types`
 2. Emit via `event_bus.broadcast()` in service
 3. Naming: `domain.camelCaseAction`
 
@@ -244,7 +244,7 @@ Prohibited:
 
 > ⚠️ **When to run what:**
 >
-> - During development: only test the crate you're working on → `cargo test -p aionui-<crate>`
+> - During development: only test the crate you're working on → `cargo test -p fool-<crate>`
 > - After implementation complete: full verification → `cargo test --workspace`
 > - Do NOT run `cargo test --workspace` at the start of a task.
 >
@@ -252,21 +252,21 @@ Prohibited:
 >
 > - `cargo clippy --workspace` takes several minutes — use `run_in_background: true`.
 > - `cargo test --workspace` takes 10+ minutes. MUST use `run_in_background: true` when calling via Bash tool, otherwise it will timeout.
-> - `cargo clippy -p aionui-<crate>` and `cargo test -p aionui-<crate>` typically complete in under 1 minute.
+> - `cargo clippy -p fool-<crate>` and `cargo test -p fool-<crate>` typically complete in under 1 minute.
 
 ### During Development (fast feedback loop)
 
 ```bash
-cargo test -p aionui-<crate>                          # Test the crate you changed
-cargo clippy -p aionui-<crate> -- -D warnings         # Lint the crate you changed
+cargo test -p fool-<crate>                          # Test the crate you changed
+cargo clippy -p fool-<crate> -- -D warnings         # Lint the crate you changed
 ```
 
 ### Before Commit (affected crates)
 
 ```bash
 cargo fmt --all -- --check                                                      # Format gate (instant)
-cargo clippy -p aionui-<crate1> -p aionui-<crate2> -- -D warnings              # Lint affected crates
-cargo test -p aionui-<crate1> -p aionui-<crate2>                               # Test affected crates
+cargo clippy -p fool-<crate1> -p fool-<crate2> -- -D warnings              # Lint affected crates
+cargo test -p fool-<crate1> -p fool-<crate2>                               # Test affected crates
 ```
 
 ### Before Push (full workspace)

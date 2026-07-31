@@ -21,8 +21,8 @@ describe('The Fool primary brand surfaces', () => {
     expect(about).toContain('{PRODUCT_NAME}');
     expect(about).toContain('{LEGAL_ATTRIBUTION}');
 
-    expect(tray).not.toContain("tray.setToolTip('AionUi')");
-    expect(titlebar).not.toContain("useMemo(() => 'AionUi'");
+    expect(tray).not.toContain("tray.setToolTip('The Fool')");
+    expect(titlebar).not.toContain("useMemo(() => 'The Fool'");
   });
 
   it('brands browser and installable web metadata as The Fool', () => {
@@ -51,7 +51,7 @@ describe('The Fool primary brand surfaces', () => {
     const appMenu = readProjectFile('packages/desktop/src/process/utils/appMenu.ts');
 
     expect(deepLink).toContain('PROTOCOL_SCHEME = PRODUCT_PROTOCOL');
-    expect(deepLink).not.toContain("PROTOCOL_SCHEME = 'aionui'");
+    expect(deepLink).not.toContain("PROTOCOL_SCHEME = 'fool'");
     expect(bootstrap).toContain('!AUTO_UPDATE_ENABLED');
     expect(appMenu).toContain('if (AUTO_UPDATE_ENABLED)');
   });

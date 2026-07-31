@@ -20,7 +20,7 @@ type JesterDiagnoseButtonProps = {
 /**
  * Inline "ask the Jester" chip shown next to FeedbackButton on error surfaces.
  * Instead of filing a report, it routes the user to the home chat with the
- * AionUi Jester selected and a diagnosis prompt (including the error text)
+ * The Fool Jester selected and a diagnosis prompt (including the error text)
  * pre-filled — the same flow as the report modal's "Solve via chat" action.
  */
 const JesterDiagnoseButton: React.FC<JesterDiagnoseButtonProps> = ({ errorText, className }) => {
@@ -32,7 +32,7 @@ const JesterDiagnoseButton: React.FC<JesterDiagnoseButtonProps> = ({ errorText, 
       event.stopPropagation();
       const prompt = t('settings.talkToJester.prompt.diagnoseChatError', {
         defaultValue:
-          'I ran into an error during a conversation in AionUi, please help me diagnose it.\n\n[Error] {{error}}\n\nPlease diagnose the cause and tell me how to fix it.',
+          'I ran into an error during a conversation in The Fool, please help me diagnose it.\n\n[Error] {{error}}\n\nPlease diagnose the cause and tell me how to fix it.',
         error: errorText.trim(),
       });
       talkToJester({ prompt }).catch((err) => {

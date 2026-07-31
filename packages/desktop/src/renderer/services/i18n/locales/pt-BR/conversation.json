@@ -131,29 +131,29 @@
       "send_feedback": "Envie feedback com logs para que a equipe possa investigar."
     },
     "ownership": {
-      "aionui": "Aplicativo",
+      "fool": "Aplicativo",
       "user_agent": "Agente",
       "user_llm_provider": "Provedor de modelo",
       "unknown_upstream": "Upstream"
     },
     "codes": {
-      "AIONUI_STREAM_BROKEN": {
+      "FOOL_STREAM_BROKEN": {
         "title": "O fluxo de resposta foi interrompido",
         "body": "O aplicativo aceitou sua mensagem, mas o fluxo de resposta terminou inesperadamente. Tente novamente; se acontecer de novo, envie feedback."
       },
-      "AIONUI_STATE_INCONSISTENT": {
+      "FOOL_STATE_INCONSISTENT": {
         "title": "O estado da conversa está fora de sincronia",
         "body": "O estado da conversa está fora de sincronia. Reinicie este chat ou recarregue o aplicativo antes de tentar novamente."
       },
-      "AIONUI_PERMISSION_ERROR": {
+      "FOOL_PERMISSION_ERROR": {
         "title": "Não foi possível acessar o recurso solicitado",
         "body": "Falhou uma verificação local de permissões ou do sistema de arquivos. Verifique o caminho do projeto e as permissões do aplicativo e tente novamente."
       },
-      "AIONUI_INTERNAL_ERROR": {
+      "FOOL_INTERNAL_ERROR": {
         "title": "A solicitação falhou no aplicativo",
         "body": "A solicitação falhou enquanto o aplicativo a estava processando. Tente novamente uma vez; se se repetir, envie feedback."
       },
-      "AIONUI_CONVERSATION_BUSY": {
+      "FOOL_CONVERSATION_BUSY": {
         "title": "A conversa está ocupada",
         "body": "Ainda há outra resposta em execução. Espere ela terminar antes de enviar uma nova mensagem."
       },

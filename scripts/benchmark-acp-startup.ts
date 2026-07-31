@@ -86,9 +86,9 @@ function agentPillByBackend(backend: string) {
 
 function getLogFilePath(): string {
   const today = new Date().toISOString().slice(0, 10);
-  // Dev mode uses "AionUi-Dev", production uses "AionUi"
-  const devPath = path.join(os.homedir(), 'Library', 'Logs', 'AionUi-Dev', `${today}.log`);
-  const prodPath = path.join(os.homedir(), 'Library', 'Logs', 'AionUi', `${today}.log`);
+  // Dev mode uses "The Fool-Dev", production uses "The Fool"
+  const devPath = path.join(os.homedir(), 'Library', 'Logs', 'The Fool-Dev', `${today}.log`);
+  const prodPath = path.join(os.homedir(), 'Library', 'Logs', 'The Fool', `${today}.log`);
   return fs.existsSync(devPath) ? devPath : prodPath;
 }
 
@@ -202,10 +202,10 @@ async function launchApp(): Promise<ElectronApplication> {
     env: {
       ...process.env,
       ACP_PERF: '1',
-      AIONUI_DISABLE_AUTO_UPDATE: '1',
-      AIONUI_E2E_TEST: '1',
-      AIONUI_DISABLE_DEVTOOLS: '1',
-      AIONUI_CDP_PORT: '0',
+      FOOL_DISABLE_AUTO_UPDATE: '1',
+      FOOL_E2E_TEST: '1',
+      FOOL_DISABLE_DEVTOOLS: '1',
+      FOOL_CDP_PORT: '0',
       NODE_ENV: 'development',
     },
     timeout: 60_000,

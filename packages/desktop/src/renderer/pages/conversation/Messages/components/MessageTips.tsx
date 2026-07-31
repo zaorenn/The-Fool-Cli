@@ -37,7 +37,7 @@ const useFormatContent = (content: string) => {
 };
 
 const ownershipColor = {
-  aionui: 'red',
+  fool: 'red',
   user_agent: 'orange',
   user_llm_provider: 'arcoblue',
   unknown_upstream: 'gray',

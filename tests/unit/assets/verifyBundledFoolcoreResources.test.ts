@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 const {
-  verifyBundledAioncoreResources,
+  verifyBundledFoolcoreResources,
 } = require('../../../packages/shared-scripts/src/verify-bundled-foolcore-resources');
 
 const CLAUDE_VERSION = '2.1.215';
@@ -142,13 +142,13 @@ function seedRuntimeKey(
   return managedResourcesDir;
 }
 
-describe('verifyBundledAioncoreResources', () => {
+describe('verifyBundledFoolcoreResources', () => {
   let tmp: string;
   let resourcesDir: string;
   let managedResourcesDir: string;
 
   beforeEach(() => {
-    tmp = mkdtempSync(join(tmpdir(), 'aionui-bundled-resources-'));
+    tmp = mkdtempSync(join(tmpdir(), 'fool-bundled-resources-'));
     resourcesDir = join(tmp, 'resources');
     managedResourcesDir = seedRuntimeKey(resourcesDir, {
       runtimeKey: 'win32-x64',
@@ -164,7 +164,7 @@ describe('verifyBundledAioncoreResources', () => {
   });
 
   it('passes when the managed resources contract points to existing resources', () => {
-    const result = verifyBundledAioncoreResources({
+    const result = verifyBundledFoolcoreResources({
       resourcesDir,
       electronPlatformName: 'win32',
       targetArch: 'x64',
@@ -178,7 +178,7 @@ describe('verifyBundledAioncoreResources', () => {
   it('fails when managed resources contract is missing', () => {
     rmSync(join(managedResourcesDir, 'manifest.json'));
 
-    const result = verifyBundledAioncoreResources({
+    const result = verifyBundledFoolcoreResources({
       resourcesDir,
       electronPlatformName: 'win32',
       targetArch: 'x64',
@@ -199,7 +199,7 @@ describe('verifyBundledAioncoreResources', () => {
       arch: 'arm64',
     });
 
-    const result = verifyBundledAioncoreResources({
+    const result = verifyBundledFoolcoreResources({
       resourcesDir,
       electronPlatformName: 'win32',
       targetArch: 'x64',
@@ -225,7 +225,7 @@ describe('verifyBundledAioncoreResources', () => {
       nodeExecutable: 'node.exe',
     });
 
-    const result = verifyBundledAioncoreResources({
+    const result = verifyBundledFoolcoreResources({
       resourcesDir: arm64ResourcesDir,
       electronPlatformName: 'win32',
       targetArch: 'arm64',
@@ -248,7 +248,7 @@ describe('verifyBundledAioncoreResources', () => {
       nodeExecutable: 'bin/node',
     });
 
-    const result = verifyBundledAioncoreResources({
+    const result = verifyBundledFoolcoreResources({
       resourcesDir: darwinResourcesDir,
       electronPlatformName: 'darwin',
       targetArch: 'arm64',
@@ -276,7 +276,7 @@ describe('verifyBundledAioncoreResources', () => {
     // Remove the node executable, leaving the directory.
     rmSync(join(linuxManagedResourcesDir, 'node', 'node-v24.11.0-linux-x64', 'bin', 'node'), { force: true });
 
-    const result = verifyBundledAioncoreResources({
+    const result = verifyBundledFoolcoreResources({
       resourcesDir: linuxResourcesDir,
       electronPlatformName: 'linux',
       targetArch: 'x64',
@@ -298,7 +298,7 @@ describe('verifyBundledAioncoreResources', () => {
     rmSync(join(managedResourcesDir, 'cli', 'codex', CODEX_VERSION), { recursive: true, force: true });
     createManagedCliFixture({ managedResourcesDir, name: 'codex', version: '0.100.0', runtimeKey: 'win32-x64' });
 
-    const result = verifyBundledAioncoreResources({
+    const result = verifyBundledFoolcoreResources({
       resourcesDir,
       electronPlatformName: 'win32',
       targetArch: 'x64',
@@ -315,7 +315,7 @@ describe('verifyBundledAioncoreResources', () => {
       force: true,
     });
 
-    const result = verifyBundledAioncoreResources({
+    const result = verifyBundledFoolcoreResources({
       resourcesDir,
       electronPlatformName: 'win32',
       targetArch: 'x64',
@@ -333,7 +333,7 @@ describe('verifyBundledAioncoreResources', () => {
     rmSync(join(managedResourcesDir, 'node', 'node-v24.11.0-win-x64'), { recursive: true, force: true });
     writeFile(join(managedResourcesDir, 'node', 'node-v20.0.0-win-x64', 'node.exe'));
 
-    const result = verifyBundledAioncoreResources({
+    const result = verifyBundledFoolcoreResources({
       resourcesDir,
       electronPlatformName: 'win32',
       targetArch: 'x64',
@@ -351,7 +351,7 @@ describe('verifyBundledAioncoreResources', () => {
     manifest.clis.push({ ...manifest.clis[0] });
     writeJson(manifestPath, manifest);
 
-    const result = verifyBundledAioncoreResources({
+    const result = verifyBundledFoolcoreResources({
       resourcesDir,
       electronPlatformName: 'win32',
       targetArch: 'x64',
@@ -372,7 +372,7 @@ describe('verifyBundledAioncoreResources', () => {
     manifest.clis = manifest.clis.filter((cli: { name: string }) => cli.name !== 'codex');
     writeJson(manifestPath, manifest);
 
-    const result = verifyBundledAioncoreResources({
+    const result = verifyBundledFoolcoreResources({
       resourcesDir,
       electronPlatformName: 'win32',
       targetArch: 'x64',
@@ -389,7 +389,7 @@ describe('verifyBundledAioncoreResources', () => {
   it('fails when the contract is invalid JSON', () => {
     writeFileSync(join(managedResourcesDir, 'manifest.json'), '{');
 
-    const result = verifyBundledAioncoreResources({
+    const result = verifyBundledFoolcoreResources({
       resourcesDir,
       electronPlatformName: 'win32',
       targetArch: 'x64',
@@ -404,7 +404,7 @@ describe('verifyBundledAioncoreResources', () => {
     manifest.schemaVersion = 1;
     writeJson(manifestPath, manifest);
 
-    const result = verifyBundledAioncoreResources({
+    const result = verifyBundledFoolcoreResources({
       resourcesDir,
       electronPlatformName: 'win32',
       targetArch: 'x64',
@@ -419,7 +419,7 @@ describe('verifyBundledAioncoreResources', () => {
     manifest.node.root = 42;
     writeJson(manifestPath, manifest);
 
-    const result = verifyBundledAioncoreResources({
+    const result = verifyBundledFoolcoreResources({
       resourcesDir,
       electronPlatformName: 'win32',
       targetArch: 'x64',
@@ -434,7 +434,7 @@ describe('verifyBundledAioncoreResources', () => {
     manifest.clis[0].platformDirectory = 'linux-x64';
     writeJson(manifestPath, manifest);
 
-    const result = verifyBundledAioncoreResources({
+    const result = verifyBundledFoolcoreResources({
       resourcesDir,
       electronPlatformName: 'win32',
       targetArch: 'x64',

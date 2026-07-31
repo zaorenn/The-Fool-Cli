@@ -1,5 +1,5 @@
-!ifndef AIONUI_INSTALLER_COMMON_NSH
-!define AIONUI_INSTALLER_COMMON_NSH
+!ifndef FOOL_INSTALLER_COMMON_NSH
+!define FOOL_INSTALLER_COMMON_NSH
 !include "installer-observability.nsh"
 !include "installer-errors-sentry.nsh"
 !include "installer-process-control.nsh"

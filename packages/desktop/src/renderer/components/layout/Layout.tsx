@@ -156,7 +156,7 @@ const Layout: React.FC<{
     // Mirror Titlebar's handleBackToChat convention: return to the last non-settings path.
     let target: string | null = null;
     try {
-      target = sessionStorage.getItem('aion:last-non-settings-path');
+      target = sessionStorage.getItem('fool:last-non-settings-path');
     } catch {
       // ignore
     }
@@ -311,7 +311,7 @@ const Layout: React.FC<{
 
     // Handle check update request from tray / 托盘请求检查更新
     const handleCheckUpdate = () => {
-      window.dispatchEvent(new CustomEvent('aionui-open-update-modal', { detail: { source: 'tray' } }));
+      window.dispatchEvent(new CustomEvent('fool-open-update-modal', { detail: { source: 'tray' } }));
     };
 
     // Listen for tray events / 监听托盘事件
@@ -511,7 +511,12 @@ const Layout: React.FC<{
                 per-conversation subtree → persists across same-project switches. */}
             <div ref={mainRowRef} className='flex flex-1 min-h-0 overflow-hidden'>
               <ArcoLayout.Content
-                className={'bg-1 layout-content flex flex-col min-h-0 flex-1'}
+                className={classNames('bg-1 layout-content flex flex-col min-h-0 flex-1', {
+                  // Rounded only while the sider is actually beside it. Collapsed
+                  // or on mobile the content runs to the window edge, where a
+                  // radius would cut a notch out of the app frame.
+                  'layout-content--beside-sider': !isMobile && !collapsed,
+                })}
                 onClick={() => {
                   if (isMobile && !collapsed) setCollapsed(true);
                 }}

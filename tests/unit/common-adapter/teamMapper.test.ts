@@ -140,12 +140,12 @@ describe('teamMapper', () => {
       toBackendAssistant({
         role: 'leader',
         assistant_backend: 'foolrs',
-        assistant_name: 'Aion CLI',
+        assistant_name: 'Fool CLI',
         status: 'pending',
         assistant_id: 'assistant-1',
       })
     ).toMatchObject({
-      name: 'Aion CLI',
+      name: 'Fool CLI',
       role: 'lead',
       assistant_id: 'assistant-1',
     });

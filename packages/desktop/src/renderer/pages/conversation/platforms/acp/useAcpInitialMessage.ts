@@ -61,7 +61,7 @@ export const useAcpInitialMessage = ({
         const input = typeof initialMessage.input === 'string' ? initialMessage.input : '';
         // Guid-page initial files are source-tagged ChatFileRefs (`local` for
         // backend-machine picks, `upload` for device uploads). Body stays plain
-        // text; the backend resolves each ref and injects the [[AION_FILES]]
+        // text; the backend resolves each ref and injects the [[FOOL_FILES]]
         // marker at the send edge. Legacy string[] entries (a stale pre-upgrade
         // session) coerce to upload refs for back-compat.
         const files: ChatFileRef[] = Array.isArray(initialMessage.files)

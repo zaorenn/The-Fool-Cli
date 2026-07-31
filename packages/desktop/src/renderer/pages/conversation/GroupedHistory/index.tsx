@@ -5,7 +5,7 @@
  */
 
 import type { TChatConversation } from '@/common/config/storage';
-import AionModal from '@/renderer/components/base/AionModal';
+import FoolModal from '@/renderer/components/base/FoolModal';
 import DirectorySelectionModal from '@/renderer/components/settings/DirectorySelectionModal';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useVoiceBoundConversation } from '@/renderer/hooks/voice/useVoiceBoundConversation';
@@ -425,8 +425,8 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         </div>
       )}
 
-      {/* 移除项目确认弹窗 — 使用项目自家 AionModal + 圆角线框按钮（红色危险态） */}
-      <AionModal
+      {/* 移除项目确认弹窗 — 使用项目自家 FoolModal + 圆角线框按钮（红色危险态） */}
+      <FoolModal
         visible={removeProjectTarget !== null}
         style={{ width: '400px' }}
         header={{
@@ -490,7 +490,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
             count: removeProjectTarget?.conversations.length ?? 0,
           })}
         </div>
-      </AionModal>
+      </FoolModal>
 
       <div>
         {/* L1: Pinned section */}

@@ -1,30 +1,30 @@
 [workspace]
 resolver = "3"
 members = [
-  "crates/aionui-assets",
-  "crates/aionui-common",
-  "crates/aionui-db",
-  "crates/aionui-api-types",
-  "crates/aionui-realtime",
-  "crates/aionui-runtime",
-  "crates/aionui-process",
-  "crates/aionui-session",
-  "crates/aionui-auth",
-  "crates/aionui-system",
-  "crates/aionui-file",
-  "crates/aionui-office",
-  "crates/aionui-shell",
-  "crates/aionui-ai-agent",
-  "crates/aionui-mcp",
-  "crates/aionui-conversation",
-  "crates/aionui-extension",
-  "crates/aionui-channel",
-  "crates/aionui-team-prompts",
-  "crates/aionui-team",
-  "crates/aionui-project",
-  "crates/aionui-cron",
-  "crates/aionui-assistant",
-  "crates/aionui-app",
+  "crates/fool-assets",
+  "crates/fool-common",
+  "crates/fool-db",
+  "crates/fool-api-types",
+  "crates/fool-realtime",
+  "crates/fool-runtime",
+  "crates/fool-process",
+  "crates/fool-session",
+  "crates/fool-auth",
+  "crates/fool-system",
+  "crates/fool-file",
+  "crates/fool-office",
+  "crates/fool-shell",
+  "crates/fool-ai-agent",
+  "crates/fool-mcp",
+  "crates/fool-conversation",
+  "crates/fool-extension",
+  "crates/fool-channel",
+  "crates/fool-team-prompts",
+  "crates/fool-team",
+  "crates/fool-project",
+  "crates/fool-cron",
+  "crates/fool-assistant",
+  "crates/fool-app",
 ]
 
 [workspace.package]
@@ -34,37 +34,37 @@ license = "MIT"
 
 [workspace.dependencies]
 # Internal crates
-aionui-common = { path = "crates/aionui-common" }
-aionui-assets = { path = "crates/aionui-assets" }
-aionui-db = { path = "crates/aionui-db" }
-aionui-api-types = { path = "crates/aionui-api-types" }
-aionui-realtime = { path = "crates/aionui-realtime" }
-aionui-runtime = { path = "crates/aionui-runtime" }
-aionui-process = { path = "crates/aionui-process" }
-aionui-session = { path = "crates/aionui-session" }
-aionui-auth = { path = "crates/aionui-auth" }
-aionui-system = { path = "crates/aionui-system" }
-aionui-file = { path = "crates/aionui-file" }
-aionui-office = { path = "crates/aionui-office" }
-aionui-shell = { path = "crates/aionui-shell" }
-aionui-ai-agent = { path = "crates/aionui-ai-agent" }
-aionui-mcp = { path = "crates/aionui-mcp" }
-aionui-conversation = { path = "crates/aionui-conversation" }
-aionui-extension = { path = "crates/aionui-extension" }
-aionui-channel = { path = "crates/aionui-channel" }
-aionui-team-prompts = { path = "crates/aionui-team-prompts" }
-aionui-team = { path = "crates/aionui-team" }
-aionui-project = { path = "crates/aionui-project" }
-aionui-cron = { path = "crates/aionui-cron" }
-aionui-assistant = { path = "crates/aionui-assistant" }
-aionui-app = { path = "crates/aionui-app" }
+fool-common = { path = "crates/fool-common" }
+fool-assets = { path = "crates/fool-assets" }
+fool-db = { path = "crates/fool-db" }
+fool-api-types = { path = "crates/fool-api-types" }
+fool-realtime = { path = "crates/fool-realtime" }
+fool-runtime = { path = "crates/fool-runtime" }
+fool-process = { path = "crates/fool-process" }
+fool-session = { path = "crates/fool-session" }
+fool-auth = { path = "crates/fool-auth" }
+fool-system = { path = "crates/fool-system" }
+fool-file = { path = "crates/fool-file" }
+fool-office = { path = "crates/fool-office" }
+fool-shell = { path = "crates/fool-shell" }
+fool-ai-agent = { path = "crates/fool-ai-agent" }
+fool-mcp = { path = "crates/fool-mcp" }
+fool-conversation = { path = "crates/fool-conversation" }
+fool-extension = { path = "crates/fool-extension" }
+fool-channel = { path = "crates/fool-channel" }
+fool-team-prompts = { path = "crates/fool-team-prompts" }
+fool-team = { path = "crates/fool-team" }
+fool-project = { path = "crates/fool-project" }
+fool-cron = { path = "crates/fool-cron" }
+fool-assistant = { path = "crates/fool-assistant" }
+fool-app = { path = "crates/fool-app" }
 
-aion-agent = { path = "../agent/crates/aion-agent" }
-aion-providers = { path = "../agent/crates/aion-providers" }
-aion-types = { path = "../agent/crates/aion-types" }
-aion-protocol = { path = "../agent/crates/aion-protocol" }
-aion-config = { path = "../agent/crates/aion-config" }
-aion-mcp = { path = "../agent/crates/aion-mcp" }
+foolrs-agent = { path = "../agent/crates/foolrs-agent" }
+foolrs-providers = { path = "../agent/crates/foolrs-providers" }
+foolrs-types = { path = "../agent/crates/foolrs-types" }
+foolrs-protocol = { path = "../agent/crates/foolrs-protocol" }
+foolrs-config = { path = "../agent/crates/foolrs-config" }
+foolrs-mcp = { path = "../agent/crates/foolrs-mcp" }
 
 # Core framework
 tokio = { version = "1", features = ["full"] }

@@ -310,7 +310,7 @@
   "autoPreviewOfficeFiles": "Yeni Office Dosyalarını Otomatik Önizle",
   "autoPreviewOfficeFilesDesc": "Geçerli projede yeni oluşturulan Word, Excel ve PowerPoint dosyalarını otomatik olarak açar. Office geçici kilit dosyaları yok sayılır.",
   "startOnBoot": "Açılışta Başlat",
-  "startOnBootDesc": "macOS veya Windows oturumu açtığınızda The Fool'yi otomatik olarak başlatır.",
+  "startOnBootDesc": "macOS veya Windows oturumu açtığınızda The Fool'u otomatik olarak başlatır.",
   "startOnBootUnsupported": "Yalnızca paketlenmiş macOS ve Windows uygulamalarında kullanılabilir.",
   "startOnBootUpdateFailed": "Açılışta başlat ayarı güncellenemedi",
   "closeToTray": "Tepsiye Kapat",

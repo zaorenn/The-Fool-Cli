@@ -6,7 +6,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 Set-Location $repoRoot
 
-$migrationDir = Join-Path $repoRoot "crates/aionui-db/migrations"
+$migrationDir = Join-Path $repoRoot "crates/fool-db/migrations"
 $duplicateVersions = Get-ChildItem -LiteralPath $migrationDir -File -Filter "*.sql" |
     ForEach-Object {
         if ($_.Name -match '^([0-9]+)_') {
@@ -30,12 +30,12 @@ if ($duplicateVersions) {
     exit 1
 }
 
-if ($env:AIONCORE_ALLOW_MAIN_MIGRATION_EDIT -eq "1") {
-    Write-Output "AIONCORE_ALLOW_MAIN_MIGRATION_EDIT=1; skipping migration immutability check"
+if ($env:FOOLCORE_ALLOW_MAIN_MIGRATION_EDIT -eq "1") {
+    Write-Output "FOOLCORE_ALLOW_MAIN_MIGRATION_EDIT=1; skipping migration immutability check"
     exit 0
 }
 
-$baseRef = $env:AIONCORE_MIGRATION_BASE_REF
+$baseRef = $env:FOOLCORE_MIGRATION_BASE_REF
 if ([string]::IsNullOrWhiteSpace($baseRef)) {
     git rev-parse --verify --quiet origin/main | Out-Null
     if ($LASTEXITCODE -eq 0) {
@@ -62,12 +62,12 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
-$changed = git diff --name-status --diff-filter=DMR $baseCommit -- "crates/aionui-db/migrations/*.sql"
+$changed = git diff --name-status --diff-filter=DMR $baseCommit -- "crates/fool-db/migrations/*.sql"
 if (-not [string]::IsNullOrWhiteSpace(($changed -join "`n"))) {
     [Console]::Error.WriteLine("Existing migration files from main must not be modified or deleted.")
     [Console]::Error.WriteLine("")
     [Console]::Error.WriteLine("Fix this by reverting changes to existing migration files and adding a new next-numbered migration instead.")
-    [Console]::Error.WriteLine("If this is an intentional high-risk exception, rerun with AIONCORE_ALLOW_MAIN_MIGRATION_EDIT=1.")
+    [Console]::Error.WriteLine("If this is an intentional high-risk exception, rerun with FOOLCORE_ALLOW_MAIN_MIGRATION_EDIT=1.")
     [Console]::Error.WriteLine("")
     [Console]::Error.WriteLine("Changed existing migrations:")
     [Console]::Error.WriteLine(($changed -join "`n"))

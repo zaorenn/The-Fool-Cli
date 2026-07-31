@@ -90,7 +90,7 @@ export type BackendLaunchOptions = {
   dataDir?: string;
   logDir?: string;
   /**
-   * System dirs exposed to the backend via AIONUI_{CACHE,WORK,LOG}_DIR env.
+   * System dirs exposed to the backend via FOOL_{CACHE,WORK,LOG}_DIR env.
    * Surfaces on `/api/system/info`. If omitted, the backend inherits
    * process.env and will likely report wrong/empty dirs.
    */
@@ -186,7 +186,7 @@ export class BackendStartupCancelledError extends Error {
 }
 
 export function buildSpawnArgs(config: SpawnConfig): string[] {
-  const logLevel = process.env.AIONUI_LOG_LEVEL || (config.isPackaged ? 'info' : 'debug');
+  const logLevel = process.env.FOOL_LOG_LEVEL || (config.isPackaged ? 'info' : 'debug');
   const args = [
     '--port',
     String(config.port),
@@ -199,7 +199,7 @@ export function buildSpawnArgs(config: SpawnConfig): string[] {
     config.appVersion,
   ];
   if (config.isPackaged) args.push('--managed-resources-mode', 'bundled');
-  if (!config.isPackaged && process.env.AIONUI_DUMP_PROMPTS === '1') args.push('--dump-prompts');
+  if (!config.isPackaged && process.env.FOOL_DUMP_PROMPTS === '1') args.push('--dump-prompts');
   if (config.logDir) args.push('--log-dir', config.logDir);
   if (config.workDir) args.push('--work-dir', config.workDir);
   if (config.local) args.push('--local');
@@ -208,17 +208,17 @@ export function buildSpawnArgs(config: SpawnConfig): string[] {
 }
 
 /**
- * Backend reads AIONUI_{CACHE,WORK,LOG}_DIR env vars to report system dirs
- * (see The Fool Core/crates/aionui-system/src/sysinfo.rs). Inject them so the
+ * Backend reads FOOL_{CACHE,WORK,LOG}_DIR env vars to report system dirs
+ * (see The Fool Core/crates/fool-system/src/sysinfo.rs). Inject them so the
  * backend's `/api/system/info` matches what Electron main persists in
- * ProcessEnv('aionui.dir').
+ * ProcessEnv('fool.dir').
  */
 export function buildSpawnEnv(dirs: BackendDirConfig): NodeJS.ProcessEnv {
   return {
     ...process.env,
-    AIONUI_CACHE_DIR: dirs.cacheDir,
-    AIONUI_WORK_DIR: dirs.workDir,
-    AIONUI_LOG_DIR: dirs.logDir,
+    FOOL_CACHE_DIR: dirs.cacheDir,
+    FOOL_WORK_DIR: dirs.workDir,
+    FOOL_LOG_DIR: dirs.logDir,
   };
 }
 
@@ -360,7 +360,7 @@ function clearHealthCheckErrorDiagnostics(diagnostics: HealthCheckDiagnostics): 
   delete diagnostics.healthCheckLastErrorCauseCode;
 }
 
-function parseAioncoreListeningPort(line: string): number | undefined {
+function parseFoolcoreListeningPort(line: string): number | undefined {
   if (!line.startsWith(FOOLCORE_LISTENING_PREFIX)) return undefined;
   try {
     const parsed = JSON.parse(line.slice(FOOLCORE_LISTENING_PREFIX.length)) as { port?: unknown };
@@ -775,7 +775,7 @@ export class BackendLifecycleManager {
       stdoutTail = appendOutputTail(stdoutTail, data);
       for (const line of data.toString().split('\n')) {
         const trimmed = line.trim();
-        const port = parseAioncoreListeningPort(trimmed);
+        const port = parseFoolcoreListeningPort(trimmed);
         if (port !== undefined) {
           this._port = port;
           serverListeningObserved = true;

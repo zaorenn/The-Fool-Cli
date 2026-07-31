@@ -16,7 +16,7 @@ type StreamRegistry = {
   >;
 };
 
-const STREAM_INJECTOR_CONVERSATION_KEY = 'aionui:e2e-message-stream-conversation-id';
+const STREAM_INJECTOR_CONVERSATION_KEY = 'fool:e2e-message-stream-conversation-id';
 
 function contrastRatio(foreground: string, background: string): number {
   const toLuminance = (color: string) => {
@@ -94,13 +94,13 @@ test.describe('The Fool default theme', () => {
       await page.goto(page.url().split('#')[0] + '#/conversation/' + conversation.id);
       await expect(page.getByTestId('message-list-scroller')).toBeVisible({ timeout: 30_000 });
       await page.waitForFunction((conversationId) => {
-        const registry = (window as unknown as { __AIONUI_E2E_MESSAGE_STREAM__?: StreamRegistry })
-          .__AIONUI_E2E_MESSAGE_STREAM__;
+        const registry = (window as unknown as { __FOOL_E2E_MESSAGE_STREAM__?: StreamRegistry })
+          .__FOOL_E2E_MESSAGE_STREAM__;
         return Boolean(registry?.controllers[conversationId]);
       }, conversation.id);
       await page.evaluate(async (conversationId) => {
-        const registry = (window as unknown as { __AIONUI_E2E_MESSAGE_STREAM__?: StreamRegistry })
-          .__AIONUI_E2E_MESSAGE_STREAM__;
+        const registry = (window as unknown as { __FOOL_E2E_MESSAGE_STREAM__?: StreamRegistry })
+          .__FOOL_E2E_MESSAGE_STREAM__;
         await registry!.controllers[conversationId].runScenario({ historyPairs: 1, lines: 0, seedHistoryOnly: true });
       }, conversation.id);
 

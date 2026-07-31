@@ -1,4 +1,4 @@
-import AionSelect from '@/renderer/components/base/AionSelect';
+import FoolSelect from '@/renderer/components/base/FoolSelect';
 import type { SelectHandle } from '@arco-design/web-react/es/Select/interface';
 import React, { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -29,21 +29,21 @@ const LanguageSwitcher: React.FC = () => {
 
   return (
     <div className='flex items-center gap-8px'>
-      <AionSelect ref={selectRef} className='w-160px' value={i18n.language} onChange={handleLanguageChange}>
-        <AionSelect.Option value='zh-CN'>简体中文</AionSelect.Option>
-        <AionSelect.Option value='zh-TW'>繁體中文</AionSelect.Option>
-        <AionSelect.Option value='ja-JP'>日本語</AionSelect.Option>
-        <AionSelect.Option value='ko-KR'>한국어</AionSelect.Option>
-        <AionSelect.Option value='tr-TR'>Türkçe</AionSelect.Option>
-        <AionSelect.Option value='ru-RU'>Русский</AionSelect.Option>
-        <AionSelect.Option value='uk-UA'>Українська</AionSelect.Option>
-        <AionSelect.Option value='pt-BR'>Português (BR)</AionSelect.Option>
-        <AionSelect.Option value='de-DE'>Deutsch</AionSelect.Option>
-        <AionSelect.Option value='es-ES'>Español</AionSelect.Option>
-        <AionSelect.Option value='fr-FR'>Français</AionSelect.Option>
-        <AionSelect.Option value='fa-IR'>فارسی</AionSelect.Option>
-        <AionSelect.Option value='en-US'>English</AionSelect.Option>
-      </AionSelect>
+      <FoolSelect ref={selectRef} className='w-160px' value={i18n.language} onChange={handleLanguageChange}>
+        <FoolSelect.Option value='zh-CN'>简体中文</FoolSelect.Option>
+        <FoolSelect.Option value='zh-TW'>繁體中文</FoolSelect.Option>
+        <FoolSelect.Option value='ja-JP'>日本語</FoolSelect.Option>
+        <FoolSelect.Option value='ko-KR'>한국어</FoolSelect.Option>
+        <FoolSelect.Option value='tr-TR'>Türkçe</FoolSelect.Option>
+        <FoolSelect.Option value='ru-RU'>Русский</FoolSelect.Option>
+        <FoolSelect.Option value='uk-UA'>Українська</FoolSelect.Option>
+        <FoolSelect.Option value='pt-BR'>Português (BR)</FoolSelect.Option>
+        <FoolSelect.Option value='de-DE'>Deutsch</FoolSelect.Option>
+        <FoolSelect.Option value='es-ES'>Español</FoolSelect.Option>
+        <FoolSelect.Option value='fr-FR'>Français</FoolSelect.Option>
+        <FoolSelect.Option value='fa-IR'>فارسی</FoolSelect.Option>
+        <FoolSelect.Option value='en-US'>English</FoolSelect.Option>
+      </FoolSelect>
     </div>
   );
 };

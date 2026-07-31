@@ -13,5 +13,9 @@
     "specifyWorkspace": "Sélectionnez le dossier du projet",
     "searchPlaceholder": "Rechercher des projets…",
     "noProject": "Aucun projet"
+  },
+  "firstRun": {
+    "conversationName": "Premiers pas",
+    "openingMessage": "J'ouvre The Fool pour la première fois. Présente-toi, puis guide-moi dans la configuration : vérifie ce qui fonctionne déjà, aide-moi à connecter un fournisseur de modèles, confirme qu'il répond et explique-moi ce que je peux faire ensuite. Pose-moi une seule question à la fois et effectue toi-même la configuration au fur et à mesure."
   }
 }

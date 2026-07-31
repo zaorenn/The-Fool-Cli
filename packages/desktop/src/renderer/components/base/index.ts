@@ -5,7 +5,7 @@
  */
 
 /**
- * AionUi 基础组件库统一导出 / AionUi base components unified exports
+ * The Fool 基础组件库统一导出 / The Fool base components unified exports
  *
  * 提供所有基础组件和类型的统一导出入口
  * Provides unified export entry for all base components and types
@@ -13,37 +13,37 @@
 
 // ==================== 组件导出 / Component Exports ====================
 
-export { default as AionModal } from './AionModal';
-export { default as AionCollapse } from './AionCollapse';
-export { default as AionSelect } from './AionSelect';
-export { default as AionScrollArea } from './AionScrollArea';
-export { default as AionSteps } from './AionSteps';
-export { default as AionSearchInput } from './AionSearchInput';
-export { default as AionInlineSearchInput } from './AionInlineSearchInput';
+export { default as FoolModal } from './FoolModal';
+export { default as FoolCollapse } from './FoolCollapse';
+export { default as FoolSelect } from './FoolSelect';
+export { default as FoolScrollArea } from './FoolScrollArea';
+export { default as FoolSteps } from './FoolSteps';
+export { default as FoolSearchInput } from './FoolSearchInput';
+export { default as FoolInlineSearchInput } from './FoolInlineSearchInput';
 
 // ==================== 类型导出 / Type Exports ====================
 
-// AionModal 类型 / AionModal types
+// FoolModal 类型 / FoolModal types
 export type {
   ModalSize,
   ModalHeaderConfig,
   ModalFooterConfig,
   ModalContentStyleConfig,
-  AionModalProps,
-} from './AionModal';
-export { MODAL_SIZES } from './AionModal';
+  FoolModalProps,
+} from './FoolModal';
+export { MODAL_SIZES } from './FoolModal';
 
-// AionCollapse 类型 / AionCollapse types
-export type { AionCollapseProps, AionCollapseItemProps } from './AionCollapse';
+// FoolCollapse 类型 / FoolCollapse types
+export type { FoolCollapseProps, FoolCollapseItemProps } from './FoolCollapse';
 
-// AionSelect 类型 / AionSelect types
-export type { AionSelectProps } from './AionSelect';
+// FoolSelect 类型 / FoolSelect types
+export type { FoolSelectProps } from './FoolSelect';
 
-// AionSteps 类型 / AionSteps types
-export type { AionStepsProps } from './AionSteps';
+// FoolSteps 类型 / FoolSteps types
+export type { FoolStepsProps } from './FoolSteps';
 
-// AionSearchInput 类型 / AionSearchInput types
-export type { AionSearchInputProps } from './AionSearchInput';
+// FoolSearchInput 类型 / FoolSearchInput types
+export type { FoolSearchInputProps } from './FoolSearchInput';
 
-// AionInlineSearchInput 类型 / AionInlineSearchInput types
-export type { AionInlineSearchInputProps } from './AionInlineSearchInput';
+// FoolInlineSearchInput 类型 / FoolInlineSearchInput types
+export type { FoolInlineSearchInputProps } from './FoolInlineSearchInput';

@@ -41,7 +41,7 @@ describe('Windows bundled foolcore install verifier', () => {
   const runOnWindows = process.platform === 'win32' ? it : it.skip;
 
   runOnWindows('fails an old-version-only Codex CLI install directory', () => {
-    const tmp = mkdtempSync(join(tmpdir(), 'aionui-install-verify-'));
+    const tmp = mkdtempSync(join(tmpdir(), 'fool-install-verify-'));
     const installDir = join(tmp, 'install');
     const managedRoot = join(installDir, 'resources', 'bundled-foolcore', 'win32-x64', 'managed-resources');
     const logPath = join(tmp, 'verify.log');

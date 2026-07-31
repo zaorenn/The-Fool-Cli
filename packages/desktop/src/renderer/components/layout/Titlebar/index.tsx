@@ -188,14 +188,14 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
       const path = `${location.pathname}${location.search}${location.hash}`;
       lastNonSettingsPathRef.current = path;
       try {
-        sessionStorage.setItem('aion:last-non-settings-path', path);
+        sessionStorage.setItem('fool:last-non-settings-path', path);
       } catch {
         // ignore
       }
       return;
     }
     try {
-      const stored = sessionStorage.getItem('aion:last-non-settings-path');
+      const stored = sessionStorage.getItem('fool:last-non-settings-path');
       if (stored) {
         lastNonSettingsPathRef.current = stored;
       }

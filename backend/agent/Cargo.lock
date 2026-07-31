@@ -12,18 +12,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "aion-agent"
+name = "foolrs-agent"
 version = "0.2.8"
 dependencies = [
- "aion-compact",
- "aion-config",
- "aion-mcp",
- "aion-memory",
- "aion-protocol",
- "aion-providers",
- "aion-skills",
- "aion-tools",
- "aion-types",
+ "foolrs-compact",
+ "foolrs-config",
+ "foolrs-mcp",
+ "foolrs-memory",
+ "foolrs-protocol",
+ "foolrs-providers",
+ "foolrs-skills",
+ "foolrs-tools",
+ "foolrs-types",
  "anyhow",
  "async-trait",
  "base64",
@@ -49,19 +49,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "aion-cli"
+name = "foolrs-cli"
 version = "0.2.8"
 dependencies = [
- "aion-agent",
- "aion-compact",
- "aion-config",
- "aion-mcp",
- "aion-memory",
- "aion-protocol",
- "aion-providers",
- "aion-skills",
- "aion-tools",
- "aion-types",
+ "foolrs-agent",
+ "foolrs-compact",
+ "foolrs-config",
+ "foolrs-mcp",
+ "foolrs-memory",
+ "foolrs-protocol",
+ "foolrs-providers",
+ "foolrs-skills",
+ "foolrs-tools",
+ "foolrs-types",
  "anyhow",
  "clap",
  "tokio",
@@ -71,7 +71,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aion-compact"
+name = "foolrs-compact"
 version = "0.2.8"
 dependencies = [
  "regex",
@@ -82,12 +82,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "aion-config"
+name = "foolrs-config"
 version = "0.2.8"
 dependencies = [
- "aion-compact",
- "aion-process",
- "aion-types",
+ "foolrs-compact",
+ "foolrs-process",
+ "foolrs-types",
  "anyhow",
  "chrono",
  "dirs",
@@ -109,13 +109,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "aion-mcp"
+name = "foolrs-mcp"
 version = "0.2.8"
 dependencies = [
- "aion-config",
- "aion-protocol",
- "aion-tools",
- "aion-types",
+ "foolrs-config",
+ "foolrs-protocol",
+ "foolrs-tools",
+ "foolrs-types",
  "anyhow",
  "async-trait",
  "futures",
@@ -129,10 +129,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "aion-memory"
+name = "foolrs-memory"
 version = "0.2.8"
 dependencies = [
- "aion-config",
+ "foolrs-config",
  "chrono",
  "rstest",
  "serde",
@@ -145,7 +145,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aion-process"
+name = "foolrs-process"
 version = "0.2.8"
 dependencies = [
  "libc",
@@ -155,10 +155,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "aion-protocol"
+name = "foolrs-protocol"
 version = "0.2.8"
 dependencies = [
- "aion-types",
+ "foolrs-types",
  "rstest",
  "serde",
  "serde_json",
@@ -168,11 +168,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "aion-providers"
+name = "foolrs-providers"
 version = "0.2.8"
 dependencies = [
- "aion-config",
- "aion-types",
+ "foolrs-config",
+ "foolrs-types",
  "anyhow",
  "async-trait",
  "aws-config",
@@ -200,13 +200,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "aion-skills"
+name = "foolrs-skills"
 version = "0.2.8"
 dependencies = [
- "aion-config",
- "aion-mcp",
- "aion-process",
- "aion-types",
+ "foolrs-config",
+ "foolrs-mcp",
+ "foolrs-process",
+ "foolrs-types",
  "anyhow",
  "async-trait",
  "dirs",
@@ -229,13 +229,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "aion-tools"
+name = "foolrs-tools"
 version = "0.2.8"
 dependencies = [
- "aion-config",
- "aion-process",
- "aion-protocol",
- "aion-types",
+ "foolrs-config",
+ "foolrs-process",
+ "foolrs-protocol",
+ "foolrs-types",
  "anyhow",
  "async-trait",
  "base64",
@@ -251,7 +251,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aion-types"
+name = "foolrs-types"
 version = "0.2.8"
 dependencies = [
  "async-trait",

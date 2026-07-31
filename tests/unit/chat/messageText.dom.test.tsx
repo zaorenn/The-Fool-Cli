@@ -224,7 +224,7 @@ describe('MessageText attachment paths', () => {
       position: 'right',
       createdAt: Date.now(),
       content: {
-        content: 'look at this\n\n[[AION_FILES]]\nuploads/photo.png',
+        content: 'look at this\n\n[[FOOL_FILES]]\nuploads/photo.png',
       },
     };
 
@@ -262,7 +262,7 @@ describe('MessageText attachment paths', () => {
   });
 
   it('wraps a long unbroken url/path in a user message so the bubble never overflows', () => {
-    const longPath = '/var/folders/gd/6bb7q8jd1ll0g17q5gly4flw0000gn/T/aionui/0265f4a8/image-xxxxxxxxxxxxxxxxxx';
+    const longPath = '/var/folders/gd/6bb7q8jd1ll0g17q5gly4flw0000gn/T/fool/0265f4a8/image-xxxxxxxxxxxxxxxxxx';
 
     renderMessageText(longPath, { position: 'right' });
 
@@ -283,7 +283,7 @@ describe('MessageText attachment paths', () => {
       position: 'right',
       createdAt: Date.now(),
       content: {
-        content: 'look at this\n\n[[AION_FILES]]\n/Users/demo/Desktop/photo.png',
+        content: 'look at this\n\n[[FOOL_FILES]]\n/Users/demo/Desktop/photo.png',
       },
     };
 
@@ -300,7 +300,7 @@ describe('MessageText attachment paths', () => {
     const content = [
       'look at these',
       '',
-      '[[AION_FILES]]',
+      '[[FOOL_FILES]]',
       'C:\\Users\\demo\\Desktop\\图片 文件.png',
       'uploads/中文 文件.txt',
       '设计 图.png',
@@ -317,7 +317,7 @@ describe('MessageText attachment paths', () => {
   });
 
   it('renders assistant marker mentions as full message text without file previews', () => {
-    const content = '请不要使用 [[AION_FILES]] 这种格式';
+    const content = '请不要使用 [[FOOL_FILES]] 这种格式';
 
     renderMessageText(content);
 
@@ -329,9 +329,9 @@ describe('MessageText attachment paths', () => {
 
   it('keeps assistant marker-tail markdown visible as message text', () => {
     const content = [
-      '不是用 `[[AION_FILES]]` 路径形式。',
+      '不是用 `[[FOOL_FILES]]` 路径形式。',
       '',
-      '[[AION_FILES]]',
+      '[[FOOL_FILES]]',
       '## 怎么解决',
       '- 路径引用...模型看不到像素',
     ].join('\n');
@@ -339,8 +339,8 @@ describe('MessageText attachment paths', () => {
     renderMessageText(content);
 
     const messageContent = screen.getByTestId('message-text-content');
-    expect(messageContent).toHaveTextContent('不是用 `[[AION_FILES]]` 路径形式。');
-    expect(messageContent).toHaveTextContent('[[AION_FILES]]');
+    expect(messageContent).toHaveTextContent('不是用 `[[FOOL_FILES]]` 路径形式。');
+    expect(messageContent).toHaveTextContent('[[FOOL_FILES]]');
     expect(messageContent).toHaveTextContent('## 怎么解决');
     expect(messageContent).toHaveTextContent('- 路径引用...模型看不到像素');
     expect(screen.queryByTestId('file-preview')).not.toBeInTheDocument();
@@ -349,13 +349,13 @@ describe('MessageText attachment paths', () => {
   });
 
   it('keeps assistant fenced-code marker text visible without file previews', () => {
-    const content = ['```md', '[[AION_FILES]]', 'uploads/photo.png', '```'].join('\n');
+    const content = ['```md', '[[FOOL_FILES]]', 'uploads/photo.png', '```'].join('\n');
 
     renderMessageText(content);
 
     const messageContent = screen.getByTestId('message-text-content');
     expect(messageContent).toHaveTextContent('```md');
-    expect(messageContent).toHaveTextContent('[[AION_FILES]]');
+    expect(messageContent).toHaveTextContent('[[FOOL_FILES]]');
     expect(messageContent).toHaveTextContent('uploads/photo.png');
     expect(screen.queryByTestId('file-preview')).not.toBeInTheDocument();
     expect(mockFilePreview).not.toHaveBeenCalled();
@@ -363,7 +363,7 @@ describe('MessageText attachment paths', () => {
   });
 
   it('keeps teammate marker text visible without file previews', () => {
-    const content = '请不要使用 [[AION_FILES]] 这种格式';
+    const content = '请不要使用 [[FOOL_FILES]] 这种格式';
 
     renderMessageText(
       content,
@@ -395,13 +395,13 @@ describe('MessageText attachment paths', () => {
       tailLines: ['https://example.com/photo.png'],
     },
   ])('keeps invalid user marker block text visible for $name', ({ tailLines }) => {
-    const content = ['look', '', '[[AION_FILES]]', ...tailLines].join('\n');
+    const content = ['look', '', '[[FOOL_FILES]]', ...tailLines].join('\n');
 
     renderMessageText(content, { position: 'right' });
 
     const messageContent = screen.getByTestId('message-text-content');
     expect(messageContent).toHaveTextContent('look');
-    expect(messageContent).toHaveTextContent('[[AION_FILES]]');
+    expect(messageContent).toHaveTextContent('[[FOOL_FILES]]');
     for (const line of tailLines) {
       expect(messageContent).toHaveTextContent(line);
     }
@@ -411,7 +411,7 @@ describe('MessageText attachment paths', () => {
   });
 
   it('copies complete assistant marker text', async () => {
-    const content = '请不要使用 [[AION_FILES]] 这种格式';
+    const content = '请不要使用 [[FOOL_FILES]] 这种格式';
 
     renderMessageText(content);
 
@@ -425,7 +425,7 @@ describe('MessageText attachment paths', () => {
   });
 
   it('copies complete teammate marker text', async () => {
-    const content = '请不要使用 [[AION_FILES]] 这种格式';
+    const content = '请不要使用 [[FOOL_FILES]] 这种格式';
 
     renderMessageText(
       content,

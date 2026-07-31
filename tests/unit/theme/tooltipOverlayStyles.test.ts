@@ -12,11 +12,11 @@ describe('arco tooltip and popover overlay styles', () => {
   it('defines shared light and dark overlay tokens for tooltip-like surfaces', () => {
     const css = fs.readFileSync(arcoOverridePath, 'utf8');
 
-    expect(css).toContain('--aion-overlay-bg: #ffffff;');
-    expect(css).toContain('--aion-overlay-text: #1d2129;');
+    expect(css).toContain('--fool-overlay-bg: #ffffff;');
+    expect(css).toContain('--fool-overlay-text: #1d2129;');
     expect(css).toContain("body[arco-theme='dark'] {");
-    expect(css).toContain('--aion-overlay-bg: #0e0e0e;');
-    expect(css).toContain('--aion-overlay-text: #f2f3f5;');
+    expect(css).toContain('--fool-overlay-bg: #0e0e0e;');
+    expect(css).toContain('--fool-overlay-text: #f2f3f5;');
   });
 
   it('applies the shared overlay tokens to tooltip, popover, and popconfirm surfaces', () => {
@@ -25,9 +25,9 @@ describe('arco tooltip and popover overlay styles', () => {
     expect(css).toContain('.arco-tooltip-content,');
     expect(css).toContain('.arco-popover-content,');
     expect(css).toContain('.arco-popconfirm-content {');
-    expect(css).toContain('background: var(--aion-overlay-bg) !important;');
-    expect(css).toContain('color: var(--aion-overlay-text) !important;');
-    expect(css).toContain('border: 1px solid var(--aion-overlay-border) !important;');
+    expect(css).toContain('background: var(--fool-overlay-bg) !important;');
+    expect(css).toContain('color: var(--fool-overlay-text) !important;');
+    expect(css).toContain('border: 1px solid var(--fool-overlay-border) !important;');
     expect(css).toContain('.arco-trigger-arrow.arco-tooltip-arrow,');
     expect(css).toContain('.arco-popover-arrow.arco-trigger-arrow,');
     expect(css).toContain('.arco-popconfirm-arrow.arco-trigger-arrow {');

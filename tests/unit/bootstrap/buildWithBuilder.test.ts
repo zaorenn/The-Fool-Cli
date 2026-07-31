@@ -23,7 +23,7 @@ const repoRoot = resolve(__dirname, '../../..');
 
 function readInstallerErrorDefinitions(): Array<{ defineName: string; code: string }> {
   const source = readFileSync(resolve(repoRoot, 'resources/windows/installer-errors-sentry.nsh'), 'utf8');
-  return Array.from(source.matchAll(/!define\s+(AIONUI_E_[A-Z0-9_]+)\s+"(E\d{4})"/g), (match) => ({
+  return Array.from(source.matchAll(/!define\s+(FOOL_E_[A-Z0-9_]+)\s+"(E\d{4})"/g), (match) => ({
     defineName: match[1],
     code: match[2],
   }));
@@ -52,7 +52,7 @@ describe('build-with-builder', () => {
   it('rejects skip-vite when renderer output is only a source html shell', () => {
     const outDir = resolve(repoRoot, 'out');
     const backupOutDir = resolve(repoRoot, `.tmp-out-backup-${process.pid}-${Date.now()}`);
-    const tempDir = mkdtempSync(join(tmpdir(), 'aionui-build-skip-vite-test-'));
+    const tempDir = mkdtempSync(join(tmpdir(), 'fool-build-skip-vite-test-'));
     const hookPath = join(tempDir, 'hook.cjs');
 
     writeFileSync(
@@ -107,18 +107,16 @@ childProcess.execSync = function mockedExecSync(command) {
 
   it('releases the NSIS output directory before any update repair or uninstall work', () => {
     const script = readFileSync(resolve(repoRoot, 'resources/windows/installer-update-verify.nsh'), 'utf8');
-    const preInit = script.match(/!macro AIONUI_INSTALLER_PREINIT([\s\S]*?)!macroend/)?.[1];
-    const releaseMacro = script.match(/!macro AIONUI_RELEASE_INSTALL_DIR_OUTDIR([\s\S]*?)!macroend/)?.[1];
+    const preInit = script.match(/!macro FOOL_INSTALLER_PREINIT([\s\S]*?)!macroend/)?.[1];
+    const releaseMacro = script.match(/!macro FOOL_RELEASE_INSTALL_DIR_OUTDIR([\s\S]*?)!macroend/)?.[1];
 
     expect(preInit).toBeTruthy();
     expect(releaseMacro).toBeTruthy();
     expect(releaseMacro).toContain('InitPluginsDir');
     expect(releaseMacro).toContain('SetOutPath "$PLUGINSDIR"');
     expect(releaseMacro).not.toContain('SetOutPath $INSTDIR');
-    expect(preInit).toContain('!insertmacro AIONUI_RELEASE_INSTALL_DIR_OUTDIR');
-    expect(preInit!.indexOf('AIONUI_RELEASE_INSTALL_DIR_OUTDIR')).toBeLessThan(
-      preInit!.indexOf('AIONUI_SESSION_BEGIN')
-    );
+    expect(preInit).toContain('!insertmacro FOOL_RELEASE_INSTALL_DIR_OUTDIR');
+    expect(preInit!.indexOf('FOOL_RELEASE_INSTALL_DIR_OUTDIR')).toBeLessThan(preInit!.indexOf('FOOL_SESSION_BEGIN'));
   });
 
   it('uses install-directory ownership checks in the shared Windows NSIS include', () => {
@@ -128,23 +126,23 @@ childProcess.execSync = function mockedExecSync(command) {
     expect(script).toContain('$$ownedPrefix');
     expect(script).toContain('StartsWith($$ownedPrefix');
     expect(script).toContain('[System.IO.Path]::GetFullPath($$path)');
-    expect(script).not.toContain("Name -ieq '${AIONUI_APP_EXECUTABLE_FILENAME}'");
+    expect(script).not.toContain("Name -ieq '${FOOL_APP_EXECUTABLE_FILENAME}'");
   });
 
   it('records installer self-lock diagnostics when Restart Manager finds no locking process', () => {
     const script = readFileSync(resolve(repoRoot, 'resources/windows/installer-process-control.nsh'), 'utf8');
     const queryScript = readFileSync(resolve(repoRoot, 'resources/windows/support/query-lockers.ps1'), 'utf8');
-    const captureMacro = script.match(/!macro AIONUI_CAPTURE_FAILED_PATH_LOCKERS[\s\S]*?!macroend/)?.[0];
+    const captureMacro = script.match(/!macro FOOL_CAPTURE_FAILED_PATH_LOCKERS[\s\S]*?!macroend/)?.[0];
 
-    expect(script).toContain('aionui-query-lockers.ps1');
-    expect(captureMacro).toContain('AIONUI_QUERY_LOCKERS');
-    expect(captureMacro).not.toContain('AIONUI_QUERY_LOCKERS_INLINE_LEGACY');
+    expect(script).toContain('fool-query-lockers.ps1');
+    expect(captureMacro).toContain('FOOL_QUERY_LOCKERS');
+    expect(captureMacro).not.toContain('FOOL_QUERY_LOCKERS_INLINE_LEGACY');
     expect(queryScript).toContain('$CurrentOutDir');
     expect(queryScript).toContain('$script:installerSelfLock');
     expect(queryScript).toContain("'installer-self-lock'");
     expect(queryScript).toContain('outerInstallerPid');
     expect(queryScript).toContain('currentOutDir');
-    expect(queryScript).toContain("name = 'AionUi installer'");
+    expect(queryScript).toContain("name = 'The Fool installer'");
   });
 
   it('continues with the bundled uninstaller when installed-uninstaller repair remains locked', () => {
@@ -152,14 +150,14 @@ childProcess.execSync = function mockedExecSync(command) {
     const messages = readFileSync(resolve(repoRoot, 'resources/windows/installer-messages.nsh'), 'utf8');
 
     const retryFailureBranch = script.match(
-      /\$\{If\} \$\{Errors\}\s+([\s\S]*?)\$\{Else\}\s+!insertmacro AIONUI_LOG_UNINSTALLER_REPAIR "after-copy-retry"/
+      /\$\{If\} \$\{Errors\}\s+([\s\S]*?)\$\{Else\}\s+!insertmacro FOOL_LOG_UNINSTALLER_REPAIR "after-copy-retry"/
     )?.[1];
 
     expect(retryFailureBranch).toBeTruthy();
     expect(retryFailureBranch).toContain('copy-failed-using-bundled');
-    expect(retryFailureBranch).toContain('$AionUiBundledUninstaller');
+    expect(retryFailureBranch).toContain('$FoolBundledUninstaller');
     expect(retryFailureBranch).not.toContain('MessageBox');
-    expect(retryFailureBranch).not.toContain('AIONUI_MSG_UNINSTALLER_LOCKED');
+    expect(retryFailureBranch).not.toContain('FOOL_MSG_UNINSTALLER_LOCKED');
     expect(messages).not.toContain('existing uninstaller is locked');
   });
 
@@ -181,10 +179,10 @@ childProcess.execSync = function mockedExecSync(command) {
         if (/^\s*Function\s+\.onVerifyInstDir\b/.test(line)) inVerifyInstDir = true;
         else if (inVerifyInstDir && /^\s*FunctionEnd\b/.test(line)) inVerifyInstDir = false;
 
-        if (line.includes('!macro AIONUI_FAIL ')) {
+        if (line.includes('!macro FOOL_FAIL ')) {
           offenders.push(`${file}:${index + 1}: defines non-reportable coded failure macro`);
         }
-        if (line.includes('!insertmacro AIONUI_FAIL ')) {
+        if (line.includes('!insertmacro FOOL_FAIL ')) {
           offenders.push(`${file}:${index + 1}: uses non-reportable coded failure macro`);
         }
         if (!inVerifyInstDir && /^\s*Abort\b/.test(line)) {
@@ -207,7 +205,7 @@ childProcess.execSync = function mockedExecSync(command) {
       ['installer-errors-sentry.nsh', [/MessageBox MB_YESNO\|MB_ICONSTOP/]],
       [
         'installer-process-control.nsh',
-        [/AIONUI_MSG_FILE_OR_FOLDER_IN_USE_ZH/, /\$\(appRunning\)/, /AIONUI_MSG_CLOSE_OR_REMOVE_PREVIOUS_ZH/],
+        [/FOOL_MSG_FILE_OR_FOLDER_IN_USE_ZH/, /\$\(appRunning\)/, /FOOL_MSG_CLOSE_OR_REMOVE_PREVIOUS_ZH/],
       ],
     ]);
 
@@ -232,12 +230,12 @@ childProcess.execSync = function mockedExecSync(command) {
   it('routes app-cannot-be-closed cancellation through E1003 instead of quitting silently', () => {
     const script = readFileSync(resolve(repoRoot, 'resources/windows/installer-process-control.nsh'), 'utf8');
     const cannotCloseBranch = script.match(
-      /AIONUI_MSG_CLOSE_OR_REMOVE_PREVIOUS_ZH[\s\S]*?IDRETRY aionui_wait_for_close([\s\S]*?)\$\{Else\}/
+      /FOOL_MSG_CLOSE_OR_REMOVE_PREVIOUS_ZH[\s\S]*?IDRETRY fool_wait_for_close([\s\S]*?)\$\{Else\}/
     )?.[1];
 
     expect(cannotCloseBranch).toBeTruthy();
-    expect(cannotCloseBranch).toContain('AIONUI_E_INSTALL_DIR_REMOVE_OR_LOCKED');
-    expect(cannotCloseBranch).toContain('AIONUI_FAIL_REPORTABLE_BILINGUAL_DIAGNOSTICS');
+    expect(cannotCloseBranch).toContain('FOOL_E_INSTALL_DIR_REMOVE_OR_LOCKED');
+    expect(cannotCloseBranch).toContain('FOOL_FAIL_REPORTABLE_BILINGUAL_DIAGNOSTICS');
     expect(cannotCloseBranch).not.toMatch(/^\s*Quit\s*$/m);
   });
 
@@ -279,7 +277,7 @@ childProcess.execSync = function mockedExecSync(command) {
       expectedArch: 'x64',
     },
   ])('prepares bundled The Fool Core for $expectedArch with args $args', ({ args, expectedArch }) => {
-    const tempDir = mkdtempSync(join(tmpdir(), 'aionui-build-test-'));
+    const tempDir = mkdtempSync(join(tmpdir(), 'fool-build-test-'));
     const hookPath = join(tempDir, 'hook.cjs');
     const callsPath = join(tempDir, 'build-calls.json');
     const outDir = resolve(repoRoot, 'out');
@@ -354,14 +352,14 @@ childProcess.execSync = function mockedExecSync(command, options) {
 
       expect(result.status, result.stderr || result.stdout).toBe(0);
       expect(readFileSync(resolve(repoRoot, 'resources/windows/support/_sentry-dsn.generated.nsh'), 'utf8')).toBe(
-        '!define AIONUI_SENTRY_DSN ""\n'
+        '!define FOOL_SENTRY_DSN ""\n'
       );
 
       if (args.includes('--win')) {
         const installUtil = readFileSync(resolveAppBuilderInstallUtil(), 'utf8');
-        expect(installUtil).toContain('AionUi-bundled-uninstaller override source');
-        expect(installUtil).toContain('$PLUGINSDIR\\AionUi-fixed-uninstaller.exe');
-        expect(installUtil.match(/AionUi-bundled-uninstaller override source/g)).toHaveLength(1);
+        expect(installUtil).toContain('The Fool-bundled-uninstaller override source');
+        expect(installUtil).toContain('$PLUGINSDIR\\The Fool-fixed-uninstaller.exe');
+        expect(installUtil.match(/The Fool-bundled-uninstaller override source/g)).toHaveLength(1);
       }
 
       const calls = JSON.parse(readFileSync(callsPath, 'utf8')) as Array<{ arch?: string } | null>;

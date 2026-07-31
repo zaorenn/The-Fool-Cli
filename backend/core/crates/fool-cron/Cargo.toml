@@ -1,0 +1,35 @@
+[package]
+name = "fool-cron"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+fool-common.workspace = true
+fool-db.workspace = true
+fool-api-types.workspace = true
+fool-realtime.workspace = true
+fool-conversation.workspace = true
+fool-ai-agent.workspace = true
+fool-auth.workspace = true
+fool-system.workspace = true
+axum.workspace = true
+cron.workspace = true
+chrono.workspace = true
+chrono-tz.workspace = true
+iana-time-zone.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+dashmap.workspace = true
+async-trait.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
+tempfile.workspace = true
+tower = { workspace = true, features = ["util"] }
+sqlx.workspace = true
+# Enable the `AgentInstance::Mock` variant so tests can build fake agents
+# through the trait-object escape hatch without spawning real CLI processes.
+fool-ai-agent = { workspace = true, features = ["test-support"] }

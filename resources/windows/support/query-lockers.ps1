@@ -43,7 +43,7 @@ function Test-SamePath([string]$left, [string]$right) {
 }
 
 function New-SelfLockProcess([int]$processId) {
-  return [pscustomobject]@{ name = 'AionUi installer'; pid = $processId }
+  return [pscustomobject]@{ name = 'The Fool installer'; pid = $processId }
 }
 
 function Write-LockersAndExit($lockers, [string]$fallbackReason, [string]$message, [int]$exitCode, [int]$resources, [int]$count) {
@@ -79,7 +79,7 @@ try {
     $topLevel = @(Get-ChildItem -LiteralPath $targetPathFull -Force -File -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
     # Nested paths only. The executable and the uninstaller sit at the top level
     # and are already in $topLevel, so naming them here bought nothing and went
-    # stale at the rebrand — they were still 'AionUi.exe' long after the file was
+    # stale at the rebrand — they were still 'The Fool.exe' long after the file was
     # called something else.
     $knownRelative = @(
       'resources\app.asar',
@@ -124,7 +124,7 @@ using System;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace AionUi.RestartManager {
+namespace The Fool.RestartManager {
   public enum RM_APP_TYPE {
     RmUnknownApp = 0,
     RmMainWindow = 1,
@@ -171,7 +171,7 @@ namespace AionUi.RestartManager {
 
   $sessionHandle = [uint32]0
   $key = New-Object System.Text.StringBuilder 64
-  $result = [AionUi.RestartManager.Native]::RmStartSession([ref]$sessionHandle, 0, $key)
+  $result = [The Fool.RestartManager.Native]::RmStartSession([ref]$sessionHandle, 0, $key)
   if ($result -ne 0) {
     throw "RmStartSession=$result"
   }
@@ -180,7 +180,7 @@ namespace AionUi.RestartManager {
     for ($i = 0; $i -lt $resources.Count; $i += 256) {
       $end = [Math]::Min($i + 255, $resources.Count - 1)
       $chunk = [string[]]$resources[$i..$end]
-      $result = [AionUi.RestartManager.Native]::RmRegisterResources($sessionHandle, [uint32]$chunk.Count, $chunk, 0, [IntPtr]::Zero, 0, $null)
+      $result = [The Fool.RestartManager.Native]::RmRegisterResources($sessionHandle, [uint32]$chunk.Count, $chunk, 0, [IntPtr]::Zero, 0, $null)
       if ($result -ne 0) {
         throw "RmRegisterResources=$result"
       }
@@ -199,7 +199,7 @@ namespace AionUi.RestartManager {
       $needed = [uint32]0
       $count = [uint32]0
       $reasons = [uint32]0
-      $result = [AionUi.RestartManager.Native]::RmGetList($sessionHandle, [ref]$needed, [ref]$count, $null, [ref]$reasons)
+      $result = [The Fool.RestartManager.Native]::RmGetList($sessionHandle, [ref]$needed, [ref]$count, $null, [ref]$reasons)
       if ($result -ne $ERROR_ACCESS_DENIED) {
         break
       }
@@ -216,8 +216,8 @@ namespace AionUi.RestartManager {
           Start-Sleep -Milliseconds (50 * $attempt)
         }
         $count = $needed
-        $apps = New-Object 'AionUi.RestartManager.RM_PROCESS_INFO[]' $count
-        $result = [AionUi.RestartManager.Native]::RmGetList($sessionHandle, [ref]$needed, [ref]$count, $apps, [ref]$reasons)
+        $apps = New-Object 'The Fool.RestartManager.RM_PROCESS_INFO[]' $count
+        $result = [The Fool.RestartManager.Native]::RmGetList($sessionHandle, [ref]$needed, [ref]$count, $apps, [ref]$reasons)
         if ($result -ne $ERROR_ACCESS_DENIED -and $result -ne $ERROR_MORE_DATA) {
           break
         }
@@ -269,7 +269,7 @@ namespace AionUi.RestartManager {
 
     Write-LockersAndExit $lockers '' '' 0 $resources.Count $needed
   } finally {
-    [void][AionUi.RestartManager.Native]::RmEndSession($sessionHandle)
+    [void][The Fool.RestartManager.Native]::RmEndSession($sessionHandle)
   }
 } catch {
   Write-InstallerJson 'rm-error' @{

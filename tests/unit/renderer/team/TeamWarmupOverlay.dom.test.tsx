@@ -50,7 +50,7 @@ describe('TeamWarmupOverlay failure states', () => {
     render(
       <TeamWarmupOverlay
         phase='error'
-        assistants={[assistant('l', 'leader', 'Codex'), assistant('m', 'teammate', 'Aion CLI')]}
+        assistants={[assistant('l', 'leader', 'Codex'), assistant('m', 'teammate', 'Fool CLI')]}
         runtimeStatus={runtime([
           ['l', 'ready'],
           ['m', 'failed', "Invalid request: Bad request: Provider 'foolrs' not found"],
@@ -60,7 +60,7 @@ describe('TeamWarmupOverlay failure states', () => {
       />
     );
     // single failure → title names the member
-    expect(screen.getByText('Member Aion CLI failed to start')).toBeInTheDocument();
+    expect(screen.getByText('Member Fool CLI failed to start')).toBeInTheDocument();
     // error is simplified (wrapper prefixes stripped)
     expect(screen.getByTestId('team-warmup-error')).toHaveTextContent("Provider 'foolrs' not found");
     // teammate is removable → hint mentions removal
@@ -73,7 +73,7 @@ describe('TeamWarmupOverlay failure states', () => {
         phase='error'
         assistants={[
           assistant('l', 'leader', 'Gemini'),
-          assistant('a', 'teammate', 'Aion CLI'),
+          assistant('a', 'teammate', 'Fool CLI'),
           assistant('c', 'teammate', 'CodeBuddy'),
         ]}
         runtimeStatus={runtime([
@@ -91,7 +91,7 @@ describe('TeamWarmupOverlay failure states', () => {
     const box = screen.getByTestId('team-warmup-error');
     expect(box).toHaveTextContent('Gemini');
     expect(box).toHaveTextContent('ACP error');
-    expect(box).toHaveTextContent('Aion CLI');
+    expect(box).toHaveTextContent('Fool CLI');
     expect(box).toHaveTextContent("Provider 'foolrs' not found");
     // a teammate is among the failures → removal is offered
     expect(screen.getByText(/remove the member/i)).toBeInTheDocument();

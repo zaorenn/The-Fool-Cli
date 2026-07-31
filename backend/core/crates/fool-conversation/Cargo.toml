@@ -1,0 +1,41 @@
+[package]
+name = "fool-conversation"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+fool-common.workspace = true
+fool-db.workspace = true
+fool-project.workspace = true
+fool-api-types.workspace = true
+fool-realtime.workspace = true
+fool-auth.workspace = true
+fool-ai-agent.workspace = true
+fool-extension.workspace = true
+fool-mcp.workspace = true
+fool-runtime.workspace = true
+axum.workspace = true
+base64.workspace = true
+chrono.workspace = true
+regex.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+async-trait.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
+tempfile.workspace = true
+tracing-subscriber.workspace = true
+sqlx.workspace = true
+# Enable the `AgentInstance::Mock` variant so tests can build fake agents
+# through the trait-object escape hatch without spawning real CLI processes.
+fool-ai-agent = { workspace = true, features = ["test-support"] }
+# Force-kill convergence tests (force_kill_convergence.rs) build a real
+# `AgentInstance::Session` over a fake `SessionBackend`, so they need the session
+# crate's trait + test doubles. Dev-only; never shipped.
+fool-session = { workspace = true, features = ["test-support"] }
+futures-util = { workspace = true }
+async-trait.workspace = true

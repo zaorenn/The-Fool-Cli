@@ -485,7 +485,7 @@ const normalizePersistedWorkspaceRuntimeError = (
   return {
     message,
     code: 'WORKSPACE_PATH_RUNTIME_UNAVAILABLE',
-    ownership: 'aionui',
+    ownership: 'fool',
     detail,
     workspacePath,
     retryable: false,
@@ -521,7 +521,7 @@ const classifyPersistedSendFailure = (
     return {
       message,
       code: effectiveCode,
-      ownership: 'aionui',
+      ownership: 'fool',
       detail: message,
       retryable: true,
       feedback_recommended: true,
@@ -536,7 +536,7 @@ const classifyPersistedSendFailure = (
     return {
       message,
       code: effectiveCode,
-      ownership: 'aionui',
+      ownership: 'fool',
       detail: message,
       retryable: false,
       feedback_recommended: false,
@@ -557,16 +557,16 @@ const classifyPersistedSendFailure = (
   if (persistedCode === 'INTERNAL_ERROR') {
     return {
       message,
-      code: 'AIONUI_INTERNAL_ERROR',
-      ownership: 'aionui',
+      code: 'FOOL_INTERNAL_ERROR',
+      ownership: 'fool',
       detail: message,
       retryable: true,
       feedback_recommended: true,
     };
   }
 
-  if (persistedCode?.startsWith('AIONUI_')) {
-    return { message, code: persistedCode, ownership: 'aionui', detail: message, retryable: true };
+  if (persistedCode?.startsWith('FOOL_')) {
+    return { message, code: persistedCode, ownership: 'fool', detail: message, retryable: true };
   }
   if (persistedCode?.startsWith('USER_AGENT_')) {
     return { message, code: persistedCode, ownership: 'user_agent', detail: message, retryable: true };
@@ -595,8 +595,8 @@ const classifyPersistedSendFailure = (
   if (parsed.source === 'send_failed') {
     return {
       message,
-      code: 'AIONUI_INTERNAL_ERROR',
-      ownership: 'aionui',
+      code: 'FOOL_INTERNAL_ERROR',
+      ownership: 'fool',
       detail: message,
       retryable: true,
       feedback_recommended: true,

@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Work only in `C:\Fool-AionUI` on `feat/the-fool-windows-alpha`; never modify `C:\Fool`.
+- Work only in `C:\Fool-The Fool` on `feat/the-fool-windows-alpha`; never modify `C:\Fool`.
 - No `any`. The existing `as any` casts in `initBridge.ts` are pre-existing; do not add more and do not expand scope to remove them.
 - Renderer code uses no Node APIs; main-process code uses no DOM APIs. Cross-process calls go through `ipcBridge`.
 - Arco components only for interactive UI — no raw `<button>`, `<input>`, `<select>`.
@@ -734,7 +734,7 @@ git commit -m "feat(voice): add microphone capture and voice activity detection"
   - `useFoolVoiceSession(): { state: VoiceTurnState; missingModelId: string | null; start(): Promise<void>; stop(): void }`
   - `type VoiceTalkButtonProps = { disabled?: boolean; onRequestModelInstall?: (modelId: string) => void }` — the callback opens the Voice settings install flow from Task 6.
 
-The hook submits transcripts by dispatching the existing `fool:voice-submit` window event that `SendBox` listens for, so all ACP and Aionrs routing and permission behavior is untouched.
+The hook submits transcripts by dispatching the existing `fool:voice-submit` window event that `SendBox` listens for, so all ACP and Foolrs routing and permission behavior is untouched.
 
 - [ ] **Step 1: Write the failing button tests**
 

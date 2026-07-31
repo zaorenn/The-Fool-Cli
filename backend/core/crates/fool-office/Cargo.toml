@@ -1,0 +1,29 @@
+[package]
+name = "fool-office"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+fool-common.workspace = true
+fool-api-types.workspace = true
+fool-realtime.workspace = true
+fool-auth.workspace = true
+fool-file.workspace = true
+fool-runtime.workspace = true
+axum.workspace = true
+tokio.workspace = true
+reqwest.workspace = true
+which.workspace = true
+calamine.workspace = true
+sha1.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+dashmap.workspace = true
+tracing.workspace = true
+thiserror.workspace = true
+async-trait.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+rust_xlsxwriter.workspace = true
+tokio = { workspace = true, features = ["test-util"] }

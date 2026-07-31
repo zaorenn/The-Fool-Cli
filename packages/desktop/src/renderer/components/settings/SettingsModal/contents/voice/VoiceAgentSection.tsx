@@ -79,14 +79,14 @@ const VoiceAgentSection: React.FC<VoiceAgentSectionProps> = ({ settings, onChang
   );
 
   const selectedAssistant = assistants.find((assistant) => assistant.id === settings.session.assistantId);
-  // The Aion CLI backend is handed the provider record itself, so it cannot fall
+  // The Fool CLI backend is handed the provider record itself, so it cannot fall
   // back to an assistant default the way an ACP agent can.
   const modelRequired = Boolean(selectedAssistant && isFoolrsAssistant(selectedAssistant));
 
   /**
    * The models the selected ACP agent runs, as it names them.
    *
-   * Read from the agent's own runtime catalog rather than from AionUi's
+   * Read from the agent's own runtime catalog rather than from The Fool's
    * providers, because the two use different namespaces for the same weights:
    * Hermes calls the LM Studio model `lmstudio:qwen/qwen3.5-9b` and the provider
    * calls it `qwen/qwen3.5-9b`. Offering the provider's spelling here produced a

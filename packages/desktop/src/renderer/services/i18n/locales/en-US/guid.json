@@ -13,5 +13,9 @@
     "specifyWorkspace": "Select project folder",
     "searchPlaceholder": "Search projects…",
     "noProject": "No Project"
+  },
+  "firstRun": {
+    "conversationName": "Getting started",
+    "openingMessage": "This is my first time opening The Fool. Introduce yourself, then walk me through setting it up: check what is already working, help me connect a model provider, verify it responds, and tell me what I can do from here. Ask me one question at a time and do the configuration yourself as we go."
   }
 }

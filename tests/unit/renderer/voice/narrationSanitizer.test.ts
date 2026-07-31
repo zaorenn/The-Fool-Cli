@@ -67,7 +67,7 @@ describe('sanitizeForSpeech', () => {
   });
 
   it('never speaks a file path', () => {
-    const spoken = sanitizeForSpeech('Changed C:\\Fool-AionUI\\packages\\desktop\\src\\index.ts today.');
+    const spoken = sanitizeForSpeech('Changed C:\\Fool\\packages\\desktop\\src\\index.ts today.');
 
     expect(spoken).not.toContain('packages');
     expect(spoken).not.toContain('index.ts');

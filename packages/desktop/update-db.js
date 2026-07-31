@@ -8,7 +8,7 @@ import path from 'node:path';
 // hardcoding either, so this keeps working on both sides of that migration.
 // The database file itself is named by the backend binary, not by us.
 const root = path.join(homedir(), 'AppData', 'Roaming', 'TheFool-Dev');
-const candidates = ['fool-core', 'aionui'].map((dir) => path.join(root, dir, 'aionui-backend.db'));
+const candidates = ['fool-core', 'fool'].map((dir) => path.join(root, dir, 'fool-backend.db'));
 const databasePath = candidates.find((candidate) => existsSync(candidate));
 
 if (!databasePath) {

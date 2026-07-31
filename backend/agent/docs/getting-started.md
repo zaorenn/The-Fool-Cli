@@ -51,7 +51,7 @@ subcommand runs its action and exits — it does not start the agent main flow.
 | `--json-stream`                       | JSON Lines mode for host integration                                    |
 | `--resume <id>`                       | Resume a previous session                                               |
 | `--log-dir <path>`                    | Enable file logging to the given directory                              |
-| `--log-level <filter>`                | Log level filter (e.g. `debug`, `info`, `aion_providers=debug`)         |
+| `--log-level <filter>`                | Log level filter (e.g. `debug`, `info`, `foolrs_providers=debug`)       |
 
 ---
 
@@ -230,7 +230,7 @@ foolrs config init
 ### 2. Single-Shot Mode
 
 ```bash
-foolrs "Read and explain crates/aion-agent/src/engine.rs"
+foolrs "Read and explain crates/foolrs-agent/src/engine.rs"
 ```
 
 ### 3. Interactive REPL

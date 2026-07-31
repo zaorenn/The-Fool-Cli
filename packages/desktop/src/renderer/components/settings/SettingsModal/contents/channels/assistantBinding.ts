@@ -9,7 +9,7 @@ import type { IChannelAssistantBindingRead, IChannelAssistantBindingWrite } from
 
 /**
  * Channel settings UI consumes backend-normalized assistant bindings.
- * Legacy backend/custom-agent migration is handled by aionCore during channel
+ * Legacy backend/custom-agent migration is handled by foolCore during channel
  * settings reads; renderer-side selection must only trust canonical
  * `assistant_id` bindings.
  */

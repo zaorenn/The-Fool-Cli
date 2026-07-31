@@ -13,5 +13,9 @@
     "specifyWorkspace": "Proje klasörü seç",
     "searchPlaceholder": "Proje ara…",
     "noProject": "Proje Yok"
+  },
+  "firstRun": {
+    "conversationName": "Başlangıç",
+    "openingMessage": "The Fool'u ilk kez açıyorum. Kendini tanıt, sonra kurulumda bana rehberlik et: neyin hazır olduğunu kontrol et, bir model sağlayıcı bağlamama yardım et, yanıt verdiğini doğrula ve buradan neler yapabileceğimi anlat. Bana tek seferde tek soru sor ve yapılandırmayı ilerledikçe kendin yap."
   }
 }

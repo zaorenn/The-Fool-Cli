@@ -1,7 +1,7 @@
 # Architecture
 
-AionCore is the backend server for AionUi, built with Rust (Axum + Tokio + SQLite).
-It provides HTTP REST APIs and WebSocket real-time events for the AionUi desktop client.
+The Fool Core is the backend server for The Fool, built with Rust (Axum + Tokio + SQLite).
+It provides HTTP REST APIs and WebSocket real-time events for the The Fool desktop client.
 
 ## Tech Stack
 
@@ -17,25 +17,25 @@ It provides HTTP REST APIs and WebSocket real-time events for the AionUi desktop
 
 ```
 ┌─────────────────────────────────────────────────┐
-│                  aionui-app                      │
+│                  fool-app                      │
 │         (binary entry, router assembly)          │
 ├──────────┬──────────┬──────────┬────────────────┤
 │conversa- │ channel  │  team    │  ... (domain)  │
 │  tion    │          │          │                 │
 ├──────────┴──────────┴──────────┴────────────────┤
-│   aionui-auth          aionui-realtime           │
+│   fool-auth          fool-realtime           │
 │  (JWT, CSRF, middleware) (WebSocket, events)     │
 ├─────────────────────────────────────────────────┤
-│  aionui-db    aionui-api-types   aionui-runtime  │
+│  fool-db    fool-api-types   fool-runtime  │
 │ (repositories) (API contracts)  (runtime/process)│
 ├─────────────────────────────────────────────────┤
-│       aionui-common          aionui-assets       │
+│       fool-common          fool-assets       │
 │  (error types, enums, crypto)  (embedded data)   │
 └─────────────────────────────────────────────────┘
 ```
 
-Dependencies flow strictly downward. Domain crates must not depend on aionui-app,
-and aionui-common has zero internal dependencies.
+Dependencies flow strictly downward. Domain crates must not depend on fool-app,
+and fool-common has zero internal dependencies.
 
 ## Crate Hierarchy
 
@@ -45,47 +45,47 @@ The project is organized as a Cargo workspace with 20 crates across four layers:
 
 Depended on by nearly all other crates. Changes require careful impact assessment.
 
-| Crate              | Responsibility                                                                                |
-| ------------------ | --------------------------------------------------------------------------------------------- |
-| `aionui-common`    | Shared error types (ApiError), enums, ID generation, crypto utilities, timestamps, pagination |
-| `aionui-api-types` | All HTTP/WebSocket request and response types — the single source of truth for API contracts  |
-| `aionui-db`        | SQLite database layer, defines Repository traits and implementations                          |
-| `aionui-assets`    | Embedded static assets (agent metadata, prompts)                                              |
-| `aionui-runtime`   | Managed Node, subprocess spawning, PATH enhancement                                           |
+| Crate            | Responsibility                                                                                |
+| ---------------- | --------------------------------------------------------------------------------------------- |
+| `fool-common`    | Shared error types (ApiError), enums, ID generation, crypto utilities, timestamps, pagination |
+| `fool-api-types` | All HTTP/WebSocket request and response types — the single source of truth for API contracts  |
+| `fool-db`        | SQLite database layer, defines Repository traits and implementations                          |
+| `fool-assets`    | Embedded static assets (agent metadata, prompts)                                              |
+| `fool-runtime`   | Managed Node, subprocess spawning, PATH enhancement                                           |
 
 ### Capability
 
 Cross-cutting capabilities used by domain crates.
 
-| Crate             | Responsibility                                                                            |
-| ----------------- | ----------------------------------------------------------------------------------------- |
-| `aionui-auth`     | JWT authentication, password hashing, CSRF protection, cookie management, auth middleware |
-| `aionui-realtime` | WebSocket connection management, event broadcasting (BroadcastEventBus), message routing  |
+| Crate           | Responsibility                                                                            |
+| --------------- | ----------------------------------------------------------------------------------------- |
+| `fool-auth`     | JWT authentication, password hashing, CSRF protection, cookie management, auth middleware |
+| `fool-realtime` | WebSocket connection management, event broadcasting (BroadcastEventBus), message routing  |
 
 ### Domain
 
 Each crate owns an independent business domain. They remain loosely coupled from each other.
 
-| Crate                 | Responsibility                                                                      |
-| --------------------- | ----------------------------------------------------------------------------------- |
-| `aionui-conversation` | Conversation management, messaging, confirmations, streaming responses              |
-| `aionui-channel`      | Multi-channel integration (WeChat, DingTalk, Lark), plugin system, pairing sessions |
-| `aionui-team`         | Team collaboration, task scheduling, mailbox system                                 |
-| `aionui-cron`         | Scheduled job execution, cron expressions, event triggering                         |
-| `aionui-file`         | File operations, watching, snapshots, git operations, compression                   |
-| `aionui-office`       | Office document handling (Excel, PPT, Word), preview, conversion                    |
-| `aionui-system`       | System settings, provider management, version checking, model fetching              |
-| `aionui-mcp`          | MCP protocol integration, OAuth, multi-platform adapters                            |
-| `aionui-ai-agent`     | Agent lifecycle management, worker task queues, ACP/auxiliary skills                |
-| `aionui-extension`    | Extension registry, hub management, skill discovery and installation                |
-| `aionui-shell`        | Shell command execution, speech-to-text                                             |
-| `aionui-assistant`    | Assistant configuration and management                                              |
+| Crate               | Responsibility                                                                      |
+| ------------------- | ----------------------------------------------------------------------------------- |
+| `fool-conversation` | Conversation management, messaging, confirmations, streaming responses              |
+| `fool-channel`      | Multi-channel integration (WeChat, DingTalk, Lark), plugin system, pairing sessions |
+| `fool-team`         | Team collaboration, task scheduling, mailbox system                                 |
+| `fool-cron`         | Scheduled job execution, cron expressions, event triggering                         |
+| `fool-file`         | File operations, watching, snapshots, git operations, compression                   |
+| `fool-office`       | Office document handling (Excel, PPT, Word), preview, conversion                    |
+| `fool-system`       | System settings, provider management, version checking, model fetching              |
+| `fool-mcp`          | MCP protocol integration, OAuth, multi-platform adapters                            |
+| `fool-ai-agent`     | Agent lifecycle management, worker task queues, ACP/auxiliary skills                |
+| `fool-extension`    | Extension registry, hub management, skill discovery and installation                |
+| `fool-shell`        | Shell command execution, speech-to-text                                             |
+| `fool-assistant`    | Assistant configuration and management                                              |
 
 ### Composition
 
-| Crate        | Responsibility                                                          |
-| ------------ | ----------------------------------------------------------------------- |
-| `aionui-app` | Top-level binary entry point, assembles all crates into the Axum server |
+| Crate      | Responsibility                                                          |
+| ---------- | ----------------------------------------------------------------------- |
+| `fool-app` | Top-level binary entry point, assembles all crates into the Axum server |
 
 ### Dependency Direction Rules
 
@@ -101,12 +101,12 @@ Composition → Domain → Capability → Foundation
 
 ## Domain Crate Anatomy
 
-Every domain crate follows a consistent internal organization. Using aionui-conversation as a reference:
+Every domain crate follows a consistent internal organization. Using fool-conversation as a reference:
 
 ### Standard Directory Structure
 
 ```
-crates/aionui-conversation/src/
+crates/fool-conversation/src/
 ├── lib.rs       # Module exports, defines the crate's public API
 ├── routes.rs    # HTTP route handlers
 ├── service.rs   # Business logic layer
@@ -207,7 +207,7 @@ Both `data` and `message` are optional fields, omitted from serialization when n
 }
 ```
 
-All response types are defined in `aionui-api-types` — the single source of truth for API contracts.
+All response types are defined in `fool-api-types` — the single source of truth for API contracts.
 
 ### HTTP Status Code Mapping
 
@@ -273,7 +273,7 @@ Existing inconsistencies will be unified incrementally during related module ite
 
 ### Repository Trait Pattern
 
-All database access goes through trait abstractions defined in `aionui-db`:
+All database access goes through trait abstractions defined in `fool-db`:
 
 ```rust
 #[async_trait]
@@ -297,23 +297,23 @@ Rules:
 
 The project has three categories of data types, each with its own home:
 
-| Type                   | Location                    | Purpose                       | Example                                             |
-| ---------------------- | --------------------------- | ----------------------------- | --------------------------------------------------- |
-| Row models             | `aionui-db/src/models/`     | Database row mapping          | `ConversationRow`                                   |
-| Params objects         | `aionui-db/src/repository/` | Database write parameters     | `UpdateConversationParams`                          |
-| Request/response types | `aionui-api-types`          | API contracts and shared DTOs | `CreateConversationRequest`, `ConversationResponse` |
+| Type                   | Location                  | Purpose                       | Example                                             |
+| ---------------------- | ------------------------- | ----------------------------- | --------------------------------------------------- |
+| Row models             | `fool-db/src/models/`     | Database row mapping          | `ConversationRow`                                   |
+| Params objects         | `fool-db/src/repository/` | Database write parameters     | `UpdateConversationParams`                          |
+| Request/response types | `fool-api-types`          | API contracts and shared DTOs | `CreateConversationRequest`, `ConversationResponse` |
 
-**The service layer may directly use types from `aionui-api-types`.** This crate contains
+**The service layer may directly use types from `fool-api-types`.** This crate contains
 pure data structure definitions with no HTTP framework dependencies, essentially serving as a shared DTO layer.
 
-⚠️ **Critical constraint: `aionui-api-types` must not depend on axum, tower, or any HTTP framework.
+⚠️ **Critical constraint: `fool-api-types` must not depend on axum, tower, or any HTTP framework.
 Only serde and basic type dependencies are allowed.** This is the prerequisite for services to safely use it.
 
 ### Responsibility Boundaries
 
 - **Handler (routes.rs):** Request validation, parameter extraction, error mapping, constructing `ApiResponse`
 - **Service (service.rs):** Business logic, rule validation, orchestrating Repository calls, Row ↔ Response conversion
-- **Repository (aionui-db):** Pure database operations, no business logic
+- **Repository (fool-db):** Pure database operations, no business logic
 
 The boundary between Handler and Service is defined by **responsibility**, not by types —
 Handlers do not make business decisions, Services do not handle HTTP concerns.
@@ -322,7 +322,7 @@ Handlers do not make business decisions, Services do not handle HTTP concerns.
 
 Using sqlx's embedded migrations (`sqlx::migrate!()`):
 
-- Migration files are located in `crates/aionui-db/migrations/`
+- Migration files are located in `crates/fool-db/migrations/`
 - Naming format: `NNN_descriptive_name.sql` (sequential numbering)
 - Migrations run automatically on application startup
 - New tables or schema changes must go through migration files — manual database modifications are forbidden
@@ -332,7 +332,7 @@ Using sqlx's embedded migrations (`sqlx::migrate!()`):
 
 ```
 DbError (database layer)
-  ↓ From trait implementation (aionui-db/src/error.rs)
+  ↓ From trait implementation (fool-db/src/error.rs)
 ApiError (unified error type)
   ↓ IntoResponse implementation
 HTTP response (status code + ErrorResponse JSON)
@@ -352,7 +352,7 @@ The application uses Axum's `with_state()` pattern for dependency injection in t
 
 **Step 1: Centralized service construction (AppServices)**
 
-`aionui-app` defines `AppServices`, which holds all shared dependencies centrally:
+`fool-app` defines `AppServices`, which holds all shared dependencies centrally:
 
 ```rust
 pub struct AppServices {
@@ -443,7 +443,7 @@ Key points:
 - **AppServices is the sole service construction center** — all Repository instantiation and Service assembly happens here
 - **RouterState holds only necessary dependencies** — each domain's State includes only the services it uses
 - **Dependencies are passed via `Arc<dyn Trait>`** — enables runtime polymorphism and test substitution
-- **Domain crates do not construct their own dependencies** — they only define what they need (RouterState), `aionui-app` handles assembly
+- **Domain crates do not construct their own dependencies** — they only define what they need (RouterState), `fool-app` handles assembly
 
 ## Security Model
 
@@ -465,16 +465,16 @@ CORS (local mode only, allows any origin)
 
 - Algorithm: HMAC-SHA256
 - Validity: 24 hours
-- Payload: `user_id`, `username`, `iat`, `exp`, `iss` ("aionui"), `aud` ("aionui-webui")
+- Payload: `user_id`, `username`, `iat`, `exp`, `iss` ("fool"), `aud` ("fool-webui")
 - Secret source priority: environment variable → database → random generation (64 bytes, getrandom)
-- Token extraction priority: `Authorization: Bearer` header → `aionui-session` cookie
+- Token extraction priority: `Authorization: Bearer` header → `fool-session` cookie
 - Supports token blacklist (SHA-256 hash, DashMap storage)
 
 ### CSRF Protection
 
 Uses the Double Submit Cookie pattern:
 
-- Cookie name: `aionui-csrf-token` (not HttpOnly — JavaScript must read it)
+- Cookie name: `fool-csrf-token` (not HttpOnly — JavaScript must read it)
 - Request header: `x-csrf-token`
 - Validation: cookie value must exactly match header value
 - Safe methods (GET, HEAD, OPTIONS) bypass validation
@@ -488,10 +488,10 @@ Uses the Double Submit Cookie pattern:
 
 ### Cookie Configuration
 
-| Cookie              | HttpOnly | Secure     | SameSite                  | Max-Age |
-| ------------------- | -------- | ---------- | ------------------------- | ------- |
-| `aionui-session`    | ✅       | When HTTPS | Strict(HTTPS) / Lax(HTTP) | 30 days |
-| `aionui-csrf-token` | ❌       | When HTTPS | Strict(HTTPS) / Lax(HTTP) | 30 days |
+| Cookie            | HttpOnly | Secure     | SameSite                  | Max-Age |
+| ----------------- | -------- | ---------- | ------------------------- | ------- |
+| `fool-session`    | ✅       | When HTTPS | Strict(HTTPS) / Lax(HTTP) | 30 days |
+| `fool-csrf-token` | ❌       | When HTTPS | Strict(HTTPS) / Lax(HTTP) | 30 days |
 
 ### Rate Limiting
 
@@ -528,7 +528,7 @@ Enabled via the `--local` startup flag, designed for Electron embedded scenarios
 | ----------------- | ---------------------------------------- | ----------------- | -------------------------------------------- |
 | Unit tests        | `#[cfg(test)]` inline in each `.rs` file | None or Mock      | Function-level logic verification            |
 | Integration tests | `crates/<crate>/tests/`                  | In-memory SQLite  | Service and Repository behavior verification |
-| E2E tests         | `crates/aionui-app/tests/`               | In-memory SQLite  | Full HTTP request chain verification         |
+| E2E tests         | `crates/fool-app/tests/`                 | In-memory SQLite  | Full HTTP request chain verification         |
 
 ### In-Memory Database
 
@@ -550,7 +550,7 @@ All tests requiring a database use `init_database_memory()`:
 
 ### E2E Test Pattern
 
-`aionui-app/tests/common/mod.rs` provides shared test utilities:
+`fool-app/tests/common/mod.rs` provides shared test utilities:
 
 ```rust
 // Build the complete application
@@ -613,28 +613,28 @@ Prohibited:
 
 ### Complete Steps for Creating a New Domain Crate
 
-Using `aionui-my-feature` as an example:
+Using `fool-my-feature` as an example:
 
 **Step 1: Create the crate and register it in the workspace**
 
-1. Create the directory `crates/aionui-my-feature/`
+1. Create the directory `crates/fool-my-feature/`
 2. Add the workspace member in root `Cargo.toml`:
    ```toml
    members = [
        # ... existing members
-       "crates/aionui-my-feature",
+       "crates/fool-my-feature",
    ]
    ```
 3. Register in `[workspace.dependencies]` of root `Cargo.toml`:
    ```toml
-   aionui-my-feature = { path = "crates/aionui-my-feature" }
+   fool-my-feature = { path = "crates/fool-my-feature" }
    ```
 4. Use `.workspace = true` for shared dependency versions within the crate
 
 **Step 2: Write the crate following the standard structure**
 
 ```
-crates/aionui-my-feature/
+crates/fool-my-feature/
 ├── Cargo.toml
 ├── src/
 │   ├── lib.rs        # Export my_feature_routes, MyFeatureService, MyFeatureRouterState
@@ -645,22 +645,22 @@ crates/aionui-my-feature/
     └── my_feature_test.rs
 ```
 
-**Step 3: If database access is needed, add to aionui-db**
+**Step 3: If database access is needed, add to fool-db**
 
 1. Add Row model in `models/`
 2. Define Repository trait (`I` prefix) and Sqlite implementation in `repository/`
 3. Add migration file in `migrations/` (`NNN_descriptive_name.sql`)
 
-**Step 4: If API types are needed, add to aionui-api-types**
+**Step 4: If API types are needed, add to fool-api-types**
 
-Define request/response types in `aionui-api-types` to keep API contracts centrally managed.
+Define request/response types in `fool-api-types` to keep API contracts centrally managed.
 
-**Step 5: Wire into aionui-app**
+**Step 5: Wire into fool-app**
 
-1. Add dependency in `aionui-app/Cargo.toml`:
+1. Add dependency in `fool-app/Cargo.toml`:
 
    ```toml
-   aionui-my-feature.workspace = true
+   fool-my-feature.workspace = true
    ```
 
 2. Add field to `ModuleStates`:
@@ -705,8 +705,8 @@ Before adding a new crate, confirm:
 
 - [ ] Crate internal structure follows the standard pattern (lib/routes/service/state)
 - [ ] Dependency direction is correct (does not depend on upper-layer or same-layer concrete implementations)
-- [ ] Repository trait defined in aionui-db, implementation uses Sqlite prefix
-- [ ] API types defined in aionui-api-types
+- [ ] Repository trait defined in fool-db, implementation uses Sqlite prefix
+- [ ] API types defined in fool-api-types
 - [ ] Routes use `/api/` prefix with kebab-case resource names
 - [ ] Includes corresponding test files
 - [ ] WebSocket events follow `domain.camelCaseAction` naming convention
@@ -716,14 +716,14 @@ Before adding a new crate, confirm:
 ### Managed Node Runtime
 
 Builtin ACP adapters run through the managed Node runtime in
-`crates/aionui-runtime/src/node_runtime/`. Packaged builds activate Node
+`crates/fool-runtime/src/node_runtime/`. Packaged builds activate Node
 from the managed-resources bundle; download-mode builds install the pinned
 runtime under `{data_dir}/runtime/node`. Adapter commands carry an explicit
 Node executable and do not depend on the ambient `PATH`.
 
 ### Startup PATH Enhancement
 
-`fn main()` calls `aionui_runtime::enhance_process_path()` **before** the
+`fn main()` calls `fool_runtime::enhance_process_path()` **before** the
 tokio runtime starts, so every downstream `which::which(...)` and
 `Command::new(...)` — including the existing spawn sites across the
 workspace — inherits an enriched `PATH`. Three layers are merged in priority
@@ -739,8 +739,8 @@ logged at `info` level).
 ### Subprocess Spawn Builder
 
 New subprocess spawn sites should go through
-`aionui_runtime::Builder::agent(program)` (for long-running agent CLIs
-whose stdio the caller owns) or `aionui_runtime::Builder::clean_cli(program)`
+`fool_runtime::Builder::agent(program)` (for long-running agent CLIs
+whose stdio the caller owns) or `fool_runtime::Builder::clean_cli(program)`
 (for short-lived tools whose output we parse). Both set
 `kill_on_drop(true)` and strip `NODE_OPTIONS`/`NODE_INSPECT`/`NODE_DEBUG`/
 `CLAUDECODE` so debug-profile env doesn't leak into the child.

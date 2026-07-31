@@ -31,5 +31,9 @@
     "understand": "Familiarízate con este proyecto y explícame con palabras sencillas qué hace y por dónde empezar",
     "cleanup": "Encuentra archivos duplicados e inútiles en esta carpeta y lístalos para que los confirme",
     "create": "Créame una página personal bonita y ábrela cuando esté lista"
+  },
+  "firstRun": {
+    "conversationName": "Primeros pasos",
+    "openingMessage": "Es la primera vez que abro The Fool. Preséntate y luego guíame en la configuración: comprueba qué ya funciona, ayúdame a conectar un proveedor de modelos, verifica que responde y cuéntame qué puedo hacer a partir de aquí. Hazme una pregunta cada vez y realiza tú mismo la configuración sobre la marcha."
   }
 }

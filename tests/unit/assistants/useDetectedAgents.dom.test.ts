@@ -61,8 +61,8 @@ describe('buildAssistantEditorBackends', () => {
         id: 'agent-foolrs',
         backend: undefined,
         agent_type: 'foolrs',
-        name: 'Aion CLI',
-        name_i18n: { 'zh-CN': 'Aion 命令行' },
+        name: 'Fool CLI',
+        name_i18n: { 'zh-CN': 'Fool 命令行' },
         status: 'online',
       }),
     ];
@@ -70,7 +70,7 @@ describe('buildAssistantEditorBackends', () => {
     expect(buildAssistantEditorBackends(agents, 'zh-CN')).toEqual([
       {
         id: 'agent-foolrs',
-        name: 'Aion 命令行',
+        name: 'Fool 命令行',
         runtimeKey: 'foolrs',
         modelOptions: [],
       },

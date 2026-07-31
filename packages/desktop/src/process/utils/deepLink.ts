@@ -11,10 +11,10 @@ import { PRODUCT_PROTOCOL } from '@/common/brand';
 export const PROTOCOL_SCHEME = PRODUCT_PROTOCOL;
 
 /**
- * Parse an aionui:// URL into action and params.
+ * Parse an fool:// URL into action and params.
  * Supports two formats:
- *   1. aionui://add-provider?base_url=xxx&api_key=xxx
- *   2. aionui://provider/add?v=1&data=<base64 JSON>  (one-api / new-api style)
+ *   1. fool://add-provider?base_url=xxx&api_key=xxx
+ *   2. fool://provider/add?v=1&data=<base64 JSON>  (one-api / new-api style)
  */
 export const parseDeepLinkUrl = (url: string): { action: string; params: Record<string, string> } | null => {
   try {

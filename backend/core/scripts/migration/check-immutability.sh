@@ -5,7 +5,7 @@ repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
 duplicate_versions="$(
-    find crates/aionui-db/migrations -maxdepth 1 -type f -name '*.sql' -print \
+    find crates/fool-db/migrations -maxdepth 1 -type f -name '*.sql' -print \
         | awk -F/ '
             {
                 name = $NF
@@ -40,12 +40,12 @@ EOF
     exit 1
 fi
 
-if [[ "${AIONCORE_ALLOW_MAIN_MIGRATION_EDIT:-}" == "1" ]]; then
-    echo "AIONCORE_ALLOW_MAIN_MIGRATION_EDIT=1; skipping migration immutability check"
+if [[ "${FOOLCORE_ALLOW_MAIN_MIGRATION_EDIT:-}" == "1" ]]; then
+    echo "FOOLCORE_ALLOW_MAIN_MIGRATION_EDIT=1; skipping migration immutability check"
     exit 0
 fi
 
-base_ref="${AIONCORE_MIGRATION_BASE_REF:-}"
+base_ref="${FOOLCORE_MIGRATION_BASE_REF:-}"
 if [[ -z "$base_ref" ]]; then
     if git rev-parse --verify --quiet origin/main >/dev/null; then
         base_ref="origin/main"
@@ -64,7 +64,7 @@ fi
 
 base_commit="$(git merge-base HEAD "$base_ref")"
 changed="$(
-    git diff --name-status --diff-filter=DMR "$base_commit" -- 'crates/aionui-db/migrations/*.sql'
+    git diff --name-status --diff-filter=DMR "$base_commit" -- 'crates/fool-db/migrations/*.sql'
 )"
 
 if [[ -n "$changed" ]]; then
@@ -72,7 +72,7 @@ if [[ -n "$changed" ]]; then
 Existing migration files from main must not be modified or deleted.
 
 Fix this by reverting changes to existing migration files and adding a new next-numbered migration instead.
-If this is an intentional high-risk exception, rerun with AIONCORE_ALLOW_MAIN_MIGRATION_EDIT=1.
+If this is an intentional high-risk exception, rerun with FOOLCORE_ALLOW_MAIN_MIGRATION_EDIT=1.
 
 Changed existing migrations:
 EOF

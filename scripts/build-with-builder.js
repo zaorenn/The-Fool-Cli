@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Simplified build script for AionUi
+ * Simplified build script for The Fool
  * Coordinates electron-vite (bundling) and electron-builder (packaging)
  *
  * Features:
@@ -26,7 +26,7 @@ const DMG_RETRY_DELAY_SEC = 30;
 
 // Incremental build: hash of source files to detect changes
 const INCREMENTAL_CACHE_FILE = 'out/.build-hash';
-const DEBUG_AUTO_UPDATE_CURRENT_VERSION_ENV = 'AIONUI_DEBUG_AUTO_UPDATE_CURRENT_VERSION';
+const DEBUG_AUTO_UPDATE_CURRENT_VERSION_ENV = 'FOOL_DEBUG_AUTO_UPDATE_CURRENT_VERSION';
 
 function patchElectronBuilderNsisInstaller() {
   const rootDir = path.resolve(__dirname, '..');
@@ -94,19 +94,17 @@ function patchElectronBuilderNsisInstaller() {
     patched = patched.replace(oneMoreAttemptLabel, '');
   }
 
-  const copiedUninstallerExec = `ExecWait '"$uninstallerFileNameTemp" /S /KEEP_APP_DATA $0 _?=$installationDir' $R0`;
-  const copiedUninstallerExecWithLog = `ExecWait '"$uninstallerFileNameTemp" /S /KEEP_APP_DATA $0 --installer-log="$AionUiSessionLogPath" --installer-session="$AionUiSessionId" _?=$installationDir' $R0`;
-  if (patched.includes(copiedUninstallerExec)) {
-    patched = patched.replace(copiedUninstallerExec, copiedUninstallerExecWithLog);
-  } else if (
-    patched.includes(
-      `ExecWait '"$uninstallerFileNameTemp" /S /KEEP_APP_DATA $0 --installer-log="$AionUiSessionLogPath" _?=$installationDir' $R0`
-    )
-  ) {
-    patched = patched.replace(
-      `ExecWait '"$uninstallerFileNameTemp" /S /KEEP_APP_DATA $0 --installer-log="$AionUiSessionLogPath" _?=$installationDir' $R0`,
-      copiedUninstallerExecWithLog
-    );
+  const copiedUninstallerExecWithLog = `ExecWait '"$uninstallerFileNameTemp" /S /KEEP_APP_DATA $0 --installer-log="$FoolSessionLogPath" --installer-session="$FoolSessionId" _?=$installationDir' $R0`;
+  // Matched on shape rather than on an exact string. electron-builder's own
+  // line carries no extra flags; a copy this script already patched carries
+  // whatever flags that older version injected. Listing every historical
+  // variant meant a rename of the session variables turned every
+  // already-patched checkout into a build failure, so anything between `$0`
+  // and `_?=` is accepted and rewritten to the current form.
+  const copiedUninstallerExecPattern =
+    /ExecWait '"\$uninstallerFileNameTemp" \/S \/KEEP_APP_DATA \$0(?: [^']*?)? _\?=\$installationDir' \$R0/;
+  if (copiedUninstallerExecPattern.test(patched)) {
+    patched = patched.replace(copiedUninstallerExecPattern, () => copiedUninstallerExecWithLog);
   } else if (!patched.includes(copiedUninstallerExecWithLog)) {
     throw new Error(
       'electron-builder copied-uninstaller ExecWait template changed; update patchElectronBuilderNsisInstaller.'
@@ -118,9 +116,9 @@ function patchElectronBuilderNsisInstaller() {
     '  !insertmacro copyFile "$uninstallerFileName" "$uninstallerFileNameTemp"',
   ].join('\n');
   const bundledUninstallerOverride = [
-    '  ${if} ${FileExists} "$PLUGINSDIR\\AionUi-fixed-uninstaller.exe"',
-    '    DetailPrint `AionUi-bundled-uninstaller override source.`',
-    '    StrCpy $uninstallerFileName "$PLUGINSDIR\\AionUi-fixed-uninstaller.exe"',
+    '  ${if} ${FileExists} "$PLUGINSDIR\\The Fool-fixed-uninstaller.exe"',
+    '    DetailPrint `The Fool-bundled-uninstaller override source.`',
+    '    StrCpy $uninstallerFileName "$PLUGINSDIR\\The Fool-fixed-uninstaller.exe"',
     '  ${endIf}',
   ].join('\n');
   const bundledUninstallerCopySource = [
@@ -147,19 +145,12 @@ function patchElectronBuilderNsisInstaller() {
     );
   }
 
-  const inPlaceUninstallerExec = `ExecWait '"$uninstallerFileName" /S /KEEP_APP_DATA $0 _?=$installationDir' $R0`;
-  const inPlaceUninstallerExecWithLog = `ExecWait '"$uninstallerFileName" /S /KEEP_APP_DATA $0 --installer-log="$AionUiSessionLogPath" --installer-session="$AionUiSessionId" _?=$installationDir' $R0`;
-  if (patched.includes(inPlaceUninstallerExec)) {
-    patched = patched.replace(inPlaceUninstallerExec, inPlaceUninstallerExecWithLog);
-  } else if (
-    patched.includes(
-      `ExecWait '"$uninstallerFileName" /S /KEEP_APP_DATA $0 --installer-log="$AionUiSessionLogPath" _?=$installationDir' $R0`
-    )
-  ) {
-    patched = patched.replace(
-      `ExecWait '"$uninstallerFileName" /S /KEEP_APP_DATA $0 --installer-log="$AionUiSessionLogPath" _?=$installationDir' $R0`,
-      inPlaceUninstallerExecWithLog
-    );
+  const inPlaceUninstallerExecWithLog = `ExecWait '"$uninstallerFileName" /S /KEEP_APP_DATA $0 --installer-log="$FoolSessionLogPath" --installer-session="$FoolSessionId" _?=$installationDir' $R0`;
+  // Same shape-match as the copied-uninstaller line above, for the same reason.
+  const inPlaceUninstallerExecPattern =
+    /ExecWait '"\$uninstallerFileName" \/S \/KEEP_APP_DATA \$0(?: [^']*?)? _\?=\$installationDir' \$R0/;
+  if (inPlaceUninstallerExecPattern.test(patched)) {
+    patched = patched.replace(inPlaceUninstallerExecPattern, () => inPlaceUninstallerExecWithLog);
   } else if (!patched.includes(inPlaceUninstallerExecWithLog)) {
     throw new Error(
       'electron-builder in-place uninstaller ExecWait template changed; update patchElectronBuilderNsisInstaller.'
@@ -482,7 +473,7 @@ function writeGeneratedSentryDsnInclude(projectRoot) {
   fs.mkdirSync(path.dirname(generatedInclude), { recursive: true });
   fs.writeFileSync(
     generatedInclude,
-    `!define AIONUI_SENTRY_DSN "${escapeNsisDefineValue(process.env.SENTRY_DSN || '')}"\n`
+    `!define FOOL_SENTRY_DSN "${escapeNsisDefineValue(process.env.SENTRY_DSN || '')}"\n`
   );
 }
 
@@ -842,14 +833,14 @@ try {
     const winUnpackedDir = path.join(outDir, 'win-unpacked');
     let cleaned = tryRemoveDir(winUnpackedDir);
     if (!cleaned) {
-      const aionRunning = isProcessRunningWindows('AionUi.exe');
+      const foolRunning = isProcessRunningWindows('The Fool.exe');
       const electronRunning = isProcessRunningWindows('electron.exe');
-      if (aionRunning || electronRunning) {
-        console.log('⚠️  Detected running AionUi/Electron process. Attempting to close...');
-        killWindowsProcesses(['AionUi.exe', 'electron.exe']);
+      if (foolRunning || electronRunning) {
+        console.log('⚠️  Detected running The Fool/Electron process. Attempting to close...');
+        killWindowsProcesses(['The Fool.exe', 'electron.exe']);
         cleaned = tryRemoveDir(winUnpackedDir);
         if (!cleaned) {
-          console.log('⚠️  Directory still locked. Please close any running AionUi/Electron processes and retry.');
+          console.log('⚠️  Directory still locked. Please close any running The Fool/Electron processes and retry.');
         }
       }
     }
@@ -865,7 +856,7 @@ try {
   try {
     buildWithDmgRetry(builderCommand, targetArch);
   } catch (error) {
-    const winExePath = path.join(outDir, 'win-unpacked', 'AionUi.exe');
+    const winExePath = path.join(outDir, 'win-unpacked', 'The Fool.exe');
     const firstError = formatExecError(error);
     const canRetryWithoutExecutableEdit =
       process.platform === 'win32' && isWindowsBuild && process.env.CI !== 'true' && fs.existsSync(winExePath);
@@ -874,7 +865,7 @@ try {
       throw error;
     }
 
-    console.log('⚠️  Windows local build failed after AionUi.exe was produced.');
+    console.log('⚠️  Windows local build failed after The Fool.exe was produced.');
     if (firstError) {
       console.log('   First failure summary:');
       console.log(
@@ -887,7 +878,7 @@ try {
     }
     console.log('   Retrying local build with win.signAndEditExecutable=false...');
     console.log('   This fallback is intended for transient rcedit / file-lock failures on developer machines.');
-    killWindowsProcesses(['AionUi.exe', 'electron.exe']);
+    killWindowsProcesses(['The Fool.exe', 'electron.exe']);
     cleanupWindowsPackOutput();
 
     try {

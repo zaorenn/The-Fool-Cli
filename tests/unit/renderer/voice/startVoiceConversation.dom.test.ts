@@ -145,7 +145,7 @@ describe('startVoiceConversation', () => {
     expect(result).toEqual({ ok: false, reason: 'agent-missing' });
   });
 
-  it('refuses an Aion CLI agent with no model, which it cannot be created without', async () => {
+  it('refuses an Fool CLI agent with no model, which it cannot be created without', async () => {
     const result = await startVoiceConversation({
       text: 'hello',
       settings: settings({ assistantId: 'hermes' }),
@@ -154,7 +154,7 @@ describe('startVoiceConversation', () => {
     expect(result).toEqual({ ok: false, reason: 'no-model' });
   });
 
-  // Hermes names the LM Studio model `lmstudio:qwen/qwen3.5-9b`; the AionUi
+  // Hermes names the LM Studio model `lmstudio:qwen/qwen3.5-9b`; the The Fool
   // provider calls the same weights `qwen/qwen3.5-9b`. A pin in the agent's own
   // namespace matches no provider, and dropping it left the agent on whatever
   // model it was last set to.

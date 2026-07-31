@@ -61,9 +61,14 @@
   "more": "Daha Fazla",
   "refresh": "Yenile",
   "readOnly": "Salt okunur",
-  "tray.showWindow": "The Fool'yi Göster",
+  "tray.showWindow": "The Fool'u Göster",
   "tray.newChat": "Yeni Sohbet",
   "tray.closeToTray": "Tepsiye Gizle",
+  "tray.closePromptTitle": "The Fool'u Kapat",
+  "tray.closePromptMessage": "The Fool sistem tepsisinde çalışmaya devam etsin mi?",
+  "tray.closePromptDetail": "Yanıtınız hatırlanır. Daha sonra Ayarlar → Sistem üzerinden değiştirebilirsiniz.",
+  "tray.closePromptMinimize": "Tepsiye küçült",
+  "tray.closePromptQuit": "The Fool'dan çık",
   "tray.about": "The Fool Hakkında",
   "tray.restart": "Uygulamayı Yeniden Başlat",
   "tray.quit": "Çıkış",
@@ -75,7 +80,7 @@
   "backendStartup": {
     "incompatibleRuntime": {
       "title": "Bu sistem paketlenmiş backend tarafından desteklenmiyor",
-      "description": "The Fool açıldı, ancak yerel The Fool Core backend bu Linux sürümünde çalışamaz. Desteklenen bir Linux dağıtımına yükseltip The Fool'yi yeniden başlatın.",
+      "description": "The Fool açıldı, ancak yerel The Fool Core backend bu Linux sürümünde çalışamaz. Desteklenen bir Linux dağıtımına yükseltip The Fool'u yeniden başlatın.",
       "requiredVersions": "Gerekli çalışma zamanı sembolleri: {{versions}}"
     },
     "incompleteInstallation": {
@@ -102,7 +107,7 @@
     },
     "localDataRepair": {
       "title": "Local data repair failed",
-      "description": "The Fool açıldı, ancak The Fool Core assistant veya agent kayıtları gibi yerel başlangıç verilerini hazırlarken durdu. The Fool'yi yeniden yüklemek bu sorunu çözmeyebilir. Yerel veritabanının incelenebilmesi için tanılama raporu gönderin veya destek ekibiyle iletişime geçin.",
+      "description": "The Fool açıldı, ancak The Fool Core assistant veya agent kayıtları gibi yerel başlangıç verilerini hazırlarken durdu. The Fool'u yeniden yüklemek bu sorunu çözmeyebilir. Yerel veritabanının incelenebilmesi için tanılama raporu gönderin veya destek ekibiyle iletişime geçin.",
       "sendDiagnostics": "Send diagnostics",
       "diagnosticsSent": "Diagnostics sent",
       "diagnosticsReportSuccess": "Diagnostics report sent",
@@ -129,7 +134,7 @@
     },
     "transientConcurrentStartup": {
       "title": "The Fool başlatılıyor",
-      "description": "Bu pencere açıldığında başka bir The Fool başlatma işlemi yerel verileri hâlâ kullanıyordu. Bu geçicidir ve verileriniz güvende — yeniden yükleme gerekmez. Lütfen biraz bekleyip tekrar deneyin veya The Fool'yi yeniden başlatın.",
+      "description": "Bu pencere açıldığında başka bir The Fool başlatma işlemi yerel verileri hâlâ kullanıyordu. Bu geçicidir ve verileriniz güvende — yeniden yükleme gerekmez. Lütfen biraz bekleyip tekrar deneyin veya The Fool'u yeniden başlatın.",
       "sendDiagnostics": "Send diagnostics",
       "diagnosticsSent": "Diagnostics sent",
       "diagnosticsReportSuccess": "Diagnostics report sent",

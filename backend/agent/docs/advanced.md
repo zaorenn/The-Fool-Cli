@@ -168,11 +168,11 @@ dir = "/path/to/logs"  # log directory (default: platform-specific, see below)
 
 The `level` field accepts standard tracing filter directives:
 
-| Value                         | Effect                                        |
-| ----------------------------- | --------------------------------------------- |
-| `"info"`                      | Info and above for all targets                |
-| `"debug"`                     | Debug and above for all targets               |
-| `"aion_providers=debug,info"` | Debug for providers, info for everything else |
+| Value                           | Effect                                        |
+| ------------------------------- | --------------------------------------------- |
+| `"info"`                        | Info and above for all targets                |
+| `"debug"`                       | Debug and above for all targets               |
+| `"foolrs_providers=debug,info"` | Debug for providers, info for everything else |
 
 ### Default Log Directory
 
@@ -193,18 +193,18 @@ Each line is a JSON object with structured fields:
   "timestamp": "2026-05-13T12:12:52.431Z",
   "level": "INFO",
   "fields": { "message": "mcp server connected", "server": "sentry", "tools": 20 },
-  "target": "aion_mcp",
+  "target": "foolrs_mcp",
   "spans": [{ "name": "agent_run", "session_id": "abc-123", "msg_id": "msg-456" }]
 }
 ```
 
 Key fields:
 
-| Field                | Description                                                     |
-| -------------------- | --------------------------------------------------------------- |
-| `target`             | Source crate (`aion_agent`, `aion_providers`, `aion_mcp`, etc.) |
-| `spans[].session_id` | Session ID for correlating events within a conversation         |
-| `spans[].msg_id`     | Message ID for correlating events within a single turn          |
+| Field                | Description                                                           |
+| -------------------- | --------------------------------------------------------------------- |
+| `target`             | Source crate (`foolrs_agent`, `foolrs_providers`, `foolrs_mcp`, etc.) |
+| `spans[].session_id` | Session ID for correlating events within a conversation               |
+| `spans[].msg_id`     | Message ID for correlating events within a single turn                |
 
 ### Session Correlation
 
@@ -220,11 +220,11 @@ grep '"session_id":"abc-123"' 2026-05-13.foolrs.log | jq .
 When foolrs is used as a library (e.g. embedded in a backend server), the `create_file_layer()` API provides a composable tracing layer:
 
 ```rust
-use aion_config::logging::{ResolvedLogging, create_file_layer};
+use foolrs_config::logging::{ResolvedLogging, create_file_layer};
 
 let resolved = ResolvedLogging {
     enabled: true,
-    level: "aion_agent=debug,aion_providers=debug".to_string(),
+    level: "foolrs_agent=debug,foolrs_providers=debug".to_string(),
     dir: log_dir.to_path_buf(),
 };
 let (layer, guard) = create_file_layer(&resolved)?;
@@ -272,7 +272,7 @@ my-workspace/
         └── AGENTS.md  ← server-specific rules
 ```
 
-Running aion in `packages/server/` produces a system prompt containing both files, workspace first, then server.
+Running fool in `packages/server/` produces a system prompt containing both files, workspace first, then server.
 
 ---
 
@@ -320,7 +320,7 @@ Memory is enabled by default with no configuration required. The memory director
 Override the base directory via environment variable:
 
 ```bash
-export AIONRS_MEMORY_DIR=/custom/path
+export FOOLRS_MEMORY_DIR=/custom/path
 ```
 
 ### How It Works

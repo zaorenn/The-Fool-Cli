@@ -13,5 +13,9 @@
     "specifyWorkspace": "選擇專案資料夾",
     "searchPlaceholder": "搜尋專案…",
     "noProject": "不使用專案"
+  },
+  "firstRun": {
+    "conversationName": "快速上手",
+    "openingMessage": "這是我第一次開啟 The Fool。請先自我介紹，然後帶我完成設定：檢查哪些已經可用，幫我接上一個模型服務商，驗證它能正常回應，並告訴我接下來能做什麼。每次只問我一個問題，並在過程中自己完成設定。"
   }
 }

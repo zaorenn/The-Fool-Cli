@@ -7,7 +7,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Form, Input, Select, Message, TimePicker, Radio, Button, Switch } from '@arco-design/web-react';
-import AionModal from '@renderer/components/base/AionModal';
+import FoolModal from '@renderer/components/base/FoolModal';
 import { Down, Robot } from '@icon-park/react';
 import { ipcBridge } from '@/common';
 import { resolveLocaleKey } from '@/common/utils';
@@ -369,7 +369,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
 
   const isGeminiMode = resolvedBackend === 'gemini' || resolvedBackend === 'foolrs';
 
-  // Providers compatible with foolrs (AionCLI does not support Google Auth).
+  // Providers compatible with foolrs (FoolCLI does not support Google Auth).
   // Computed independent of the current selection so assistant options backed
   // by foolrs can be disabled when no provider is configured.
   const foolrsProviders = useMemo(
@@ -609,7 +609,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   };
 
   return (
-    <AionModal
+    <FoolModal
       variant='standard'
       header={{ title: isEditMode ? t('cron.page.editTask') : t('cron.page.createTask'), showClose: true }}
       visible={visible}
@@ -1000,7 +1000,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
           )}
         </Form>
       </div>
-    </AionModal>
+    </FoolModal>
   );
 };
 

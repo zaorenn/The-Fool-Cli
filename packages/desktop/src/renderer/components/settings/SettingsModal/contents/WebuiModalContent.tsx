@@ -8,8 +8,8 @@ import { WEBUI_DEFAULT_PORT } from '@/common/config/constants';
 import { shell, webui, type IWebUIStatus } from '@/common/adapter/ipcBridge';
 import { isBackendHttpError } from '@/common/adapter/httpBridge';
 import { configService } from '@/common/config/configService';
-import AionModal from '@/renderer/components/base/AionModal';
-import AionScrollArea from '@/renderer/components/base/AionScrollArea';
+import FoolModal from '@/renderer/components/base/FoolModal';
+import FoolScrollArea from '@/renderer/components/base/FoolScrollArea';
 import { useTalkToJester } from '@/renderer/hooks/assistant/useTalkToJester';
 import ChannelDingTalkLogo from '@/renderer/assets/channel-logos/dingtalk.svg';
 import ChannelDiscordLogo from '@/renderer/assets/channel-logos/discord.svg';
@@ -558,20 +558,20 @@ const WebuiModalContent: React.FC = () => {
   if (!isDesktop) {
     return (
       <div className='flex flex-col h-full w-full'>
-        <AionScrollArea className='flex-1 min-h-0 pb-16px' disableOverflow={isPageMode}>
+        <FoolScrollArea className='flex-1 min-h-0 pb-16px' disableOverflow={isPageMode}>
           <div className='space-y-16px'>
             <h2 className='text-20px font-500 text-t-primary m-0'>Channels</h2>
             <Suspense fallback={<div className='text-13px text-t-secondary'>{t('common.loading')}</div>}>
               <ChannelModalContentLazy />
             </Suspense>
           </div>
-        </AionScrollArea>
+        </FoolScrollArea>
       </div>
     );
   }
 
   const webuiPanel = (
-    <AionScrollArea className='flex-1 min-h-0 pb-16px' disableOverflow={isPageMode}>
+    <FoolScrollArea className='flex-1 min-h-0 pb-16px' disableOverflow={isPageMode}>
       <div className='space-y-12px px-[12px] md:px-[28px]'>
         {/* 标题 / Title */}
         <h2 className='text-20px font-500 text-t-primary m-0'>WebUI</h2>
@@ -668,7 +668,7 @@ const WebuiModalContent: React.FC = () => {
                     void talkToJester({
                       prompt: t('settings.talkToJester.prompt.setupRemote', {
                         defaultValue:
-                          'Help me set up remote access so I can open AionUi from my phone or over the internet.',
+                          'Help me set up remote access so I can open The Fool from my phone or over the internet.',
                       }),
                     })
                   }
@@ -797,7 +797,7 @@ const WebuiModalContent: React.FC = () => {
           )}
         </div>
       </div>
-    </AionScrollArea>
+    </FoolScrollArea>
   );
 
   return (
@@ -858,7 +858,7 @@ const WebuiModalContent: React.FC = () => {
         </div>
       )}
 
-      <AionModal
+      <FoolModal
         visible={setUsernameModalVisible}
         onCancel={() => setSetUsernameModalVisible(false)}
         onOk={handleSetNewUsername}
@@ -908,10 +908,10 @@ const WebuiModalContent: React.FC = () => {
             <Input placeholder={t('settings.webui.newUsernamePlaceholder')} />
           </Form.Item>
         </Form>
-      </AionModal>
+      </FoolModal>
 
       {/* 设置新密码弹窗 / Set New Password Modal */}
-      <AionModal
+      <FoolModal
         visible={setPasswordModalVisible}
         onCancel={() => setSetPasswordModalVisible(false)}
         onOk={handleSetNewPassword}
@@ -949,7 +949,7 @@ const WebuiModalContent: React.FC = () => {
             <Input.Password placeholder={t('settings.webui.confirmPasswordPlaceholder')} />
           </Form.Item>
         </Form>
-      </AionModal>
+      </FoolModal>
     </div>
   );
 };

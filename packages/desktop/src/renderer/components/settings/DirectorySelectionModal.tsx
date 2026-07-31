@@ -10,7 +10,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getBaseUrl } from '@/common/adapter/httpBridge';
 import { stripWindowsVerbatimPrefix } from '@/renderer/utils/file/fileSelection';
-import AionModal from '@/renderer/components/base/AionModal';
+import FoolModal from '@/renderer/components/base/FoolModal';
 
 interface DirectoryItem {
   name: string;
@@ -140,7 +140,7 @@ const DirectorySelectionModal: React.FC<DirectorySelectionModalProps> = ({
     // This picker is opened *from* other modals (team/cron create dialogs sit at
     // zIndex 10000, the cron workspace menu at 10020), so it must float above all
     // of them — it's the topmost layer while choosing a folder.
-    <AionModal
+    <FoolModal
       variant='standard'
       visible={visible}
       header={{
@@ -236,7 +236,7 @@ const DirectorySelectionModal: React.FC<DirectorySelectionModalProps> = ({
           </div>
         </div>
       </Spin>
-    </AionModal>
+    </FoolModal>
   );
 };
 

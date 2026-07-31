@@ -63,16 +63,16 @@ describe('local storage bridge', () => {
     const storage = buildStorage<TestStorage>('test.settings');
     registerMemoryStore(storage);
 
-    await storage.set('name', 'AionUi');
+    await storage.set('name', 'The Fool');
 
-    await expect(storage.get('name')).resolves.toBe('AionUi');
+    await expect(storage.get('name')).resolves.toBe('The Fool');
   });
 
   it('supports remove and clear operations', async () => {
     const { buildStorage } = await loadStorage();
     const storage = buildStorage<TestStorage>('test.settings');
     registerMemoryStore(storage);
-    await storage.set('name', 'AionUi');
+    await storage.set('name', 'The Fool');
     await storage.set('count', 2);
 
     await storage.remove('name');

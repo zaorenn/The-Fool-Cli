@@ -37,7 +37,7 @@ vi.mock('@/renderer/utils/platform', () => ({
   isElectronDesktop: () => true,
 }));
 
-vi.mock('@/renderer/components/base/AionScrollArea', () => ({
+vi.mock('@/renderer/components/base/FoolScrollArea', () => ({
   default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
@@ -204,7 +204,7 @@ describe('SystemModalContent directory settings', () => {
     await screen.findByText('/work');
     const workDirItem = screen.getByText('settings.workDir').closest('.arco-form-item');
     expect(workDirItem).not.toBeNull();
-    const fieldBody = (workDirItem as HTMLElement).querySelector('.aion-dir-input');
+    const fieldBody = (workDirItem as HTMLElement).querySelector('.fool-dir-input');
     expect(fieldBody).not.toBeNull();
 
     await user.click(fieldBody as HTMLElement);

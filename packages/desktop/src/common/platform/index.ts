@@ -10,7 +10,7 @@ let _services: IPlatformServices | null = null;
  * Centralised so that every call-site stays in sync.
  */
 export function getDevAppName(): string {
-  const isMultiInstance = process.env.AIONUI_MULTI_INSTANCE === '1';
+  const isMultiInstance = process.env.FOOL_MULTI_INSTANCE === '1';
   const devAppName = `${PRODUCT_EXECUTABLE_NAME}-Dev`;
   return isMultiInstance ? `${devAppName}-2` : devAppName;
 }

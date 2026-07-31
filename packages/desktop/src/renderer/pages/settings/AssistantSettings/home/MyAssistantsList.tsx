@@ -51,7 +51,7 @@ const MyAssistantsList: React.FC<MyAssistantsListProps> = ({
   const talkToJester = useTalkToJester();
   const [filter, setFilter] = useState<AssistantEnabledFilter>('all');
 
-  // "Create via chat": hand off to the AionUi Jester on the home page with a
+  // "Create via chat": hand off to the The Fool Jester on the home page with a
   // ready-made create-an-assistant prompt (same flow as the header action).
   const handleCreateViaChat = () => {
     void talkToJester({

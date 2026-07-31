@@ -125,9 +125,9 @@ function classifyIncompleteInstallation(details: ErrorWithDetails['details']): B
   const hasPackagedApp = resourcesDirEntries.some((entry) => PACKAGED_APP_MARKER_ENTRIES.has(entry));
   if (!hasPackagedApp) return undefined;
 
-  const missingBundledAioncoreDir = !resourcesDirEntries.includes('bundled-foolcore/');
+  const missingBundledFoolcoreDir = !resourcesDirEntries.includes('bundled-foolcore/');
   const missingRuntimeDir = details.runtimeDirExists === false && typeof details.runtimeKey === 'string';
-  const missingResources = missingBundledAioncoreDir ? ['bundled-foolcore/'] : [];
+  const missingResources = missingBundledFoolcoreDir ? ['bundled-foolcore/'] : [];
   if (details.runtimeDirExists === false && typeof details.runtimeKey === 'string') {
     missingResources.push(`bundled-foolcore/${details.runtimeKey}/`);
   }
@@ -154,12 +154,12 @@ function classifyIncompleteInstallation(details: ErrorWithDetails['details']): B
 
   return {
     incompleteInstallationKind:
-      missingBundledAioncoreDir || missingRuntimeDir || missingManagedResourcesDir
+      missingBundledFoolcoreDir || missingRuntimeDir || missingManagedResourcesDir
         ? 'missing_directory_resources'
         : 'missing_backend_binary',
     missingBackendBinary:
-      missingBundledAioncoreDir || missingRuntimeDir || missingManagedResourcesDir || missingRuntimeBinary,
-    missingBundledAioncoreDir,
+      missingBundledFoolcoreDir || missingRuntimeDir || missingManagedResourcesDir || missingRuntimeBinary,
+    missingBundledFoolcoreDir,
     missingHubDir: getMissingDirectoryFlag(resourcesDirEntries, 'hub/'),
     missingPetStatesDir: getMissingDirectoryFlag(resourcesDirEntries, 'pet-states/'),
     missingPwaDir: getMissingDirectoryFlag(resourcesDirEntries, 'pwa/'),

@@ -8,7 +8,7 @@ const {
   verifyModuleBinary,
   getModulesToRebuild,
 } = require('./rebuildNativeModules');
-const { verifyBundledAioncoreResources } = require('../packages/shared-scripts/src/verify-bundled-foolcore-resources');
+const { verifyBundledFoolcoreResources } = require('../packages/shared-scripts/src/verify-bundled-foolcore-resources');
 
 /**
  * afterPack hook for electron-builder
@@ -18,12 +18,12 @@ const { verifyBundledAioncoreResources } = require('../packages/shared-scripts/s
 function resolveResourcesDir(electronPlatformName, appOutDir, packager) {
   if (electronPlatformName !== 'darwin') return path.join(appOutDir, 'resources');
 
-  const appName = packager?.appInfo?.productFilename || 'AionUi';
+  const appName = packager?.appInfo?.productFilename || 'The Fool';
   return path.join(appOutDir, `${appName}.app`, 'Contents', 'Resources');
 }
 
 function verifyBundledResources(resourcesDir, electronPlatformName, targetArch) {
-  const result = verifyBundledAioncoreResources({
+  const result = verifyBundledFoolcoreResources({
     resourcesDir,
     electronPlatformName,
     targetArch,

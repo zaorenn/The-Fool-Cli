@@ -5,8 +5,8 @@
  */
 
 /**
- * AionRouter 协议检测器
- * Protocol Detector for AionRouter
+ * FoolRouter 协议检测器
+ * Protocol Detector for FoolRouter
  *
  * 支持自动检测 API 端点使用的协议类型：
  * - OpenAI 协议（大多数第三方服务）

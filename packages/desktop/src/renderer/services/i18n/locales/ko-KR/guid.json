@@ -13,5 +13,9 @@
     "specifyWorkspace": "프로젝트 폴더 선택",
     "searchPlaceholder": "프로젝트 검색…",
     "noProject": "프로젝트 없음"
+  },
+  "firstRun": {
+    "conversationName": "시작하기",
+    "openingMessage": "The Fool을 처음 실행했습니다. 자기소개를 한 다음 설정을 안내해 주세요. 이미 동작하는 것을 확인하고, 모델 공급자를 연결하도록 도와주고, 응답하는지 검증하고, 여기서 무엇을 할 수 있는지 알려주세요. 질문은 한 번에 하나씩 하고, 설정은 진행하면서 직접 해주세요."
   }
 }

@@ -1,0 +1,74 @@
+[package]
+name = "fool-ai-agent"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+fool-auth.workspace = true
+fool-common.workspace = true
+fool-db.workspace = true
+fool-mcp.workspace = true
+fool-realtime.workspace = true
+fool-runtime.workspace = true
+fool-extension.workspace = true
+fool-api-types.workspace = true
+fool-team-prompts.workspace = true
+fool-session.workspace = true
+fool-process.workspace = true
+fool-system.workspace = true
+axum.workspace = true
+http.workspace = true
+base64.workspace = true
+tokio.workspace = true
+tokio-tungstenite.workspace = true
+ed25519-dalek.workspace = true
+sha2.workspace = true
+hex.workspace = true
+dirs.workspace = true
+getrandom.workspace = true
+regex.workspace = true
+dashmap.workspace = true
+futures-util.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+which.workspace = true
+foolrs-agent.workspace = true
+foolrs-providers.workspace = true
+foolrs-types.workspace = true
+foolrs-protocol.workspace = true
+foolrs-config.workspace = true
+foolrs-mcp.workspace = true
+uuid.workspace = true
+agent-client-protocol = { version = "2.0.0", features = ["unstable_session_fork", "unstable_end_turn_token_usage"] }
+tokio-util = { version = "0.7", features = ["compat", "codec"] }
+rusqlite.workspace = true
+libc.workspace = true
+
+[features]
+# Enables the `AgentInstance::Mock` variant used by downstream test harnesses
+# (conversation/cron/team/app) to inject trait-object stubs without having to
+# spawn a real agent process. Production builds must NOT turn this on — it
+# introduces a `dyn IAgentTask` branch that defeats the enum's zero-dispatch
+# guarantee.
+test-support = []
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { workspace = true, features = ["full"] }
+tracing-subscriber.workspace = true
+fool-common.workspace = true
+fool-extension.workspace = true
+fool-db.workspace = true
+fool-process.workspace = true
+uuid.workspace = true
+sqlx.workspace = true
+
+# Integration tests under `tests/` need the `AgentInstance::Mock` variant.
+# Unlike unit tests (which see `cfg(test)` on the library), integration
+# tests compile as separate binaries and must opt in via a feature.
+[[test]]
+name = "agent_types_integration"
+required-features = ["test-support"]

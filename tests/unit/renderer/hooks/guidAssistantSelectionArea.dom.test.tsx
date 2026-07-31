@@ -237,7 +237,7 @@ describe('AssistantSelectionArea', () => {
         .getAllByRole('button')
         .slice(0, 4)
         .map((node) => node.textContent?.trim())
-    ).toEqual(['Aion CLI', 'Early', 'Mid', 'Late']);
+    ).toEqual(['Fool CLI', 'Early', 'Mid', 'Late']);
   });
 
   it('keeps a selected overflow assistant visible in the top pill row', () => {
@@ -304,7 +304,7 @@ function assistants(): Assistant[] {
     {
       id: 'bare-foolrs',
       source: 'generated',
-      name: 'Aion CLI',
+      name: 'Fool CLI',
       name_i18n: {},
       description_i18n: {},
       enabled: true,

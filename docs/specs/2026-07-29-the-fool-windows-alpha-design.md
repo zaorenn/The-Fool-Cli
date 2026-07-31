@@ -2,12 +2,12 @@
 
 **Date:** 2026-07-29  
 **Status:** Approved for specification; implementation requires written-spec review  
-**Base:** AionUi v2.1.43  
+**Base:** The Fool v2.1.43  
 **Target:** Windows 10/11 x64
 
 ## 1. Objective
 
-Build a usable Windows-first alpha of **The Fool** by rebranding and extending AionUi. The product
+Build a usable Windows-first alpha of **The Fool** by rebranding and extending The Fool. The product
 must be a general-purpose, voice-first desktop agent that can use OpenClaw, Hermes Agent, and other
 ACP-compatible CLIs without making voice, memory, or presentation depend on any one agent.
 
@@ -33,7 +33,7 @@ its uncommitted work remain untouched.
 5. **Alpha means usable, not simulated.** Unsupported capabilities are disabled with an explanation;
    no placeholder model, fake health state, or non-functional button ships.
 6. **Upstream remains mergeable.** New domains are isolated behind typed boundaries and the
-   rebrand is centralized so AionUi updates can be evaluated and merged deliberately.
+   rebrand is centralized so The Fool updates can be evaluated and merged deliberately.
 
 ## 3. Alpha Scope
 
@@ -269,7 +269,7 @@ reading raw code.
 
 ## 8. Agent Integration
 
-AionUi’s ACP session management remains the transport foundation. The Fool detects installed agents
+The Fool’s ACP session management remains the transport foundation. The Fool detects installed agents
 and exposes configured custom ACP agents.
 
 Required alpha checks:
@@ -350,7 +350,7 @@ The alpha is accepted only after all applicable repository checks and the follow
 flows pass:
 
 1. A clean Windows x64 package installs and opens as The Fool.
-2. No primary product surface presents AionUi branding as the product identity.
+2. No primary product surface presents The Fool branding as the product identity.
 3. The supplied visual identity is legible in the window, installer, taskbar, tray, and phone PWA.
 4. Microphone and speaker can be selected and tested.
 5. “Hey Fool” starts listening in a quiet indoor environment.
@@ -372,7 +372,7 @@ flows pass:
 
 ## 13. Implementation Sequence
 
-1. Establish the clean AionUi baseline: dependencies, tests, development launch, Windows package.
+1. Establish the clean The Fool baseline: dependencies, tests, development launch, Windows package.
 2. Centralize product identity and implement The Fool theme and assets.
 3. Add typed voice contracts, IPC, persistence, and device lifecycle.
 4. Implement one local and one OpenAI-compatible STT/TTS path.
@@ -392,7 +392,7 @@ the core conversational loop, narration, and agent routing are working.
 
 The delivery consists of:
 
-- the separate The Fool source repository based on AionUi,
+- the separate The Fool source repository based on The Fool,
 - committed design and implementation documentation,
 - a Windows x64 alpha installer or package,
 - generated branding assets,

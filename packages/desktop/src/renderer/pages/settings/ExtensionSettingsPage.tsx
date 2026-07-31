@@ -63,7 +63,7 @@ const ExtensionSettingsPage: React.FC = () => {
 
       frameWindow.postMessage(
         {
-          type: 'aion:init',
+          type: 'fool:init',
           locale: i18n.language,
           extensionName: tab.extensionName,
           translations,
@@ -85,7 +85,7 @@ const ExtensionSettingsPage: React.FC = () => {
       const data = event.data as { type?: string; reqId?: string } | undefined;
       if (!data) return;
 
-      if (data.type === 'aion:get-locale') {
+      if (data.type === 'fool:get-locale') {
         void postLocaleInit();
         return;
       }

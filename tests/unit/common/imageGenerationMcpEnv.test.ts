@@ -33,17 +33,17 @@ describe('resolveImageGenerationMcpEnv', () => {
 
   it('matches legacy env by platform, base URL, and model when provider id is absent', () => {
     const result = resolveImageGenerationMcpEnv(undefined, [geminiProvider], {
-      AIONUI_IMG_PLATFORM: 'gemini',
-      AIONUI_IMG_BASE_URL: 'https://generativelanguage.googleapis.com/',
-      AIONUI_IMG_MODEL: 'gemini-3-pro-image-preview',
-      AIONUI_IMG_API_KEY: 'stale-key',
+      FOOL_IMG_PLATFORM: 'gemini',
+      FOOL_IMG_BASE_URL: 'https://generativelanguage.googleapis.com/',
+      FOOL_IMG_MODEL: 'gemini-3-pro-image-preview',
+      FOOL_IMG_API_KEY: 'stale-key',
     });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.source).toBe('field-match');
-    expect(result.env.AIONUI_IMG_PROVIDER_ID).toBe('03c8482c');
-    expect(result.env.AIONUI_IMG_API_KEY).toBe('provider-key');
+    expect(result.env.FOOL_IMG_PROVIDER_ID).toBe('03c8482c');
+    expect(result.env.FOOL_IMG_API_KEY).toBe('provider-key');
   });
 
   it('fails loudly when neither provider id nor legacy fields match a provider', () => {

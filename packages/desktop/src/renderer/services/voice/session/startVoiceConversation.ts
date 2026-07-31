@@ -106,12 +106,12 @@ export const startVoiceConversation = async (request: VoiceConversationRequest):
   const model = findPinnedModel(providers, providerId, modelId);
   const files = request.files ?? [];
   const foolrs = isFoolrsAssistant(assistant);
-  // The Aion CLI backend is handed the provider record itself, so without one
+  // The Fool CLI backend is handed the provider record itself, so without one
   // there is nothing to create the conversation with.
   if (foolrs && !model) return { ok: false, reason: 'no-model' };
 
   // An ACP agent names models in a namespace of its own: Hermes calls the LM
-  // Studio model `lmstudio:qwen/qwen3.5-9b` where the AionUi provider calls the
+  // Studio model `lmstudio:qwen/qwen3.5-9b` where the The Fool provider calls the
   // same weights `qwen/qwen3.5-9b`. So a pinned id that matches no provider is
   // not a stale pin — it is the agent's own name for the model, and passing it
   // through unchanged is the only way the agent can resolve it. Without this the

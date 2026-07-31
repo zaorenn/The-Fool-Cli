@@ -139,7 +139,7 @@ describe('VoiceAgentSection', () => {
     expect(screen.queryByText('gone · LM Studio (Local)')).toBeNull();
   });
 
-  it('says an Aion CLI agent needs a model, because it cannot start without one', async () => {
+  it('says an Fool CLI agent needs a model, because it cannot start without one', async () => {
     render(<VoiceAgentSection settings={settings({ assistantId: 'hermes' })} onChange={vi.fn()} />);
 
     await waitFor(() => expect(screen.getByTestId('voice-agent-needs-model')).toBeTruthy());

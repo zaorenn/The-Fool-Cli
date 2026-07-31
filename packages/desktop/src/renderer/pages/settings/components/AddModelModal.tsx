@@ -6,7 +6,7 @@ import {
   updateModelSettings,
 } from '@/common/utils/modelCapabilities';
 import ModalHOC from '@/renderer/utils/ui/ModalHOC';
-import AionModal from '@/renderer/components/base/AionModal';
+import FoolModal from '@/renderer/components/base/FoolModal';
 import { Alert, Select } from '@arco-design/web-react';
 import { PreviewOpen } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -97,7 +97,7 @@ const AddModelModal = ModalHOC<{ data?: IProvider; model?: string; onSubmit: (mo
     ]);
 
     return (
-      <AionModal
+      <FoolModal
         variant='standard'
         visible={modalProps.visible}
         onCancel={modalCtrl.close}
@@ -185,7 +185,7 @@ const AddModelModal = ModalHOC<{ data?: IProvider; model?: string; onSubmit: (mo
             <div className='text-11px text-t-secondary leading-4'>{t('settings.modelSettingsApplyToSelected')}</div>
           )}
         </div>
-      </AionModal>
+      </FoolModal>
     );
   }
 );

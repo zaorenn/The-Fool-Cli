@@ -7,7 +7,7 @@ import type { FileOrFolderItem } from '@/renderer/utils/file/fileTypes';
  * refs; `atPath` items carrying a `chatRef` (Explorer tree → `project`, backend
  * machine picker → `local`) are sent verbatim; bare `atPath` entries without a
  * `chatRef` fall back to `upload`. The backend resolves each ref to an absolute
- * path — the front-end no longer builds paths nor splices the `[[AION_FILES]]`
+ * path — the front-end no longer builds paths nor splices the `[[FOOL_FILES]]`
  * marker into the message body.
  */
 export const collectChatFileRefs = (uploadFile: string[], atPath: Array<string | FileOrFolderItem>): ChatFileRef[] => {

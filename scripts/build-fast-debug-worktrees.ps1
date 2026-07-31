@@ -2,7 +2,7 @@ param(
   [string[]]$Versions = @(),
   [string]$SentryDsnFile = '',
   [string]$OutputDir = (Join-Path $PSScriptRoot '..\out-fast-builds'),
-  [string]$WorktreeRoot = (Join-Path $PSScriptRoot '..\..\aionui-build-worktrees'),
+  [string]$WorktreeRoot = (Join-Path $PSScriptRoot '..\..\fool-build-worktrees'),
   [int]$TimeoutSeconds = 1800,
   [switch]$Sequential
 )
@@ -94,7 +94,7 @@ function Remove-LongPathTree([string]$Path) {
   }
 }
 
-function New-BuildCommandFile([string]$WorktreePath, [string]$Version, [string]$Dsn, [string]$LocalAioncoreBinary, [string]$LocalAioncoreBundleDir) {
+function New-BuildCommandFile([string]$WorktreePath, [string]$Version, [string]$Dsn, [string]$LocalFoolcoreBinary, [string]$LocalFoolcoreBundleDir) {
   $scriptPath = Join-Path $WorktreePath "build-$Version.ps1"
   $dsnBase64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($Dsn))
   $lines = @(
@@ -104,10 +104,10 @@ function New-BuildCommandFile([string]$WorktreePath, [string]$Version, [string]$
     '$env:TEMP = $buildTemp',
     '$env:TMP = $buildTemp',
     '$env:SENTRY_DSN = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(''' + $dsnBase64 + '''))',
-    '$env:AIONUI_DEBUG_AUTO_UPDATE_CURRENT_VERSION = ''' + $Version + '''',
+    '$env:FOOL_DEBUG_AUTO_UPDATE_CURRENT_VERSION = ''' + $Version + '''',
     '$env:ELECTRON_BUILDER_COMPRESSION_LEVEL = ''1''',
-    '$env:AIONUI_BACKEND_LOCAL_BINARY = ''' + ($LocalAioncoreBinary -replace "'", "''") + '''',
-    '$env:AIONUI_BACKEND_LOCAL_BUNDLE_DIR = ''' + ($LocalAioncoreBundleDir -replace "'", "''") + '''',
+    '$env:FOOL_BACKEND_LOCAL_BINARY = ''' + ($LocalFoolcoreBinary -replace "'", "''") + '''',
+    '$env:FOOL_BACKEND_LOCAL_BUNDLE_DIR = ''' + ($LocalFoolcoreBundleDir -replace "'", "''") + '''',
     '$env:ELECTRON_CACHE = Join-Path $env:LOCALAPPDATA ''electron\Cache''',
     '& bun run build-win:x64:fast',
     'exit $LASTEXITCODE'
@@ -116,8 +116,8 @@ function New-BuildCommandFile([string]$WorktreePath, [string]$Version, [string]$
   return $scriptPath
 }
 
-function Start-BuildProcess([string]$WorktreePath, [string]$Version, [string]$Dsn, [string]$LogDir, [string]$LocalAioncoreBinary, [string]$LocalAioncoreBundleDir) {
-  $scriptPath = New-BuildCommandFile $WorktreePath $Version $Dsn $LocalAioncoreBinary $LocalAioncoreBundleDir
+function Start-BuildProcess([string]$WorktreePath, [string]$Version, [string]$Dsn, [string]$LogDir, [string]$LocalFoolcoreBinary, [string]$LocalFoolcoreBundleDir) {
+  $scriptPath = New-BuildCommandFile $WorktreePath $Version $Dsn $LocalFoolcoreBinary $LocalFoolcoreBundleDir
   $stdoutPath = Join-Path $LogDir "build-$Version.out.log"
   $stderrPath = Join-Path $LogDir "build-$Version.err.log"
   $process = Start-Process -FilePath 'powershell.exe' `
@@ -166,7 +166,7 @@ function Wait-BuildProcess($Build, [int]$TimeoutSeconds) {
   $Build.process.WaitForExit()
   $Build.process.Refresh()
   $exitCode = $Build.process.ExitCode
-  $source = Join-Path $Build.worktreePath "out\AionUi-$($Build.version)-win-x64.exe"
+  $source = Join-Path $Build.worktreePath "out\The Fool-$($Build.version)-win-x64.exe"
   if (-not (Test-Path -LiteralPath $source)) {
     $tailParts = @()
     if (Test-Path -LiteralPath $Build.stderrPath) {
@@ -198,7 +198,7 @@ function Wait-BuildProcess($Build, [int]$TimeoutSeconds) {
     throw "build $($Build.version) produced an unexpectedly small installer ($($sourceItem.Length) bytes): $source. Logs: $($Build.stdoutPath), $($Build.stderrPath)"
   }
 
-  $target = Join-Path $script:OutputDirResolved "AionUi-$($Build.version)-win-x64.exe"
+  $target = Join-Path $script:OutputDirResolved "The Fool-$($Build.version)-win-x64.exe"
   Copy-Item -LiteralPath $source -Destination $target -Force
   $item = Get-Item -LiteralPath $target
   $hash = (Get-FileHash -LiteralPath $target -Algorithm SHA512).Hash
@@ -240,24 +240,24 @@ Invoke-Git $repoRoot @('diff', '--binary', 'HEAD', "--output=$patchPath") | Out-
 $hasPatch = (Get-Item -LiteralPath $patchPath).Length -gt 0
 $baseRef = (Invoke-Git $repoRoot @('rev-parse', 'HEAD')).Trim()
 $nodeModules = Join-Path $repoRoot 'node_modules'
-$localAioncoreBinary = Join-Path $repoRoot 'resources\bundled-aioncore\win32-x64\aioncore.exe'
-$localAioncoreBundleDir = Join-Path $repoRoot 'out\win-unpacked\resources\bundled-aioncore\win32-x64'
-if (-not (Test-Path -LiteralPath (Join-Path $localAioncoreBundleDir 'managed-resources') -PathType Container)) {
-  $localAioncoreBundleDir = Join-Path $env:LOCALAPPDATA 'Programs\AionUi\resources\bundled-aioncore\win32-x64'
+$localFoolcoreBinary = Join-Path $repoRoot 'resources\bundled-foolcore\win32-x64\foolcore.exe'
+$localFoolcoreBundleDir = Join-Path $repoRoot 'out\win-unpacked\resources\bundled-foolcore\win32-x64'
+if (-not (Test-Path -LiteralPath (Join-Path $localFoolcoreBundleDir 'managed-resources') -PathType Container)) {
+  $localFoolcoreBundleDir = Join-Path $env:LOCALAPPDATA 'Programs\The Fool\resources\bundled-foolcore\win32-x64'
 }
-if (Test-Path -LiteralPath (Join-Path $localAioncoreBundleDir 'managed-resources') -PathType Container) {
-  $localAioncoreBundleDir = (Resolve-Path -LiteralPath $localAioncoreBundleDir).Path
-  Write-Host "=== using local aioncore bundle fallback: $localAioncoreBundleDir ==="
+if (Test-Path -LiteralPath (Join-Path $localFoolcoreBundleDir 'managed-resources') -PathType Container) {
+  $localFoolcoreBundleDir = (Resolve-Path -LiteralPath $localFoolcoreBundleDir).Path
+  Write-Host "=== using local foolcore bundle fallback: $localFoolcoreBundleDir ==="
 } else {
-  $localAioncoreBundleDir = ''
-  Write-Warning 'Local aioncore bundle fallback was not found; builds may need to prepare managed resources.'
+  $localFoolcoreBundleDir = ''
+  Write-Warning 'Local foolcore bundle fallback was not found; builds may need to prepare managed resources.'
 }
-if (Test-Path -LiteralPath $localAioncoreBinary -PathType Leaf) {
-  $localAioncoreBinary = (Resolve-Path -LiteralPath $localAioncoreBinary).Path
-  Write-Host "=== using local aioncore fallback: $localAioncoreBinary ==="
+if (Test-Path -LiteralPath $localFoolcoreBinary -PathType Leaf) {
+  $localFoolcoreBinary = (Resolve-Path -LiteralPath $localFoolcoreBinary).Path
+  Write-Host "=== using local foolcore fallback: $localFoolcoreBinary ==="
 } else {
-  $localAioncoreBinary = ''
-  Write-Warning 'Local aioncore fallback was not found; builds may need to download aioncore.'
+  $localFoolcoreBinary = ''
+  Write-Warning 'Local foolcore fallback was not found; builds may need to download foolcore.'
 }
 $worktrees = @()
 $builds = @()
@@ -266,7 +266,7 @@ $completed = $false
 
 try {
   foreach ($version in $buildVersions) {
-    $worktreePath = Join-Path $runRoot "AionUi-$version"
+    $worktreePath = Join-Path $runRoot "The Fool-$version"
     $worktrees += $worktreePath
     Write-Host "=== prepare worktree ${version}: $worktreePath ==="
     Invoke-Git $repoRoot @('worktree', 'add', '--detach', $worktreePath, $baseRef) | Out-Null
@@ -282,9 +282,9 @@ try {
   }
 
   foreach ($version in $buildVersions) {
-    $worktreePath = Join-Path $runRoot "AionUi-$version"
+    $worktreePath = Join-Path $runRoot "The Fool-$version"
     Write-Host "=== build $version start: $(Get-Date -Format o) ==="
-    $build = Start-BuildProcess $worktreePath $version $dsn $runRoot $localAioncoreBinary $localAioncoreBundleDir
+    $build = Start-BuildProcess $worktreePath $version $dsn $runRoot $localFoolcoreBinary $localFoolcoreBundleDir
     if ($Sequential) {
       $result = Wait-BuildProcess $build $TimeoutSeconds
       $results += $result

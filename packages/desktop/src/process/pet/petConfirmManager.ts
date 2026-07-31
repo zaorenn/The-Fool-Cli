@@ -349,7 +349,7 @@ function registerIpcHandlers(): void {
         });
       }
 
-      // Forward response to backend via HTTP (aionui-conversation route)
+      // Forward response to backend via HTTP (fool-conversation route)
       ipcBridge.conversation.confirmation.confirm
         .invoke({
           conversation_id: data.conversation_id,

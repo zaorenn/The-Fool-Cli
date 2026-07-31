@@ -31,5 +31,9 @@
     "statusTesting": "Latenz wird gemessen...",
     "statusUnreachable": "Nicht erreichbar",
     "statusAvailable": "Verfügbar"
+  },
+  "firstRun": {
+    "conversationName": "Erste Schritte",
+    "openingMessage": "Ich öffne The Fool zum ersten Mal. Stell dich vor und führe mich dann durch die Einrichtung: prüfe, was bereits funktioniert, hilf mir, einen Modellanbieter zu verbinden, überprüfe, ob er antwortet, und erkläre mir, was ich von hier aus tun kann. Stelle mir immer nur eine Frage und nimm die Konfiguration dabei selbst vor."
   }
 }

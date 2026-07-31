@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import AionModal from '@/renderer/components/base/AionModal';
-import AionScrollArea from '@/renderer/components/base/AionScrollArea';
+import FoolModal from '@/renderer/components/base/FoolModal';
+import FoolScrollArea from '@/renderer/components/base/FoolScrollArea';
 import { iconColors } from '@/renderer/styles/colors';
 import { isElectronDesktop, resolveExtensionAssetUrl } from '@/renderer/utils/platform';
 import { type IExtensionSettingsTab } from '@/common/adapter/ipcBridge';
@@ -102,7 +102,7 @@ interface SubModalProps {
  */
 export const SubModal: React.FC<SubModalProps> = ({ visible, onCancel, title, children }) => {
   return (
-    <AionModal
+    <FoolModal
       visible={visible}
       onCancel={onCancel}
       footer={null}
@@ -110,8 +110,8 @@ export const SubModal: React.FC<SubModalProps> = ({ visible, onCancel, title, ch
       size='medium'
       title={title}
     >
-      <AionScrollArea className='h-full px-20px pb-16px text-14px text-t-primary'>{children}</AionScrollArea>
-    </AionModal>
+      <FoolScrollArea className='h-full px-20px pb-16px text-14px text-t-primary'>{children}</FoolScrollArea>
+    </FoolModal>
   );
 };
 
@@ -368,7 +368,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onCancel, defaul
 
   // 桌面端菜单（侧边栏）/ Desktop menu (sidebar)
   const desktopMenu = (
-    <AionScrollArea className='flex-shrink-0 b-color-border-2 scrollbar-hide' style={{ width: `${SIDEBAR_WIDTH}px` }}>
+    <FoolScrollArea className='flex-shrink-0 b-color-border-2 scrollbar-hide' style={{ width: `${SIDEBAR_WIDTH}px` }}>
       <div className='flex flex-col gap-2px'>
         {menuItems.map((item) => (
           <div
@@ -387,13 +387,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onCancel, defaul
           </div>
         ))}
       </div>
-    </AionScrollArea>
+    </FoolScrollArea>
   );
 
   return (
     <SettingsViewModeProvider value='modal'>
       <SettingsTabNavigateProvider value={handleTabChange}>
-        <AionModal
+        <FoolModal
           visible={visible}
           onCancel={onCancel}
           footer={null}
@@ -416,14 +416,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onCancel, defaul
           >
             {isMobile ? mobileMenu : desktopMenu}
 
-            <AionScrollArea
+            <FoolScrollArea
               className={classNames('flex-1 min-h-0', isMobile ? 'overflow-y-auto' : 'flex flex-col pl-24px gap-16px')}
             >
               {renderBuiltinContent()}
               {renderExtensionTabs()}
-            </AionScrollArea>
+            </FoolScrollArea>
           </div>
-        </AionModal>
+        </FoolModal>
       </SettingsTabNavigateProvider>
     </SettingsViewModeProvider>
   );

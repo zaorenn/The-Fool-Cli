@@ -129,7 +129,7 @@ export type IMessageText = IMessage<
   }
 >;
 
-export type AgentErrorOwnership = 'aionui' | 'user_agent' | 'user_llm_provider' | 'unknown_upstream';
+export type AgentErrorOwnership = 'fool' | 'user_agent' | 'user_llm_provider' | 'unknown_upstream';
 
 export type AgentErrorResolutionKind =
   | 'retry'
@@ -496,7 +496,7 @@ export const normalizeTextMessageContent = (
 };
 
 const AGENT_ERROR_OWNERSHIPS = new Set<AgentErrorOwnership>([
-  'aionui',
+  'fool',
   'user_agent',
   'user_llm_provider',
   'unknown_upstream',

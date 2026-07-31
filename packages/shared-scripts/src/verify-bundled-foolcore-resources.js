@@ -332,7 +332,7 @@ function requireContractDirectory(baseDir, runtimeKey, cli, root, relativePath, 
   }
 }
 
-function verifyBundledAioncoreResources({ resourcesDir, electronPlatformName, targetArch }) {
+function verifyBundledFoolcoreResources({ resourcesDir, electronPlatformName, targetArch }) {
   const runtimeKey = `${electronPlatformName}-${targetArch}`;
   const baseDir = path.join(resourcesDir, 'bundled-foolcore', runtimeKey);
   const checked = [];
@@ -351,5 +351,5 @@ function verifyBundledAioncoreResources({ resourcesDir, electronPlatformName, ta
 }
 
 module.exports = {
-  verifyBundledAioncoreResources,
+  verifyBundledFoolcoreResources,
 };

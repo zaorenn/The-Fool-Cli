@@ -23,9 +23,9 @@ The three changes are:
 
 ## 2. New project-wide constraints
 
-### 2.1 Zero regression against upstream AionUi
+### 2.1 Zero regression against upstream The Fool
 
-No user-facing capability that exists in upstream AionUi may be missing, hidden, or broken in The
+No user-facing capability that exists in upstream The Fool may be missing, hidden, or broken in The
 Fool. Rebranding, theming, and additive features must not remove functionality.
 
 This is verified, not assumed. Verification method:
@@ -52,14 +52,14 @@ this document is confirmed working. Nothing in this delta may break the existing
 
 ### 3.1 Problem
 
-The model list for a provider is produced by the AionCore backend through
+The model list for a provider is produced by the FoolCore backend through
 `POST /api/providers/:id/models`. For an OpenAI-compatible provider the backend queries the
 provider's `/v1/models`. LM Studio's `/v1/models` returns only **loaded** models.
 
 Measured on the target machine: 16 models are installed (110 GB on disk); `/v1/models` and
 `/api/v0/models` each returned 2. `lms ls --json` returned all 16.
 
-The AionCore backend is a separate binary and is not modifiable from this repository.
+FoolCore backend is a separate binary and is not modifiable from this repository.
 
 ### 3.2 Seam
 
@@ -108,7 +108,7 @@ complete set, coarser metadata.
 Tier result: `loaded-only`. The UI labels this list as incomplete and names the reason. It is never
 presented as the full set.
 
-The resolved identifiers are merged as a union with the list the AionCore backend already returned,
+The resolved identifiers are merged as a union with the list the FoolCore backend already returned,
 then deduplicated and sorted stably, so a currently loaded model can never disappear from the
 picker. The merged list is written with `PUT /api/providers/:id`.
 
@@ -163,7 +163,7 @@ User speech during playback aborts playback immediately and opens the next turn.
 This behavior is implemented by the base plan's Task 7 components (`voiceTurnMachine`, `AdaptiveVad`,
 `TranscriptWakeWordProvider`, `useFoolVoiceSession`, `FoolVoiceContext`), which are not yet written.
 This delta therefore **includes completing base-plan Task 7**; it does not replace it. Submission
-continues to flow through the generic `SendBox`, preserving all existing ACP and Aionrs routing and
+continues to flow through the generic `SendBox`, preserving all existing ACP and Foolrs routing and
 permission behavior.
 
 ### 4.3 Visibility rule

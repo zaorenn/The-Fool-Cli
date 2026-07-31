@@ -8,11 +8,11 @@ import type { ImageGenerationModelSetting } from './clientSettings';
 import type { IProvider } from './storage';
 
 export const IMAGE_GEN_ENV_KEYS = {
-  providerId: 'AIONUI_IMG_PROVIDER_ID',
-  platform: 'AIONUI_IMG_PLATFORM',
-  baseUrl: 'AIONUI_IMG_BASE_URL',
-  apiKey: 'AIONUI_IMG_API_KEY',
-  model: 'AIONUI_IMG_MODEL',
+  providerId: 'FOOL_IMG_PROVIDER_ID',
+  platform: 'FOOL_IMG_PLATFORM',
+  baseUrl: 'FOOL_IMG_BASE_URL',
+  apiKey: 'FOOL_IMG_API_KEY',
+  model: 'FOOL_IMG_MODEL',
 } as const;
 
 type ImageGenerationSelection = Partial<ImageGenerationModelSetting>;

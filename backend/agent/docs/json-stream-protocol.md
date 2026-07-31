@@ -1,6 +1,6 @@
 # foolrs JSON Stream Protocol Spec
 
-> This protocol defines the communication between foolrs (Rust CLI) and a host client (e.g., AionUi Electron app) via stdin/stdout JSON Lines.
+> This protocol defines the communication between foolrs (Rust CLI) and a host client (e.g., The Fool Electron app) via stdin/stdout JSON Lines.
 
 ## Overview
 
@@ -8,7 +8,7 @@
 ┌──────────────┐   stdin (JSON Lines)     ┌──────────────────┐
 │              │ ◄─────────────────────── │                  │
 │    foolrs    │                          │   Host Client    │
-│  (Rust CLI)  │ ──────────────────────►  │   (AionUi etc.)  │
+│  (Rust CLI)  │ ──────────────────────►  │   (The Fool etc.)  │
 │              │   stdout (JSON Lines)    │                  │
 └──────────────┘                          └──────────────────┘
      stderr → diagnostic logs (not part of protocol)

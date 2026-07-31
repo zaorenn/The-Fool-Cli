@@ -44,7 +44,7 @@ export interface BackendStartupFailureInfo {
   localDataIssueKind?: BackendLocalDataIssueKind;
   startupDirectoryIssueKind?: BackendStartupDirectoryIssueKind;
   missingBackendBinary?: boolean;
-  missingBundledAioncoreDir?: boolean;
+  missingBundledFoolcoreDir?: boolean;
   missingHubDir?: boolean;
   missingPetStatesDir?: boolean;
   missingPwaDir?: boolean;
@@ -65,7 +65,7 @@ declare global {
   interface Window {
     electronAPI?: ElectronBridgeAPI;
     __initialLanguage?: string | null;
-    __aionuiE2ETest?: boolean;
+    __foolE2ETest?: boolean;
     __backendStartupFailed?: boolean;
     __backendStartupFailure?: BackendStartupFailureInfo | null;
     __installationIntegrityReportCount?: number;

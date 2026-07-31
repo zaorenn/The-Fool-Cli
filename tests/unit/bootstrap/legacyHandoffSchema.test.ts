@@ -18,7 +18,7 @@ function makeDriver(tableColumns: Record<string, string[]>) {
 }
 
 describe('legacy handoff schema repair', () => {
-  it('keeps the AionUi mirror contract aligned with The Fool Core handoff columns', () => {
+  it('keeps the The Fool mirror contract aligned with The Fool Core handoff columns', () => {
     expect(LEGACY_HANDOFF_COLUMNS).toEqual([
       { table: 'cron_jobs', column: 'skill_content', definition: 'TEXT' },
       { table: 'cron_jobs', column: 'description', definition: 'TEXT' },

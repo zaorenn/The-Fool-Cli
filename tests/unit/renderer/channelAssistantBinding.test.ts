@@ -40,7 +40,7 @@ function assistant(overrides: Partial<Assistant> & Pick<Assistant, 'id' | 'name'
 
 describe('channel assistant binding helpers', () => {
   const assistants = [
-    assistant({ id: 'bare-foolrs', name: 'Aion CLI', source: 'generated', preset_agent_type: 'foolrs' }),
+    assistant({ id: 'bare-foolrs', name: 'Fool CLI', source: 'generated', preset_agent_type: 'foolrs' }),
     assistant({ id: 'bare-claude', name: 'Claude', source: 'generated', preset_agent_type: 'claude' }),
     assistant({ id: 'user-writer', name: 'Writer', source: 'user', preset_agent_type: 'claude' }),
   ];

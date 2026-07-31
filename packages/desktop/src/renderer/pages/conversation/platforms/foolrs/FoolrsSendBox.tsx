@@ -258,7 +258,7 @@ const FoolrsSendBox: React.FC<{
       }
 
       // The message body is plain user text; the backend resolves each
-      // ChatFileRef to an absolute path and injects the [[AION_FILES]] marker at
+      // ChatFileRef to an absolute path and injects the [[FOOL_FILES]] marker at
       // the send edge — the front-end no longer builds paths nor the marker.
       try {
         void checkAndUpdateTitle(conversation_id, input);

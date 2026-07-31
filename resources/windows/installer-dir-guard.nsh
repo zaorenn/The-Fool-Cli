@@ -1,10 +1,10 @@
-!ifndef AIONUI_INSTALLER_DIR_GUARD_NSH
-!define AIONUI_INSTALLER_DIR_GUARD_NSH
+!ifndef FOOL_INSTALLER_DIR_GUARD_NSH
+!define FOOL_INSTALLER_DIR_GUARD_NSH
 
 ; Refuses an install directory that belongs to somebody else.
 ;
 ; This installer removes the target directory as part of its own upgrade flow —
-; `AIONUI_REMOVE_INSTALL_DIR` ends in `RMDir /r "$INSTDIR"`. That is correct for a
+; `FOOL_REMOVE_INSTALL_DIR` ends in `RMDir /r "$INSTDIR"`. That is correct for a
 ; directory this app owns and catastrophic for anything else, and the directory
 ; page lets the user type any path at all. Point it at a source checkout, a
 ; Documents folder, or a drive root and the contents are gone.
