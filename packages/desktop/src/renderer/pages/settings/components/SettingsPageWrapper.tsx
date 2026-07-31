@@ -12,6 +12,7 @@ import {
   Cat,
   Communication,
   Computer,
+  Dashboard,
   Earth,
   Info,
   Lightning,
@@ -40,6 +41,12 @@ type TranslateFn = (key: string, options?: { defaultValue?: string }) => string;
 
 export function getBuiltinSettingsNavItems(isDesktop: boolean, t: TranslateFn): NavItem[] {
   const builtinMap: Record<string, NavItem> = {
+    overview: {
+      id: 'overview',
+      label: t('settings.overview.title', { defaultValue: 'Overview' }),
+      icon: <Dashboard theme='outline' size='16' />,
+      path: 'overview',
+    },
     model: { id: 'model', label: t('settings.model'), icon: <LinkCloud theme='outline' size='16' />, path: 'model' },
     assistants: {
       id: 'assistants',
