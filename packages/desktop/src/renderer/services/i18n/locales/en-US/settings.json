@@ -1375,7 +1375,10 @@
     "cloneCancel": "Cancel",
     "cloneAnother": "Clone another",
     "cloneSavedUsable": "{{name}} saved and verified — it speaks.",
-    "cloneSavedUnusable": "{{name}} saved, but verification failed. Try a clearer recording."
+    "cloneSavedUnusable": "{{name}} saved, but verification failed. Try a clearer recording.",
+    "deleteCloned": "Delete this voice",
+    "deleteClonedConfirm": "Delete {{name}}? This removes the recording — you can clone it again from the same file.",
+    "deleteClonedFailed": "Could not delete that voice."
   },
   "themeCustomizer": {
     "title": "Customize theme",
