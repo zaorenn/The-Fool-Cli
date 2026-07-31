@@ -15,9 +15,12 @@ import {
 import { AdaptiveVad } from '@renderer/services/voice/AdaptiveVad';
 import { getSpeechPlayer } from '@renderer/services/voice/speechPlayer';
 import { MicrophoneCapture } from '@renderer/services/voice/MicrophoneCapture';
-import { EMPTY_EVIDENCE, type RunEvidence } from '@renderer/services/voice/narration/FoolNarrator';
+import { EMPTY_EVIDENCE, describeEvidence, type RunEvidence } from '@renderer/services/voice/narration/FoolNarrator';
+import { truncateToSpokenLength } from '@renderer/services/voice/narration/narrationSanitizer';
 import { createRunEvidenceCollector } from '@renderer/services/voice/RunEvidenceCollector';
-import { speakText } from '@renderer/services/voice/speakText';
+import { createIncrementalSpeechCollector } from '@renderer/services/voice/IncrementalSpeechCollector';
+import { createSpeechClipQueue, type SpeechClipQueue } from '@renderer/services/voice/speechClipQueue';
+import { prepareSynthesis, speakText } from '@renderer/services/voice/speakText';
 import { publishVoiceStage, publishVoiceStageOff } from '@renderer/services/voice/publishVoiceStage';
 import {
   VOICE_REPLY_EVENT,
@@ -201,6 +204,30 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
    * colliding, which is why the read-aloud button alone always sounded right.
    */
   const expectingAnswerRef = useRef(false);
+
+  /**
+   * The streaming-speech path — used instead of `collectorRef`'s when
+   * `settings.summary.translateToEnglish` is off, so the reply is spoken as
+   * it arrives instead of waiting to be translated and shortened first.
+   *
+   * Two collectors run over the same messages: `incrementalCollectorRef`
+   * speaks sentences as they complete, and `evidenceCollectorRef` — a plain
+   * `RunEvidenceCollector`, reused rather than duplicated for its evidence
+   * tracking — reports the run's evidence once the turn finishes, which is
+   * also this path's single "the turn is done" signal (its own text half is
+   * ignored; the sentences already went out through the collector above).
+   */
+  const incrementalCollectorRef = useRef<ReturnType<typeof createIncrementalSpeechCollector> | null>(null);
+  const evidenceCollectorRef = useRef<ReturnType<typeof createRunEvidenceCollector> | null>(null);
+  /** The queue built for whichever turn is currently streaming in on that path. */
+  const incrementalQueueRef = useRef<SpeechClipQueue | null>(null);
+  /** Dedupes concurrent `ensureIncrementalQueueReady` calls from sentences arriving before the first one resolves. */
+  const incrementalPreparingRef = useRef<Promise<void> | null>(null);
+  /** True once a turn has been claimed as ours to speak, mirroring `expectingAnswerRef`'s consumption in `speakThenListen`. */
+  const incrementalTurnClaimedRef = useRef(false);
+  /** Rebuilt every render so the collectors above — built once — always call the current version. */
+  const ensureIncrementalQueueReadyRef = useRef<(sampleText: string) => Promise<void>>(() => Promise.resolve());
+  const finishIncrementalTurnRef = useRef<(evidence: RunEvidence) => void>(() => undefined);
 
   const sessionId = useMemo(() => crypto.randomUUID(), []);
 
@@ -460,6 +487,32 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     [isAwake, processUtterance, settings.activation.wakePhrase.phrase]
   );
 
+  /**
+   * There is now something to interrupt, so start listening again — this is
+   * the moment the hold taken at submit time is for. Reset the detector
+   * first: it has heard nothing for however long the run took, and its idea
+   * of the noise floor is stale.
+   *
+   * Shared by both speaking paths (`speak`'s single passage and the
+   * incremental queue below) — each renders the answer as a run of clips, and
+   * this is what "the first one is about to play" means for either.
+   */
+  const onSpeechPlaybackStart = useCallback((): void => {
+    release();
+    vad.current?.reset();
+    capture.current?.beginUtterance();
+    utteranceStartedAtRef.current = Date.now();
+  }, [release]);
+
+  /**
+   * Every clip, not just the first: the guard it feeds exists so the voice's
+   * own echo cannot be heard as the user interrupting, and each clip leaks
+   * its own opening moment into the microphone.
+   */
+  const onSpeechClipStart = useCallback((): void => {
+    playbackStartedAtRef.current = Date.now();
+  }, []);
+
   const speak = useCallback(
     async (answer: string, evidence: RunEvidence): Promise<void> => {
       // Translated and shortened first when that is switched on, so the voice
@@ -494,27 +547,35 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
         // The summary can take a model load, and the session may be closed
         // during it; speaking then would talk over a shut microphone.
         shouldContinue: () => activeRef.current,
-        onPlaybackStart: () => {
-          // There is now something to interrupt, so start listening again — this
-          // is the moment the hold taken at submit time is for. Reset the
-          // detector first: it has heard nothing for however long the run took,
-          // and its idea of the noise floor is stale.
-          release();
-          vad.current?.reset();
-          capture.current?.beginUtterance();
-          utteranceStartedAtRef.current = Date.now();
-        },
-        // Every clip, not just the first: the guard exists so the voice's own
-        // echo cannot be heard as the user interrupting, and each clip leaks its
-        // own opening moment into the microphone.
-        onClipStart: () => {
-          playbackStartedAtRef.current = Date.now();
-        },
+        onPlaybackStart: onSpeechPlaybackStart,
+        onClipStart: onSpeechClipStart,
       });
       playbackStartedAtRef.current = 0;
     },
-    [enter, release, sessionId, settings]
+    [enter, onSpeechClipStart, onSpeechPlaybackStart, sessionId, settings]
   );
+
+  /**
+   * What happens once an answer is done being spoken — success or failure,
+   * the microphone must not stay deaf because a synthesis call failed.
+   *
+   * Shared by both speaking paths, so a one-shot session closes and a wake
+   * session drops back to listening for the phrase the same way regardless
+   * of which one spoke the answer.
+   */
+  const resumeAfterSpeaking = useCallback((): void => {
+    if (!activeRef.current) return;
+    // A microphone the shortcut opened is the shortcut's to close: nothing
+    // else was listening before it, and nothing should be after.
+    if (oneShotRef.current) {
+      stopRef.current();
+      return;
+    }
+    // An always-on listener whose follow-up window has closed goes back to
+    // waiting for the phrase rather than treating the room as input.
+    if (wakeModeRef.current && !isAwake()) listenForWake();
+    else listen();
+  }, [isAwake, listen, listenForWake]);
 
   const speakThenListen = useCallback(
     (answer: string, evidence: RunEvidence): void => {
@@ -528,59 +589,194 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
         .catch((): void => {
           // A synthesis failure must not end the session; keep listening.
         })
-        .finally((): void => {
-          if (!activeRef.current) return;
-          // A microphone the shortcut opened is the shortcut's to close: nothing
-          // else was listening before it, and nothing should be after.
-          if (oneShotRef.current) {
-            stopRef.current();
-            return;
-          }
-          // An always-on listener whose follow-up window has closed goes back to
-          // waiting for the phrase rather than treating the room as input.
-          if (wakeModeRef.current && !isAwake()) listenForWake();
-          else listen();
-        });
+        .finally(resumeAfterSpeaking);
     },
-    [isAwake, listen, listenForWake, speak]
+    [resumeAfterSpeaking, speak]
   );
 
   // The collector is built once and calls whichever version is current.
   const speakThenListenRef = useRef(speakThenListen);
   speakThenListenRef.current = speakThenListen;
 
+  /**
+   * Builds this turn's queue if nothing has yet — idempotent, and safe to
+   * call more than once for the same turn (from a sentence, and again from
+   * the evidence tail below): `incrementalQueueRef`/`incrementalPreparingRef`
+   * gate every call after the first.
+   *
+   * Does not itself decide whether this turn is ours to speak — both callers
+   * below establish that first.
+   */
+  const ensureIncrementalQueueBuilt = useCallback(
+    (sampleText: string): Promise<void> => {
+      if (incrementalQueueRef.current) return Promise.resolve();
+      if (incrementalPreparingRef.current) return incrementalPreparingRef.current;
+
+      incrementalPreparingRef.current = (async (): Promise<void> => {
+        try {
+          const prepared = await prepareSynthesis(sampleText, settings, getSpeechPlayer());
+          if ('unavailable' in prepared || !activeRef.current) return;
+          incrementalQueueRef.current ??= createSpeechClipQueue(getSpeechPlayer(), prepared.synthesize, {
+            shouldContinue: () => activeRef.current,
+            onPlaybackStart: onSpeechPlaybackStart,
+            onClipStart: onSpeechClipStart,
+          });
+        } catch {
+          // No voice to prepare with; `finishIncrementalTurn` still resumes
+          // listening once the turn's evidence arrives, same as a failed
+          // `speakText` call does not leave the microphone deaf on the other path.
+        }
+      })();
+      return incrementalPreparingRef.current;
+    },
+    [onSpeechClipStart, onSpeechPlaybackStart, settings]
+  );
+
+  /**
+   * Starts (once) the queue this turn's sentences are pushed into, and
+   * claims the turn — consuming `expectingAnswerRef`, same as
+   * `speakThenListen` does for the other path — the moment it decides this
+   * one is ours, not once speech actually starts.
+   *
+   * Mirrors `useAutoReadAloud`'s `ensureQueueReady`.
+   */
+  const ensureIncrementalQueueReady = useCallback(
+    (sampleText: string): Promise<void> => {
+      if (incrementalQueueRef.current || incrementalPreparingRef.current) {
+        return ensureIncrementalQueueBuilt(sampleText);
+      }
+      if (!activeRef.current || !expectingAnswerRef.current) return Promise.resolve();
+      expectingAnswerRef.current = false;
+      incrementalTurnClaimedRef.current = true;
+      return ensureIncrementalQueueBuilt(sampleText);
+    },
+    [ensureIncrementalQueueBuilt]
+  );
+
+  /**
+   * Appends the run's evidence tail and, once every clip has played, resumes
+   * listening — this path's single "the turn is done" step, driven by the
+   * evidence collector's own completion below rather than the incremental
+   * text collector's, which has nothing left to say once its sentences are
+   * queued.
+   */
+  const finishIncrementalTurn = useCallback(
+    (evidence: RunEvidence): void => {
+      const alreadyClaimed = incrementalTurnClaimedRef.current;
+      incrementalTurnClaimedRef.current = false;
+
+      // A sentence already claimed this turn, or nothing ever did — a run
+      // that ended with no speakable text before it (tool calls only, say)
+      // means `ensureIncrementalQueueReady` never ran. Claim it here instead,
+      // so the microphone is not left held until the 10-minute safety timer;
+      // a turn nobody claimed either way is a typed one finishing, not ours.
+      if (!alreadyClaimed) {
+        if (!activeRef.current || !expectingAnswerRef.current) return;
+        expectingAnswerRef.current = false;
+      }
+
+      const tail = truncateToSpokenLength(
+        describeEvidence(evidence, settings.narrator.language),
+        settings.narrator.maxSpokenCharacters
+      );
+
+      void (async (): Promise<void> => {
+        if (tail.length > 0) {
+          // Nothing may have built the queue yet (the "no speakable text"
+          // case above) — this is also where that happens, with the tail
+          // itself as the sample the voice is picked from.
+          await ensureIncrementalQueueBuilt(tail);
+          incrementalQueueRef.current?.push(tail);
+        }
+        const queue = incrementalQueueRef.current;
+        incrementalQueueRef.current = null;
+        incrementalPreparingRef.current = null;
+        await (queue?.finish() ?? Promise.resolve()).catch((): void => undefined);
+        resumeAfterSpeaking();
+      })();
+    },
+    [
+      ensureIncrementalQueueBuilt,
+      resumeAfterSpeaking,
+      settings.narrator.language,
+      settings.narrator.maxSpokenCharacters,
+    ]
+  );
+
+  // The collectors built inside the effect below are built once and kept, for
+  // the same reason `collectorRef`'s is — calling through these refs is what
+  // keeps them using the current settings and callbacks regardless.
+  ensureIncrementalQueueReadyRef.current = ensureIncrementalQueueReady;
+  finishIncrementalTurnRef.current = finishIncrementalTurn;
+
   // Turn completion arrives on the conversation's existing response stream.
   // Subscribing here — rather than adding a second detection path — keeps the
   // spoken brief in step with what the screen already shows.
   useEffect(() => {
-    // Built once and kept. `speakThenListen` is rebuilt whenever the settings
-    // object changes identity, and re-running this effect used to throw the
-    // collector away mid-turn — taking the text it had gathered with it. The
-    // reply then arrived with nothing in it, and the narrator, left with neither
-    // an answer nor evidence, fell back to its one-word phrase: "Done."
-    collectorRef.current ??= createRunEvidenceCollector(({ answer, evidence }) =>
-      speakThenListenRef.current(answer, evidence)
-    );
-    const collector = collectorRef.current;
-    const disposeStream = ipcBridge.conversation?.responseStream?.on(collector.onStreamMessage);
+    if (settings.summary.translateToEnglish) {
+      // Built once and kept. `speakThenListen` is rebuilt whenever the settings
+      // object changes identity, and re-running this effect used to throw the
+      // collector away mid-turn — taking the text it had gathered with it. The
+      // reply then arrived with nothing in it, and the narrator, left with neither
+      // an answer nor evidence, fell back to its one-word phrase: "Done."
+      collectorRef.current ??= createRunEvidenceCollector(({ answer, evidence }) =>
+        speakThenListenRef.current(answer, evidence)
+      );
+      const collector = collectorRef.current;
+      const disposeStream = ipcBridge.conversation?.responseStream?.on(collector.onStreamMessage);
 
-    // Also honoured directly, so a caller can drive speech in tests or from a
-    // surface that is not the conversation stream.
-    const handleReply = (event: Event) => {
-      const { answer, evidence } = (event as CustomEvent<VoiceReplyDetail>).detail;
-      speakThenListen(answer, evidence ?? EMPTY_EVIDENCE);
-    };
-    window.addEventListener(VOICE_REPLY_EVENT, handleReply);
+      // Also honoured directly, so a caller can drive speech in tests or from a
+      // surface that is not the conversation stream.
+      const handleReply = (event: Event) => {
+        const { answer, evidence } = (event as CustomEvent<VoiceReplyDetail>).detail;
+        speakThenListen(answer, evidence ?? EMPTY_EVIDENCE);
+      };
+      window.addEventListener(VOICE_REPLY_EVENT, handleReply);
+
+      return () => {
+        disposeStream?.();
+        // Deliberately not reset: this cleanup also runs on a plain re-subscribe,
+        // and clearing here is what lost the turn's text in the first place. The
+        // collector clears itself when a turn completes, and `stop` clears it when
+        // the session really ends.
+        window.removeEventListener(VOICE_REPLY_EVENT, handleReply);
+      };
+    }
+
+    // The English summary is off: speak the reply as it streams in instead of
+    // waiting for the whole thing, then a short evidence tail once the run it
+    // reports on — not just the reply's prose — has actually finished.
+    //
+    // Two collectors run over the same messages, for the same "built once and
+    // kept" reason as `collectorRef`'s: `incrementalCollectorRef` speaks
+    // sentences as they complete; `evidenceCollectorRef` — a plain
+    // `RunEvidenceCollector`, reused for its evidence tracking rather than
+    // duplicating it — reports the run's evidence at `finish`, which is also
+    // this path's "the turn is done" signal (its own answer text is ignored;
+    // the sentences already went out through the collector above).
+    incrementalCollectorRef.current ??= createIncrementalSpeechCollector(
+      (sentence) => {
+        void ensureIncrementalQueueReadyRef.current(sentence).then(() => {
+          incrementalQueueRef.current?.push(sentence);
+        });
+      },
+      () => undefined,
+      settings.narrator.maxSpokenCharacters
+    );
+    evidenceCollectorRef.current ??= createRunEvidenceCollector(({ evidence }) =>
+      finishIncrementalTurnRef.current(evidence)
+    );
+    const incrementalCollector = incrementalCollectorRef.current;
+    const evidenceCollector = evidenceCollectorRef.current;
+    const disposeStream = ipcBridge.conversation?.responseStream?.on((message) => {
+      incrementalCollector.onStreamMessage(message);
+      evidenceCollector.onStreamMessage(message);
+    });
 
     return () => {
       disposeStream?.();
-      // Deliberately not reset: this cleanup also runs on a plain re-subscribe,
-      // and clearing here is what lost the turn's text in the first place. The
-      // collector clears itself when a turn completes, and `stop` clears it when
-      // the session really ends.
-      window.removeEventListener(VOICE_REPLY_EVENT, handleReply);
     };
-  }, [speakThenListen]);
+  }, [speakThenListen, settings]);
 
   const stop = useCallback(() => {
     const wasManual = activeRef.current && !wakeModeRef.current;
@@ -588,6 +784,11 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
     busyRef.current = false;
     expectingAnswerRef.current = false;
     collectorRef.current?.reset();
+    incrementalCollectorRef.current?.reset();
+    evidenceCollectorRef.current?.reset();
+    incrementalQueueRef.current = null;
+    incrementalPreparingRef.current = null;
+    incrementalTurnClaimedRef.current = false;
     wakeModeRef.current = false;
     awakeUntilRef.current = 0;
     oneShotRef.current = false;
