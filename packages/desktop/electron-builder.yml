@@ -116,6 +116,12 @@ extraResources:
     to: bundled-foolcore
   - from: resources/hub
     to: hub
+  # Apache-2.0 4(a) and 4(d): recipients of the binary get the License and the
+  # attribution notices, not just readers of the repository.
+  - from: LICENSE
+    to: LICENSE
+  - from: NOTICE
+    to: NOTICE
 win:
   target:
     - nsis
@@ -221,9 +227,11 @@ removePackageScripts: true
 electronDownload:
   cache: ${env.ELECTRON_CACHE}
 
+# Baked into app-update.yml at pack time. Keep in sync with PRODUCT_REPO_OWNER /
+# PRODUCT_REPO_NAME in src/common/brand.ts — theFoolPackagingIdentity asserts it.
 publish:
   provider: github
-  owner: iOfficeAI
-  repo: AionUi
-  publishAutoUpdate: false
+  owner: zaorenn
+  repo: The-Fool-Cli
+  publishAutoUpdate: true
   releaseType: release

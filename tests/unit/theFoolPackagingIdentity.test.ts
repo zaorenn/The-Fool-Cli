@@ -26,6 +26,17 @@ describe('The Fool packaging identity', () => {
     expect(builder).toContain('executableName: TheFool');
     expect(builder).toContain('name: The Fool Protocol');
     expect(builder).toContain('      - thefool');
-    expect(builder).toContain('publishAutoUpdate: false');
+  });
+
+  it('publishes to the same repository the updater reads from', async () => {
+    const builder = readProjectFile('packages/desktop/electron-builder.yml');
+    const { PRODUCT_REPO_NAME, PRODUCT_REPO_OWNER } = await import('@/common/brand');
+
+    // app-update.yml is generated from this block at pack time. If it drifts
+    // from brand.ts the shipped app checks one repo and downloads from another.
+    expect(builder).toContain(`owner: ${PRODUCT_REPO_OWNER}`);
+    expect(builder).toContain(`repo: ${PRODUCT_REPO_NAME}`);
+    expect(builder).toContain('publishAutoUpdate: true');
+    expect(builder).not.toContain('iOfficeAI');
   });
 });

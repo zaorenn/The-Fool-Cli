@@ -1,0 +1,54 @@
+The Fool
+Copyright 2026 The Fool contributors
+
+This product includes software developed by AionUi (https://aionui.com).
+Copyright 2025 AionUi (aionui.com)
+
+--------------------------------------------------------------------------------
+
+The Fool is a derivative work of the following projects, each licensed under the
+Apache License, Version 2.0:
+
+  * AionUi      — https://github.com/iOfficeAI/AionUi
+                  the desktop application this project was forked from
+  * AionCore    — https://github.com/iOfficeAI/AionCore
+                  the backend, vendored here as backend/core and built as `foolcore`
+  * aionrs      — https://github.com/iOfficeAI/aionrs
+                  the agent SDK, vendored here as backend/agent
+
+Files carrying a "Copyright 2025 AionUi (aionui.com)" header originate from those
+projects. That notice is retained as Section 4(c) of the License requires, and its
+presence does not imply any endorsement of this project by AionUi.
+
+--------------------------------------------------------------------------------
+
+MODIFICATIONS
+
+As required by Section 4(b) of the License: files in this repository have been
+modified from their original form. The changes are substantial and ongoing, and
+include but are not limited to:
+
+  * A local voice stack — speech recognition, synthesis, voice cloning, wake-word
+    listening, push-to-talk, spoken summaries and an on-screen caption window.
+  * Discovery and use of locally installed models.
+  * A new product identity: name, icons, themes, protocol handler, data directory,
+    executable names, application id and installer.
+  * Vendoring the backend and agent SDK into this repository so they are built
+    from source here rather than downloaded as third-party release artifacts.
+  * Update checks and downloads served from this project's own repository.
+
+A complete, per-commit record of every modification is in the Git history at
+https://github.com/zaorenn/The-Fool-Cli and summarised in CHANGELOG.md.
+
+--------------------------------------------------------------------------------
+
+THIRD-PARTY SERVICES
+
+This application can download content from projects it does not control:
+
+  * OfficeCLI — https://github.com/iOfficeAI/OfficeCli
+                installed on demand for document conversion features
+  * AionHub   — https://github.com/iOfficeAI/AionHub
+                a catalogue of agent definitions fetched during packaging
+
+These are dependencies, not part of this work, and remain under their own terms.

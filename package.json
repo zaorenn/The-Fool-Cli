@@ -3,9 +3,17 @@
   "version": "2.1.43",
   "description": "A local-first, voice-first desktop agent for OpenClaw, Hermes, and ACP-compatible CLIs.",
   "keywords": [],
+  "homepage": "https://github.com/zaorenn/The-Fool-Cli#readme",
+  "bugs": {
+    "url": "https://github.com/zaorenn/The-Fool-Cli/issues"
+  },
   "license": "Apache-2.0",
   "author": {
     "name": "The Fool contributors"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zaorenn/The-Fool-Cli.git"
   },
   "workspaces": [
     "packages/*"
@@ -14,7 +22,7 @@
   "scripts": {
     "dev": "electron-vite dev --config packages/desktop/electron.vite.config.ts",
     "start": "electron-vite dev --config packages/desktop/electron.vite.config.ts",
-    "start:multi": "cross-env AIONUI_MULTI_INSTANCE=1 electron-vite dev --config packages/desktop/electron.vite.config.ts",
+    "start:multi": "cross-env FOOL_MULTI_INSTANCE=1 electron-vite dev --config packages/desktop/electron.vite.config.ts",
     "cli": "electron-vite dev --config packages/desktop/electron.vite.config.ts",
     "webui": "tsx scripts/webui.ts",
     "webui:remote": "tsx scripts/webui.ts --remote",
@@ -76,7 +84,6 @@
   },
   "dependencies": {
     "@agentclientprotocol/sdk": "^0.18.2",
-    "@aionui/web-host": "workspace:*",
     "@anthropic-ai/sdk": "^0.71.2",
     "@arco-design/web-react": "^2.66.1",
     "@aws-sdk/client-bedrock": "^3.987.0",
@@ -94,6 +101,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@floating-ui/react": "^0.27.16",
+    "@fool/web-host": "workspace:*",
     "@google/genai": "^1.16.0",
     "@grammyjs/transformer-throttler": "^1.2.1",
     "@icon-park/react": "^1.4.2",
