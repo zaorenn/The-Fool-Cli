@@ -7,6 +7,16 @@ import { tmpdir } from 'node:os';
 const projectRoot = resolve(__dirname, '../..');
 const itWithBash = spawnSync('bash', ['--version'], { encoding: 'utf8' }).status === 0 ? it : it.skip;
 
+/**
+ * Hand a path to bash in a form bash will not eat.
+ *
+ * A native Windows path reaches the shell script as an argument, where
+ * `mkdir -p "C:\Users\..."` treats every backslash as an escape. They vanish,
+ * the path stops being absolute, and bash creates a directory named
+ * `C:Users...` inside the working directory - which is the repository.
+ */
+const toBashPath = (winPath: string): string => winPath.replace(/\\/g, '/');
+
 function readProjectFile(path: string): string {
   return readFileSync(resolve(projectRoot, path), 'utf8');
 }
@@ -58,7 +68,7 @@ describe('release packaging configuration', () => {
 
     try {
       const env = { ...process.env, MOCK_VERSION: '1.0.0' };
-      const createResult = spawnSync('bash', ['scripts/create-mock-release-artifacts.sh', artifactsDir], {
+      const createResult = spawnSync('bash', ['scripts/create-mock-release-artifacts.sh', toBashPath(artifactsDir)], {
         cwd: projectRoot,
         env,
         encoding: 'utf8',
@@ -67,11 +77,15 @@ describe('release packaging configuration', () => {
 
       rmSync(resolve(artifactsDir, 'macos-build-arm64', 'The Fool-1.0.0-mac-arm64.zip'), { force: true });
 
-      const prepareResult = spawnSync('bash', ['scripts/prepare-release-assets.sh', artifactsDir, outputDir], {
-        cwd: projectRoot,
-        env,
-        encoding: 'utf8',
-      });
+      const prepareResult = spawnSync(
+        'bash',
+        ['scripts/prepare-release-assets.sh', toBashPath(artifactsDir), toBashPath(outputDir)],
+        {
+          cwd: projectRoot,
+          env,
+          encoding: 'utf8',
+        }
+      );
 
       expect(prepareResult.status).not.toBe(0);
       expect(`${prepareResult.stdout}\n${prepareResult.stderr}`).toContain('Missing macOS zip artifact');
