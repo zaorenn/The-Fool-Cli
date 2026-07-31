@@ -22,6 +22,7 @@ import GuidInputCard from './components/GuidInputCard';
 import GuidModelSelector from './components/GuidModelSelector';
 import QuickActionButtons from './components/QuickActionButtons';
 import FeedbackReportModal from '@/renderer/components/settings/SettingsModal/contents/FeedbackReportModal';
+import { useFirstRunSetup } from './hooks/useFirstRunSetup';
 import { useGuidAssistantSelection } from './hooks/useGuidAssistantSelection';
 import { useGuidInput } from './hooks/useGuidInput';
 import { useGuidModelSelection } from './hooks/useGuidModelSelection';
@@ -67,6 +68,10 @@ const GuidPage: React.FC = () => {
 
   const localeKey = resolveLocaleKey(i18n.language);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+
+  // A first launch with nothing configured hands the user to The Jester rather
+  // than an empty prompt box.
+  useFirstRunSetup({ navigate, localeKey, t });
 
   // Open external link
   const openLink = useCallback(async (url: string) => {

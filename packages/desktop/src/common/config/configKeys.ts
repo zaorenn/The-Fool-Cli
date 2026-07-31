@@ -39,6 +39,11 @@ export type ConfigKeyMap = {
   'system.cronNotificationEnabled': boolean | undefined;
   'system.keepAwake': boolean | undefined;
   'system.autoPreviewOfficeFiles': boolean | undefined;
+  /**
+   * Set once The Jester has been handed the first-launch setup, so a returning
+   * user is never dropped back into onboarding.
+   */
+  'system.firstRunGreeted': boolean | undefined;
   'skillsMarket.enabled': boolean | undefined;
   'pet.enabled': boolean | undefined;
   'pet.size': number | undefined;
