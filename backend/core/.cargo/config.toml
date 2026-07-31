@@ -1,2 +1,8 @@
 [net]
 git-fetch-with-cli = true
+
+# Note: the MSVC runtime is linked statically for shipped builds, but that is
+# set by scripts/buildFoolcore.js via RUSTFLAGS rather than here. Putting
+# `+crt-static` in this file applies it to `cargo test` too, where it fails to
+# link against the proc-macro and dylib crates the test harness pulls in
+# (`error: crate ... required to be available in rlib format`).

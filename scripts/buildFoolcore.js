@@ -33,6 +33,24 @@ if (!existsSync(path.join(coreDir, 'Cargo.toml'))) {
   fail(`No backend source at ${coreDir}. Expected the workspace manifest there.`);
 }
 
+/**
+ * Link the MSVC runtime into the binary on Windows.
+ *
+ * Without this, foolcore.exe imports VCRUNTIME140.dll, which a freshly
+ * installed Windows does not have — it arrives with the Visual C++
+ * Redistributable. The app would install cleanly and then fail to start its
+ * backend on exactly the machines a first-time user has.
+ *
+ * This belongs here rather than in `.cargo/config.toml`: applied there it also
+ * hits `cargo test`, where the test harness pulls in proc-macro and dylib
+ * crates that cannot link against a static CRT ("crate ... required to be
+ * available in rlib format").
+ */
+const buildEnv = { ...process.env };
+if (process.platform === 'win32') {
+  buildEnv.RUSTFLAGS = [buildEnv.RUSTFLAGS, '-C target-feature=+crt-static'].filter(Boolean).join(' ');
+}
+
 console.log(`[foolcore] building ${profile} for ${process.platform}-${arch}`);
 try {
   // Offline on purpose: every dependency is either vendored in `backend/agent`
@@ -41,6 +59,7 @@ try {
   execFileSync('cargo', ['build', `--${profile}`, '--bin', 'foolcore', '--offline'], {
     cwd: coreDir,
     stdio: 'inherit',
+    env: buildEnv,
   });
 } catch {
   fail('cargo build failed. Run it inside backend/core to see the full output.');
