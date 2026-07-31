@@ -930,7 +930,10 @@ mod tests {
         maybe_copy_legacy_database(&target).unwrap();
 
         assert_eq!(std::fs::read(&target).unwrap(), b"electron-database");
-        assert!(!stale_wal.exists(), "a WAL from an unrelated database must be discarded");
+        assert!(
+            !stale_wal.exists(),
+            "a WAL from an unrelated database must be discarded"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 

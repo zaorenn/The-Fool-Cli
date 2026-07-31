@@ -122,10 +122,7 @@ mod tests {
                 .cloned())
         }
 
-        async fn create(
-            &self,
-            _params: fool_db::CreateMcpServerParams<'_>,
-        ) -> Result<McpServerRow, fool_db::DbError> {
+        async fn create(&self, _params: fool_db::CreateMcpServerParams<'_>) -> Result<McpServerRow, fool_db::DbError> {
             unimplemented!("not needed for adapter tests")
         }
 
@@ -160,12 +157,7 @@ mod tests {
             unimplemented!("not needed for adapter tests")
         }
 
-        async fn update_tools(
-            &self,
-            _user_id: &str,
-            _id: &str,
-            _tools: Option<&str>,
-        ) -> Result<(), fool_db::DbError> {
+        async fn update_tools(&self, _user_id: &str, _id: &str, _tools: Option<&str>) -> Result<(), fool_db::DbError> {
             unimplemented!("not needed for adapter tests")
         }
     }

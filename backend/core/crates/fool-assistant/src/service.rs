@@ -4338,10 +4338,7 @@ mod tests {
             .find(|assistant| assistant.id == "bare:agent-snow")
             .expect("installed generated assistant should reappear");
         assert_eq!(assistant.source, AssistantSource::Generated);
-        assert_eq!(
-            assistant.agent_status,
-            fool_api_types::AgentManagementStatus::Unchecked
-        );
+        assert_eq!(assistant.agent_status, fool_api_types::AgentManagementStatus::Unchecked);
     }
 
     #[tokio::test]
@@ -4964,11 +4961,7 @@ mod tests {
         // `backend` empty (it is an ACP-vendor label). The generated assistant must
         // still expose the concrete agent id so the frontend does not bind it
         // through an overloaded runtime backend label.
-        let mut agent_row = mk_agent_row(
-            "agent-foolrs",
-            "foolrs",
-            fool_api_types::AgentManagementStatus::Online,
-        );
+        let mut agent_row = mk_agent_row("agent-foolrs", "foolrs", fool_api_types::AgentManagementStatus::Online);
         agent_row.backend = None;
         agent_row.agent_type = fool_common::AgentType::Foolrs;
 
@@ -4992,11 +4985,7 @@ mod tests {
         // agent row by `agent_type` ("foolrs"), since that row's `backend` is
         // NULL. Matching on `backend` alone left the row unresolved and
         // mislabelled every foolrs assistant as Missing/unavailable.
-        let mut foolrs_row = mk_agent_row(
-            "agent-foolrs",
-            "foolrs",
-            fool_api_types::AgentManagementStatus::Online,
-        );
+        let mut foolrs_row = mk_agent_row("agent-foolrs", "foolrs", fool_api_types::AgentManagementStatus::Online);
         foolrs_row.backend = None;
         foolrs_row.agent_type = fool_common::AgentType::Foolrs;
 
@@ -5027,11 +5016,7 @@ mod tests {
         let fx = fixture_with_options(FixtureOpts {
             builtins: vec![mk_builtin("builtin-office", "Office")],
             agent_rows: vec![
-                mk_agent_row(
-                    "agent-claude",
-                    "claude",
-                    fool_api_types::AgentManagementStatus::Online,
-                ),
+                mk_agent_row("agent-claude", "claude", fool_api_types::AgentManagementStatus::Online),
                 mk_agent_row("agent-codex", "codex", fool_api_types::AgentManagementStatus::Online),
             ],
             ..Default::default()

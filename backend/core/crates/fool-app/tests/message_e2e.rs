@@ -7,8 +7,8 @@ use axum::http::StatusCode;
 use serde_json::json;
 use tower::ServiceExt;
 
-use fool_db::{ConversationRowUpdate, IConversationRepository};
 use common::{body_json, build_app, build_app_with_mock_agents, get_request, get_with_token, setup_and_login};
+use fool_db::{ConversationRowUpdate, IConversationRepository};
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -27,13 +27,7 @@ async fn create_conversation(app: &mut axum::Router, token: &str, csrf: &str, na
     json["data"]["id"].as_str().unwrap().to_owned()
 }
 
-async fn insert_message(
-    services: &fool_app::AppServices,
-    conv_id: &str,
-    msg_id: &str,
-    content: &str,
-    created_at: i64,
-) {
+async fn insert_message(services: &fool_app::AppServices, conv_id: &str, msg_id: &str, content: &str, created_at: i64) {
     let repo = fool_db::SqliteConversationRepository::new(services.database.pool().clone());
     let user_id = repo.owner_user_id(conv_id).await.unwrap().unwrap();
     let msg = fool_db::models::MessageRow {

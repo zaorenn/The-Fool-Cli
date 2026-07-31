@@ -4,10 +4,10 @@
 //! They treat `should_microcompact` and `microcompact` as opaque functions
 //! and validate observable behaviour only (inputs → outputs).
 
+use chrono::{Duration, Utc};
 use foolrs_agent::compact::micro::{CLEARED_TOOL_RESULT, MicrocompactResult, microcompact, should_microcompact};
 use foolrs_config::compact::CompactConfig;
 use foolrs_types::message::{ContentBlock, Message, Role};
-use chrono::{Duration, Utc};
 use serde_json::json;
 
 // ── Helpers ─────────────────────────────────────────────────────────────────

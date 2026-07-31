@@ -3,9 +3,7 @@
 //!   STT_SMOKE_API_KEY=sk-... STT_SMOKE_MODEL=gpt-4o-mini-transcribe \
 //!   cargo run -p fool-shell --example stt_stream_smoke -- /path/to/pcm16-24k-mono.wav
 
-use fool_api_types::{
-    DeepgramSpeechToTextConfig, OpenAISpeechToTextConfig, SpeechToTextConfig, SpeechToTextProvider,
-};
+use fool_api_types::{DeepgramSpeechToTextConfig, OpenAISpeechToTextConfig, SpeechToTextConfig, SpeechToTextProvider};
 use fool_shell::{ProviderUpstreamFactory, UpstreamEvent, UpstreamFactory};
 use std::time::Duration;
 

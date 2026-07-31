@@ -5,9 +5,9 @@
 use std::path::Path;
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use fool_db::ISkillRepository;
 pub use fool_extension::ResolvedAgentSkill;
-use async_trait::async_trait;
 use tracing::warn;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

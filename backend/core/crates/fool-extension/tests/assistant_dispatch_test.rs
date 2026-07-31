@@ -8,6 +8,9 @@
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
+use axum::Extension;
+use axum::body::Body;
+use axum::http::{Request, StatusCode};
 use fool_api_types::{ApiResponse, AssistantSource, SkillImportLimitsResponse};
 use fool_auth::CurrentUser;
 use fool_db::{UserStatus, UserType};
@@ -16,9 +19,6 @@ use fool_extension::error::ExtensionError;
 use fool_extension::external_paths::ExternalPathsManager;
 use fool_extension::skill_routes::{SkillRouterState, skill_routes};
 use fool_extension::skill_service::SkillPaths;
-use axum::Extension;
-use axum::body::Body;
-use axum::http::{Request, StatusCode};
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 

@@ -4,20 +4,20 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use crate::error::AgentError;
+use fool_api_types::{
+    HealthStatus, ProviderHealthCheckErrorKind, ProviderHealthCheckRequest, ProviderHealthCheckResponse,
+};
+use fool_db::{IProviderRepository, models::Provider};
 use foolrs_agent::bootstrap::AgentBootstrap;
 use foolrs_agent::engine::AgentEngine;
 use foolrs_agent::output::OutputSink;
 use foolrs_agent::output::null_sink::NullSink;
 use foolrs_config::config::{CliArgs, Config};
-use fool_api_types::{
-    HealthStatus, ProviderHealthCheckErrorKind, ProviderHealthCheckRequest, ProviderHealthCheckResponse,
-};
-use fool_db::{IProviderRepository, models::Provider};
 use regex::Regex;
 use tracing::{info, warn};
 
 use crate::factory::foolrs::{
-    map_foolrs_provider, resolve_foolrs_url_and_compat_with_mode, resolve_bedrock_config,
+    map_foolrs_provider, resolve_bedrock_config, resolve_foolrs_url_and_compat_with_mode,
     resolve_model_compat_overrides,
 };
 use crate::types::FoolrsResolvedConfig;
@@ -334,9 +334,9 @@ pub(crate) fn extract_http_status(message: &str) -> Option<u16> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use foolrs_config::compat::OpenAiApiMode;
     use fool_common::encrypt_string;
     use fool_db::{CreateProviderParams, DbError, UpdateProviderParams};
+    use foolrs_config::compat::OpenAiApiMode;
 
     const TEST_KEY: [u8; 32] = [0xAB; 32];
     const TEST_USER_ID: &str = "user-1";

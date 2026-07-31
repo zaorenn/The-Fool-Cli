@@ -66,9 +66,6 @@ mod tests {
 
         let ctx = FactoryContext::resolve(&context).await.unwrap();
 
-        assert_eq!(
-            ctx.runtime_env,
-            vec![("FOOL_USER_ID".to_owned(), "user-1".to_owned())]
-        );
+        assert_eq!(ctx.runtime_env, vec![("FOOL_USER_ID".to_owned(), "user-1".to_owned())]);
     }
 }

@@ -1,11 +1,11 @@
 use std::sync::Arc;
 use std::{future::Future, pin::Pin};
 
-use fool_api_types::WebSocketMessage;
 use axum::extract::WebSocketUpgrade;
 use axum::extract::ws::{CloseFrame, Message, WebSocket};
 use axum::http::HeaderMap;
 use axum::response::IntoResponse;
+use fool_api_types::WebSocketMessage;
 use futures_util::{SinkExt, StreamExt};
 use serde_json::{Value, json};
 use tokio::sync::mpsc;

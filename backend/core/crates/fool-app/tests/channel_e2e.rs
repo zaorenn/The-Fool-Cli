@@ -5,10 +5,10 @@
 
 mod common;
 
+use axum::http::StatusCode;
 use fool_common::now_ms;
 use fool_db::models::{AssistantSessionRow, AssistantUserRow};
 use fool_db::{IChannelRepository, SqliteChannelRepository};
-use axum::http::StatusCode;
 use serde_json::json;
 use tower::ServiceExt;
 

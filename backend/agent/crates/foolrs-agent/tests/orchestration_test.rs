@@ -1,11 +1,11 @@
 mod common;
 
+use common::{MockTool, auto_approve_confirmer};
 use foolrs_agent::orchestration::execute_tool_calls;
 use foolrs_compact::CompactLevel;
 use foolrs_config::hooks::{HookDef, HookEngine, HooksConfig};
 use foolrs_tools::registry::ToolRegistry;
 use foolrs_types::message::ContentBlock;
-use common::{MockTool, auto_approve_confirmer};
 use serde_json::json;
 
 // ---------------------------------------------------------------------------

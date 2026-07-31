@@ -1,8 +1,8 @@
-use foolrs_agent::error::AgentError as FoolrsAgentError;
-use foolrs_providers::ProviderError;
 use fool_api_types::{
     AgentErrorCode, AgentErrorOwnership, AgentErrorResolution, AgentErrorResolutionKind, AgentErrorResolutionTarget,
 };
+use foolrs_agent::error::AgentError as FoolrsAgentError;
+use foolrs_providers::ProviderError;
 
 use crate::protocol::send_error::AgentSendError;
 

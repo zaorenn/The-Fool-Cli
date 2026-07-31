@@ -6,9 +6,9 @@
 
 use std::collections::{HashMap, HashSet};
 
+use chrono::Utc;
 use foolrs_config::compact::CompactConfig;
 use foolrs_types::message::{ContentBlock, Message, Role};
-use chrono::Utc;
 
 /// Placeholder that replaces cleared tool result content.
 pub const CLEARED_TOOL_RESULT: &str = "[Tool result cleared]";

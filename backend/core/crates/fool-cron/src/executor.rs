@@ -2455,11 +2455,7 @@ mod tests {
             ) -> Result<AgentInstance, fool_ai_agent::AgentError> {
                 Err(fool_ai_agent::AgentError::internal("stub"))
             }
-            fn kill(
-                &self,
-                _: &str,
-                _: Option<fool_common::AgentKillReason>,
-            ) -> Result<(), fool_ai_agent::AgentError> {
+            fn kill(&self, _: &str, _: Option<fool_common::AgentKillReason>) -> Result<(), fool_ai_agent::AgentError> {
                 Ok(())
             }
             fn kill_and_wait(

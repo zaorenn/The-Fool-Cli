@@ -1693,11 +1693,7 @@ impl CronService {
     async fn build_agent_config_from_conversation(
         &self,
         row: &fool_db::models::ConversationRow,
-    ) -> (
-        String,
-        Option<fool_api_types::CronAgentConfigWriteDto>,
-        Option<String>,
-    ) {
+    ) -> (String, Option<fool_api_types::CronAgentConfigWriteDto>, Option<String>) {
         let extra = serde_json::from_str::<serde_json::Value>(&row.extra).unwrap_or_else(|_| serde_json::json!({}));
         let assistant_snapshot = match self.executor.get_assistant_snapshot(&row.id).await {
             Ok(snapshot) => snapshot,

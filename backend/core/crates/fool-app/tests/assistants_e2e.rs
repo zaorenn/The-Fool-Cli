@@ -12,6 +12,7 @@ mod common;
 
 use std::sync::Arc;
 
+use axum::http::StatusCode;
 use fool_api_types::{
     AgentManagementRow, AgentManagementStatus, AgentSnapshotCheckKind, AgentSnapshotCheckStatus, AgentSource,
     AgentSourceInfo, BehaviorPolicy,
@@ -30,7 +31,6 @@ use fool_extension::{
     AssistantRuleDispatcher, ExtensionRegistry, ExtensionRouterState, ExtensionSource, ExtensionStateStore,
     ExternalPathsManager, HubIndexManager, HubInstaller, HubRouterState, ScanPath, SkillPaths, SkillRouterState,
 };
-use axum::http::StatusCode;
 use serde_json::{Value, json};
 use tempfile::TempDir;
 use tower::ServiceExt;

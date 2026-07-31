@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use fool_ai_agent::IWorkerTaskManager;
 use fool_api_types::{AssistantConversationRequest, CreateConversationRequest, GetConfigOptionsResponse};
 use fool_conversation::{
@@ -14,7 +15,6 @@ use fool_team::{
     TeamConversationBindingLookup, TeamConversationCreateRequest, TeamConversationCreateResult,
     TeamConversationLookupPort, TeamConversationProvisioningPort, TeamError, TeamProjectionMessageStore,
 };
-use async_trait::async_trait;
 use tracing::{debug, info, warn};
 
 /// Vendor label of the codex builtin backend (its `agent_metadata.backend`), used

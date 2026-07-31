@@ -463,10 +463,7 @@ impl StreamPersistenceAdapter {
 
     /// Persist an ACP (Claude CLI) tool call event.
     #[tracing::instrument(skip_all)]
-    pub async fn persist_acp_tool_call(
-        &self,
-        data: &fool_ai_agent::protocol::events::tool_call::AcpToolCallEventData,
-    ) {
+    pub async fn persist_acp_tool_call(&self, data: &fool_ai_agent::protocol::events::tool_call::AcpToolCallEventData) {
         if !self.allows_write(RuntimeWriteKind::AcpToolCallPersist) {
             return;
         }

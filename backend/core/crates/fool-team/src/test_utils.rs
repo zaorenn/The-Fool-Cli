@@ -252,6 +252,7 @@ impl ITeamRepository for MockTeamRepo {
 pub(crate) mod workspace_harness {
     use std::sync::{Arc, Mutex};
 
+    use async_trait::async_trait;
     use fool_ai_agent::{AgentError, IWorkerTaskManager};
     use fool_api_types::{
         AcpConfigOptionDto, AcpConfigSelectOptionDto, CreateTeamRequest, GetConfigOptionsResponse, WebSocketMessage,
@@ -268,7 +269,6 @@ pub(crate) mod workspace_harness {
         MessagePageResult, MessageRowUpdate, MessageSearchRow, UpdateTeamParams,
     };
     use fool_realtime::EventBroadcaster;
-    use async_trait::async_trait;
 
     use crate::ports::{
         AgentTurnCancellationPort, AgentTurnExecutionError, AgentTurnExecutionPort, AgentTurnOutcome, AgentTurnRequest,
@@ -648,10 +648,8 @@ pub(crate) mod workspace_harness {
         fn new(repo: Arc<MockConversationRepo>) -> Self {
             Self {
                 repo,
-                workspace_root: std::env::temp_dir().join(format!(
-                    "fool-team-workspace-harness-{}",
-                    fool_common::generate_id()
-                )),
+                workspace_root: std::env::temp_dir()
+                    .join(format!("fool-team-workspace-harness-{}", fool_common::generate_id())),
             }
         }
     }

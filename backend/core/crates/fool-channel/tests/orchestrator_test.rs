@@ -4,9 +4,7 @@ use fool_channel::action::{ActionExecutor, MessageResult};
 use fool_channel::channel_settings::ChannelSettingsService;
 use fool_channel::pairing::PairingService;
 use fool_channel::session::SessionManager;
-use fool_channel::types::{
-    MessageContentType, PluginType, UnifiedIncomingMessage, UnifiedMessageContent, UnifiedUser,
-};
+use fool_channel::types::{MessageContentType, PluginType, UnifiedIncomingMessage, UnifiedMessageContent, UnifiedUser};
 
 const OWNER_ID: &str = "system_default_user";
 

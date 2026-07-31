@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use chrono::{Datelike, Local};
 use fool_common::generate_short_id;
 use fool_db::{FolderRow, IProjectStore, ProjectExplorerRow, ProjectKind, Role};
-use chrono::{Datelike, Local};
 
 use crate::canonical::{self, Canonical};
 use crate::containment;

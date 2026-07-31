@@ -823,12 +823,7 @@ async fn import_skills_from_zip(paths: &SkillPaths, archive_path: &Path) -> Resu
             ));
         }
 
-        import_skill_dirs_batch(
-            paths,
-            skill_dirs,
-            fool_common::generate_prefixed_id("skill_import_op"),
-        )
-        .await
+        import_skill_dirs_batch(paths, skill_dirs, fool_common::generate_prefixed_id("skill_import_op")).await
     }
     .await;
 

@@ -2,13 +2,13 @@ mod common;
 
 use std::sync::Arc;
 
+use common::MockTeamRepo;
 use fool_api_types::WebSocketMessage;
 use fool_realtime::EventBroadcaster;
 use fool_team::{
     Mailbox, MailboxMessageType, SchedulerAction, TaskBoard, TeamAgent, TeammateManager, TeammateRole, TeammateStatus,
     WAKE_TIMEOUT_MS,
 };
-use common::MockTeamRepo;
 
 // ---------------------------------------------------------------------------
 // Test infrastructure

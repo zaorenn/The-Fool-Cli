@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use fool_api_types::WebSocketMessage;
 use fool_db::models::MessageRow;
 use fool_realtime::EventBroadcaster;
-use async_trait::async_trait;
 use tracing::info;
 
 use crate::error::TeamError;

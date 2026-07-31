@@ -9,10 +9,10 @@ mod common;
 
 use std::sync::Arc;
 
+use axum::http::StatusCode;
 use fool_app::{ModuleStates, build_module_states, create_router_with_states};
 use fool_db::init_database_memory;
 use fool_extension::{ExternalPathsManager, SkillPaths, SkillRouterState};
-use axum::http::StatusCode;
 use serde_json::{Value, json};
 use tempfile::TempDir;
 use tower::ServiceExt;

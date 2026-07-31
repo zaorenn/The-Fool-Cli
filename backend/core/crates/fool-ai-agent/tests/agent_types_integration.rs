@@ -11,7 +11,7 @@ use std::sync::Arc;
 
 use fool_ai_agent::manager::foolrs::FoolrsAgentManager;
 use fool_ai_agent::task_manager::AgentFactory;
-use fool_ai_agent::types::{FoolrsResolvedConfig, BuildTaskOptions, SendMessageData};
+use fool_ai_agent::types::{BuildTaskOptions, FoolrsResolvedConfig, SendMessageData};
 use fool_ai_agent::*;
 use fool_ai_agent::{SkillIndex, build_system_instructions_with_skills_index};
 use fool_common::{AgentKillReason, AgentType, ConversationStatus, ProviderWithModel, TimestampMs, now_ms};

@@ -6,9 +6,9 @@
 
 use std::sync::Arc;
 
-use fool_realtime::BroadcastEventBus;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
+use fool_realtime::BroadcastEventBus;
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 

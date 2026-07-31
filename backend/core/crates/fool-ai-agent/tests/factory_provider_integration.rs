@@ -6,7 +6,7 @@ use fool_ai_agent::AcpSkillManager;
 use fool_ai_agent::factory::{AgentFactoryDeps, build_agent_factory};
 use fool_ai_agent::registry::AgentRegistry;
 use fool_ai_agent::session_context::{
-    AgentSessionContext, AgentSessionKind, FoolrsSessionBuildContext, ConversationContext, WorkspaceContext,
+    AgentSessionContext, AgentSessionKind, ConversationContext, FoolrsSessionBuildContext, WorkspaceContext,
 };
 use fool_ai_agent::types::BuildTaskOptions;
 use fool_api_types::FoolrsBuildExtra;

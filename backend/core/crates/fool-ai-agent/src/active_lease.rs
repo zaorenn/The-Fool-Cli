@@ -1,5 +1,5 @@
-use fool_common::{TimestampMs, now_ms};
 use dashmap::DashMap;
+use fool_common::{TimestampMs, now_ms};
 
 pub const ACTIVE_LEASE_TTL_MS: TimestampMs = 90_000;
 

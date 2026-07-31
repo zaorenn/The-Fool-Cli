@@ -84,10 +84,8 @@ pub(crate) async fn validate_with_budget(meta: &AgentMetadata, budget: Duration)
     if meta.agent_source == fool_api_types::AgentSource::Builtin
         && meta.agent_source_info.bridge_binary.as_deref() == Some("npx")
         && let Some(backend) = meta.backend.as_deref()
-        && fool_runtime::should_skip_registry_npx_version_probe(backend).map_err(|error| {
-            ProbeFailure::SkipLookup {
-                detail: error.to_string(),
-            }
+        && fool_runtime::should_skip_registry_npx_version_probe(backend).map_err(|error| ProbeFailure::SkipLookup {
+            detail: error.to_string(),
         })?
     {
         return Ok(ProbeSuccess {

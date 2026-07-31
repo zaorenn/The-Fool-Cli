@@ -24,6 +24,8 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex, Weak};
 use std::time::Duration;
 
+use async_trait::async_trait;
+use common::MockTeamRepo;
 use fool_ai_agent::AgentError;
 use fool_ai_agent::agent_task::{AgentInstance, IAgentTask, IMockAgent};
 use fool_ai_agent::protocol::events::{AgentStreamEvent, FinishEventData};
@@ -43,8 +45,6 @@ use fool_team::ports::{
 };
 use fool_team::service::TeamSessionService;
 use fool_team::{TeamAgent, TeamProjectionMessageStore, TeamSession, TeammateRole};
-use async_trait::async_trait;
-use common::MockTeamRepo;
 use serde_json::{Value, json};
 use tokio::net::TcpStream;
 use tokio::sync::{broadcast, oneshot};
@@ -309,10 +309,7 @@ impl TeamProjectionMessageStore for NoopProjectionStore {
         Ok(None)
     }
 
-    async fn insert_projected_message(
-        &self,
-        _row: &fool_db::models::MessageRow,
-    ) -> Result<(), fool_team::TeamError> {
+    async fn insert_projected_message(&self, _row: &fool_db::models::MessageRow) -> Result<(), fool_team::TeamError> {
         Ok(())
     }
 }

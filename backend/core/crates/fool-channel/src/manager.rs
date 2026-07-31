@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
+use dashmap::DashMap;
 use fool_api_types::{PluginStatusChangedPayload, PluginStatusResponse, WebSocketMessage};
 use fool_common::{decrypt_string, encrypt_string, now_ms};
 use fool_db::models::ChannelPluginRow;
 use fool_db::{IChannelRepository, UpdatePluginStatusParams};
 use fool_realtime::EventBroadcaster;
-use dashmap::DashMap;
 use tokio::sync::mpsc;
 use tracing::{debug, error, info, warn};
 

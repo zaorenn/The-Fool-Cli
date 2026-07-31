@@ -1565,14 +1565,12 @@ mod tests {
 
         let rx = tx.subscribe();
 
-        tx.send(AgentStreamEvent::Tips(
-            fool_ai_agent::protocol::events::TipsEventData {
-                content: String::new(),
-                tip_type: fool_ai_agent::protocol::events::TipType::Warning,
-                code: Some("ACP_EMPTY_TURN".into()),
-                params: None,
-            },
-        ))
+        tx.send(AgentStreamEvent::Tips(fool_ai_agent::protocol::events::TipsEventData {
+            content: String::new(),
+            tip_type: fool_ai_agent::protocol::events::TipType::Warning,
+            code: Some("ACP_EMPTY_TURN".into()),
+            params: None,
+        }))
         .unwrap();
         tx.send(AgentStreamEvent::Finish(FinishEventData::default())).unwrap();
 

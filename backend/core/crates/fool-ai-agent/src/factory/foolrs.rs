@@ -1,10 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use foolrs_agent::session::SessionManager;
-use foolrs_config::compat::OpenAiApiMode;
-use foolrs_config::config::{McpServerConfig, TransportType};
-use foolrs_types::message::ImageInputCapability;
 use fool_api_types::{
     FoolrsBuildExtra, ModelImageInputCapability, ModelOpenAiApiMode, ModelSettings, SessionMcpServer,
     SessionMcpTransport, TEAM_MCP_SERVER_NAME, TeamMcpStdioConfig,
@@ -14,6 +10,10 @@ use fool_db::IMcpServerRepository;
 use fool_db::models::McpServerRow;
 use fool_realtime::EventBroadcaster;
 use fool_runtime::ensure_runtime_command_with_reporter;
+use foolrs_agent::session::SessionManager;
+use foolrs_config::compat::OpenAiApiMode;
+use foolrs_config::config::{McpServerConfig, TransportType};
+use foolrs_types::message::ImageInputCapability;
 use serde_json::{Map, Value};
 use tracing::{debug, info, warn};
 
@@ -912,10 +912,7 @@ mod tests {
                 .cloned())
         }
 
-        async fn create(
-            &self,
-            _params: fool_db::CreateMcpServerParams<'_>,
-        ) -> Result<McpServerRow, fool_db::DbError> {
+        async fn create(&self, _params: fool_db::CreateMcpServerParams<'_>) -> Result<McpServerRow, fool_db::DbError> {
             unimplemented!("not needed for factory tests")
         }
 
@@ -950,12 +947,7 @@ mod tests {
             unimplemented!("not needed for factory tests")
         }
 
-        async fn update_tools(
-            &self,
-            _user_id: &str,
-            _id: &str,
-            _tools: Option<&str>,
-        ) -> Result<(), fool_db::DbError> {
+        async fn update_tools(&self, _user_id: &str, _id: &str, _tools: Option<&str>) -> Result<(), fool_db::DbError> {
             unimplemented!("not needed for factory tests")
         }
     }

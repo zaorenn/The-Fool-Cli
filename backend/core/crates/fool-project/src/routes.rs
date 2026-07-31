@@ -18,14 +18,14 @@
 
 use std::sync::Arc;
 
-use fool_api_types::{ApiResponse, AttachFolderRequest, ProjectDetailResponse, ProjectEntry, ProjectExplorer};
-use fool_auth::CurrentUser;
-use fool_common::ApiError;
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{Json, Path, State};
 use axum::http::StatusCode;
 use axum::routing::{delete, get, post};
 use axum::{Extension, Router};
+use fool_api_types::{ApiResponse, AttachFolderRequest, ProjectDetailResponse, ProjectEntry, ProjectExplorer};
+use fool_auth::CurrentUser;
+use fool_common::ApiError;
 use serde_json::json;
 
 use crate::canonical;

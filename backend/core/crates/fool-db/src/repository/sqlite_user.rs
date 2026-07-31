@@ -736,11 +736,7 @@ mod tests {
     async fn disabled_user_is_excluded_from_active_lookup() {
         let (repo, _db) = setup().await;
         let user = repo
-            .ensure_external_user(
-                UserType::Pro,
-                "external-disabled",
-                ExternalUserProjection::default(),
-            )
+            .ensure_external_user(UserType::Pro, "external-disabled", ExternalUserProjection::default())
             .await
             .unwrap();
 

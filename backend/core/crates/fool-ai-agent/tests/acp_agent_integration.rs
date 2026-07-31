@@ -46,11 +46,7 @@ fn serial() -> MutexGuard<'static, ()> {
 /// (subscribed BEFORE the relay starts, so no events are missed).
 async fn make_mock_agent(script: &str, backend: &str) -> (Arc<AcpAgentManager>, broadcast::Receiver<AgentStreamEvent>) {
     let temp_dir = std::env::temp_dir();
-    let script_path = temp_dir.join(format!(
-        "mock_acp_{}_{}.sh",
-        std::process::id(),
-        fool_common::now_ms()
-    ));
+    let script_path = temp_dir.join(format!("mock_acp_{}_{}.sh", std::process::id(), fool_common::now_ms()));
     std::fs::write(&script_path, format!("#!/bin/sh\n{script}")).unwrap();
     #[cfg(unix)]
     {

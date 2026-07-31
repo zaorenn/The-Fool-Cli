@@ -1,8 +1,8 @@
 use std::sync::{Arc, RwLock};
 
+use fool_common::{Confirmation, ConfirmationOption, generate_id};
 use foolrs_protocol::events::{ProtocolEvent, ToolCategory};
 use foolrs_protocol::writer::ProtocolEmitter;
-use fool_common::{Confirmation, ConfirmationOption, generate_id};
 use serde_json::json;
 use tokio::sync::broadcast;
 use tracing::debug;

@@ -541,9 +541,7 @@ mod tests {
     use crate::types::{ActionContext, MessageContentType, PluginType, UnifiedMessageContent, UnifiedUser};
     use fool_api_types::WebSocketMessage;
     use fool_common::{TimestampMs, now_ms};
-    use fool_db::models::{
-        AssistantSessionRow, AssistantUserRow, ChannelPluginRow, ClientPreference, PairingCodeRow,
-    };
+    use fool_db::models::{AssistantSessionRow, AssistantUserRow, ChannelPluginRow, ClientPreference, PairingCodeRow};
     use fool_db::{DbError, IChannelRepository, IClientPreferenceRepository, UpdatePluginStatusParams};
     use fool_realtime::EventBroadcaster;
     use std::collections::HashMap;

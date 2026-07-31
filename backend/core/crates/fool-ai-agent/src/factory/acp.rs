@@ -972,11 +972,7 @@ mod tests {
         async fn find_by_name(&self, _user_id: &str, _name: &str) -> Result<Option<McpServerRow>, fool_db::DbError> {
             unimplemented!()
         }
-        async fn list_by_ids_any(
-            &self,
-            user_id: &str,
-            ids: &[String],
-        ) -> Result<Vec<McpServerRow>, fool_db::DbError> {
+        async fn list_by_ids_any(&self, user_id: &str, ids: &[String]) -> Result<Vec<McpServerRow>, fool_db::DbError> {
             if self.fail {
                 return Err(fool_db::DbError::Init("simulated".into()));
             }
@@ -990,10 +986,7 @@ mod tests {
                 })
                 .collect())
         }
-        async fn create(
-            &self,
-            _params: fool_db::CreateMcpServerParams<'_>,
-        ) -> Result<McpServerRow, fool_db::DbError> {
+        async fn create(&self, _params: fool_db::CreateMcpServerParams<'_>) -> Result<McpServerRow, fool_db::DbError> {
             unimplemented!()
         }
         async fn update(
@@ -1023,12 +1016,7 @@ mod tests {
         ) -> Result<(), fool_db::DbError> {
             unimplemented!()
         }
-        async fn update_tools(
-            &self,
-            _user_id: &str,
-            _id: &str,
-            _tools: Option<&str>,
-        ) -> Result<(), fool_db::DbError> {
+        async fn update_tools(&self, _user_id: &str, _id: &str, _tools: Option<&str>) -> Result<(), fool_db::DbError> {
             unimplemented!()
         }
     }

@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
 use fool_ai_agent::{AgentError, IWorkerTaskManager};
-use fool_api_types::{
-    CreateConversationRequest, ListConversationsQuery, UpdateConversationRequest, WebSocketMessage,
-};
+use fool_api_types::{CreateConversationRequest, ListConversationsQuery, UpdateConversationRequest, WebSocketMessage};
 use fool_common::{AgentKillReason, AgentType, ConversationSource, ConversationStatus, TimestampMs};
 use fool_conversation::skill_resolver::SkillResolver;
 use fool_conversation::{ConversationError, ConversationService};

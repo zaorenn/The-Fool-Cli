@@ -7,13 +7,13 @@
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
+use async_trait::async_trait;
 use foolrs_agent::context::{SystemPromptCache, build_system_prompt};
 use foolrs_agent::plan::tools::{EnterPlanModeTool, ExitPlanModeTool};
 use foolrs_protocol::events::ToolCategory;
 use foolrs_tools::Tool;
 use foolrs_tools::registry::ToolRegistry;
 use foolrs_types::tool::ToolResult;
-use async_trait::async_trait;
 use serde_json::{Value, json};
 
 // ---------------------------------------------------------------------------

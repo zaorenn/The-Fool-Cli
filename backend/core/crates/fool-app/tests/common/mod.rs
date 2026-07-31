@@ -196,9 +196,7 @@ impl IAgentTask for NoopMockAgent {
 
 #[async_trait::async_trait]
 impl IMockAgent for NoopMockAgent {
-    async fn get_config_options(
-        &self,
-    ) -> Result<fool_api_types::GetConfigOptionsResponse, fool_ai_agent::AgentError> {
+    async fn get_config_options(&self) -> Result<fool_api_types::GetConfigOptionsResponse, fool_ai_agent::AgentError> {
         Ok(fool_api_types::GetConfigOptionsResponse {
             config_options: vec![fool_api_types::AcpConfigOptionDto {
                 id: "model".to_owned(),

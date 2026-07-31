@@ -13,6 +13,7 @@ use serde_json::{Value, json};
 use tokio::sync::broadcast;
 use tower::ServiceExt;
 
+use async_trait::async_trait;
 use fool_ai_agent::agent_task::{AgentInstance, IAgentTask, IMockAgent};
 use fool_ai_agent::protocol::events::TextEventData;
 use fool_ai_agent::types::{BuildTaskOptions, SendMessageData};
@@ -20,7 +21,6 @@ use fool_ai_agent::{AgentError, AgentStreamEvent, IWorkerTaskManager};
 use fool_api_types::AgentSource;
 use fool_common::{AgentKillReason, AgentType, Confirmation, ConversationStatus, TimestampMs, now_ms};
 use fool_db::UpsertAgentMetadataParams;
-use async_trait::async_trait;
 
 use common::{body_json, get_with_token, json_with_token, setup_and_login};
 

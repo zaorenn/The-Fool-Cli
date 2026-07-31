@@ -3856,10 +3856,7 @@ mod persist_tests {
 
         let resp = task.set_config_option("effort", "high").await.unwrap();
         assert!(
-            matches!(
-                resp.confirmation,
-                fool_api_types::ConfigOptionConfirmation::CommandAck
-            ),
+            matches!(resp.confirmation, fool_api_types::ConfigOptionConfirmation::CommandAck),
             "effort reports CommandAck (no picker current_value to observe)"
         );
 

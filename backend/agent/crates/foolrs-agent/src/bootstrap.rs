@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, RwLock};
 
+use anyhow::Result;
 use foolrs_config::config::{Config, McpServerConfig};
 use foolrs_config::shell::{ResolvedShell, resolve_shell_config};
 use foolrs_mcp::manager::McpManager;
@@ -22,7 +23,6 @@ use foolrs_tools::registry::ToolRegistry;
 use foolrs_tools::tool_search::ToolSearchTool;
 use foolrs_tools::view_image::ViewImageTool;
 use foolrs_tools::write::WriteTool;
-use anyhow::Result;
 use tracing::info;
 
 use crate::context::{SystemPromptCache, build_system_prompt_with_shell_and_tool_policy};

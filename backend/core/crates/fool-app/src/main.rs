@@ -8,8 +8,8 @@ use std::process::ExitCode;
 
 use clap::Parser;
 
-use fool_app::AppServices;
 use cli::{Cli, Command};
+use fool_app::AppServices;
 
 use crate::bootstrap::parent_exit_signal;
 use crate::error::MainError;

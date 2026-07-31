@@ -30,7 +30,7 @@ use fool_extension::{
 };
 use fool_file::{BrowseRoots, FileRouterState, FileService, FileWatchService, SnapshotService};
 use fool_mcp::{
-    FoolrsAdapter, FoolAdapter, ClaudeAdapter, CodeBuddyAdapter, CodexAdapter, GeminiAdapter, McpAgentAdapter,
+    ClaudeAdapter, CodeBuddyAdapter, CodexAdapter, FoolAdapter, FoolrsAdapter, GeminiAdapter, McpAgentAdapter,
     McpConfigService, McpConnectionTestService, McpRouterState, McpSyncService, OpencodeAdapter, QwenAdapter,
 };
 use fool_office::{
@@ -512,9 +512,9 @@ pub fn build_mcp_state(services: &AppServices) -> McpRouterState {
         Arc::new(FoolAdapter::new(repo.clone())),
     ];
 
-    let oauth_token_repo: Arc<dyn fool_db::IOAuthTokenRepository> = Arc::new(
-        fool_db::SqliteOAuthTokenRepository::new(services.database.pool().clone()),
-    );
+    let oauth_token_repo: Arc<dyn fool_db::IOAuthTokenRepository> = Arc::new(fool_db::SqliteOAuthTokenRepository::new(
+        services.database.pool().clone(),
+    ));
     let http_client = reqwest::Client::new();
 
     McpRouterState {
@@ -877,9 +877,7 @@ pub fn build_shell_state(services: &AppServices) -> ShellRouterState {
     let client_pref_service = ClientPrefService::new(client_pref_repo);
 
     ShellRouterState {
-        shell_service: Arc::new(fool_shell::ShellService::new(Arc::new(
-            fool_shell::DefaultSystemOpener,
-        ))),
+        shell_service: Arc::new(fool_shell::ShellService::new(Arc::new(fool_shell::DefaultSystemOpener))),
         stt_service: Arc::new(fool_shell::SttService::new(reqwest::Client::new())),
         client_pref_service,
     }
@@ -988,7 +986,7 @@ mod tests {
     }
 
     use crate::AppConfig;
-    use fool_ai_agent::types::{FOOL_BASE_URL_ENV, FOOL_HELPER_BIN_ENV, BuildTaskOptions, SendMessageData};
+    use fool_ai_agent::types::{BuildTaskOptions, FOOL_BASE_URL_ENV, FOOL_HELPER_BIN_ENV, SendMessageData};
     use fool_ai_agent::{
         AgentError, AgentInstance, AgentSendError, AgentStreamEvent, IAgentTask, IMockAgent, IWorkerTaskManager,
         WorkerTaskManagerImpl,

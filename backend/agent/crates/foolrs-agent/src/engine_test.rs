@@ -585,6 +585,7 @@ mod tests_compact {
     use std::env;
     use std::sync::{Arc, Mutex};
 
+    use chrono::Utc;
     use foolrs_config::compact::CompactConfig;
     use foolrs_config::config::{CliArgs, Config};
     use foolrs_providers::error::ProviderError;
@@ -592,7 +593,6 @@ mod tests_compact {
     use foolrs_tools::registry::ToolRegistry;
     use foolrs_types::llm::{LlmEvent, LlmRequest};
     use foolrs_types::message::{ContentBlock, ImageInputCapability, ImageUrl, Message, Role, StopReason, TokenUsage};
-    use chrono::Utc;
     use serde_json::json;
     use tempfile::tempdir;
     use tokio::sync::mpsc;
@@ -1585,6 +1585,7 @@ mod tests_handle_command {
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::{Arc, Mutex};
 
+    use async_trait::async_trait;
     use foolrs_config::compact::CompactConfig;
     use foolrs_protocol::events::ToolCategory;
     use foolrs_providers::error::ProviderError;
@@ -1594,7 +1595,6 @@ mod tests_handle_command {
     use foolrs_types::llm::{LlmEvent, LlmRequest};
     use foolrs_types::message::{ContentBlock, ImageInputCapability, ImageUrl, Message, Role, StopReason, TokenUsage};
     use foolrs_types::tool::ToolResult;
-    use async_trait::async_trait;
     use serde_json::{Value, json};
     use tokio::sync::mpsc::{Receiver, channel};
 
@@ -2557,6 +2557,7 @@ mod tests_tool_policy_enforcement {
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::{Arc, Mutex};
 
+    use async_trait::async_trait;
     use foolrs_protocol::events::ToolCategory;
     use foolrs_providers::error::ProviderError;
     use foolrs_providers::provider::LlmProvider;
@@ -2565,7 +2566,6 @@ mod tests_tool_policy_enforcement {
     use foolrs_types::llm::{LlmEvent, LlmRequest};
     use foolrs_types::message::{ContentBlock, ImageInputCapability};
     use foolrs_types::tool::ToolResult;
-    use async_trait::async_trait;
     use serde_json::{Value, json};
 
     use super::{AgentEngine, CacheBreakDetector, CompactLevel, CompactState, ProviderCompat};

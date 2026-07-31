@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
+use dashmap::DashMap;
 use fool_api_types::{DetectedMcpServerEntry, DetectedMcpServerResponse};
 use fool_common::McpSource;
 use fool_db::IMcpServerRepository;
-use dashmap::DashMap;
 use tokio::sync::Mutex;
 use tracing::warn;
 

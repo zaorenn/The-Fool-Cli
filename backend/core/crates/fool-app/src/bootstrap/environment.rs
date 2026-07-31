@@ -165,10 +165,8 @@ mod tests {
 
     #[test]
     fn database_schema_repair_stage_comes_from_db_boundary_error() {
-        let err = fool_db::DatabaseInitError::new(
-            "database.schema_repair",
-            fool_db::DbError::Init("repair failed".into()),
-        );
+        let err =
+            fool_db::DatabaseInitError::new("database.schema_repair", fool_db::DbError::Init("repair failed".into()));
 
         assert_eq!(err.stage(), "database.schema_repair");
     }

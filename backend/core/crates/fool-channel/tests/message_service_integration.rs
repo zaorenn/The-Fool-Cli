@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 
+use async_trait::async_trait;
 use fool_ai_agent::agent_task::{AgentInstance, IAgentTask};
 use fool_ai_agent::protocol::events::FinishEventData;
 use fool_ai_agent::types::{BuildTaskOptions, SendMessageData};
@@ -21,7 +22,6 @@ use fool_db::{
     SqliteConversationRepository, init_database_memory,
 };
 use fool_realtime::EventBroadcaster;
-use async_trait::async_trait;
 use tokio::sync::broadcast;
 
 const TEST_OWNER_USER_ID: &str = "system_default_user";

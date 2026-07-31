@@ -7,11 +7,11 @@ mod common;
 
 use std::sync::Arc;
 
+use common::{MockLlmProvider, test_config};
 use foolrs_agent::spawn_tool::SpawnTool;
 use foolrs_agent::spawner::AgentSpawner;
 use foolrs_agent::tool_policy::ToolPolicy;
 use foolrs_tools::Tool;
-use common::{MockLlmProvider, test_config};
 
 fn make_spawn_tool() -> SpawnTool {
     let provider = Arc::new(MockLlmProvider::with_text_response("ok"));

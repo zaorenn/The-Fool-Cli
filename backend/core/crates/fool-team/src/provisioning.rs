@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use fool_ai_agent::IWorkerTaskManager;
 use fool_api_types::{AddAgentRequest, GetConfigOptionsResponse, TeamAgentInput, TeamToolTransport};
 use fool_common::{AgentKillReason, AgentType, ProviderWithModel, generate_id};
 use fool_db::models::{AgentMetadataRow, TeamRow};
 use fool_db::{IAgentMetadataRepository, IProviderRepository, ITeamRepository, UpdateTeamParams};
-use async_trait::async_trait;
 use tracing::{info, warn};
 
 use crate::capability::{supports_team_cli_fallback_backend, supports_team_mcp_backend};

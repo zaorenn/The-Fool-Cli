@@ -2,6 +2,7 @@ mod common;
 
 use std::sync::{Arc, Mutex};
 
+use async_trait::async_trait;
 use foolrs_agent::engine::AgentEngine;
 use foolrs_agent::error::AgentError;
 use foolrs_agent::output::OutputSink;
@@ -11,7 +12,6 @@ use foolrs_providers::{LlmProvider, ProviderError};
 use foolrs_tools::registry::ToolRegistry;
 use foolrs_types::llm::{LlmEvent, LlmRequest};
 use foolrs_types::message::{ContentBlock, Message, Role, StopReason, TokenUsage};
-use async_trait::async_trait;
 use serde_json::{Value, json};
 use tempfile::tempdir;
 use tokio::sync::mpsc;

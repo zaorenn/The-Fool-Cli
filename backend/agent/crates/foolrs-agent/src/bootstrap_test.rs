@@ -5,11 +5,11 @@ mod tests {
     use std::collections::HashMap;
     use std::sync::Arc;
 
+    use async_trait::async_trait;
     use foolrs_config::config::{CliArgs, McpServerConfig, TransportType};
     use foolrs_protocol::events::ToolCategory;
     use foolrs_tools::Tool;
     use foolrs_types::tool::ToolResult;
-    use async_trait::async_trait;
     use serde_json::{Value, json};
 
     use crate::output::OutputSink;

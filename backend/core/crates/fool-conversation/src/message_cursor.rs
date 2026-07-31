@@ -1,5 +1,5 @@
-use fool_db::MessagePageCursor;
 use base64::Engine;
+use fool_db::MessagePageCursor;
 
 use crate::ConversationError;
 

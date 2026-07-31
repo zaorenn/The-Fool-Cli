@@ -1,5 +1,5 @@
-use foolrs_types::message::ContentBlock;
 use fool_common::constants::FOOL_FILES_MARKER;
+use foolrs_types::message::ContentBlock;
 
 const ATTACHED_FILES_HEADER: &str = "[Attached files]";
 

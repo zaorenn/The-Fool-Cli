@@ -10,6 +10,9 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use axum::Extension;
+use axum::body::{Body, to_bytes};
+use axum::http::{Method, Request, StatusCode};
 use fool_ai_agent::AgentRegistry;
 use fool_ai_agent::agent_task::AgentInstance;
 use fool_ai_agent::types::BuildTaskOptions;
@@ -33,9 +36,6 @@ use fool_db::{
     models::{ConversationAssistantSnapshotRow, CronJobRow, MessageRow},
 };
 use fool_realtime::EventBroadcaster;
-use axum::Extension;
-use axum::body::{Body, to_bytes};
-use axum::http::{Method, Request, StatusCode};
 
 use fool_cron::events::CronEventEmitter;
 use fool_cron::executor::JobExecutor;
@@ -233,11 +233,7 @@ impl StubConvRepo {
 
 #[async_trait::async_trait]
 impl IConversationRepository for StubConvRepo {
-    async fn get(
-        &self,
-        user_id: &str,
-        id: &str,
-    ) -> Result<Option<fool_db::models::ConversationRow>, fool_db::DbError> {
+    async fn get(&self, user_id: &str, id: &str) -> Result<Option<fool_db::models::ConversationRow>, fool_db::DbError> {
         if let Some(existing) = { self.rows.lock().unwrap().get(id).cloned() } {
             if existing.user_id != user_id {
                 return Ok(None);
@@ -629,12 +625,7 @@ impl IConversationRepository for StubConvRepo {
         self.rows.lock().unwrap().insert(row.id.clone(), row.clone());
         Ok(())
     }
-    async fn update(
-        &self,
-        _user_id: &str,
-        id: &str,
-        updates: &ConversationRowUpdate,
-    ) -> Result<(), fool_db::DbError> {
+    async fn update(&self, _user_id: &str, id: &str, updates: &ConversationRowUpdate) -> Result<(), fool_db::DbError> {
         if self.update_failures.lock().unwrap().iter().any(|item| item == id) {
             return Err(fool_db::DbError::Init(format!("forced update failure for {id}")));
         }
@@ -2039,10 +2030,7 @@ async fn cj9_update_schedule_type() {
     };
 
     let updated = svc.update_job("u1", &created.id, req).await.unwrap();
-    assert!(matches!(
-        updated.schedule,
-        fool_cron::types::CronSchedule::Cron { .. }
-    ));
+    assert!(matches!(updated.schedule, fool_cron::types::CronSchedule::Cron { .. }));
     assert!(updated.next_run_at.is_some());
 }
 

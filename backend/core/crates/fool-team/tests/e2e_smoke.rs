@@ -27,11 +27,11 @@ mod common;
 
 use std::sync::Arc;
 
+use common::MockTeamRepo;
 use fool_api_types::WebSocketMessage;
 use fool_realtime::EventBroadcaster;
 use fool_team::mcp::protocol::{read_frame, write_frame};
 use fool_team::{Mailbox, TaskBoard, TeamAgent, TeamMcpServer, TeammateManager, TeammateRole};
-use common::MockTeamRepo;
 use serde_json::{Value, json};
 use tokio::net::TcpStream;
 

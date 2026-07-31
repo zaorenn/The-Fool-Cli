@@ -269,11 +269,7 @@ async fn t2_14_external_user_provision_is_idempotent() {
 async fn t2_15_disabled_user_is_not_active() {
     let r = repo().await;
     let user = r
-        .ensure_external_user(
-            UserType::Pro,
-            "pro-user-disabled",
-            ExternalUserProjection::default(),
-        )
+        .ensure_external_user(UserType::Pro, "pro-user-disabled", ExternalUserProjection::default())
         .await
         .unwrap();
 

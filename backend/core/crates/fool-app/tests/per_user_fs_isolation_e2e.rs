@@ -6,9 +6,7 @@
 
 use std::path::Path;
 
-use fool_extension::skill_service::{
-    import_skill_with_repo_for_user, materialize_skills_for_agent_with_repo_for_user,
-};
+use fool_extension::skill_service::{import_skill_with_repo_for_user, materialize_skills_for_agent_with_repo_for_user};
 use tower::ServiceExt;
 
 fn write_skill(dir: &Path, name: &str, body: &str) {

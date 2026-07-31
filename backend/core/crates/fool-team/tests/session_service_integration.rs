@@ -28,6 +28,7 @@ use fool_db::{
 };
 use fool_realtime::EventBroadcaster;
 
+use common::MockTeamRepo;
 use fool_team::ports::{
     AgentTurnCancellationPort, AgentTurnExecutionError, AgentTurnExecutionPort, AgentTurnOutcome, AgentTurnRequest,
     AgentTurnStarted, AgentTurnStatus, TeamAssistantCatalogEntry, TeamAssistantCatalogPort,
@@ -39,7 +40,6 @@ use fool_team::{
     TeamProjectionMessageStore,
 };
 use fool_team::{TeamError, TeamSessionService};
-use common::MockTeamRepo;
 
 // ---------------------------------------------------------------------------
 // Mock ConversationRepository — minimal impl for TeamSessionService tests
@@ -443,11 +443,7 @@ impl TeamConversationProvisioningPort for FakeConversationPorts {
         }))
     }
 
-    async fn create_team_temp_workspace(
-        &self,
-        _user_id: &str,
-        team_id: &str,
-    ) -> Result<String, fool_team::TeamError> {
+    async fn create_team_temp_workspace(&self, _user_id: &str, team_id: &str) -> Result<String, fool_team::TeamError> {
         if self
             .fail_team_temp_create
             .swap(false, std::sync::atomic::Ordering::SeqCst)
@@ -1446,10 +1442,7 @@ impl IProviderRepository for EmptyProviderRepo {
     async fn find_by_id(&self, _user_id: &str, _id: &str) -> Result<Option<fool_db::models::Provider>, DbError> {
         Ok(None)
     }
-    async fn create(
-        &self,
-        _params: fool_db::CreateProviderParams<'_>,
-    ) -> Result<fool_db::models::Provider, DbError> {
+    async fn create(&self, _params: fool_db::CreateProviderParams<'_>) -> Result<fool_db::models::Provider, DbError> {
         Err(DbError::NotFound("not implemented".into()))
     }
     async fn update(
@@ -2591,8 +2584,7 @@ async fn create_team_with_workspace_writes_same_workspace_to_team_and_initial_ag
     let agent_metadata_repo: Arc<dyn IAgentMetadataRepository> = Arc::new(StubAgentMetadataRepo::empty());
     let (svc, _, conv_repo) =
         setup_with_factory_and_metadata_and_conversation_repo(success_factory(), agent_metadata_repo);
-    let workspace_dir =
-        std::env::temp_dir().join(format!("fool-team-user-workspace-{}", fool_common::generate_id()));
+    let workspace_dir = std::env::temp_dir().join(format!("fool-team-user-workspace-{}", fool_common::generate_id()));
     std::fs::create_dir_all(&workspace_dir).unwrap();
     let workspace = workspace_dir.to_string_lossy().into_owned();
 

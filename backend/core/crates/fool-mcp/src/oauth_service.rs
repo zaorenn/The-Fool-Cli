@@ -758,9 +758,7 @@ mod tests {
         }
 
         async fn delete(&self, _: &str, url: &str) -> Result<(), fool_db::DbError> {
-            Err(fool_db::DbError::NotFound(format!(
-                "OAuth token for '{url}' not found"
-            )))
+            Err(fool_db::DbError::NotFound(format!("OAuth token for '{url}' not found")))
         }
 
         async fn list_authenticated_urls(&self, _: &str) -> Result<Vec<String>, fool_db::DbError> {

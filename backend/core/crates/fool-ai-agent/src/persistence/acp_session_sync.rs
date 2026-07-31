@@ -51,11 +51,7 @@ impl AcpSessionSyncService {
     }
 
     /// Read the persisted per-session state for `conversation_id`.
-    pub async fn load_persisted(
-        &self,
-        user_id: &str,
-        conversation_id: &str,
-    ) -> Option<fool_db::PersistedSessionState> {
+    pub async fn load_persisted(&self, user_id: &str, conversation_id: &str) -> Option<fool_db::PersistedSessionState> {
         match self.repo.load_runtime_state_for_user(user_id, conversation_id).await {
             Ok(state) => state,
             Err(err) => {

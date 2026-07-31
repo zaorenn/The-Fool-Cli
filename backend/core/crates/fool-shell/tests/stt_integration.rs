@@ -1,8 +1,6 @@
 #![allow(clippy::disallowed_types)]
 
-use fool_api_types::{
-    DeepgramSpeechToTextConfig, OpenAISpeechToTextConfig, SpeechToTextConfig, SpeechToTextProvider,
-};
+use fool_api_types::{DeepgramSpeechToTextConfig, OpenAISpeechToTextConfig, SpeechToTextConfig, SpeechToTextProvider};
 use fool_shell::{SttError, SttService};
 use wiremock::matchers::{body_string_contains, header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};

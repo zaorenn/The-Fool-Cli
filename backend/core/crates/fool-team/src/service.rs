@@ -6,6 +6,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, Weak};
 
+use dashmap::DashMap;
 use fool_ai_agent::{ActiveLeaseRegistry, AgentError, AgentInstance, IWorkerTaskManager, IdleCleanupCoordinator};
 use fool_api_types::ChatFileRef;
 use fool_api_types::{
@@ -22,7 +23,6 @@ use fool_db::{
 };
 use fool_project::{ProjectService, canonical};
 use fool_realtime::EventBroadcaster;
-use dashmap::DashMap;
 use tracing::{debug, info, warn};
 
 use crate::error::TeamError;

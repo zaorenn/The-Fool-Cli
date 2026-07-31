@@ -5,6 +5,11 @@ use std::pin::Pin;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
+use fool_api_types::{
+    AcpConfigOptionDto, AcpConfigSelectOptionDto, AgentModeResponse, ConfigOptionConfirmation,
+    GetConfigOptionsResponse, SetConfigOptionResponse, SlashCommandItem,
+};
+use fool_common::{AgentKillReason, AgentType, Confirmation, ConversationStatus, ErrorChain, TimestampMs, now_ms};
 use foolrs_agent::bootstrap::AgentBootstrap;
 use foolrs_agent::engine::AgentEngine;
 use foolrs_agent::output::OutputSink;
@@ -14,11 +19,6 @@ use foolrs_config::config::{CliArgs, Config, McpServerConfig, ProviderType};
 use foolrs_mcp::manager::McpManager;
 use foolrs_protocol::commands::{ApprovalScope, SessionMode};
 use foolrs_protocol::{ToolApprovalManager, ToolApprovalResult};
-use fool_api_types::{
-    AcpConfigOptionDto, AcpConfigSelectOptionDto, AgentModeResponse, ConfigOptionConfirmation,
-    GetConfigOptionsResponse, SetConfigOptionResponse, SlashCommandItem,
-};
-use fool_common::{AgentKillReason, AgentType, Confirmation, ConversationStatus, ErrorChain, TimestampMs, now_ms};
 use serde_json::Value;
 use tokio::sync::{Mutex, Notify, broadcast};
 use tokio::time::timeout;

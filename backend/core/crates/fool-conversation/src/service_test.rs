@@ -10,8 +10,8 @@ use fool_ai_agent::agent_task::{AgentInstance, IAgentTask, IMockAgent};
 use fool_ai_agent::protocol::events::tool_call::{ToolCallEventData, ToolCallStatus};
 use fool_ai_agent::protocol::events::{AgentStreamEvent, ErrorEventData, FinishEventData, TextEventData};
 use fool_ai_agent::types::{
-    FOOL_BASE_URL_ENV, FOOL_HELPER_BIN_ENV, FOOL_RUNTIME_TOKEN_ENV, BuildTaskOptions,
-    CONVERSATION_RUNTIME_CONTEXT_VERSION, SendMessageData,
+    BuildTaskOptions, CONVERSATION_RUNTIME_CONTEXT_VERSION, FOOL_BASE_URL_ENV, FOOL_HELPER_BIN_ENV,
+    FOOL_RUNTIME_TOKEN_ENV, SendMessageData,
 };
 use fool_ai_agent::{
     AcpError, AgentAvailabilityFeedbackPort, AgentError, AgentSendError, AgentSessionKind, IWorkerTaskManager,
@@ -423,11 +423,7 @@ impl IConversationRepository for MockRepo {
         Ok(Some(row))
     }
 
-    async fn delete_assistant_snapshot(
-        &self,
-        _user_id: &str,
-        conversation_id: &str,
-    ) -> Result<bool, fool_db::DbError> {
+    async fn delete_assistant_snapshot(&self, _user_id: &str, conversation_id: &str) -> Result<bool, fool_db::DbError> {
         let mut rows = self.assistant_snapshots.lock().unwrap();
         let before = rows.len();
         rows.retain(|row| row.conversation_id != conversation_id);

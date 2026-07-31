@@ -1,17 +1,17 @@
 mod common;
 
-use fool_db::{IConversationRepository, MessagePageDirection, MessagePageParams};
 use axum::http::StatusCode;
+use fool_db::{IConversationRepository, MessagePageDirection, MessagePageParams};
 use serde_json::{Value, json};
 use tokio::net::TcpStream;
 use tower::ServiceExt;
 
-use fool_api_types::TeamMcpStdioConfig;
-use fool_team::mcp::protocol::{read_frame, write_frame};
 use common::{
     body_json, build_app, build_app_with_mock_agents, delete_with_token, get_request, get_with_token, json_with_token,
     setup_and_login,
 };
+use fool_api_types::TeamMcpStdioConfig;
+use fool_team::mcp::protocol::{read_frame, write_frame};
 
 const DEFAULT_TEAM_ASSISTANT_ID: &str = "team-e2e-assistant";
 const DEFAULT_TEAM_AGENT_ID: &str = "2d23ff1c";
