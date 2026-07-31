@@ -25,7 +25,24 @@ const DMG_RETRY_MAX = 3;
 const DMG_RETRY_DELAY_SEC = 30;
 
 // Incremental build: hash of source files to detect changes
-const INCREMENTAL_CACHE_FILE = 'out/.build-hash';
+const INCREMENTAL_CACHE_BASENAME = '.build-hash';
+
+/**
+ * Where the build writes.
+ *
+ * Overridable so tests can point the script at a scratch directory. Without a
+ * seam here a test has no way to exercise this script except against the real
+ * `out/`, which means moving the developer's build aside and deleting it — and
+ * losing it for good the moment either step fails, as it does on Windows while
+ * a virus scanner still holds the freshly written installer open.
+ *
+ * This only moves what this script writes. electron-builder takes its own
+ * output directory from `directories.output` in electron-builder.yml, so a real
+ * build must not set this.
+ */
+const OUT_DIR = process.env.FOOL_BUILD_OUT_DIR
+  ? path.resolve(process.env.FOOL_BUILD_OUT_DIR)
+  : path.resolve(__dirname, '..', 'out');
 const DEBUG_AUTO_UPDATE_CURRENT_VERSION_ENV = 'FOOL_DEBUG_AUTO_UPDATE_CURRENT_VERSION';
 
 function patchElectronBuilderNsisInstaller() {
@@ -222,7 +239,7 @@ function computeSourceHash() {
 
 function loadCachedHash() {
   try {
-    const cacheFile = path.resolve(__dirname, '..', INCREMENTAL_CACHE_FILE);
+    const cacheFile = path.join(OUT_DIR, INCREMENTAL_CACHE_BASENAME);
     if (fs.existsSync(cacheFile)) {
       return fs.readFileSync(cacheFile, 'utf8').trim();
     }
@@ -232,7 +249,7 @@ function loadCachedHash() {
 
 function saveCurrentHash(hash) {
   try {
-    const cacheFile = path.resolve(__dirname, '..', INCREMENTAL_CACHE_FILE);
+    const cacheFile = path.join(OUT_DIR, INCREMENTAL_CACHE_BASENAME);
     const viteDir = path.dirname(cacheFile);
     if (!fs.existsSync(viteDir)) {
       fs.mkdirSync(viteDir, { recursive: true });
@@ -242,7 +259,7 @@ function saveCurrentHash(hash) {
 }
 
 function viteBuildExists() {
-  const outDir = path.resolve(__dirname, '../out');
+  const outDir = OUT_DIR;
   const mainDir = path.join(outDir, 'main');
   const rendererDir = path.join(outDir, 'renderer');
 
@@ -336,7 +353,7 @@ function validateRendererBuildOutput(rendererDir) {
 }
 
 function validateViteBuildOutput() {
-  const outDir = path.resolve(__dirname, '../out');
+  const outDir = OUT_DIR;
   const problems = [];
 
   for (const relPath of ['main/index.js', 'preload/index.js']) {
@@ -532,7 +549,7 @@ function createMacArtifactsWithPrepackaged(appDir, targetArch) {
 
 function buildWithDmgRetry(cmd, targetArch) {
   const isMac = process.platform === 'darwin';
-  const outDir = path.resolve(__dirname, '../out');
+  const outDir = OUT_DIR;
 
   try {
     execSync(cmd, { stdio: 'inherit', shell: process.platform === 'win32' });
@@ -569,7 +586,7 @@ function buildWithDmgRetry(cmd, targetArch) {
 
 // Clean stale Windows packaging outputs from previous runs
 function cleanupWindowsPackOutput() {
-  const outDir = path.resolve(__dirname, '../out');
+  const outDir = OUT_DIR;
   if (!fs.existsSync(outDir)) return;
 
   const removed = [];
@@ -736,7 +753,7 @@ try {
   });
 
   // 3. Verify electron-vite output
-  const outDir = path.resolve(__dirname, '../out');
+  const outDir = OUT_DIR;
   if (!fs.existsSync(outDir)) {
     throw new Error('electron-vite did not generate out/ directory');
   }

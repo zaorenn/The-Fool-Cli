@@ -5,16 +5,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  renameSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -50,9 +41,8 @@ function resolveAppBuilderInstallUtil(): string {
 
 describe('build-with-builder', () => {
   it('rejects skip-vite when renderer output is only a source html shell', () => {
-    const outDir = resolve(repoRoot, 'out');
-    const backupOutDir = resolve(repoRoot, `.tmp-out-backup-${process.pid}-${Date.now()}`);
     const tempDir = mkdtempSync(join(tmpdir(), 'fool-build-skip-vite-test-'));
+    const outDir = join(tempDir, 'out');
     const hookPath = join(tempDir, 'hook.cjs');
 
     writeFileSync(
@@ -66,12 +56,7 @@ childProcess.execSync = function mockedExecSync(command) {
       'utf8'
     );
 
-    let movedExistingOut = false;
     try {
-      if (existsSync(outDir)) {
-        renameSync(outDir, backupOutDir);
-        movedExistingOut = true;
-      }
       mkdirSync(resolve(outDir, 'main'), { recursive: true });
       mkdirSync(resolve(outDir, 'renderer'), { recursive: true });
       writeFileSync(resolve(outDir, 'main/index.js'), 'console.log("main placeholder");\n', 'utf8');
@@ -89,6 +74,7 @@ childProcess.execSync = function mockedExecSync(command) {
           encoding: 'utf8',
           env: {
             ...process.env,
+            FOOL_BUILD_OUT_DIR: outDir,
             NODE_OPTIONS: [process.env.NODE_OPTIONS, `--require=${hookPath}`].filter(Boolean).join(' '),
           },
         }
@@ -97,10 +83,6 @@ childProcess.execSync = function mockedExecSync(command) {
       expect(result.status).not.toBe(0);
       expect(result.stderr + result.stdout).toContain('Renderer build output is incomplete');
     } finally {
-      rmSync(outDir, { recursive: true, force: true });
-      if (movedExistingOut) {
-        renameSync(backupOutDir, outDir);
-      }
       rmSync(tempDir, { recursive: true, force: true });
     }
   });
@@ -280,8 +262,7 @@ childProcess.execSync = function mockedExecSync(command) {
     const tempDir = mkdtempSync(join(tmpdir(), 'fool-build-test-'));
     const hookPath = join(tempDir, 'hook.cjs');
     const callsPath = join(tempDir, 'build-calls.json');
-    const outDir = resolve(repoRoot, 'out');
-    const backupOutDir = resolve(repoRoot, `.tmp-out-backup-${process.pid}-${Date.now()}-${expectedArch}`);
+    const outDir = join(tempDir, 'out');
 
     writeFileSync(
       hookPath,
@@ -300,11 +281,10 @@ function recordPrepareCall(options) {
   fs.writeFileSync(callsPath, JSON.stringify(calls));
 }
 
-// Satisfy build-with-builder's output checks without clobbering real build
-// artifacts: out/ lives in the actual repo (the script resolves it from its
-// own __dirname), so only create empty placeholders when nothing is there.
+// Satisfy build-with-builder's output checks inside the scratch directory the
+// test handed it, so the developer's real build in out/ is never touched.
 function ensurePlaceholder(relativePath) {
-  const target = path.join(process.cwd(), relativePath);
+  const target = path.join(process.env.FOOL_BUILD_OUT_DIR, relativePath);
   fs.mkdirSync(path.dirname(target), { recursive: true });
   if (!fs.existsSync(target)) {
     fs.writeFileSync(target, '');
@@ -318,12 +298,12 @@ childProcess.execSync = function mockedExecSync(command, options) {
     return Buffer.from('');
   }
   if (commandText.includes('electron-vite build')) {
-    ensurePlaceholder('out/main/index.js');
-    ensurePlaceholder('out/preload/index.js');
-    ensurePlaceholder('out/renderer/assets/index-test.js');
-    ensurePlaceholder('out/renderer/assets/index-test.css');
+    ensurePlaceholder('main/index.js');
+    ensurePlaceholder('preload/index.js');
+    ensurePlaceholder('renderer/assets/index-test.js');
+    ensurePlaceholder('renderer/assets/index-test.css');
     fs.writeFileSync(
-      path.join(process.cwd(), 'out/renderer/index.html'),
+      path.join(process.env.FOOL_BUILD_OUT_DIR, 'renderer/index.html'),
       '<!doctype html><html><head><script type="module" src="./assets/index-test.js"></script><link rel="stylesheet" href="./assets/index-test.css"></head><body><div id="root"></div></body></html>\\n'
     );
   }
@@ -333,18 +313,13 @@ childProcess.execSync = function mockedExecSync(command, options) {
       'utf8'
     );
 
-    let movedExistingOut = false;
     try {
-      if (existsSync(outDir)) {
-        renameSync(outDir, backupOutDir);
-        movedExistingOut = true;
-      }
-
       const result = spawnSync(process.execPath, ['scripts/build-with-builder.js', ...args], {
         cwd: repoRoot,
         encoding: 'utf8',
         env: {
           ...process.env,
+          FOOL_BUILD_OUT_DIR: outDir,
           FOOL_PREPARE_CALLS_FILE: callsPath,
           NODE_OPTIONS: [process.env.NODE_OPTIONS, `--require=${hookPath}`].filter(Boolean).join(' '),
         },
@@ -365,10 +340,6 @@ childProcess.execSync = function mockedExecSync(command, options) {
       const calls = JSON.parse(readFileSync(callsPath, 'utf8')) as Array<{ arch?: string } | null>;
       expect(calls).toContainEqual(expect.objectContaining({ arch: expectedArch }));
     } finally {
-      rmSync(outDir, { recursive: true, force: true });
-      if (movedExistingOut) {
-        renameSync(backupOutDir, outDir);
-      }
       rmSync(tempDir, { recursive: true, force: true });
     }
   });
