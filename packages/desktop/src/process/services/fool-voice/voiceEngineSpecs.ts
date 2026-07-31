@@ -92,6 +92,15 @@ const CLONING_THREAD_CAP = 6;
 /** Engines that speak in a voice they were not trained on, and pay for it. */
 const CLONING_KINDS: ReadonlySet<TtsEngineSpec['kind']> = new Set(['zipvoice', 'pocket']);
 
+/**
+ * Whether an engine needs a reference recording to speak at all.
+ *
+ * These have no voice of their own — no speaker table to index into. The voice
+ * arrives with the request, as a clip and its transcript, and without one there
+ * is nothing for the engine to imitate.
+ */
+export const isCloningTts = (kind: TtsEngineSpec['kind']): boolean => CLONING_KINDS.has(kind);
+
 export const ttsThreadsFor = (kind: TtsEngineSpec['kind'], cpuCount: number): number => {
   if (!CLONING_KINDS.has(kind)) return ENGINE_THREADS['text-to-speech'];
 

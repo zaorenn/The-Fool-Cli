@@ -59,8 +59,10 @@ export const useVoiceCatalog = (): VoiceCatalogHandle => {
   // Read inside callbacks that must not be re-created on every state change.
   const modelsRef = useRef<readonly VoiceModel[]>([]);
   const installsRef = useRef<Record<string, InstallState>>({});
+  const profilesRef = useRef<readonly VoiceProfile[]>([]);
   modelsRef.current = models;
   installsRef.current = installs;
+  profilesRef.current = profiles;
 
   const refresh = useCallback(async (): Promise<readonly VoiceModel[]> => {
     try {
@@ -164,11 +166,24 @@ export const useVoiceCatalog = (): VoiceCatalogHandle => {
       const model = modelsRef.current.find((candidate) => candidate.id === modelId);
       if (!model) return;
 
+      // A cloning model lists no voices of its own — it borrows one. Checking it
+      // means speaking with a recording the user has cloned; asked to speak with
+      // nothing to imitate, the engine has no voice at all.
+      //
+      // Only a speaking model carries `profileIds`; a transcriber has no voices
+      // to list and nothing to borrow.
+      const borrowedProfileId =
+        model.role === 'text-to-speech' && model.profileIds.length === 0
+          ? profilesRef.current.find((profile) => profile.modelId === modelId && profile.kind === 'cloned')?.id
+          : undefined;
+
       setVerifications((previous) => ({ ...previous, [modelId]: 'checking' }));
       // Re-read the catalog first: the files may have appeared or vanished since
       // this page was opened.
       void refresh()
-        .then((fresh) => verifyVoiceModel(fresh.find((candidate) => candidate.id === modelId) ?? model))
+        .then((fresh) =>
+          verifyVoiceModel(fresh.find((candidate) => candidate.id === modelId) ?? model, borrowedProfileId)
+        )
         .then((result) => setVerifications((previous) => ({ ...previous, [modelId]: result.status })))
         .catch(() => setVerifications((previous) => ({ ...previous, [modelId]: 'unusable' })));
     },

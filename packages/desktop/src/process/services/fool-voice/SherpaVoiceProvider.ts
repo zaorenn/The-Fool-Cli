@@ -15,6 +15,7 @@ import {
   canUseGpu,
   ENGINE_THREADS,
   getEngineSpec,
+  isCloningTts,
   ttsThreadsFor,
   type SttEngineSpec,
   type TtsEngineSpec,
@@ -371,8 +372,10 @@ export class SherpaVoiceProvider {
    * The reference a cloned profile speaks with, or nothing for a preset voice.
    *
    * A profile naming a voice whose files have gone is treated as no reference
-   * rather than as an error: the engine then speaks in its own default voice,
-   * which is a worse answer than the one asked for and a better one than silence.
+   * rather than as an error: an engine with a voice of its own then speaks in
+   * it, which is a worse answer than the one asked for and a better one than
+   * silence. A cloning engine has no such voice, and {@link synthesize} refuses
+   * the request before it reaches the addon — see the guard there.
    */
   private referenceFor(profileId: string): SherpaGenerationConfig | undefined {
     const voiceId = parseClonedProfileId(profileId);
@@ -482,6 +485,22 @@ export class SherpaVoiceProvider {
     text: string,
     signal?: AbortSignal
   ): Promise<{ audio: VoiceSynthesizedWav; durationMs: number }> {
+    // A cloned voice is a recording plus its transcript, not a speaker index, so
+    // it overrides the id entirely and travels with the request.
+    const generationConfig = this.referenceFor(profileId);
+
+    // A cloning engine has no voice of its own to fall back on. Handed no
+    // reference it does not return an error — it dies inside the addon, and
+    // since that is a native crash it takes the whole app down with it, every
+    // window and any unsaved work. Refuse before the engine is even loaded.
+    //
+    // Verifying one of these models is how a user meets this: the check runs the
+    // model with no profile chosen, so nothing supplies a reference.
+    const engine = getEngineSpec(modelId);
+    if (engine?.role === 'text-to-speech' && isCloningTts(engine.engine.kind) && !generationConfig) {
+      throw new Error(`${modelId} speaks by cloning and needs a reference recording; profile "${profileId}" has none`);
+    }
+
     const synthesizer = await this.getSynthesizer(modelId);
     if (signal?.aborted) throw new Error('cancelled');
 
@@ -495,10 +514,6 @@ export class SherpaVoiceProvider {
         : this.clampSpeaker(parseDynamicSpeakerId(profileId) ?? 0, synthesizer.numSpeakers);
 
     if (signal?.aborted) throw new Error('cancelled');
-
-    // A cloned voice is a recording plus its transcript, not a speaker index, so
-    // it overrides the id entirely and travels with the request.
-    const generationConfig = this.referenceFor(profileId);
 
     const startMs = Date.now();
     // Deliberately the plain `{ text, sid, speed }` form: the alternative

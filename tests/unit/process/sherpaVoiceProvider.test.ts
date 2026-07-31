@@ -165,13 +165,30 @@ describe('SherpaVoiceProvider cloned voices', () => {
   });
 
   // A voice whose files were deleted must not take the whole reply down with it.
+  //
+  // For an engine that has a voice of its own that means speaking in it. A
+  // cloning engine has none — handed no reference it does not fall back, it
+  // dies inside the addon, and a native crash closes every window. Refusing is
+  // what keeps the app up, so the two engines part company here.
   it('falls back to the engine default when the recording has gone', async () => {
     const { module, generate } = fakeModule();
     const provider = new SherpaVoiceProvider(modelsDir(), async () => module);
 
-    await provider.synthesize('tts-zipvoice-distill-int8', 'cloned:nobody', 'en', 1, 'Hello');
+    await provider.synthesize('tts-piper-en-libritts-r', 'cloned:nobody', 'en', 1, 'Hello');
 
     expect((generate.mock.calls[0][0] as { generationConfig?: unknown }).generationConfig).toBeUndefined();
+  });
+
+  it('refuses a cloning engine the same request, which has no default to fall back to', async () => {
+    const { module, generate } = fakeModule();
+    const provider = new SherpaVoiceProvider(modelsDir(), async () => module);
+
+    await expect(provider.synthesize('tts-zipvoice-distill-int8', 'cloned:nobody', 'en', 1, 'Hello')).rejects.toThrow(
+      /needs a reference recording/
+    );
+    // Refused before the engine is even built: loading one costs seconds, and
+    // the crash is in the call it would then be handed.
+    expect(generate).not.toHaveBeenCalled();
   });
 
   it('offers the cloned voice as a profile the picker can list', () => {
