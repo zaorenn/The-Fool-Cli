@@ -82,7 +82,13 @@ vi.mock('@icon-park/react', () => ({
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 
-const readyModel = (id: string, role: 'text-to-speech' | 'speech-to-text' = 'text-to-speech') => ({
+const readyModel = (
+  id: string,
+  role: 'text-to-speech' | 'speech-to-text' = 'text-to-speech',
+  // Empty models a cloning engine: it lists no voices of its own, only what
+  // the user clones into it.
+  profileIds: string[] = ['libritts-p0']
+) => ({
   id,
   providerId: 'local-sherpa',
   displayName: id,
@@ -93,7 +99,7 @@ const readyModel = (id: string, role: 'text-to-speech' | 'speech-to-text' = 'tex
   downloadBytes: null,
   installedBytes: null,
   audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
-  profileIds: ['libritts-p0'],
+  profileIds,
 });
 
 const synthesis = {
@@ -174,6 +180,90 @@ describe('SpeakMessageButton', () => {
     await waitFor(() => expect(synthesizeInvoke).toHaveBeenCalled());
     const request = synthesizeInvoke.mock.calls[0][0] as { payload: Record<string, unknown> };
     expect(request.payload.modelId).toBe('tts-kokoro-en-v0_19-int8');
+  });
+
+  it('falls back to an installed voice when a cloned reference has gone missing', async () => {
+    // The model itself (Pocket) is installed either way — a cloned voice is a
+    // recording, not a trained model, so "the model is installed" stays true
+    // even after the specific recording it needs was deleted, or never copied
+    // to this machine. That used to reach the native addon with nothing to
+    // clone and crash the app; refusing it is correct, but left uncaught here
+    // it read as "speak aloud" failing on an ordinary message.
+    settings = {
+      ...NO_SUMMARY,
+      tts: { ...NO_SUMMARY.tts, modelId: 'tts-pocket-int8-2026-01-26', profileId: 'cloned:ultron' },
+    };
+    catalogInvoke.mockResolvedValue({
+      ok: true,
+      data: {
+        models: [
+          readyModel('tts-pocket-int8-2026-01-26', 'text-to-speech', []),
+          readyModel('tts-kokoro-en-v0_19-int8'),
+        ],
+        profiles: [],
+      },
+    });
+
+    render(<SpeakMessageButton text='Still speak, please.' />);
+    fireEvent.click(screen.getByTestId('speak-message'));
+
+    await waitFor(() => expect(synthesizeInvoke).toHaveBeenCalled());
+    const request = synthesizeInvoke.mock.calls[0][0] as { payload: Record<string, unknown> };
+    expect(request.payload.modelId).toBe('tts-kokoro-en-v0_19-int8');
+    expect(request.payload.profileId).toBe('speaker-0');
+  });
+
+  it('falls back to speaker-0 on the same model when it is the only voice installed and its cloned reference is gone', async () => {
+    // The coincidence this guards: the fallback model and the configured one
+    // are the same string (Pocket is the only voice installed), which must
+    // not be mistaken for "kept the configured profile".
+    settings = {
+      ...NO_SUMMARY,
+      tts: { ...NO_SUMMARY.tts, modelId: 'tts-pocket-int8-2026-01-26', profileId: 'cloned:ultron' },
+    };
+    catalogInvoke.mockResolvedValue({
+      ok: true,
+      data: { models: [readyModel('tts-pocket-int8-2026-01-26', 'text-to-speech', [])], profiles: [] },
+    });
+
+    render(<SpeakMessageButton text='Still speak, please.' />);
+    fireEvent.click(screen.getByTestId('speak-message'));
+
+    await waitFor(() => expect(synthesizeInvoke).toHaveBeenCalled());
+    const request = synthesizeInvoke.mock.calls[0][0] as { payload: Record<string, unknown> };
+    expect(request.payload.profileId).toBe('speaker-0');
+  });
+
+  it('keeps a cloned profile whose recording is actually present', async () => {
+    catalogInvoke.mockResolvedValue({
+      ok: true,
+      data: {
+        models: [readyModel('tts-pocket-int8-2026-01-26', 'text-to-speech', [])],
+        profiles: [
+          {
+            id: 'cloned:ultron',
+            providerId: 'local-sherpa',
+            modelId: 'tts-pocket-int8-2026-01-26',
+            kind: 'cloned',
+            state: 'ready',
+            displayName: 'Ultron',
+            languages: ['en'],
+            deletable: true,
+          },
+        ],
+      },
+    });
+    settings = {
+      ...NO_SUMMARY,
+      tts: { ...NO_SUMMARY.tts, modelId: 'tts-pocket-int8-2026-01-26', profileId: 'cloned:ultron' },
+    };
+
+    render(<SpeakMessageButton text='Ultron speaking.' />);
+    fireEvent.click(screen.getByTestId('speak-message'));
+
+    await waitFor(() => expect(synthesizeInvoke).toHaveBeenCalled());
+    const request = synthesizeInvoke.mock.calls[0][0] as { payload: Record<string, unknown> };
+    expect(request.payload).toMatchObject({ modelId: 'tts-pocket-int8-2026-01-26', profileId: 'cloned:ultron' });
   });
 
   it('reports a synthesis failure rather than looking like a dead button', async () => {

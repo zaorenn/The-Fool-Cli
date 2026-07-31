@@ -138,8 +138,10 @@ describe('useFoolVoiceSession — the microphone hold', () => {
             providerId: 'local-sherpa',
             role: 'text-to-speech',
             state: { status: 'ready' },
+            profileIds: ['libritts-p0'],
           },
         ],
+        profiles: [],
       },
     });
     transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'run the tests' } });

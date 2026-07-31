@@ -42,6 +42,14 @@ const unwrap = <T>(envelope: { ok: true; data: T } | { ok: false; error: { code:
   return envelope.data;
 };
 
+/**
+ * Matches `CLONED_PROFILE_PREFIX` in the main process's `ClonedVoiceStore`.
+ * Not imported directly: that module lives under `process/`, off limits to
+ * the renderer, and the prefix is part of the profile id's public shape
+ * rather than an implementation detail of the store.
+ */
+const CLONED_PROFILE_PREFIX = 'cloned:';
+
 export type SpeakTextRequest = {
   text: string;
   settings: FoolVoiceSettings;
@@ -82,7 +90,7 @@ export const speakText = async (request: SpeakTextRequest): Promise<SpeakOutcome
     await ipcBridge.foolVoice.catalog.invoke({
       version: 1,
       requestId: newRequestId(),
-      payload: { includeProfiles: false },
+      payload: { includeProfiles: true },
     })
   );
   const installed = catalog.models
@@ -91,10 +99,44 @@ export const speakText = async (request: SpeakTextRequest): Promise<SpeakOutcome
   if (installed.length === 0) return { spoken: false, reason: 'no-voice' };
 
   const target = selectTtsTarget(spoken, settings, installed);
+
+  // A cloned voice is a recording, not a trained model: its id names a real,
+  // installed engine (Pocket) whichever machine runs it, so "the model is
+  // installed" is true even when the recording itself was deleted, or was
+  // never copied to this machine. That engine has no voice of its own to fall
+  // back on — asked to speak with nothing to imitate, it used to crash the
+  // whole app; now it refuses the request outright. Left uncaught here, that
+  // refusal is what "speak aloud" reads as failing for a normal message that
+  // never asked for cloning at all.
+  const clonedReferenceMissing =
+    target.profileId.startsWith(CLONED_PROFILE_PREFIX) &&
+    !catalog.profiles.some((profile) => profile.id === target.profileId);
+
+  // A model with no presets of its own is a cloning model — picking it as the
+  // fallback would trade one "no reference" refusal for another. Preferred
+  // over `installed[0]` for exactly the case that sent this whole request
+  // down the fallback path: pocket, installed, sitting right next to a
+  // perfectly good preset voice.
+  const modelsWithOwnVoice = new Set(
+    catalog.models
+      .filter(
+        (model) =>
+          model.role === 'text-to-speech' && model.state.status === 'ready' && (model.profileIds?.length ?? 0) > 0
+      )
+      .map((model) => model.id)
+  );
+  const fallbackModelId = installed.find((id) => modelsWithOwnVoice.has(id)) ?? installed[0];
+
   // Fall back to something installed rather than failing on a voice the user
-  // selected and then removed.
-  const modelId = installed.includes(target.modelId) ? target.modelId : installed[0];
-  const profileId = modelId === target.modelId ? target.profileId : 'speaker-0';
+  // selected and then removed — whether the whole model is gone, or, for a
+  // cloned one, just the recording it needs in order to speak at all. Kept as
+  // its own flag rather than compared back from `modelId`: the fallback model
+  // can coincide with the configured one (the only installed voice IS the
+  // broken cloning model), and re-deriving "did we fall back" from that
+  // equality would then wrongly say no.
+  const useConfigured = installed.includes(target.modelId) && !clonedReferenceMissing;
+  const modelId = useConfigured ? target.modelId : fallbackModelId;
+  const profileId = useConfigured ? target.profileId : 'speaker-0';
 
   const synthesize = (text: string): Promise<VoiceSynthesizedWav> => {
     const operationId = newRequestId();
