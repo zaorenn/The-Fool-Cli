@@ -57,6 +57,13 @@ const MessageAcpPermission: React.FC<MessageAcpPermissionProps> = React.memo(({ 
     return null;
   }
 
+  // The backend rides an AskUserQuestion's `input` through as `raw_input`, so
+  // the presence of `questions` is what separates "the agent is asking you
+  // something" from "the agent wants permission to act". Only the former should
+  // offer a free-text answer — typing prose at a shell-command prompt would be
+  // forwarded as an approval label and mean nothing.
+  const isQuestion = Array.isArray((tool_call.raw_input as { questions?: unknown } | undefined)?.questions);
+
   const title = tool_call.title || tool_call.raw_input?.description || t('messages.permissionRequest');
   const detail = tool_call.raw_input?.command || tool_call.title;
   const description = tool_call.raw_input?.description;
@@ -70,6 +77,7 @@ const MessageAcpPermission: React.FC<MessageAcpPermissionProps> = React.memo(({ 
       operationKind={normalizePermissionOperationKind(tool_call.kind)}
       detail={detail}
       options={panelOptions}
+      allowCustomAnswer={isQuestion}
       onConfirm={handleConfirm}
     />
   );

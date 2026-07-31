@@ -71,5 +71,8 @@
   "speakAloud": "소리내어 읽기",
   "speakStop": "읽기 중지",
   "speakNeedsVoice": "답변을 읽어주려면 설정 → 음성에서 음성을 설치하세요.",
-  "speakFailed": "이 메시지를 읽어줄 수 없습니다."
+  "speakFailed": "이 메시지를 읽어줄 수 없습니다.",
+  "answerInYourOwnWords": "직접 입력해서 답하기",
+  "answerPlaceholder": "답변을 입력하세요…",
+  "sendAnswer": "답변 보내기"
 }

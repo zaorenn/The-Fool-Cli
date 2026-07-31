@@ -71,5 +71,8 @@
   "speakAloud": "朗讀",
   "speakStop": "停止朗讀",
   "speakNeedsVoice": "請在「設定 → 語音」中安裝一個音色，回覆才能朗讀。",
-  "speakFailed": "無法朗讀這則訊息。"
+  "speakFailed": "無法朗讀這則訊息。",
+  "answerInYourOwnWords": "用自己的話回答",
+  "answerPlaceholder": "輸入你的回答…",
+  "sendAnswer": "傳送回答"
 }

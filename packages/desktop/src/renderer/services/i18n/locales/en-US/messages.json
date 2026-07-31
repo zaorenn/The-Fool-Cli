@@ -71,5 +71,8 @@
   "speakAloud": "Read aloud",
   "speakStop": "Stop reading",
   "speakNeedsVoice": "Install a voice in Settings → Voice to have replies read aloud.",
-  "speakFailed": "Could not read this message aloud."
+  "speakFailed": "Could not read this message aloud.",
+  "answerInYourOwnWords": "Answer in your own words",
+  "answerPlaceholder": "Type your answer…",
+  "sendAnswer": "Send answer"
 }

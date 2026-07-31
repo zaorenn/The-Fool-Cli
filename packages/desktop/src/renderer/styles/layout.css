@@ -289,3 +289,13 @@
     line-height: 20px !important;
   }
 }
+
+/* The dock a pending permission or question card paints into, directly above
+   the composer. Empty most of the time — it must claim no space until a card
+   arrives, or every conversation would carry a permanent gap above the input. */
+.permission-dock:not(:empty) {
+  flex-shrink: 0;
+  margin-bottom: 8px;
+  max-height: 46vh;
+  overflow-y: auto;
+}

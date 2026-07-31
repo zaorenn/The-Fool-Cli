@@ -71,5 +71,8 @@
   "speakAloud": "Vorlesen",
   "speakStop": "Vorlesen beenden",
   "speakNeedsVoice": "Installiere unter Einstellungen → Stimme eine Stimme, damit Antworten vorgelesen werden.",
-  "speakFailed": "Diese Nachricht konnte nicht vorgelesen werden."
+  "speakFailed": "Diese Nachricht konnte nicht vorgelesen werden.",
+  "answerInYourOwnWords": "In eigenen Worten antworten",
+  "answerPlaceholder": "Antwort eingeben…",
+  "sendAnswer": "Antwort senden"
 }

@@ -71,5 +71,8 @@
   "speakAloud": "Ler em voz alta",
   "speakStop": "Parar leitura",
   "speakNeedsVoice": "Instale uma voz em Configurações → Voz para que as respostas sejam lidas em voz alta.",
-  "speakFailed": "Não foi possível ler esta mensagem em voz alta."
+  "speakFailed": "Não foi possível ler esta mensagem em voz alta.",
+  "answerInYourOwnWords": "Responder com suas palavras",
+  "answerPlaceholder": "Digite sua resposta…",
+  "sendAnswer": "Enviar resposta"
 }

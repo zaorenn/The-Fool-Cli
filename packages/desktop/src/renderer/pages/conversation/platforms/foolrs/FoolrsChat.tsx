@@ -23,6 +23,7 @@ import HOC from '@renderer/utils/ui/HOC';
 import React, { useEffect, useMemo } from 'react';
 import LocalImageView from '@renderer/components/media/LocalImageView';
 import type { TeamSendBoxRuntime } from '@/renderer/pages/team/components/teamSendRuntime';
+import { PermissionDock } from '@renderer/pages/conversation/Messages/components/MessagePermission/PermissionDock';
 import FoolrsSendBox from './FoolrsSendBox';
 import type { FoolrsModelSelection } from './useFoolrsModelSelection';
 
@@ -78,9 +79,11 @@ const FoolrsChat: React.FC<{
     <ConversationProvider value={conversationValue}>
       <ConversationArtifactProvider conversation_id={conversation_id}>
         <div className={`${CHAT_SURFACE_CONTAINER_CLASS} flex-1 flex flex-col px-20px min-h-0`}>
-          <FlexFullContainer>
-            <MessageList className='flex-1' emptySlot={emptySlot} />
-          </FlexFullContainer>
+          <PermissionDock>
+            <FlexFullContainer>
+              <MessageList className='flex-1' emptySlot={emptySlot} />
+            </FlexFullContainer>
+          </PermissionDock>
           <FoolrsSendBox
             conversation_id={conversation_id}
             modelSelection={modelSelection}

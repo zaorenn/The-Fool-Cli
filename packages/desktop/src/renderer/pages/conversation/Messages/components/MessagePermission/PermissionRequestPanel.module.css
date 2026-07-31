@@ -244,3 +244,35 @@
     gap: 2px;
   }
 }
+
+/* The free-text answer, revealed by the last option on a question card. */
+.customAnswer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.customInput {
+  width: 100%;
+  resize: vertical;
+  min-height: 56px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-base);
+  background-color: var(--fill-0);
+  color: var(--text-primary);
+  font: inherit;
+  line-height: 1.5;
+}
+
+.customInput:focus {
+  outline: none;
+  border-color: var(--primary-6, #c8102e);
+}
+
+.customActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

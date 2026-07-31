@@ -8,6 +8,8 @@ import { Button, Card, Typography } from '@arco-design/web-react';
 import { Attention, CheckOne } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { usePermissionDock } from './PermissionDock';
 import { useTranslation } from 'react-i18next';
 import styles from './PermissionRequestPanel.module.css';
 import {
@@ -31,6 +33,9 @@ let keyboardOwner: symbol | null = null;
 /** Highest option a single keystroke can reach. */
 const MAX_NUMBERED_OPTIONS = 9;
 
+/** Identifies the "type your own answer" choice, which opens a field rather than answering. */
+const CUSTOM_ANSWER_ID = '__custom_answer__';
+
 const isTypingTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
@@ -46,6 +51,12 @@ type PermissionRequestPanelProps = {
   detail?: string;
   options: PermissionPanelOption[];
   onConfirm: (optionValue: string) => Promise<void>;
+  /**
+   * Offer a final choice that takes free text instead of picking a listed
+   * option. Set for question cards, where the agent's suggestions are guesses
+   * and the real answer is often none of them.
+   */
+  allowCustomAnswer?: boolean;
 };
 
 export const PermissionRequestPanel: React.FC<PermissionRequestPanelProps> = ({
@@ -57,6 +68,7 @@ export const PermissionRequestPanel: React.FC<PermissionRequestPanelProps> = ({
   detail,
   options,
   onConfirm,
+  allowCustomAnswer = false,
 }) => {
   const { t } = useTranslation();
   const optionsIdentity = getPermissionOptionsIdentity(options);
@@ -68,6 +80,9 @@ export const PermissionRequestPanel: React.FC<PermissionRequestPanelProps> = ({
   const requestEpochRef = useRef(0);
   const optionsEpochRef = useRef(0);
   const optionsLabelId = useId();
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customText, setCustomText] = useState('');
+  const customInputRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     requestEpochRef.current += 1;
@@ -76,6 +91,8 @@ export const PermissionRequestPanel: React.FC<PermissionRequestPanelProps> = ({
     setHasResponded(false);
     setHasError(false);
     setSubmittingId(null);
+    setCustomOpen(false);
+    setCustomText('');
   }, [requestKey]);
 
   useEffect(() => {
@@ -120,8 +137,32 @@ export const PermissionRequestPanel: React.FC<PermissionRequestPanelProps> = ({
     [hasResponded, onConfirm]
   );
 
+  const submitCustomAnswer = useCallback(() => {
+    const answer = customText.trim();
+    if (!answer) return;
+    // Reuses the option path so epochs, the responding guard and the error
+    // state all behave exactly as they do for a listed choice.
+    void submitOption({
+      id: CUSTOM_ANSWER_ID,
+      value: answer,
+      label: answer,
+      intent: 'neutral',
+      testId: `${testIdPrefix}-option-custom-submit`,
+    });
+  }, [customText, submitOption, testIdPrefix]);
+
   const panelId = useRef<symbol>(Symbol('permission-panel'));
-  const numbered = options.slice(0, MAX_NUMBERED_OPTIONS);
+  const customOption: PermissionPanelOption | null = allowCustomAnswer
+    ? {
+        id: CUSTOM_ANSWER_ID,
+        value: CUSTOM_ANSWER_ID,
+        label: t('messages.answerInYourOwnWords'),
+        intent: 'neutral',
+        testId: `${testIdPrefix}-option-custom`,
+      }
+    : null;
+  const visibleOptions = customOption ? [...options, customOption] : options;
+  const numbered = visibleOptions.slice(0, MAX_NUMBERED_OPTIONS);
   const awaitingAnswer = !hasResponded && numbered.length > 0;
 
   // The newest unanswered panel takes the keys, and hands them back when it is
@@ -149,6 +190,10 @@ export const PermissionRequestPanel: React.FC<PermissionRequestPanelProps> = ({
       if (!option || option.disabled) return;
 
       event.preventDefault();
+      if (option.id === CUSTOM_ANSWER_ID) {
+        setCustomOpen(true);
+        return;
+      }
       void submitOption(option);
     };
 
@@ -156,7 +201,9 @@ export const PermissionRequestPanel: React.FC<PermissionRequestPanelProps> = ({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [awaitingAnswer, numbered, submitOption]);
 
-  return (
+  const dock = usePermissionDock();
+
+  const card = (
     <Card className={styles.card} bordered={false} data-testid={`${testIdPrefix}-card`}>
       <div className={styles.panel} aria-busy={isResponding}>
         <div className={styles.heading}>
@@ -189,7 +236,7 @@ export const PermissionRequestPanel: React.FC<PermissionRequestPanelProps> = ({
                   aria-labelledby={optionsLabelId}
                   data-testid={`${testIdPrefix}-options`}
                 >
-                  {options.map((option, index) => (
+                  {visibleOptions.map((option, index) => (
                     <Button
                       key={option.id}
                       className={styles.optionButton}
@@ -197,7 +244,13 @@ export const PermissionRequestPanel: React.FC<PermissionRequestPanelProps> = ({
                       data-disabled={Boolean(option.disabled || isResponding)}
                       disabled={option.disabled || isResponding}
                       loading={submittingId === option.id}
-                      onClick={() => void submitOption(option)}
+                      onClick={() => {
+                        if (option.id === CUSTOM_ANSWER_ID) {
+                          setCustomOpen(true);
+                          return;
+                        }
+                        void submitOption(option);
+                      }}
                     >
                       {index < MAX_NUMBERED_OPTIONS && (
                         <span className={styles.optionKey} aria-hidden='true' data-testid={`${option.testId}-key`}>
@@ -212,6 +265,53 @@ export const PermissionRequestPanel: React.FC<PermissionRequestPanelProps> = ({
                 <Text className={styles.emptyState}>{t('messages.noOptionsAvailable')}</Text>
               )}
             </fieldset>
+
+            {customOpen && (
+              <div className={styles.customAnswer} data-testid={`${testIdPrefix}-custom`}>
+                <textarea
+                  ref={customInputRef}
+                  className={styles.customInput}
+                  value={customText}
+                  autoFocus
+                  rows={2}
+                  disabled={isResponding}
+                  placeholder={t('messages.answerPlaceholder')}
+                  aria-label={t('messages.answerInYourOwnWords')}
+                  data-testid={`${testIdPrefix}-custom-input`}
+                  onChange={(event) => setCustomText(event.target.value)}
+                  onKeyDown={(event) => {
+                    // Enter sends, Shift+Enter breaks the line — the same
+                    // contract the composer below this card already uses.
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                      event.preventDefault();
+                      submitCustomAnswer();
+                    }
+                  }}
+                />
+                <div className={styles.customActions}>
+                  <Button
+                    size='small'
+                    disabled={isResponding}
+                    onClick={() => {
+                      setCustomOpen(false);
+                      setCustomText('');
+                    }}
+                  >
+                    {t('common.cancel')}
+                  </Button>
+                  <Button
+                    size='small'
+                    type='primary'
+                    disabled={isResponding || !customText.trim()}
+                    loading={submittingId === CUSTOM_ANSWER_ID}
+                    data-testid={`${testIdPrefix}-custom-submit`}
+                    onClick={submitCustomAnswer}
+                  >
+                    {t('messages.sendAnswer')}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {hasError && (
               <div
@@ -241,4 +341,8 @@ export const PermissionRequestPanel: React.FC<PermissionRequestPanelProps> = ({
       </div>
     </Card>
   );
+
+  // Painted above the composer where a dock exists, so scrolling the
+  // conversation never hides the request the keyboard shortcuts act on.
+  return dock ? createPortal(card, dock) : card;
 };

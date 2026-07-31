@@ -23,6 +23,7 @@ import { usePendingConfirmationsRecovery } from '@renderer/pages/conversation/Me
 import HOC from '@renderer/utils/ui/HOC';
 import React from 'react';
 import AcpE2EStreamInjector from './AcpE2EStreamInjector';
+import { PermissionDock } from '@renderer/pages/conversation/Messages/components/MessagePermission/PermissionDock';
 import AcpSendBox from './AcpSendBox';
 import { useAcpMessage } from './useAcpMessage';
 
@@ -81,10 +82,12 @@ const AcpChat: React.FC<{
     >
       <ConversationArtifactProvider conversation_id={conversation_id}>
         <div className={`${CHAT_SURFACE_CONTAINER_CLASS} flex-1 flex flex-col px-20px min-h-0`}>
-          <FlexFullContainer>
-            <MessageList className='flex-1' emptySlot={emptySlot} />
-          </FlexFullContainer>
-          <AcpE2EStreamInjector conversationId={conversation_id} />
+          <PermissionDock>
+            <FlexFullContainer>
+              <MessageList className='flex-1' emptySlot={emptySlot} />
+            </FlexFullContainer>
+            <AcpE2EStreamInjector conversationId={conversation_id} />
+          </PermissionDock>
           {!hideSendBox && (
             <AcpSendBox
               conversation_id={conversation_id}

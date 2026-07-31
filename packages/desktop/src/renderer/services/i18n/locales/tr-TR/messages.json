@@ -71,5 +71,8 @@
   "speakAloud": "Sesli oku",
   "speakStop": "Okumayı durdur",
   "speakNeedsVoice": "Yanıtların sesli okunması için Ayarlar → Ses bölümünden bir ses kur.",
-  "speakFailed": "Bu mesaj sesli okunamadı."
+  "speakFailed": "Bu mesaj sesli okunamadı.",
+  "answerInYourOwnWords": "Kendi cümlelerinle yanıtla",
+  "answerPlaceholder": "Yanıtını yaz…",
+  "sendAnswer": "Yanıtı gönder"
 }

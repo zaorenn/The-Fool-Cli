@@ -71,5 +71,8 @@
   "speakAloud": "朗读",
   "speakStop": "停止朗读",
   "speakNeedsVoice": "请在“设置 → 语音”中安装一个音色，回复才能朗读。",
-  "speakFailed": "无法朗读这条消息。"
+  "speakFailed": "无法朗读这条消息。",
+  "answerInYourOwnWords": "用自己的话回答",
+  "answerPlaceholder": "输入你的回答…",
+  "sendAnswer": "发送回答"
 }

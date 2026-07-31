@@ -71,5 +71,8 @@
   "speakAloud": "読み上げる",
   "speakStop": "読み上げを停止",
   "speakNeedsVoice": "返信を読み上げるには、設定 → 音声で声をインストールしてください。",
-  "speakFailed": "このメッセージを読み上げられませんでした。"
+  "speakFailed": "このメッセージを読み上げられませんでした。",
+  "answerInYourOwnWords": "自分の言葉で答える",
+  "answerPlaceholder": "回答を入力…",
+  "sendAnswer": "回答を送信"
 }
