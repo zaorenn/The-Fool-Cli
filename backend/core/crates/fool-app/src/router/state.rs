@@ -414,7 +414,11 @@ pub fn build_system_state(services: &AppServices) -> SystemRouterState {
         ClientPrefService::with_keep_awake_controller(client_pref_repo, keep_awake_controller, "system_default_user")
     } else {
         ClientPrefService::with_keep_awake_controller_without_restore(client_pref_repo, keep_awake_controller)
-    };
+    }
+    // This is the one that serves `/api/settings/client`, so it is the one a
+    // window, the WebUI, or an agent's config CLI writes through — and the only
+    // one whose writes anybody is waiting to see.
+    .with_broadcaster(services.event_bus.clone());
 
     SystemRouterState {
         settings_service: SettingsService::new(Arc::new(SqliteSettingsRepository::new(pool.clone()))),

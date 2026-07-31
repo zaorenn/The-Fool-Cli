@@ -79,10 +79,34 @@ const useTheme = (): [Theme | null, (activeId: string) => Promise<void>, string 
         /* noop */
       }
     });
+    // The theme is otherwise applied once at startup and then only when this
+    // window changes it. A theme created or switched from anywhere else — the
+    // config CLI an agent drives, another window — reaches the config cache and
+    // stopped there, so the app kept its old colours until it was restarted.
+    const reapplyFromConfig = () => {
+      const userThemes = (configService.get('theme.userThemes') as Theme[] | undefined) ?? [];
+      const resolved = resolveActiveTheme(
+        getPersistedActiveId(),
+        [...BUILTIN_THEMES, ...userThemes],
+        getSystemPrefersDark()
+      );
+      applyTheme(resolved);
+      if (mounted) {
+        setActive(resolved);
+        setActiveId(getPersistedActiveId());
+      }
+      // Carries the change to the surfaces that do not read config themselves:
+      // the pet windows and the markdown shadow roots.
+      void ipcBridge.theme.setActive.invoke(resolved).catch(() => {});
+    };
+    const offActiveId = configService.subscribe('theme.activeId', reapplyFromConfig);
+    const offUserThemes = configService.subscribe('theme.userThemes', reapplyFromConfig);
     const offSystemWatch = startSystemThemeWatcher();
     return () => {
       mounted = false;
       off?.();
+      offActiveId();
+      offUserThemes();
       offSystemWatch();
     };
   }, []);

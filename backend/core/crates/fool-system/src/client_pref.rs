@@ -1,8 +1,9 @@
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
-use fool_api_types::{ClientPreferencesResponse, UpdateClientPreferencesRequest};
+use fool_api_types::{ClientPreferencesResponse, UpdateClientPreferencesRequest, WebSocketMessage};
 use fool_db::IClientPreferenceRepository;
+use fool_realtime::EventBroadcaster;
 use tracing::{debug, info, warn};
 
 use crate::error::SystemError;
@@ -11,11 +12,20 @@ use crate::keep_awake::{DynKeepAwakeController, KEEP_AWAKE_KEY, NoopKeepAwakeCon
 /// Maximum allowed key length for client preferences.
 const MAX_KEY_LENGTH: usize = 255;
 
+/// Announces that someone's client preferences moved.
+///
+/// A client reads this store once, when it starts. Without an announcement a
+/// preference written by anything other than that client — the config CLI an
+/// agent drives, another window, the WebUI — sits in the database until the app
+/// is restarted, which reads to the user as the change not having worked.
+pub const CLIENT_PREFERENCES_CHANGED_EVENT: &str = "settings.clientPreferencesChanged";
+
 /// Business logic for client preferences (generic key-value store).
 #[derive(Clone)]
 pub struct ClientPrefService {
     repo: Arc<dyn IClientPreferenceRepository>,
     keep_awake_controller: DynKeepAwakeController,
+    broadcaster: Option<Arc<dyn EventBroadcaster>>,
 }
 
 impl ClientPrefService {
@@ -23,7 +33,18 @@ impl ClientPrefService {
         Self {
             repo,
             keep_awake_controller: Arc::new(NoopKeepAwakeController),
+            broadcaster: None,
         }
+    }
+
+    /// Announce writes to connected clients.
+    ///
+    /// Optional because most callers build this service to read a single value
+    /// — the shell's speech settings, a test — and have no bus to announce on.
+    /// Without one the store still works; it just stays quiet.
+    pub fn with_broadcaster(mut self, broadcaster: Arc<dyn EventBroadcaster>) -> Self {
+        self.broadcaster = Some(broadcaster);
+        self
     }
 
     pub fn with_keep_awake_controller(
@@ -43,6 +64,7 @@ impl ClientPrefService {
         Self {
             repo,
             keep_awake_controller,
+            broadcaster: None,
         }
     }
 
@@ -165,7 +187,31 @@ impl ClientPrefService {
             }
         }
 
+        let mut changed: Vec<String> = upserts.into_iter().map(|(key, _)| key).chain(deletes).collect();
+        changed.sort();
+        self.announce_change(user_id, changed);
+
         Ok(())
+    }
+
+    /// Tell connected clients which keys moved — never what they now hold.
+    ///
+    /// The bus reaches every connection, and preferences are per-user, so a
+    /// payload carrying values would hand one user's settings to another. Names
+    /// alone are enough: a client re-reads through its own authenticated
+    /// request, which can only ever return that client's own values, so an
+    /// event about somebody else costs a wasted read and changes nothing.
+    fn announce_change(&self, user_id: &str, keys: Vec<String>) {
+        if keys.is_empty() {
+            return;
+        }
+        let Some(broadcaster) = &self.broadcaster else {
+            return;
+        };
+        broadcaster.broadcast(WebSocketMessage::new(
+            CLIENT_PREFERENCES_CHANGED_EVENT,
+            serde_json::json!({ "user_id": user_id, "keys": keys }),
+        ));
     }
 
     pub async fn release_keep_awake_for_shutdown(&self) -> Result<(), SystemError> {
@@ -347,7 +393,24 @@ mod tests {
         ClientPrefService {
             repo,
             keep_awake_controller: controller,
+            broadcaster: None,
         }
+    }
+
+    /// Captures what was announced, so a test can read the payload back.
+    #[derive(Default)]
+    struct RecordingBroadcaster {
+        events: Mutex<Vec<WebSocketMessage<serde_json::Value>>>,
+    }
+
+    impl EventBroadcaster for RecordingBroadcaster {
+        fn broadcast(&self, event: WebSocketMessage<serde_json::Value>) {
+            self.events.lock().unwrap().push(event);
+        }
+    }
+
+    async fn setup_with_broadcaster(broadcaster: Arc<RecordingBroadcaster>) -> ClientPrefService {
+        setup().await.with_broadcaster(broadcaster)
     }
 
     #[derive(Default)]
@@ -665,6 +728,85 @@ mod tests {
 
         assert_eq!(*controller.calls.lock().unwrap(), vec![true]);
         drop(service);
+    }
+
+    #[tokio::test]
+    async fn write_announces_the_keys_that_changed() {
+        let broadcaster = Arc::new(RecordingBroadcaster::default());
+        let svc = setup_with_broadcaster(broadcaster.clone()).await;
+
+        let mut seed = UpdateClientPreferencesRequest::new();
+        seed.insert("pet.enabled".into(), json!(true));
+        svc.update_preferences(TEST_USER_ID, seed).await.unwrap();
+
+        let mut req = UpdateClientPreferencesRequest::new();
+        req.insert("theme.activeId".into(), json!("midnight-ember"));
+        req.insert("pet.enabled".into(), json!(null));
+        svc.update_preferences(TEST_USER_ID, req).await.unwrap();
+
+        let events = broadcaster.events.lock().unwrap();
+        assert_eq!(events.len(), 2);
+        let latest = events.last().unwrap();
+        assert_eq!(latest.name, CLIENT_PREFERENCES_CHANGED_EVENT);
+        assert_eq!(latest.data["user_id"], json!(TEST_USER_ID));
+        // Both halves of the write, the upsert and the delete, and in a stable
+        // order so a client can compare two events without sorting them first.
+        assert_eq!(latest.data["keys"], json!(["pet.enabled", "theme.activeId"]));
+    }
+
+    #[tokio::test]
+    async fn announcement_carries_no_preference_values() {
+        let broadcaster = Arc::new(RecordingBroadcaster::default());
+        let svc = setup_with_broadcaster(broadcaster.clone()).await;
+
+        let mut req = UpdateClientPreferencesRequest::new();
+        req.insert("appearance.secretTheme".into(), json!("super-secret-value"));
+        svc.update_preferences(TEST_USER_ID, req).await.unwrap();
+
+        // The bus reaches every connection while preferences are per-user, so a
+        // value in the payload would be one user's setting handed to another.
+        let events = broadcaster.events.lock().unwrap();
+        let payload = serde_json::to_string(&events[0]).unwrap();
+        assert!(!payload.contains("super-secret-value"), "{payload}");
+        assert_eq!(events[0].data.as_object().unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn a_rejected_write_announces_nothing() {
+        let broadcaster = Arc::new(RecordingBroadcaster::default());
+        let svc = setup_with_broadcaster(broadcaster.clone()).await;
+
+        let mut req = UpdateClientPreferencesRequest::new();
+        req.insert("".into(), json!(true));
+        svc.update_preferences(TEST_USER_ID, req).await.unwrap_err();
+
+        // Announcing a write that never landed would make every client re-read
+        // for nothing, and would report a change the store does not have.
+        assert!(broadcaster.events.lock().unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn an_empty_write_announces_nothing() {
+        let broadcaster = Arc::new(RecordingBroadcaster::default());
+        let svc = setup_with_broadcaster(broadcaster.clone()).await;
+
+        svc.update_preferences(TEST_USER_ID, UpdateClientPreferencesRequest::new())
+            .await
+            .unwrap();
+
+        assert!(broadcaster.events.lock().unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_store_without_a_bus_still_writes() {
+        let svc = setup().await;
+
+        let mut req = UpdateClientPreferencesRequest::new();
+        req.insert("theme.activeId".into(), json!("dawn"));
+        svc.update_preferences(TEST_USER_ID, req).await.unwrap();
+
+        let prefs = svc.get_preferences(TEST_USER_ID, None).await.unwrap();
+        assert_eq!(prefs["theme.activeId"], json!("dawn"));
     }
 
     #[tokio::test]

@@ -16,7 +16,7 @@ pub mod sysinfo;
 pub mod version;
 
 pub use bedrock_probe::{ConnectionTestRouterState, ConnectionTestService, connection_test_routes};
-pub use client_pref::ClientPrefService;
+pub use client_pref::{CLIENT_PREFERENCES_CHANGED_EVENT, ClientPrefService};
 pub use diagnostics::FeedbackDiagnosticsService;
 pub use error::SystemError;
 pub use keep_awake::{KeepAwakeController, NoopKeepAwakeController, SystemKeepAwakeController};

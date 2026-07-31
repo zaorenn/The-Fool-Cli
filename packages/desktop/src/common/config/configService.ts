@@ -1,6 +1,36 @@
 import type { ConfigKey, ConfigKeyMap } from './configKeys';
+import { wsEmitter } from '@/common/adapter/httpBridge';
 
 type Subscriber = (value: unknown) => void;
+
+/**
+ * Backend announcement that somebody's preferences moved.
+ *
+ * Must stay identical to `CLIENT_PREFERENCES_CHANGED_EVENT` in
+ * `backend/core/crates/fool-system/src/client_pref.rs`; a mismatch is silent,
+ * because an event nobody listens for looks exactly like no event at all.
+ */
+const CLIENT_PREFERENCES_CHANGED_EVENT = 'settings.clientPreferencesChanged';
+
+/**
+ * Compares two stored values, insensitive to the order of an object's keys.
+ *
+ * The cache holds the object this window wrote; the backend hands back one
+ * rebuilt by its own JSON layer, which sorts keys. A plain string comparison
+ * calls those two different and would report a change on every write we made
+ * ourselves.
+ */
+const sameValue = (a: unknown, b: unknown): boolean => {
+  const stable = (value: unknown): string =>
+    JSON.stringify(value, (_key, inner: unknown) =>
+      inner && typeof inner === 'object' && !Array.isArray(inner)
+        ? Object.fromEntries(
+            Object.entries(inner as Record<string, unknown>).toSorted(([x], [y]) => x.localeCompare(y))
+          )
+        : inner
+    ) ?? 'undefined';
+  return stable(a) === stable(b);
+};
 
 declare global {
   interface Window {
@@ -49,6 +79,7 @@ class ConfigServiceImpl {
   private subscribers = new Map<string, Set<Subscriber>>();
   private initialized = false;
   private initPromise: Promise<void> | null = null;
+  private watching = false;
 
   // Idempotent: concurrent callers share the same in-flight promise, and a
   // resolved init returns immediately. Modules that need persisted settings on
@@ -78,6 +109,7 @@ class ConfigServiceImpl {
         void fetchJson<void>('PUT', '/api/settings/client', migrated).catch(() => {});
       }
       this.initialized = true;
+      this.watchBackend();
     })();
     this.initPromise.catch(() => {
       // Allow a future caller to retry after a transient failure
@@ -129,6 +161,27 @@ class ConfigServiceImpl {
     };
   }
 
+  /**
+   * Re-read the named keys and tell whoever is watching them.
+   *
+   * Only keys whose value actually moved are announced, so a window hearing
+   * about its own write — which it already applied — stays quiet.
+   */
+  async refreshKeys(keys: readonly string[]): Promise<void> {
+    if (keys.length === 0) return;
+    const query = encodeURIComponent(keys.join(','));
+    const fresh = await fetchJson<Record<string, unknown>>('GET', `/api/settings/client?keys=${query}`);
+
+    for (const key of keys) {
+      // A key the response omits was deleted, and falls back to its default.
+      const next = fresh?.[key];
+      if (sameValue(this.cache.get(key), next)) continue;
+      if (next === undefined) this.cache.delete(key);
+      else this.cache.set(key, next);
+      this.notify(key as ConfigKey, next);
+    }
+  }
+
   isInitialized(): boolean {
     return this.initialized;
   }
@@ -138,6 +191,28 @@ class ConfigServiceImpl {
     this.subscribers.clear();
     this.initialized = false;
     this.initPromise = null;
+  }
+
+  /**
+   * Follow preferences written from outside this window.
+   *
+   * Settings are read once at startup, so a change made by anything else — the
+   * config CLI an agent drives, another window, the WebUI — used to sit in the
+   * database until the app was restarted. Subscribed once, after the first read
+   * succeeds, and never torn down: the socket reconnects on its own and a
+   * missed event costs a setting that looks like it did not take.
+   */
+  private watchBackend(): void {
+    if (this.watching || typeof window === 'undefined') return;
+    this.watching = true;
+    wsEmitter<{ keys?: string[] } | undefined>(CLIENT_PREFERENCES_CHANGED_EVENT).on((payload) => {
+      const keys = payload?.keys;
+      if (!Array.isArray(keys)) return;
+      // The read is authenticated and scoped to this user, so an announcement
+      // about somebody else returns our own unchanged values and notifies
+      // nothing. No filtering needed, and none that could be trusted anyway.
+      void this.refreshKeys(keys).catch(() => {});
+    });
   }
 
   private notify(key: ConfigKey, value: unknown): void {

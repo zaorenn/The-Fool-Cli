@@ -171,6 +171,25 @@ i18n.on('languageChanged', async (lang: string) => {
 // Initialize on module load
 void initLanguage();
 
+// Follow the stored language when it is changed from outside this window — by
+// the config CLI an agent drives, or by another window. `languageChanged` below
+// only covers changes that went through this app's own switcher, so without
+// this the interface stayed in the old language until the next launch.
+configService.subscribe('language', (value) => {
+  if (typeof value !== 'string' || value === '') return;
+  const normalized = normalizeLanguageCode(value);
+  if (i18n.language === normalized) return;
+  void ensureAndSwitch(i18n, normalized, loadLocaleModules)
+    .then(() => {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('i18nextLng', normalized);
+      }
+      // The tray menu and other main-process text read their own copy.
+      ipcBridge.systemSettings.changeLanguage.invoke({ language: normalized }).catch(() => {});
+    })
+    .catch((error: unknown) => console.error('Failed to follow a remote language change:', error));
+});
+
 // Listen for language changes broadcast by the main process (from other renderers).
 // This enables real-time sync between desktop and WebUI — when one changes language,
 // the other updates immediately without requiring a restart.
