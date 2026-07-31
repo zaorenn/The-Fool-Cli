@@ -64,6 +64,34 @@
   overflow-x: hidden;
 }
 
+/* Where the content meets the expanded sider, round the seam so the two
+   surfaces read as stacked panels rather than one square-cut split. Only the
+   sider-facing corners are rounded — the other three sides are window edges.
+   The sider's own right border would otherwise cut straight across the curve,
+   so it is dropped here and the rounding carries the separation instead. */
+.layout-content--beside-sider {
+  border-top-left-radius: 22px;
+  border-bottom-left-radius: 22px;
+  /* The radius only clips this element's own background. Everything the route
+     renders inside paints its own, square, on top — which is why rounding the
+     container alone left the corner looking untouched. Clipping the children
+     to the same box is what actually makes the corner visible. */
+  overflow: hidden;
+}
+
+.layout:has(.layout-content--beside-sider) .layout-sider {
+  border-right: none;
+}
+
+/* What the notch reveals is the whole point. The radius was already applied and
+   still read as square, because the surface behind the corner was the window
+   background (near black) rather than the sider — a difference of a few values
+   per channel against the content, which the eye reads as a straight edge.
+   Painting the seam in the sider's own colour is what makes the curve visible. */
+.layout:has(.layout-content--beside-sider) {
+  background-color: var(--color-bg-2);
+}
+
 /* Disable transition during drag for smooth dragging */
 .layout-sider--dragging {
   transition: none !important;
