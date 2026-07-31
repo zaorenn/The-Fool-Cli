@@ -6,11 +6,29 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const projectRoot = resolve(__dirname, '../..');
 const read = (path: string): string => readFileSync(resolve(projectRoot, path), 'utf8');
+
+/**
+ * The DLLs a fresh Windows does not have.
+ *
+ * `api-ms-win-crt-*` is deliberately absent: the universal CRT ships with
+ * Windows 10 and later, so importing it is fine. These two arrive only with the
+ * Visual C++ redistributable, which a newly installed machine has no reason to
+ * carry.
+ */
+const REDISTRIBUTABLE_DLL = /(VCRUNTIME140[_0-9]*|MSVCP140[_0-9]*)\.dll/i;
+
+/** Every `.node` a directory holds, however deeply prebuilds nest them. */
+const nativeModulesIn = (directory: string): string[] => {
+  if (!existsSync(directory)) return [];
+  return readdirSync(directory, { withFileTypes: true, recursive: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.node'))
+    .map((entry) => resolve(entry.parentPath, entry.name));
+};
 
 /**
  * The promise is that one downloaded installer works on a Windows that has
@@ -49,6 +67,21 @@ describe('clean Windows install', () => {
 
     expect(imports).not.toMatch(/VCRUNTIME140[_0-9]*\.dll/i);
     expect(imports).not.toMatch(/MSVCP140[_0-9]*\.dll/i);
+  });
+
+  it('keeps the same dependency out of the native modules the app itself loads', () => {
+    // The backend is not the only thing that has to start. These are loaded by
+    // the main process, and one of them importing the redistributable fails the
+    // same way and just as quietly: the window opens onto a broken app.
+    const packaged = ['better-sqlite3', 'bcrypt', 'node-pty', 'sherpa-onnx-node', 'sherpa-onnx-win-x64'];
+    const modules = packaged.flatMap((name) => nativeModulesIn(resolve(projectRoot, 'node_modules', name)));
+
+    // A rename or a dependency drop that empties this would make the assertion
+    // below pass against nothing.
+    expect(modules.length).toBeGreaterThan(0);
+
+    const dependent = modules.filter((file) => REDISTRIBUTABLE_DLL.test(readFileSync(file).toString('latin1')));
+    expect(dependent.map((file) => file.replace(projectRoot, ''))).toEqual([]);
   });
 
   it('ships the backend and the speech runtime inside the package', () => {
