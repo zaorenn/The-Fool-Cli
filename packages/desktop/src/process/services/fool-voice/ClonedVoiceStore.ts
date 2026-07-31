@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { CLONING_MODEL_ID, type VoiceProfile } from '../../../common/types/foolVoice';
 
@@ -139,6 +139,20 @@ export class ClonedVoiceStore {
       path.join(directory, 'voice.json'),
       JSON.stringify({ id: voiceId, displayName, languages, referenceText }, null, 2)
     );
+  }
+
+  /**
+   * Removes a voice's recording and manifest.
+   *
+   * A voice id that never existed is not an error: the caller asked for an
+   * end state ("this voice is gone"), and that state already holds.
+   */
+  public delete(voiceId: string): void {
+    if (!isValidVoiceId(voiceId)) {
+      throw new Error(`invalid cloned voice id: ${voiceId}`);
+    }
+    const directory = path.join(this.root, voiceId);
+    rmSync(directory, { recursive: true, force: true });
   }
 
   /**

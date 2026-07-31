@@ -148,6 +148,42 @@ describe('ClonedVoiceStore.save — the drag-and-drop clone flow lands here', ()
   });
 });
 
+describe('ClonedVoiceStore.delete', () => {
+  beforeEach(() => {
+    root = mkdtempSync(path.join(tmpdir(), 'cloned-voices-delete-'));
+  });
+
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it('removes a voice so it no longer appears in the list', () => {
+    const store = new ClonedVoiceStore(root);
+    store.save('ultron', 'Ultron', ['en'], 'How is humanity saved.', Buffer.from([1]));
+
+    store.delete('ultron');
+
+    expect(store.list()).toEqual([]);
+    expect(existsSync(path.join(root, 'ultron'))).toBe(false);
+  });
+
+  it('does nothing when the voice was never there', () => {
+    const store = new ClonedVoiceStore(root);
+
+    expect(() => store.delete('never-existed')).not.toThrow();
+  });
+
+  it('refuses an id that would escape the cloned-voices directory, deleting nothing', () => {
+    const store = new ClonedVoiceStore(root);
+    store.save('ultron', 'Ultron', ['en'], 'How is humanity saved.', Buffer.from([1]));
+
+    expect(() => store.delete('../../evil')).toThrow();
+    expect(() => store.delete('a/b')).toThrow();
+    // The voice that does exist is untouched by the rejected calls above.
+    expect(store.list().map((voice) => voice.id)).toEqual(['ultron']);
+  });
+});
+
 describe('isValidVoiceId', () => {
   it('accepts an ordinary slug', () => {
     expect(isValidVoiceId('ultron')).toBe(true);
