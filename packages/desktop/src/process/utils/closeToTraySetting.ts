@@ -27,7 +27,14 @@ const readBackendBoolean = async (key: string): Promise<boolean | undefined> => 
   }
 };
 
-export const readCloseToTraySetting = async (): Promise<boolean> => {
+/**
+ * What the user has decided about closing the window, or `undefined` if they
+ * never have.
+ *
+ * The distinction matters: "not answered yet" is what makes the app ask, and
+ * collapsing it into `false` would quit on the first close and never ask again.
+ */
+export const readCloseToTrayPreference = async (): Promise<boolean | undefined> => {
   const localValue = await ProcessConfig.get(CLOSE_TO_TRAY_CONFIG_KEY);
   if (typeof localValue === 'boolean') {
     return localValue;
@@ -46,7 +53,12 @@ export const readCloseToTraySetting = async (): Promise<boolean> => {
     return backendValue;
   }
 
-  return false;
+  return undefined;
+};
+
+/** Same as {@link readCloseToTrayPreference}, with "never answered" read as off. */
+export const readCloseToTraySetting = async (): Promise<boolean> => {
+  return (await readCloseToTrayPreference()) === true;
 };
 
 export const writeCloseToTraySetting = async (enabled: boolean): Promise<void> => {

@@ -17,7 +17,8 @@ import { PRODUCT_NAME } from '@/common/brand';
 import i18n from '@process/services/i18n';
 
 let tray: TrayInstance | null = null;
-let closeToTrayEnabled = false;
+/** `undefined` until the user answers the close prompt. See closeToTraySetting. */
+let closeToTrayPreference: boolean | undefined;
 let isQuitting = false;
 let mainWindowRef: BrowserWindow | null = null;
 let cachedActiveCount = 0;
@@ -35,10 +36,13 @@ export const setTrayMainWindow = (win: BrowserWindow): void => {
   mainWindowRef = win;
 };
 
-export const getCloseToTrayEnabled = (): boolean => closeToTrayEnabled;
+export const getCloseToTrayEnabled = (): boolean => closeToTrayPreference === true;
 
-export const setCloseToTrayEnabled = (enabled: boolean): void => {
-  closeToTrayEnabled = enabled;
+/** `undefined` means the user has not been asked yet. */
+export const getCloseToTrayPreference = (): boolean | undefined => closeToTrayPreference;
+
+export const setCloseToTrayEnabled = (enabled: boolean | undefined): void => {
+  closeToTrayPreference = enabled;
 };
 
 export const getIsQuitting = (): boolean => isQuitting;
