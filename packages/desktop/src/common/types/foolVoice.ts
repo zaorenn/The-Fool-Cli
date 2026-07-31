@@ -976,6 +976,13 @@ export type VoiceCloneSaveResponse = {
   operationId: string;
   profileId: string;
 };
+export type VoiceDeleteClonedRequest = {
+  voiceId: string;
+};
+export type VoiceDeleteClonedResponse = {
+  voiceId: string;
+  deleted: true;
+};
 export type VoiceSynthesizeRequest = {
   operationId: string;
   providerId: 'local-sherpa' | 'openai-compatible';
