@@ -127,6 +127,11 @@ export class FoolVoiceService {
     return { profileId: this.sherpaProvider.saveClonedVoice(voiceId, displayName, languages, referenceText, wav) };
   }
 
+  /** Removes a voice cloned from a recording. A missing id is not an error. */
+  public deleteClonedVoice(voiceId: string): void {
+    this.sherpaProvider.deleteClonedVoice(voiceId);
+  }
+
   public async cancel(operationId: string): Promise<'cancelling' | 'cancelled' | 'not-found' | 'already-terminal'> {
     const controller = this.activeOperations.get(operationId);
     if (controller) {
