@@ -2,13 +2,13 @@
 
 mod common;
 
+use axum::http::StatusCode;
 use fool_db::{
     IAssistantDefinitionRepository, IAssistantOverlayRepository, IAssistantPreferenceRepository,
     IConversationRepository, SqliteAssistantDefinitionRepository, SqliteAssistantOverlayRepository,
     SqliteAssistantPreferenceRepository, SqliteConversationRepository, UpsertAssistantDefinitionParams,
     UpsertAssistantOverlayParams, UpsertAssistantPreferenceParams,
 };
-use axum::http::StatusCode;
 use serde_json::json;
 use tower::ServiceExt;
 
@@ -1264,6 +1264,9 @@ async fn auto_workspaces_of_two_users_live_under_distinct_user_roots() {
 
     let seg_a = format!("conversations/users/{dir_a}/");
     let seg_b = format!("conversations/users/{dir_b}/");
+    // Compare on normalised separators: the paths are built with the platform's
+    // own, so on Windows these segments would never match a raw `contains`.
+    let workspaces: Vec<String> = workspaces.iter().map(|w| w.replace('\\', "/")).collect();
     assert!(
         workspaces[0].contains(&seg_a),
         "A's workspace must live under its user root: {} (expected segment {seg_a})",

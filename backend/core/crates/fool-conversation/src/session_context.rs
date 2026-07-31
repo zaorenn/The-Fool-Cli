@@ -2,8 +2,9 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use chrono::Datelike;
 use fool_ai_agent::session_context::{
-    AcpSessionBuildContext, AgentSessionContext, AgentSessionKind, FoolrsSessionBuildContext, ConversationContext,
+    AcpSessionBuildContext, AgentSessionContext, AgentSessionKind, ConversationContext, FoolrsSessionBuildContext,
     WorkspaceContext,
 };
 use fool_ai_agent::shared_kernel::{ConfigKey, ConfigValue, ModeId, ModelId, PersistedSessionState};
@@ -12,7 +13,6 @@ use fool_api_types::{AcpBuildExtra, FoolrsBuildExtra, TeamSessionBinding};
 use fool_common::{AgentType, WorkspacePathValidationError, validate_workspace_path_availability};
 use fool_db::models::ConversationRow;
 use fool_db::{IAcpSessionRepository, IAgentMetadataRepository};
-use chrono::Datelike;
 use tracing::{debug, info, warn};
 
 use crate::convert::string_to_enum;
@@ -1247,8 +1247,11 @@ mod tests {
         let user = "user_019f8de8-3537-7c73-8d92-3bfde17eb1ee";
         let new_path = expected_auto_workspace_path(root, user, "conv-1", &AgentType::Acp, None);
         assert!(
+            // Normalise separators: the path is built with the platform's own,
+            // so this segment would never match a raw `contains` on Windows.
             new_path
                 .to_string_lossy()
+                .replace('\\', "/")
                 .contains("/conversations/users/019f8de8-3537-7c73-8d92-3bfde17eb1ee/"),
             "new workspace must be under conversations/users/{{dir}}/: {}",
             new_path.display()

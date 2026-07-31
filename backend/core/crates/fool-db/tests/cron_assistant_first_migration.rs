@@ -49,7 +49,7 @@ async fn seed_legacy_assistant_identity(pool: &sqlx::SqlitePool) {
     .unwrap();
 
     for (id, backend, agent_type, name, source, sort_order) in [
-        ("agent-foolrs", "", "foolrs", "Fool CLI", "internal", 100),
+        ("agent-aionrs", "", "aionrs", "Fool CLI", "internal", 100),
         ("agent-codex", "codex", "acp", "Codex CLI", "builtin", 200),
         ("agent-claude", "claude", "acp", "Claude Code", "builtin", 210),
     ] {
@@ -70,7 +70,7 @@ async fn seed_legacy_assistant_identity(pool: &sqlx::SqlitePool) {
     }
 
     for (definition_id, assistant_key, agent_backend, source_ref) in [
-        ("def-foolrs", "fool-assistant", "foolrs", "fool-assistant"),
+        ("def-aionrs", "fool-assistant", "aionrs", "fool-assistant"),
         ("def-codex", "bare:agent-codex", "codex", "agent-codex"),
         ("def-claude", "bare:agent-claude", "claude", "agent-claude"),
     ] {
@@ -96,7 +96,7 @@ async fn seed_legacy_assistant_identity(pool: &sqlx::SqlitePool) {
     }
 
     for (conversation_id, name, agent_type, extra) in [
-        ("conv_foolrs", "Fool cron", "foolrs", r#"{"workspace":"/tmp/foolrs"}"#),
+        ("conv_aionrs", "Fool cron", "aionrs", r#"{"workspace":"/tmp/aionrs"}"#),
         (
             "conv_snapshot",
             "Snapshot cron",
@@ -172,7 +172,7 @@ async fn migration_015_populates_foolrs_catalog_by_agent_type() {
     sqlx::query(
         "INSERT INTO agent_metadata (
             id, name, backend, command, agent_type, enabled, agent_source, sort_order, created_at, updated_at
-         ) VALUES ('agent-foolrs', 'Fool CLI', NULL, '', 'foolrs', 1, 'internal', 100, 1, 1)",
+         ) VALUES ('agent-aionrs', 'Fool CLI', NULL, '', 'aionrs', 1, 'internal', 100, 1, 1)",
     )
     .execute(&pool)
     .await
@@ -183,7 +183,7 @@ async fn migration_015_populates_foolrs_catalog_by_agent_type() {
     let row = sqlx::query(
         "SELECT available_modes, config_options
          FROM agent_metadata
-         WHERE id = 'agent-foolrs'",
+         WHERE id = 'agent-aionrs'",
     )
     .fetch_one(&pool)
     .await
@@ -208,7 +208,7 @@ async fn migration_016_clears_internal_foolrs_cli_overrides_only() {
          SET command = 'bad-command',
              command_override = 'bad-override',
              env_override = '[{\"name\":\"ANTHROPIC_API_KEY\",\"value\":\"sk-x\"}]'
-         WHERE agent_type = 'foolrs'
+         WHERE agent_type = 'aionrs'
            AND agent_source = 'internal'",
     )
     .execute(&pool)
@@ -234,7 +234,7 @@ async fn migration_016_clears_internal_foolrs_cli_overrides_only() {
     let internal_row = sqlx::query(
         "SELECT command, command_override, env_override
          FROM agent_metadata
-         WHERE agent_type = 'foolrs'
+         WHERE agent_type = 'aionrs'
            AND agent_source = 'internal'
          LIMIT 1",
     )
@@ -279,7 +279,7 @@ async fn migration_019_deletes_retired_runtime_client_preferences_only() {
 
     for key in [
         "acp.config",
-        "foolrs.config",
+        "aionrs.config",
         "codex.config",
         "acp.cachedModes",
         "acp.cachedInitializeResult",
@@ -301,7 +301,7 @@ async fn migration_019_deletes_retired_runtime_client_preferences_only() {
          FROM client_preferences
          WHERE key IN (
              'acp.config',
-             'foolrs.config',
+             'aionrs.config',
              'codex.config',
              'acp.cachedModes',
              'acp.cachedInitializeResult',
@@ -401,8 +401,8 @@ async fn migration_013_normalizes_legacy_cron_agent_identity() {
     insert_legacy_cron(
         &pool,
         "cron_foolrs",
-        "conv_foolrs",
-        "foolrs",
+        "conv_aionrs",
+        "aionrs",
         r#"{"backend":"provider-1","name":"Fool","assistant_id":"fool-assistant","model_id":"gpt-5"}"#,
     )
     .await;
