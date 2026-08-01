@@ -9,7 +9,7 @@ import { Button, Popconfirm, Tag, Tooltip } from '@arco-design/web-react';
 import { Attention, Check, CloseOne, Delete, PlayOne, VolumeUp } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import type { VoiceModel, VoiceProfile } from '@/common/types/foolVoice';
-import type { InstallState, VerificationState } from './useVoiceCatalog';
+import type { InstallState, VerificationState } from '../useVoiceCatalog';
 
 export type VoicePickerProps = {
   /** Installable text-to-speech models, in catalog order. */

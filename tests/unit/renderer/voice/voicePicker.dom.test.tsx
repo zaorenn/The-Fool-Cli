@@ -8,7 +8,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { VoiceModel, VoiceProfile } from '@/common/types/foolVoice';
-import VoicePicker from '@renderer/components/settings/SettingsModal/contents/voice/VoicePicker';
+import VoicePicker from '@renderer/components/settings/SettingsModal/contents/voice/tts/VoicePicker';
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 

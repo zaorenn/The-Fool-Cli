@@ -13,12 +13,12 @@ import { useFoolVoiceSettings } from '@renderer/hooks/voice/useFoolVoiceSettings
 import { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybackService';
 import { reconcileVoiceModels } from '@renderer/services/voice/reconcileVoiceModels';
 import AudioDeviceSection from './AudioDeviceSection';
-import CloneVoiceUpload from './CloneVoiceUpload';
-import SpeakerBrowser from './SpeakerBrowser';
 import SummarySection from './SummarySection';
 import VoiceAgentSection from './VoiceAgentSection';
-import VoicePicker from './VoicePicker';
 import WakeWordSection from './WakeWordSection';
+import CloneVoiceUpload from './tts/CloneVoiceUpload';
+import SpeakerBrowser from './tts/SpeakerBrowser';
+import VoicePicker from './tts/VoicePicker';
 import { useVoiceCatalog } from './useVoiceCatalog';
 
 const PREVIEW_TEXT: Record<string, string> = {

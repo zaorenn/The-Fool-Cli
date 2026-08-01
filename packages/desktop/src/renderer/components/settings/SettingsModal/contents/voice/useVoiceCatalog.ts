@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ipcBridge } from '@/common';
 import type { VoiceDownloadProgress, VoiceModel, VoiceProfile } from '@/common/types/foolVoice';
-import { verifyVoiceModel, type VerifyResult } from './voiceModelActions';
+import { verifyVoiceModel, type VerifyResult } from './tts/voiceModelActions';
 
 export type InstallErrorCode = Extract<VoiceDownloadProgress, { state: 'failed' }>['errorCode'];
 

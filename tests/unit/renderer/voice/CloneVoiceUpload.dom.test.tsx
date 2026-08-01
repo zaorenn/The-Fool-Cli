@@ -27,7 +27,7 @@ vi.mock('@renderer/services/voice/MicrophoneCapture', () => ({
 // component's real import (and the real, unmocked `synthesize` IPC call
 // inside it) to run instead. The alias path resolves to the same file
 // regardless of which file's perspective it is written from.
-vi.mock('@renderer/components/settings/SettingsModal/contents/voice/voiceModelActions', () => ({
+vi.mock('@renderer/components/settings/SettingsModal/contents/voice/tts/voiceModelActions', () => ({
   verifyVoiceModel: (...args: unknown[]) => verifyVoiceModelMock(...args),
 }));
 
@@ -95,7 +95,7 @@ vi.mock('@icon-park/react', () => ({
   Microphone: () => <span />,
 }));
 
-import CloneVoiceUpload from '@renderer/components/settings/SettingsModal/contents/voice/CloneVoiceUpload';
+import CloneVoiceUpload from '@renderer/components/settings/SettingsModal/contents/voice/tts/CloneVoiceUpload';
 
 const sttModel = {
   id: 'stt-whisper-turbo',
