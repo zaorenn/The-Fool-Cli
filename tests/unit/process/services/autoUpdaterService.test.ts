@@ -215,6 +215,33 @@ describe('AutoUpdaterService', () => {
     expect(errorStatus?.error).toContain('Could not locate update bundle');
   });
 
+  /**
+   * A private releases repository answers the update feed with 404, exactly as a
+   * repository that does not exist does — GitHub does not distinguish the two
+   * for an unauthenticated caller, and electron-updater has no token to offer.
+   *
+   * Reported verbatim it reads as 'HttpError: 404', which sends the reader
+   * looking for a broken URL rather than at the setting that actually causes it.
+   */
+  it('explains a 404 from the release feed instead of reporting the status code', async () => {
+    appMock.isPackaged = true;
+    const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
+    autoUpdaterService.initialize();
+
+    const statuses: Array<{ status: string; error?: string }> = [];
+    autoUpdaterService.on('update-status', (s: { status: string; error?: string }) => statuses.push(s));
+
+    getErrorHandler()(
+      new Error('HttpError: 404 Not Found method: GET url: https://github.com/zaorenn/The-Fool-Cli/releases')
+    );
+
+    const errorStatus = statuses.find((s) => s.status === 'error');
+    expect(errorStatus?.error).toContain('zaorenn/The-Fool-Cli');
+    expect(errorStatus?.error).toMatch(/private|does not exist/i);
+    // The original is kept: whoever debugs this still needs the real response.
+    expect(errorStatus?.error).toContain('404');
+  });
+
   it('passes through unrelated auto-updater errors verbatim', async () => {
     appMock.isPackaged = false;
     const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');

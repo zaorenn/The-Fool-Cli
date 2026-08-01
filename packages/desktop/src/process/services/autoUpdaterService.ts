@@ -10,6 +10,7 @@ import type { UpdateInfoAndProvider } from 'electron-updater/out/AppUpdater';
 import type { DownloadedUpdateHelper } from 'electron-updater/out/DownloadedUpdateHelper';
 import { findFile } from 'electron-updater/out/providers/Provider';
 import { CancellationError, CancellationToken } from 'builder-util-runtime';
+import { PRODUCT_REPO } from '@/common/brand';
 import type { AutoUpdateReadyResult } from '@/common/update/updateTypes';
 import { app, autoUpdater as nativeAutoUpdater } from 'electron';
 import log from 'electron-log';
@@ -472,6 +473,14 @@ class AutoUpdaterService extends EventEmitter {
     const message = error.message;
     if (!app.isPackaged && /Could not locate update bundle/i.test(message)) {
       return `[dev] Download succeeded; install cannot complete in dev mode (the install step requires a packaged build). Original error: ${message}`;
+    }
+    // GitHub answers an unauthenticated request for a private repository with
+    // 404 — the same answer it gives for one that was never created. The
+    // updater has no token to offer, so this is what every installed copy sees
+    // when the releases repository is not public. Reported verbatim it reads as
+    // a broken URL, and sends the reader looking in the wrong place entirely.
+    if (/\b404\b/.test(message)) {
+      return `The update feed for ${PRODUCT_REPO} could not be read (404). GitHub answers the same way for a repository that is private and one that does not exist, and the updater has no credentials to offer — so releases have to be published to a public repository for this to work. Original error: ${message}`;
     }
     return message;
   }
