@@ -29,7 +29,18 @@ const endsWithoutConfirmation = (text: string): boolean => /[.!?…]["')\]]?$/.t
 
 type TurnState = {
   texts: Map<string, ReturnType<typeof normalizeTextMessageContent>>;
-  detector: ReturnType<typeof createIncrementalSentenceDetector>;
+  /**
+   * One sentence detector per `msg_id`, not one shared per turn.
+   *
+   * `RunEvidenceCollector` explicitly supports more than one text `msg_id`
+   * arriving within a single turn (its own `texts` map is keyed the same
+   * way, joined only once the turn finishes) — a reasoning stream sending
+   * "thinking" under one id and "answer" under another is exactly this
+   * shape. A single shared detector would see both messages' deltas as one
+   * continuous buffer in delivery order, gluing a fragment of one message
+   * directly onto a fragment of the other into a garbled "sentence."
+   */
+  detectors: Map<string, ReturnType<typeof createIncrementalSentenceDetector>>;
   spokenCharacters: number;
   turnId: string | null;
   /**
@@ -49,7 +60,7 @@ type TurnState = {
 
 const newTurnState = (turnId: string | null): TurnState => ({
   texts: new Map(),
-  detector: createIncrementalSentenceDetector(),
+  detectors: new Map(),
   spokenCharacters: 0,
   turnId,
   pendingByMessage: new Map(),
@@ -117,7 +128,9 @@ export const createIncrementalSpeechCollector = (
       // `replace: true` delta is not fed as a suffix — `mergeTextMessageContent`
       // swaps the content outright, so the whole new content is the delta.
       const delta = replaced ? merged.content : merged.content.slice(existing?.content.length ?? 0);
-      const sentences = turn.detector.push(delta);
+      const detector = turn.detectors.get(textKey) ?? createIncrementalSentenceDetector();
+      turn.detectors.set(textKey, detector);
+      const sentences = detector.push(delta);
 
       // A message's first chunk (or the first chunk after a replace, which
       // starts the message over in every way that matters here) is exactly
@@ -141,8 +154,10 @@ export const createIncrementalSpeechCollector = (
     // guess was correct.
     for (const pending of turn.pendingByMessage.values()) emit(turn, pending);
     turn.pendingByMessage.clear();
-    const trailing = turn.detector.flush();
-    if (trailing.length > 0) emit(turn, trailing);
+    for (const detector of turn.detectors.values()) {
+      const trailing = detector.flush();
+      if (trailing.length > 0) emit(turn, trailing);
+    }
     turns.delete(key);
     onDone(message.conversation_id ?? '', message.turn_id ?? '');
   };

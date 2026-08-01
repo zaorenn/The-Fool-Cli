@@ -82,6 +82,27 @@ describe('createIncrementalSpeechCollector', () => {
     expect(onSentence).not.toHaveBeenCalledWith(expect.stringContaining('Half a sentence finishes'));
   });
 
+  // RunEvidenceCollector explicitly supports more than one text msg_id in a
+  // single turn (its own `texts` map is keyed by msg_id, joined only at the
+  // very end) — a reasoning stream sending "thinking" under one msg_id and
+  // "answer" under another is exactly this shape. Interleaved delivery must
+  // not glue one message's fragment onto another's.
+  it('keeps two interleaved messages in the same turn from bleeding into each other', () => {
+    const onSentence = vi.fn();
+    const collector = createIncrementalSpeechCollector(onSentence, vi.fn(), 1200);
+
+    collector.onStreamMessage(textDelta('The weather in Paris is', { msg_id: 'thinking' }));
+    collector.onStreamMessage(textDelta('Quick note.', { msg_id: 'answer' }));
+    collector.onStreamMessage(textDelta(' nice today.', { msg_id: 'thinking' }));
+    collector.onStreamMessage({ type: 'finish', conversation_id: 'c1', turn_id: 't1' });
+
+    const spoken = onSentence.mock.calls.map((call) => call[0]);
+    expect(spoken).toContain('Quick note.');
+    expect(spoken).toContain('The weather in Paris is nice today.');
+    // Neither message's text may appear fused into the other's.
+    expect(spoken.some((s) => s.includes('Quick') && s.includes('Paris'))).toBe(false);
+  });
+
   it('handles a replace delta without mis-speaking the corrected text', () => {
     const onSentence = vi.fn();
     const collector = createIncrementalSpeechCollector(onSentence, vi.fn(), 1200);
