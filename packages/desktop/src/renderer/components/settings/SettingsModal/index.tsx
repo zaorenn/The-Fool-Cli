@@ -201,14 +201,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onCancel, defaul
         label: t('settings.tools'),
         icon: <Toolkit theme='outline' size='20' fill={iconColors.secondary} />,
       },
-      {
-        key: 'voice',
-        label: t('settings.voice.title'),
-        icon: <Voice theme='outline' size='20' fill={iconColors.secondary} />,
-      },
     ];
 
     if (isDesktop) {
+      // Voice is an Electron main-process feature end to end — engine weights
+      // installed on the host machine, driven over IPC. The WebUI host serves
+      // none of those channels, so in a browser the page can only report that
+      // it failed to read a catalog that was never going to arrive.
+      builtinItems.push({
+        key: 'voice',
+        label: t('settings.voice.title'),
+        icon: <Voice theme='outline' size='20' fill={iconColors.secondary} />,
+      });
       builtinItems.push({
         key: 'webui',
         label: t('settings.webui'),

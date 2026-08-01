@@ -1388,7 +1388,8 @@
     "paramsReset": "Reset to defaults",
     "needsClonedVoice": "This engine has no voice of its own — it only speaks in a voice you clone. Drop a recording below to give it one.",
     "cloneTextOptional": "What is said in the recording — optional, this engine does not read it.",
-    "cloneSavedNoEngine": "{{name}} saved. Install a cloning voice engine to hear it."
+    "cloneSavedNoEngine": "{{name}} saved. Install a cloning voice engine to hear it.",
+    "desktopOnly": "Voice runs on the computer that hosts The Fool — its engines are installed and played there. Open Voice settings on that machine."
   },
   "themeCustomizer": {
     "title": "自訂主題",

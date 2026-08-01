@@ -41,6 +41,16 @@ export const BUILTIN_TAB_IDS = [
 ] as const;
 
 /**
+ * Tabs whose entire backend is the Electron main process.
+ *
+ * The WebUI host runs foolcore and serves the renderer; it has no main process,
+ * so these tabs' IPC channels are answered by nothing. Kept as a set next to the
+ * order above so adding a desktop-only page is one edit rather than a filter
+ * clause hidden further down.
+ */
+const DESKTOP_ONLY_TAB_IDS: ReadonlySet<string> = new Set(['pet', 'voice']);
+
+/**
  * Legacy anchor IDs that have been merged into other tabs.
  * When an extension anchors to one of these, it is redirected to the new host.
  * This keeps older extensions working without requiring them to update.
@@ -124,8 +134,17 @@ const SettingsSider: React.FC<{ collapsed?: boolean; tooltipEnabled?: boolean }>
       about: { id: 'about', label: t('settings.about'), icon: <Info />, path: 'about' },
     };
 
-    // Start with ordered builtin IDs, hiding desktop-only tabs in browser mode
-    const result: SiderItem[] = BUILTIN_TAB_IDS.filter((id) => isDesktop || id !== 'pet').map((id) => builtinMap[id]);
+    // Start with ordered builtin IDs, hiding desktop-only tabs in browser mode.
+    //
+    // Both of these are Electron main-process features rather than foolcore
+    // ones, so the WebUI host does not serve their channels at all: the pet
+    // lives in its own native always-on-top windows, and voice installs engine
+    // weights on the host machine and drives them through IPC. On a phone the
+    // voice page could only ever load an empty catalog and report that it
+    // failed — a whole tab that is broken by construction.
+    const result: SiderItem[] = BUILTIN_TAB_IDS.filter((id) => isDesktop || !DESKTOP_ONLY_TAB_IDS.has(id)).map(
+      (id) => builtinMap[id]
+    );
 
     // Extension tabs with position anchoring
     const beforeMap = new Map<string, IExtensionSettingsTab[]>();

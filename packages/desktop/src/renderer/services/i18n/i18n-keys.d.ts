@@ -2351,6 +2351,7 @@ export type I18nKey =
   | 'settings.voice.deleteCloned'
   | 'settings.voice.deleteClonedConfirm'
   | 'settings.voice.deleteClonedFailed'
+  | 'settings.voice.desktopOnly'
   | 'settings.voice.devices'
   | 'settings.voice.extracting'
   | 'settings.voice.install'
