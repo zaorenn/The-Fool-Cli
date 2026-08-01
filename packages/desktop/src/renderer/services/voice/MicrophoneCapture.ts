@@ -95,9 +95,19 @@ export class MicrophoneCapture {
       audio: {
         ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
         channelCount: 1,
+        // Both of these remove sound from the signal. Neither rescales it, so
+        // a level measured against the calibrated floor still means what it did.
         echoCancellation: true,
         noiseSuppression: true,
-        autoGainControl: true,
+        // Off, and it has to be: `AdaptiveVad` calibrates a bar against the room
+        // once and compares every later frame to it, which only holds while one
+        // level means one thing. Automatic gain control exists to change exactly
+        // that — after the assistant's reply plays out of the speakers the gain
+        // is clamped down, and from then on the room and the user alike arrive
+        // several times smaller than the bar was calibrated for. That is the
+        // "it hears the wake word perfectly, then has to be shouted at" report:
+        // not a threshold that rose, a signal that shrank underneath it.
+        autoGainControl: false,
       },
     });
 
