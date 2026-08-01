@@ -144,4 +144,45 @@ describe('AdaptiveVad', () => {
 
     expect(vad.push(0.4, 2000)).toBe('speech-started');
   });
+
+  /**
+   * The other half of "a woken session has to be shouted at".
+   *
+   * Automatic gain control moves the whole scale: after the assistant's reply
+   * plays out of the speakers, the capture gain is clamped down, and from then
+   * on the room *and* the user's voice both arrive several times smaller than
+   * they did at calibration. A bar fixed at the old scale is simply deaf to the
+   * new one. The floor has to be able to follow the room down.
+   */
+  it('follows the room down when the input level drops, instead of going deaf', () => {
+    const quiet = new AdaptiveVad({ ...config, sensitivity: 0.55 });
+    // A room at 0.02, where an ordinary voice at 0.08 is heard.
+    feed(quiet, 0.02, 0, 1000);
+    expect(quiet.push(0.08, 1050)).toBe('speech-started');
+    quiet.reset();
+
+    // Gain is clamped roughly fourfold: the same room now reads 0.005, and the
+    // same voice would read 0.02.
+    feed(quiet, 0.005, 1100, 6000);
+
+    expect(quiet.push(0.02, 6100)).toBe('speech-started');
+  });
+
+  /**
+   * The floor moves one way only, and this is why.
+   *
+   * Letting it rise is what the reset bug did by another route: the loud frames
+   * in earshot are the assistant's own voice coming back through the
+   * microphone, and a floor that climbed to meet them would raise the bar out
+   * of the user's reach — the exact deafness this class keeps being fixed for.
+   */
+  it('never raises the floor to meet a loud passage, so speech stays audible after it', () => {
+    calibrate(vad);
+
+    // The assistant talking over the microphone for a few seconds.
+    feed(vad, 0.5, 1050, 4000);
+    vad.reset();
+
+    expect(vad.push(0.04, 4100)).toBe('speech-started');
+  });
 });

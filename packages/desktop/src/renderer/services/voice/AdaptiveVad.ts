@@ -40,6 +40,15 @@ const MULTIPLIER_AT_LEAST_SENSITIVE = 4.5;
 const MULTIPLIER_AT_MOST_SENSITIVE = 1.3;
 
 /**
+ * How much of the gap the floor closes toward a quieter room, per frame.
+ *
+ * Frames arrive about eight times a second, so this converges over a couple of
+ * seconds — fast enough to recover within one exchange, slow enough that a
+ * single unusually quiet frame does not drop the bar on its own.
+ */
+const FLOOR_FOLLOW_RATE = 0.12;
+
+/**
  * Energy-based voice activity detection.
  *
  * Pure by design: it consumes an RMS level and a clock reading and returns an
@@ -52,6 +61,10 @@ export class AdaptiveVad {
   private ambientSum = 0;
   private ambientCount = 0;
   private threshold: number | null = null;
+  /** The calibrated ambient level the threshold is derived from. */
+  private floor: number | null = null;
+  /** How far above {@link floor} speech must sit, fixed by sensitivity. */
+  private multiplier = MULTIPLIER_AT_LEAST_SENSITIVE;
 
   private speechStartMs: number | null = null;
   private speechAccumulatedMs = 0;
@@ -94,6 +107,7 @@ export class AdaptiveVad {
     this.ambientSum = 0;
     this.ambientCount = 0;
     this.threshold = null;
+    this.floor = null;
     this.resetUtterance();
   }
 
@@ -109,6 +123,9 @@ export class AdaptiveVad {
       return this.onLoudFrame(nowMs, previousFrameMs);
     }
 
+    // Only quiet frames may move the floor: a loud one is either speech or the
+    // assistant, and neither is the room.
+    this.followRoomDown(rms);
     return this.onQuietFrame(nowMs);
   }
 
@@ -119,12 +136,36 @@ export class AdaptiveVad {
 
     if (nowMs - this.calibrationStartMs < this.config.calibrationMs) return 'calibrating';
 
-    const floor = Math.max(this.ambientSum / this.ambientCount, MINIMUM_FLOOR);
+    this.floor = Math.max(this.ambientSum / this.ambientCount, MINIMUM_FLOOR);
     // A higher sensitivity setting lowers the bar a speaker has to clear.
     const span = MULTIPLIER_AT_LEAST_SENSITIVE - MULTIPLIER_AT_MOST_SENSITIVE;
-    const multiplier = MULTIPLIER_AT_LEAST_SENSITIVE - span * this.config.sensitivity;
-    this.threshold = Math.max(floor * multiplier, MINIMUM_THRESHOLD);
+    this.multiplier = MULTIPLIER_AT_LEAST_SENSITIVE - span * this.config.sensitivity;
+    this.threshold = Math.max(this.floor * this.multiplier, MINIMUM_THRESHOLD);
     return 'calibrating';
+  }
+
+  /**
+   * Lets the floor follow the room downward — never upward.
+   *
+   * Automatic gain control moves the entire scale rather than any one sound:
+   * once the assistant's reply has played out of the speakers the capture gain
+   * is clamped, and every frame after it — room and user alike — arrives
+   * smaller than the one the threshold was calibrated against. Without this the
+   * bar stays where it was and the user has to shout to reach it.
+   *
+   * Downward only, and that asymmetry is the safety property. The loud frames
+   * in earshot are usually the assistant's own voice returning through the
+   * microphone; a floor that rose to meet them would push the bar out of the
+   * user's reach, which is the same deafness by another route. Rising is what
+   * {@link recalibrate} is for, and it is called only when the room or the
+   * device genuinely changes.
+   */
+  private followRoomDown(rms: number): void {
+    if (this.floor === null || rms >= this.floor) return;
+
+    this.floor += (rms - this.floor) * FLOOR_FOLLOW_RATE;
+    this.floor = Math.max(this.floor, MINIMUM_FLOOR);
+    this.threshold = Math.max(this.floor * this.multiplier, MINIMUM_THRESHOLD);
   }
 
   private onLoudFrame(nowMs: number, previousFrameMs: number | null): VadEvent {
