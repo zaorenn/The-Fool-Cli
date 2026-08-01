@@ -41,7 +41,7 @@ green and must not add failures to this baseline.
 
 ## Baseline Windows artifact
 
-- Path: `out/The Fool-2.1.43-win-x64.exe`
+- Path: `out/TheFool-2.1.43-win-x64.exe`
 - Size: `430817602` bytes
 - SHA-256: `2890500AE25B589DE4C715D0F426FDFFCA4B7C16A38DE7E3D86CE0B7B7EAC564`
 

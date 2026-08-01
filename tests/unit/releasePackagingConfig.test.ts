@@ -94,3 +94,37 @@ describe('release packaging configuration', () => {
     }
   });
 });
+
+/**
+ * The name the installer is uploaded under, and the name the updater asks for,
+ * have to be the same string.
+ *
+ * `latest.yml` is written by electron-builder, and it does not copy the file
+ * name into it verbatim: spaces become hyphens, because a URL cannot carry one.
+ * GitHub, uploading the same file, replaces spaces with dots instead. So an
+ * artifact called `The Fool-2.1.43-win-x64.exe` is hosted as
+ * `The.Fool-...` while every installed copy asks for `The-Fool-...` and gets a
+ * 404 — an update that is published, visible on the releases page, and
+ * undownloadable.
+ *
+ * A name with no space in it cannot be rewritten by either of them.
+ */
+describe('installer artifact naming', () => {
+  const config = readProjectFile('packages/desktop/electron-builder.yml');
+
+  it('never puts a space in an artifact name', () => {
+    const names = [...config.matchAll(/^\s*artifactName:\s*(.+)$/gm)].map((match) => match[1].trim());
+
+    expect(names.length).toBeGreaterThan(0);
+    for (const name of names) {
+      expect(name).not.toContain('${productName}');
+      expect(name).not.toContain(' ');
+    }
+  });
+
+  // The display name keeps its space — it is what the user reads in the Start
+  // menu and the installer window, and nothing rewrites it on the way there.
+  it('leaves the product name itself alone', () => {
+    expect(config).toMatch(/^productName:\s*The Fool$/m);
+  });
+});

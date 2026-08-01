@@ -127,7 +127,12 @@ win:
     - nsis
     #    - msi
   icon: resources/app.ico # Use the checked-in Windows icon resource for executable metadata/icon patching
-  artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+  # No space, and not ${productName}, which has one. electron-builder writes the
+  # name into latest.yml with spaces turned into hyphens; GitHub hosts the same
+  # upload with spaces turned into dots. The two disagree, and every installed
+  # copy then asks for a URL the release does not have. The display name keeps
+  # its space — this is only the file.
+  artifactName: TheFool-${version}-${os}-${arch}.${ext}
 
 nsis:
   oneClick: false
@@ -136,7 +141,7 @@ nsis:
   createStartMenuShortcut: true
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
-  artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+  artifactName: TheFool-${version}-${os}-${arch}.${ext}
   differentialPackage: false
 
 mac:
@@ -144,7 +149,7 @@ mac:
     - dmg
     - zip
   icon: resources/app.icns
-  artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+  artifactName: TheFool-${version}-${os}-${arch}.${ext}
   category: public.app-category.productivity
   hardenedRuntime: true
   gatekeeperAssess: false
@@ -177,7 +182,7 @@ linux:
   target:
     - deb
   icon: resources/app.png
-  artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+  artifactName: TheFool-${version}-${os}-${arch}.${ext}
   category: Utility
   maintainer: The Fool contributors
   vendor: The Fool
