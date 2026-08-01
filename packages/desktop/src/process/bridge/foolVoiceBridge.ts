@@ -6,6 +6,7 @@
 
 import { ipcBridge } from '@/common';
 import { isValidVoiceId } from '@process/services/fool-voice/ClonedVoiceStore';
+import { validateAudioCppParams } from '@process/services/fool-voice/audiocpp/audioCppEngineSpecs';
 import type {
   VoiceCancelRequest,
   VoiceCancelResponse,
@@ -78,7 +79,10 @@ const MAX_CLONE_REFERENCE_BYTES = 24000 * 2 * 60;
 const MAX_DISPLAY_NAME_LENGTH = 64;
 const MAX_REFERENCE_TEXT_CODE_POINTS = 1000;
 const MAX_LANGUAGE_COUNT = 8;
-const PROVIDER_IDS = new Set(['local-sherpa', 'openai-compatible', 'transcript-wake-word']);
+const PROVIDER_IDS = new Set(['local-sherpa', 'local-audiocpp', 'openai-compatible', 'transcript-wake-word']);
+/** Providers whose models this app installs and removes itself. */
+const LOCAL_PROVIDER_IDS = new Set(['local-sherpa', 'local-audiocpp']);
+const SYNTHESIS_PROVIDER_IDS = new Set(['local-sherpa', 'local-audiocpp', 'openai-compatible']);
 const CAPABILITIES = new Set([
   'transcribe',
   'synthesize',
@@ -185,7 +189,8 @@ const validateDownloadRequest = (payload: unknown): BridgeErrorCode | null =>
   isRecord(payload) &&
   hasExactKeys(payload, ['operationId', 'providerId', 'modelId']) &&
   isIdentifier(payload.operationId) &&
-  payload.providerId === 'local-sherpa' &&
+  typeof payload.providerId === 'string' &&
+  LOCAL_PROVIDER_IDS.has(payload.providerId) &&
   isIdentifier(payload.modelId)
     ? null
     : 'invalid-request';
@@ -193,7 +198,8 @@ const validateDownloadRequest = (payload: unknown): BridgeErrorCode | null =>
 const validateRemoveRequest = (payload: unknown): BridgeErrorCode | null =>
   isRecord(payload) &&
   hasExactKeys(payload, ['providerId', 'modelId']) &&
-  payload.providerId === 'local-sherpa' &&
+  typeof payload.providerId === 'string' &&
+  LOCAL_PROVIDER_IDS.has(payload.providerId) &&
   isIdentifier(payload.modelId)
     ? null
     : 'invalid-request';
@@ -323,8 +329,12 @@ const validateCloneSaveRequest = (payload: unknown): BridgeErrorCode | null => {
     payload.languages.length === 0 ||
     payload.languages.length > MAX_LANGUAGE_COUNT ||
     !payload.languages.every((lang) => typeof lang === 'string' && lang.length > 0 && lang.length <= 32) ||
+    // Present but allowed to be empty. Only ZipVoice ever aligned the new text
+    // against the clip's transcript; Pocket, Chatterbox and IndexTTS2 clone from
+    // the audio alone, so insisting on one here would make the user type
+    // something no engine reads — and would reject a Chatterbox clone outright
+    // on a machine with no transcription model installed.
     typeof payload.referenceText !== 'string' ||
-    payload.referenceText.trim().length === 0 ||
     [...payload.referenceText].length > MAX_REFERENCE_TEXT_CODE_POINTS
   ) {
     return 'invalid-request';
@@ -343,24 +353,56 @@ const validateDeleteClonedRequest = (payload: unknown): BridgeErrorCode | null =
     ? null
     : 'invalid-request';
 
-const validateSynthesizeRequest = (payload: unknown): BridgeErrorCode | null =>
-  isRecord(payload) &&
-  hasExactKeys(payload, ['operationId', 'providerId', 'modelId', 'profileId', 'language', 'speed', 'text']) &&
-  isIdentifier(payload.operationId) &&
-  (payload.providerId === 'local-sherpa' || payload.providerId === 'openai-compatible') &&
-  isIdentifier(payload.modelId) &&
-  isIdentifier(payload.profileId) &&
-  typeof payload.language === 'string' &&
-  payload.language.length > 0 &&
-  payload.language.length <= 32 &&
-  typeof payload.speed === 'number' &&
-  payload.speed >= 0.5 &&
-  payload.speed <= 2 &&
-  typeof payload.text === 'string' &&
-  [...payload.text].length > 0 &&
-  [...payload.text].length <= MAX_SYNTHESIS_CODE_POINTS
-    ? null
-    : 'invalid-request';
+/**
+ * Generation parameters, checked against the target model's own schema.
+ *
+ * The schema in `audioCppEngineSpecs.ts` is the only place a parameter is
+ * declared, so an unknown key, the wrong type, or a value outside the declared
+ * bounds is rejected here rather than sent on. It has to be: bad requests come
+ * back from the engine as `500 server_error` with free-form text, which is
+ * indistinguishable from a real fault, and several of these knobs are ones the
+ * model silently ignores rather than complains about.
+ *
+ * A model with no schema — every sherpa voice — accepts no parameters at all.
+ */
+const validateSynthesisParams = (modelId: unknown, params: unknown): BridgeErrorCode | null => {
+  if (params === undefined) return null;
+  if (typeof modelId !== 'string') return 'invalid-request';
+  return validateAudioCppParams(modelId, params) === null ? null : 'invalid-request';
+};
+
+const validateSynthesizeRequest = (payload: unknown): BridgeErrorCode | null => {
+  if (
+    !isRecord(payload) ||
+    !hasExactKeys(payload, [
+      'operationId',
+      'providerId',
+      'modelId',
+      'profileId',
+      'language',
+      'speed',
+      'text',
+      'params',
+    ]) ||
+    !isIdentifier(payload.operationId) ||
+    typeof payload.providerId !== 'string' ||
+    !SYNTHESIS_PROVIDER_IDS.has(payload.providerId) ||
+    !isIdentifier(payload.modelId) ||
+    !isIdentifier(payload.profileId) ||
+    typeof payload.language !== 'string' ||
+    payload.language.length === 0 ||
+    payload.language.length > 32 ||
+    typeof payload.speed !== 'number' ||
+    payload.speed < 0.5 ||
+    payload.speed > 2 ||
+    typeof payload.text !== 'string' ||
+    [...payload.text].length === 0 ||
+    [...payload.text].length > MAX_SYNTHESIS_CODE_POINTS
+  ) {
+    return 'invalid-request';
+  }
+  return validateSynthesisParams(payload.modelId, payload.params);
+};
 
 const validateCancelRequest = (payload: unknown): BridgeErrorCode | null =>
   isRecord(payload) && hasExactKeys(payload, ['operationId']) && isIdentifier(payload.operationId)
@@ -370,7 +412,8 @@ const validateCancelRequest = (payload: unknown): BridgeErrorCode | null =>
 const validateSpeakersRequest = (payload: unknown): BridgeErrorCode | null =>
   isRecord(payload) &&
   hasExactKeys(payload, ['providerId', 'modelId']) &&
-  payload.providerId === 'local-sherpa' &&
+  typeof payload.providerId === 'string' &&
+  LOCAL_PROVIDER_IDS.has(payload.providerId) &&
   isIdentifier(payload.modelId)
     ? null
     : 'invalid-request';

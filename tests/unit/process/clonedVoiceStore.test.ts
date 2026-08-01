@@ -14,6 +14,7 @@ import {
   isValidVoiceId,
   parseClonedProfileId,
 } from '@process/services/fool-voice/ClonedVoiceStore';
+import { AUDIOCPP_CHATTERBOX_MODEL_ID, AUDIOCPP_INDEXTTS2_MODEL_ID, CLONING_ENGINES } from '@/common/types/foolVoice';
 
 let root: string;
 
@@ -46,12 +47,17 @@ describe('ClonedVoiceStore', () => {
     expect(voice.referenceWavPath.endsWith('reference.wav')).toBe(true);
   });
 
-  // The engine aligns the new text against the reference using its transcript;
-  // without one the result is noise rather than a voice.
-  it('skips a voice with no transcript rather than offering one that cannot speak', () => {
+  // A transcript used to be mandatory, back when ZipVoice — which aligns the new
+  // text against what the clip says — was the only engine that could clone. The
+  // three engines a clone is offered to now all derive a speaker embedding from
+  // the audio alone, so discarding the voice threw away a perfectly usable one.
+  it('keeps a voice with no transcript, because no engine offered one reads it', () => {
     addVoice('mute', { displayName: 'Mute', referenceText: '   ' });
 
-    expect(new ClonedVoiceStore(root).list()).toEqual([]);
+    const [voice] = new ClonedVoiceStore(root).list();
+
+    expect(voice.id).toBe('mute');
+    expect(voice.referenceText).toBe('');
   });
 
   it('skips a voice whose recording has gone', () => {
@@ -93,15 +99,28 @@ describe('ClonedVoiceStore', () => {
     });
   });
 
-  // One card per recording. Offering the same clip under two engines put it on
-  // screen twice under one id, and neither copy could say which would speak.
-  it('offers each recording once, against the engine that renders clones', () => {
+  // One entry per recording per engine, and each carries its engine's provider
+  // id: the clip is the user's, so every engine that can clone is offered it,
+  // and the profile id alone cannot say which one would speak.
+  it('offers each recording against every engine that can clone, provider and all', () => {
     addVoice('ultron', ultron);
 
     const profiles = new ClonedVoiceStore(root).profiles();
 
-    expect(profiles).toHaveLength(1);
-    expect(profiles[0].modelId).toBe('tts-pocket-int8-2026-01-26');
+    expect(profiles.map((profile) => [profile.modelId, profile.providerId])).toEqual(
+      CLONING_ENGINES.map((engine) => [engine.modelId, engine.providerId])
+    );
+    expect(new Set(profiles.map((profile) => profile.id))).toEqual(new Set(['cloned:ultron']));
+  });
+
+  it('offers the audio.cpp engines alongside the sherpa one', () => {
+    addVoice('ultron', ultron);
+
+    const modelIds = new ClonedVoiceStore(root).profiles().map((profile) => profile.modelId);
+
+    expect(modelIds).toContain('tts-pocket-int8-2026-01-26');
+    expect(modelIds).toContain(AUDIOCPP_CHATTERBOX_MODEL_ID);
+    expect(modelIds).toContain(AUDIOCPP_INDEXTTS2_MODEL_ID);
   });
 });
 

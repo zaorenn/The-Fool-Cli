@@ -1,16 +1,32 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import type { VoiceDownloadProgress, VoiceModelState } from '../../../common/types/foolVoice';
-import { VoiceModelCatalog, type ManagedCatalogEntry } from './VoiceModelCatalog';
-import { extractBzip2Tar, ArchiveExtractionError } from './archive';
+import type { LocalVoiceProviderId, VoiceDownloadProgress, VoiceModelState } from '../../../common/types/foolVoice';
+import {
+  AUDIOCPP_CATALOG_ENTRIES,
+  VoiceModelCatalog,
+  type AudioCppCatalogEntry,
+  type AudioCppFile,
+  type EngineCatalogEntry,
+  type ManagedCatalogEntry,
+} from './VoiceModelCatalog';
+import { extractBzip2Tar, extractZip, ArchiveExtractionError } from './archive';
 
 type DownloadOperation = {
   operationId: string;
-  providerId: 'local-sherpa';
+  providerId: LocalVoiceProviderId;
   modelId: string;
   abortController: AbortController;
   progress: VoiceDownloadProgress;
+};
+
+/** One transfer, whichever kind of artefact it belongs to. */
+type Transfer = {
+  url: string;
+  sha256: string | null;
+  bytes: number;
+  /** Where the finished bytes land. */
+  destination: string;
 };
 
 type DownloadErrorCode = Extract<VoiceDownloadProgress, { state: 'failed' }>['errorCode'];
@@ -28,6 +44,13 @@ const extractionLimits = (archiveBytes: number): { maxTotalBytes: number; maxFil
   // A single weights file can legitimately be the whole archive.
   return { maxTotalBytes: headroom, maxFileSize: headroom };
 };
+
+const toTransfer = (file: AudioCppFile): Transfer => ({
+  url: file.url,
+  sha256: file.sha256,
+  bytes: file.bytes,
+  destination: file.destination,
+});
 
 /** Maps a thrown error onto the progress protocol's error codes. */
 const toErrorCode = (error: unknown): DownloadErrorCode => {
@@ -51,15 +74,58 @@ export class VoiceModelManager {
     private onProgress: (progress: VoiceDownloadProgress) => void
   ) {}
 
-  private getModelsDir(): string {
-    return path.join(this.userDataPath, 'fool', 'models', 'local-sherpa');
+  private getModelsDir(providerId: LocalVoiceProviderId = 'local-sherpa'): string {
+    return path.join(this.userDataPath, 'fool', 'models', providerId);
   }
 
   private getDownloadsDir(): string {
     return path.join(this.userDataPath, 'fool', 'downloads');
   }
 
+  /** Where a pinned engine build is unpacked. Version in the path, so an upgrade is additive. */
+  private engineDir(engine: EngineCatalogEntry): string {
+    return path.join(this.userDataPath, 'fool', 'engines', engine.engineId, engine.version);
+  }
+
+  /**
+   * The executable an installed engine offers, or `null` when it is not there.
+   *
+   * Returned as a path rather than spawned here: `AudioCppRuntime` takes its
+   * binary as an injected dependency precisely so nothing has to assume a layout
+   * that was not verified.
+   */
+  public async getEngineBinaryPath(engineId: string): Promise<string | null> {
+    const engine = VoiceModelCatalog.getEngine(engineId);
+    if (!engine) return null;
+    const binary = path.join(this.engineDir(engine), engine.binaryPath);
+    try {
+      await fs.access(binary);
+      return binary;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Where an installed audio.cpp model's weights live, for the server config. */
+  public audioCppModelDir(modelId: string): string {
+    return path.join(this.getModelsDir('local-audiocpp'), modelId);
+  }
+
+  private async filesExist(directory: string, files: readonly string[]): Promise<boolean> {
+    for (const file of files) {
+      try {
+        await fs.access(path.join(directory, file));
+      } catch {
+        return false;
+      }
+    }
+    return true;
+  }
+
   public async getModelState(modelId: string): Promise<Exclude<VoiceModelState, { status: 'unmanaged' }>> {
+    const audioCpp = VoiceModelCatalog.getAudioCppEntry(modelId);
+    if (audioCpp) return this.getAudioCppModelState(audioCpp);
+
     const entry = VoiceModelCatalog.getManagedEntry(modelId);
     if (!entry) return { status: 'not-installed' };
 
@@ -71,20 +137,37 @@ export class VoiceModelManager {
       return { status: 'not-installed' };
     }
 
-    let allFilesExist = true;
-    for (const file of entry.expectedFiles) {
-      try {
-        await fs.access(path.join(modelDir, file));
-      } catch {
-        allFilesExist = false;
-        break;
-      }
-    }
-
-    if (!allFilesExist) {
+    if (!(await this.filesExist(modelDir, entry.expectedFiles))) {
       return { status: 'invalid', reason: 'missing-files' };
     }
 
+    return { status: 'ready' };
+  }
+
+  /**
+   * An audio.cpp model is only usable with its engine.
+   *
+   * Weights alone are not an installation here: there is no in-process decoder,
+   * so a model whose engine is missing would report ready and then fail to
+   * speak. Reported as `not-installed` rather than `invalid` so the UI offers
+   * Install — which is exactly the action that fixes it.
+   */
+  private async getAudioCppModelState(
+    entry: AudioCppCatalogEntry
+  ): Promise<Exclude<VoiceModelState, { status: 'unmanaged' }>> {
+    const modelDir = this.audioCppModelDir(entry.modelId);
+    try {
+      await fs.access(modelDir);
+    } catch {
+      return { status: 'not-installed' };
+    }
+
+    if (!(await this.filesExist(modelDir, entry.expectedFiles))) {
+      return { status: 'invalid', reason: 'missing-files' };
+    }
+    if ((await this.getEngineBinaryPath(entry.engineId)) === null) {
+      return { status: 'not-installed' };
+    }
     return { status: 'ready' };
   }
 
@@ -105,6 +188,12 @@ export class VoiceModelManager {
     modelId: string
   ): Promise<'started' | 'already-running' | 'already-installed'> {
     if (this.activeDownloads.has(modelId)) return 'already-running';
+
+    // Two engines, one install button. audio.cpp models arrive as loose GGUF
+    // weights plus a prebuilt engine, so they take the transfer path below
+    // rather than the archive one — same slot, same progress events, same cancel.
+    const audioCppEntry = VoiceModelCatalog.getAudioCppEntry(modelId);
+    if (audioCppEntry) return this.downloadAudioCppModel(operationId, audioCppEntry);
 
     const entry = VoiceModelCatalog.getManagedEntry(modelId);
     if (!entry) throw new Error('Model not found in catalog');
@@ -243,12 +332,177 @@ export class VoiceModelManager {
   }
 
   /**
+   * Installs an audio.cpp model, and the engine it cannot run without.
+   *
+   * Two artefacts behind one button and one progress stream, because from the
+   * user's side there is one thing to install. The engine is an 11 MB zip and
+   * the weights are a couple of gigabytes, so the engine is fetched first: a
+   * failure there costs seconds rather than being discovered after the long
+   * download. An engine already on disk from the other audio.cpp model is
+   * skipped, and its bytes leave the total.
+   */
+  private async downloadAudioCppModel(
+    operationId: string,
+    entry: AudioCppCatalogEntry
+  ): Promise<'started' | 'already-running' | 'already-installed'> {
+    const { modelId } = entry;
+    const engine = VoiceModelCatalog.getEngine(entry.engineId);
+    if (!engine) throw new Error('Engine not found in catalog');
+
+    const abortController = new AbortController();
+    const progress: VoiceDownloadProgress = {
+      state: 'queued',
+      operationId,
+      providerId: 'local-audiocpp',
+      modelId,
+      sequence: 1,
+      attempt: 1,
+      downloadedBytes: 0,
+      totalBytes: entry.archiveBytes + engine.archiveBytes,
+      updatedAtMs: Date.now(),
+    };
+    const operation: DownloadOperation = {
+      operationId,
+      providerId: 'local-audiocpp',
+      modelId,
+      abortController,
+      progress,
+    };
+    // Claimed before the first `await`, as above: two presses must not become
+    // two multi-gigabyte transfers.
+    this.activeDownloads.set(modelId, operation);
+
+    const modelDir = this.audioCppModelDir(modelId);
+    const enginePart = path.join(this.getDownloadsDir(), `${engine.engineId}-${engine.version}.zip.part`);
+
+    try {
+      if ((await this.getModelState(modelId)).status === 'ready') {
+        this.updateProgress(modelId, {
+          ...progress,
+          state: 'ready',
+          downloadedBytes: progress.totalBytes ?? 0,
+          sequence: progress.sequence + 1,
+          updatedAtMs: Date.now(),
+        });
+        return 'already-installed';
+      }
+
+      await fs.mkdir(this.getDownloadsDir(), { recursive: true });
+      const engineInstalled = (await this.getEngineBinaryPath(engine.engineId)) !== null;
+
+      operation.progress = {
+        ...progress,
+        state: 'downloading',
+        // The engine's bytes are already on disk, so counting them as still to
+        // come would leave the bar stuck short of the end.
+        totalBytes: entry.archiveBytes + (engineInstalled ? 0 : engine.archiveBytes),
+        sequence: progress.sequence + 1,
+        updatedAtMs: Date.now(),
+      };
+      this.updateProgress(modelId, operation.progress);
+
+      let transferred = 0;
+      if (!engineInstalled) {
+        transferred = await this.transferFile(
+          operation,
+          enginePart,
+          { url: engine.url, sha256: engine.sha256, bytes: engine.archiveBytes, destination: enginePart },
+          0
+        );
+
+        this.updateProgress(modelId, {
+          ...operation.progress,
+          state: 'extracting',
+          sequence: operation.progress.sequence + 1,
+          updatedAtMs: Date.now(),
+        });
+        await extractZip({
+          archivePath: enginePart,
+          targetDir: this.engineDir(engine),
+          expectedFiles: engine.expectedFiles,
+          ...extractionLimits(engine.archiveBytes),
+        });
+        await fs.unlink(enginePart).catch(() => {});
+
+        this.updateProgress(modelId, {
+          ...operation.progress,
+          state: 'downloading',
+          sequence: operation.progress.sequence + 1,
+          updatedAtMs: Date.now(),
+        });
+      }
+
+      await fs.mkdir(modelDir, { recursive: true });
+      for (const file of entry.files) {
+        const part = path.join(this.getDownloadsDir(), `${modelId}-${path.basename(file.destination)}.part`);
+        transferred = await this.transferFile(operation, part, toTransfer(file), transferred);
+        // Renamed only once the whole file is down, so a torn transfer never
+        // looks like an installed model to `getModelState`.
+        await fs.rename(part, path.join(modelDir, file.destination));
+      }
+
+      if (!(await this.filesExist(modelDir, entry.expectedFiles))) {
+        throw new ArchiveExtractionError('manifest-mismatch', 'Downloaded files did not match the manifest');
+      }
+
+      this.updateProgress(modelId, {
+        ...operation.progress,
+        state: 'ready',
+        sequence: operation.progress.sequence + 1,
+        updatedAtMs: Date.now(),
+      });
+    } catch (error) {
+      await this.reportDownloadFailure(operation, error, modelDir, [enginePart]);
+    } finally {
+      this.activeDownloads.delete(modelId);
+    }
+
+    return 'started';
+  }
+
+  /** Turns a failed install into the progress event the UI reads, and cleans up after it. */
+  private async reportDownloadFailure(
+    operation: DownloadOperation,
+    error: unknown,
+    modelDir: string,
+    partPaths: readonly string[]
+  ): Promise<void> {
+    const { modelId } = operation;
+    if ((error as { name?: string } | null)?.name === 'AbortError') {
+      this.updateProgress(modelId, {
+        ...operation.progress,
+        state: 'cancelled',
+        sequence: operation.progress.sequence + 1,
+        updatedAtMs: Date.now(),
+      });
+      return;
+    }
+
+    const errorCode = toErrorCode(error);
+    if (errorCode === 'manifest-mismatch') {
+      for (const part of partPaths) await fs.unlink(part).catch(() => {});
+    }
+    if (errorCode === 'archive-invalid' || errorCode === 'security-rejected' || errorCode === 'manifest-mismatch') {
+      // A half-written model directory would otherwise read as `invalid` for
+      // ever, with no way to retry from the UI.
+      await fs.rm(modelDir, { recursive: true, force: true }).catch(() => {});
+    }
+    this.updateProgress(modelId, {
+      ...operation.progress,
+      state: 'failed',
+      errorCode,
+      sequence: operation.progress.sequence + 1,
+      updatedAtMs: Date.now(),
+    });
+  }
+
+  /**
    * Whether a fully-sized part file is the archive we expect.
    *
    * Without a published checksum size is all there is to go on; the extraction
    * step still checks that every expected file came out.
    */
-  private async archiveMatches(downloadPath: string, entry: ManagedCatalogEntry): Promise<boolean> {
+  private async archiveMatches(downloadPath: string, entry: { sha256: string | null }): Promise<boolean> {
     if (!entry.sha256) return true;
 
     try {
@@ -277,23 +531,48 @@ export class VoiceModelManager {
     downloadPath: string,
     entry: ManagedCatalogEntry
   ): Promise<void> {
+    await this.transferFile(
+      operation,
+      downloadPath,
+      { url: entry.url, sha256: entry.sha256, bytes: entry.archiveBytes, destination: downloadPath },
+      0
+    );
+  }
+
+  /**
+   * Fetches one file, resuming a part that is already on disk.
+   *
+   * `baseBytes` is what earlier artefacts of the same install already
+   * contributed to the progress bar; the reported total counts every file, so
+   * this transfer's own bytes have to be added on top rather than replacing it.
+   * Returns the running total, for the next transfer to carry on from.
+   */
+  private async transferFile(
+    operation: DownloadOperation,
+    downloadPath: string,
+    transfer: Transfer,
+    baseBytes: number
+  ): Promise<number> {
     const { abortController, progress } = operation;
 
-    const headers: Record<string, string> = {};
-    // A part file at or past the expected size cannot be resumed from — the
-    // range request would be unsatisfiable — so start it again.
-    if (progress.downloadedBytes >= entry.archiveBytes) {
+    let partBytes = 0;
+    try {
+      partBytes = (await fs.stat(downloadPath)).size;
+    } catch {
+      partBytes = 0;
+    }
+    // A part at or past the expected size cannot be resumed from — the range
+    // request would be unsatisfiable — so start it again.
+    if (partBytes >= transfer.bytes) {
       await fs.unlink(downloadPath).catch(() => {});
-      progress.downloadedBytes = 0;
+      partBytes = 0;
     }
-    if (progress.downloadedBytes > 0) {
-      headers['Range'] = `bytes=${progress.downloadedBytes}-`;
-    }
+    progress.downloadedBytes = baseBytes + partBytes;
 
-    const response = await fetch(entry.url, {
-      headers,
-      signal: abortController.signal,
-    });
+    const headers: Record<string, string> = {};
+    if (partBytes > 0) headers.Range = `bytes=${partBytes}-`;
+
+    const response = await fetch(transfer.url, { headers, signal: abortController.signal });
 
     if (!response.ok && response.status !== 206) {
       throw new Error(`http-${response.status}`);
@@ -306,26 +585,27 @@ export class VoiceModelManager {
       if (response.status !== 206) {
         // The server ignored the range: the file was reopened with 'w', so the
         // bytes already counted are gone.
-        progress.downloadedBytes = 0;
+        partBytes = 0;
+        progress.downloadedBytes = baseBytes;
         progress.attempt += 1;
         this.updateProgress(operation.modelId, progress);
-      } else if (entry.sha256) {
-        // The checksum covers the whole archive, so the resumed part has to be
+      } else if (transfer.sha256) {
+        // The checksum covers the whole file, so the resumed part has to be
         // folded into the hash before the new bytes arrive.
-        const existingData = await fs.readFile(downloadPath);
-        hash.update(existingData);
+        hash.update(await fs.readFile(downloadPath));
       }
 
       if (!response.body) throw new Error('network');
 
       const reader = response.body.getReader();
-      while (true) {
+      for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
 
         await fileHandle.write(value);
-        if (entry.sha256) hash.update(value);
+        if (transfer.sha256) hash.update(value);
 
+        partBytes += value.length;
         progress.downloadedBytes += value.length;
         progress.sequence += 1;
         progress.updatedAtMs = Date.now();
@@ -337,12 +617,14 @@ export class VoiceModelManager {
 
       this.updateProgress(operation.modelId, progress);
 
-      if (entry.sha256 && hash.digest('hex') !== entry.sha256) {
+      if (transfer.sha256 && hash.digest('hex') !== transfer.sha256) {
         throw new Error('sha256-mismatch');
       }
     } finally {
       await fileHandle.close();
     }
+
+    return baseBytes + partBytes;
   }
 
   public async cancelDownload(modelId: string): Promise<void> {
@@ -354,11 +636,38 @@ export class VoiceModelManager {
 
   public async removeModel(modelId: string): Promise<void> {
     await this.cancelDownload(modelId);
+
+    const audioCpp = VoiceModelCatalog.getAudioCppEntry(modelId);
+    if (audioCpp) {
+      await fs.rm(this.audioCppModelDir(modelId), { recursive: true, force: true });
+      for (const file of audioCpp.files) {
+        await fs
+          .unlink(path.join(this.getDownloadsDir(), `${modelId}-${path.basename(file.destination)}.part`))
+          .catch(() => {});
+      }
+      // The engine is shared, so it only goes when nothing is left to run on it.
+      // Leaving it would waste 11 MB; removing it while the other model is still
+      // installed would silently break that model instead.
+      await this.removeEngineIfUnused(audioCpp.engineId);
+      return;
+    }
+
     const modelDir = path.join(this.getModelsDir(), modelId);
     const downloadPath = path.join(this.getDownloadsDir(), `${modelId}.part`);
 
     await fs.rm(modelDir, { recursive: true, force: true });
     await fs.unlink(downloadPath).catch(() => {});
+  }
+
+  private async removeEngineIfUnused(engineId: string): Promise<void> {
+    const engine = VoiceModelCatalog.getEngine(engineId);
+    if (!engine) return;
+
+    for (const entry of Object.values(AUDIOCPP_CATALOG_ENTRIES)) {
+      if (entry.engineId !== engineId) continue;
+      if (await this.filesExist(this.audioCppModelDir(entry.modelId), entry.expectedFiles)) return;
+    }
+    await fs.rm(path.join(this.userDataPath, 'fool', 'engines', engineId), { recursive: true, force: true });
   }
 
   private updateProgress(modelId: string, progress: VoiceDownloadProgress) {

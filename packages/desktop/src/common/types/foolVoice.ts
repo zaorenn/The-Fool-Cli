@@ -6,8 +6,14 @@
 
 import { z } from 'zod';
 
-export type VoiceProviderId = 'local-sherpa' | 'openai-compatible' | 'transcript-wake-word';
+export type VoiceProviderId = 'local-sherpa' | 'local-audiocpp' | 'openai-compatible' | 'transcript-wake-word';
 export type VoiceProviderKind = 'local' | 'remote' | 'derived';
+
+/** Providers that install and run their models on this machine. */
+export type LocalVoiceProviderId = 'local-sherpa' | 'local-audiocpp';
+
+/** Providers a synthesis request may name. */
+export type SynthesisProviderId = LocalVoiceProviderId | 'openai-compatible';
 export type VoiceCapability =
   | 'transcribe'
   | 'synthesize'
@@ -32,6 +38,16 @@ export const FOOL_VOICE_PROVIDERS = [
     displayName: 'Local Sherpa',
     privacy: 'local',
     capabilities: ['transcribe', 'synthesize', 'manage-models'],
+  },
+  {
+    id: 'local-audiocpp',
+    kind: 'local',
+    displayName: 'Local audio.cpp',
+    privacy: 'local',
+    // No `transcribe`: the engine exposes an ASR route, but this integration
+    // only ever speaks. Transcription stays with sherpa, which is already
+    // installed and measured.
+    capabilities: ['synthesize', 'manage-models', 'voice-cloning'],
   },
   {
     id: 'openai-compatible',
@@ -93,6 +109,23 @@ type VoiceModelRole =
       role: 'text-to-speech';
       audioOutput: { container: 'wav'; encoding: 'pcm16le'; channels: 1 };
       profileIds: readonly string[];
+      /**
+       * True when the engine has no voice of its own and cannot say anything
+       * until the user clones one.
+       *
+       * Distinct from an empty `profileIds`, which only means "no presets are
+       * listed". Installing one of these leaves a working engine that is mute,
+       * and the picker says so rather than letting the user find out by pressing
+       * Preview.
+       */
+      requiresClonedVoice?: true;
+      /**
+       * Generation knobs this model accepts, from the engine's own schema.
+       *
+       * Absent for engines that expose none — sherpa's synthesis call takes
+       * `{ text, sid, speed }` and has nothing else to offer.
+       */
+      paramSpecs?: readonly VoiceParamSpec[];
     }
   | {
       role: 'wake-word';
@@ -163,7 +196,7 @@ export type VoiceHealth =
 
 type VoiceDownloadProgressBase = {
   operationId: string;
-  providerId: 'local-sherpa';
+  providerId: LocalVoiceProviderId;
   modelId: string;
   sequence: number;
   attempt: number;
@@ -182,10 +215,40 @@ export type VoiceDownloadProgress =
       errorCode: 'network' | 'http-status' | 'archive-invalid' | 'manifest-mismatch' | 'security-rejected' | 'io';
     });
 
+/** One generation parameter's value, as the engine's schema declares it. */
+export type VoiceParamValue = number | boolean | string;
+
+/** A model's generation parameters, keyed by the engine's own parameter name. */
+export type VoiceParams = Record<string, VoiceParamValue>;
+
+/**
+ * One knob an engine exposes, declared once and read everywhere.
+ *
+ * The declarations themselves live with the engine that owns them
+ * (`process/services/fool-voice/audiocpp/audioCppEngineSpecs.ts`) and reach the
+ * renderer on the model's catalog entry. Only the shape is shared, because the
+ * renderer may not import from the main process — so this is a type, and the
+ * catalog is the wire.
+ */
+export type VoiceParamSpec =
+  | {
+      name: string;
+      type: 'number';
+      min: number;
+      max: number;
+      /** UI granularity. Integer parameters use 1. */
+      step: number;
+      /** Rejected when not a whole number. */
+      integer?: boolean;
+      default: number;
+    }
+  | { name: string; type: 'boolean'; default: boolean }
+  | { name: string; type: 'text'; maxLength: number; default: string };
+
 export type FoolVoiceAgentOverride = {
   narrationEnabled?: boolean;
   tts?: {
-    providerId?: 'local-sherpa' | 'openai-compatible';
+    providerId?: SynthesisProviderId;
     modelId?: string;
     profileId?: string;
     language?: string;
@@ -238,11 +301,20 @@ export type FoolVoiceSettings = {
     language: string;
   };
   tts: {
-    providerId: 'local-sherpa' | 'openai-compatible';
+    providerId: SynthesisProviderId;
     modelId: string;
     profileId: string;
     language: string;
     speed: number;
+    /**
+     * Generation parameters, per model id.
+     *
+     * Kept per model rather than per engine because two audio.cpp models share
+     * an engine and share none of its knobs: Chatterbox has `exaggeration`,
+     * IndexTTS2 has `num_beams`, and a value carried across would be rejected
+     * as an unknown key by whichever model received it.
+     */
+    params: Record<string, VoiceParams>;
   };
   narrator:
     | {
@@ -340,8 +412,46 @@ export const FOOL_VOICE_SCHEMA_VERSION = 4;
 /** The engine cloned voices were rendered by before Pocket. */
 const LEGACY_CLONING_MODEL_ID = 'tts-zipvoice-distill-int8';
 
-/** The engine they are rendered by now. */
+/** The engine they are rendered by now, and the one a new record defaults to. */
 export const CLONING_MODEL_ID = 'tts-pocket-int8-2026-01-26';
+
+/** Chatterbox through audio.cpp: expressive, 19 languages, Turkish among them. */
+export const AUDIOCPP_CHATTERBOX_MODEL_ID = 'tts-audiocpp-chatterbox';
+
+/** IndexTTS2 through audio.cpp: Chinese and English, with emotion control. */
+export const AUDIOCPP_INDEXTTS2_MODEL_ID = 'tts-audiocpp-indextts2';
+
+/**
+ * Every engine that can speak in a voice it was not trained on.
+ *
+ * A cloned voice is a recording the user owns, not a trained artefact, so the
+ * same clip is offered against each of these — which is why a profile's model
+ * id, not its own id, is what says which engine will render it.
+ */
+export const CLONING_ENGINES: readonly { modelId: string; providerId: LocalVoiceProviderId }[] = [
+  { modelId: CLONING_MODEL_ID, providerId: 'local-sherpa' },
+  { modelId: AUDIOCPP_CHATTERBOX_MODEL_ID, providerId: 'local-audiocpp' },
+  { modelId: AUDIOCPP_INDEXTTS2_MODEL_ID, providerId: 'local-audiocpp' },
+];
+
+export const CLONING_MODEL_IDS: readonly string[] = CLONING_ENGINES.map((engine) => engine.modelId);
+
+/**
+ * Cloning engines that need the reference clip's transcript, word for word.
+ *
+ * ZipVoice aligns the new text against what the clip says, so a wrong transcript
+ * is heard as the voice mispronouncing itself and a missing one produces noise.
+ * Pocket, Chatterbox and IndexTTS2 build a speaker embedding from the audio
+ * alone and never read a transcript — insisting on one there asks the user to
+ * type something no engine will look at.
+ */
+const TRANSCRIPT_REQUIRED_MODEL_IDS: ReadonlySet<string> = new Set([LEGACY_CLONING_MODEL_ID]);
+
+export const cloningRequiresTranscript = (modelId: string): boolean => TRANSCRIPT_REQUIRED_MODEL_IDS.has(modelId);
+
+/** True when any of the engines a clip will be offered to reads its transcript. */
+export const anyCloningEngineRequiresTranscript = (modelIds: readonly string[] = CLONING_MODEL_IDS): boolean =>
+  modelIds.some(cloningRequiresTranscript);
 
 /** The phrase shipped before {@link WAKE_PHRASE_DEFAULT}, upgraded on read. */
 export const WAKE_PHRASE_LEGACY_DEFAULT = 'hey fool';
@@ -402,6 +512,7 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     profileId: 'libritts-p0',
     language: 'en',
     speed: 1,
+    params: {},
   },
   narrator: {
     mode: 'deterministic',
@@ -461,12 +572,26 @@ const httpBaseUrlSchema = z
     }
   });
 
+/**
+ * A stored parameter value, bounded but not schema-checked here.
+ *
+ * The engine's own schema is what decides whether `top_p: 3` is legal, and it
+ * lives in the main process next to the provider that sends it. Settings
+ * storage only has to refuse a value that could not be a parameter at all — an
+ * object, an array, an unbounded string.
+ */
+const paramValueSchema = z.union([z.number().finite(), z.boolean(), z.string().max(512)]);
+
+const paramsSchema = z
+  .record(z.string().min(1).max(64), paramValueSchema)
+  .refine((params) => Object.keys(params).length <= 64);
+
 const overrideSchema = z
   .object({
     narrationEnabled: z.boolean().optional(),
     tts: z
       .object({
-        providerId: z.enum(['local-sherpa', 'openai-compatible']).optional(),
+        providerId: z.enum(['local-sherpa', 'local-audiocpp', 'openai-compatible']).optional(),
         modelId: identifierSchema.optional(),
         profileId: identifierSchema.optional(),
         language: languageSchema.optional(),
@@ -543,11 +668,15 @@ const settingsSchema = z
       .default({}),
     tts: z
       .object({
-        providerId: z.enum(['local-sherpa', 'openai-compatible']).default('local-sherpa'),
+        providerId: z.enum(['local-sherpa', 'local-audiocpp', 'openai-compatible']).default('local-sherpa'),
         modelId: identifierSchema.default('tts-piper-en-libritts-r'),
         profileId: identifierSchema.default('libritts-p0'),
         language: languageSchema.default('en'),
         speed: z.number().min(0.5).max(2).default(1),
+        params: z
+          .record(identifierSchema, paramsSchema)
+          .refine((params) => Object.keys(params).length <= 32)
+          .default({}),
       })
       .strict()
       .default({}),
@@ -898,16 +1027,16 @@ export type VoiceCatalogResponse = {
 };
 export type VoiceDownloadRequest = {
   operationId: string;
-  providerId: 'local-sherpa';
+  providerId: LocalVoiceProviderId;
   modelId: string;
 };
 export type VoiceDownloadResponse = { operationId: string; accepted: true };
 export type VoiceRemoveRequest = {
-  providerId: 'local-sherpa';
+  providerId: LocalVoiceProviderId;
   modelId: string;
 };
 export type VoiceRemoveResponse = {
-  providerId: 'local-sherpa';
+  providerId: LocalVoiceProviderId;
   modelId: string;
   state: 'not-installed';
 };
@@ -985,23 +1114,33 @@ export type VoiceDeleteClonedResponse = {
 };
 export type VoiceSynthesizeRequest = {
   operationId: string;
-  providerId: 'local-sherpa' | 'openai-compatible';
+  providerId: SynthesisProviderId;
   modelId: string;
   profileId: string;
   language: string;
   speed: number;
   text: string;
+  /**
+   * Engine-specific generation parameters, validated against the model's own
+   * schema before they reach a provider.
+   *
+   * Kept as one open field rather than a union of every engine's knobs: the
+   * schema in `audioCppEngineSpecs.ts` is the single place a parameter is
+   * declared, and both this validator and the settings UI read from it. An
+   * engine with no schema accepts no parameters at all.
+   */
+  params?: VoiceParams;
 };
 export type VoiceSynthesizeResponse = {
   operationId: string;
-  providerId: 'local-sherpa' | 'openai-compatible';
+  providerId: SynthesisProviderId;
   modelId: string;
   profileId: string;
   audio: VoiceSynthesizedWav;
   durationMs: number;
 };
 export type VoiceSpeakersRequest = {
-  providerId: 'local-sherpa';
+  providerId: LocalVoiceProviderId;
   modelId: string;
 };
 /**

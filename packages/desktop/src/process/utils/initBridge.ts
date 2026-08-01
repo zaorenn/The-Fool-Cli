@@ -6,6 +6,7 @@
 
 import { app } from 'electron';
 import crypto from 'node:crypto';
+import path from 'node:path';
 import { initAllBridges } from '../bridge';
 import {
   VoiceModelManager,
@@ -13,6 +14,7 @@ import {
   OpenAICompatibleVoiceProvider,
   FoolVoiceService,
   VoiceModelCatalog,
+  AudioCppVoiceProvider,
 } from '../services/fool-voice';
 import { registerLocalModelsBridge } from '../services/local-models';
 import { handleSummarize, handleSummaryPlan } from '../services/voice-summary';
@@ -45,7 +47,26 @@ const openaiProvider = new OpenAICompatibleVoiceProvider(
   async () => null
 );
 
-const voiceService = new FoolVoiceService(modelManager, sherpaProvider, openaiProvider);
+/**
+ * The audio.cpp engine, run as a supervised child process.
+ *
+ * Everything it needs from disk comes through the installer rather than being
+ * assumed: the binary's location, the model directories, and whether a model is
+ * ready are all questions `VoiceModelManager` already answers.
+ */
+const audioCppProvider = new AudioCppVoiceProvider({
+  installation: {
+    engineBinaryPath: () => modelManager.getEngineBinaryPath('audiocpp'),
+    modelDir: (modelId) => modelManager.audioCppModelDir(modelId),
+    modelReady: async (modelId) => (await modelManager.getModelState(modelId)).status === 'ready',
+  },
+  // The same directory the sherpa provider reads: a cloned voice belongs to the
+  // user, not to an engine, and both render it from one recording on disk.
+  clonedVoicesDir: path.join(userDataPath, 'fool', 'cloned-voices'),
+  configPath: path.join(userDataPath, 'fool', 'engines', 'audiocpp-server.json'),
+});
+
+const voiceService = new FoolVoiceService(modelManager, sherpaProvider, openaiProvider, audioCppProvider);
 
 initAllBridges({
   foolVoice: {
@@ -65,7 +86,7 @@ initAllBridges({
         })
       );
       return {
-        providers: ['local-sherpa', 'openai-compatible', 'transcript-wake-word'] as any,
+        providers: ['local-sherpa', 'local-audiocpp', 'openai-compatible', 'transcript-wake-word'] as any,
         models: models as any,
         // The user's own cloned voices sit alongside the shipped presets: from
         // the picker's side a voice is a voice, whether it came with the model
@@ -96,12 +117,18 @@ initAllBridges({
       });
       return { operationId: req.operationId, accepted: true as const };
     },
-    remove: (req) =>
-      modelManager.removeModel(req.modelId).then(() => ({
+    // The engine is stopped first, unconditionally. On Windows a running server
+    // holds the GGUF open and the removal simply fails; stopping an engine that
+    // was not running costs nothing.
+    remove: async (req) => {
+      await voiceService.stopAudioCpp();
+      await modelManager.removeModel(req.modelId);
+      return {
         providerId: req.providerId as any,
         modelId: req.modelId,
         state: 'not-installed' as any,
-      })),
+      };
+    },
     transcribe: (req) =>
       voiceService
         .transcribe(req.operationId, req.providerId, req.modelId, req.languageHint, req.audio)
@@ -128,7 +155,16 @@ initAllBridges({
     },
     synthesize: (req) =>
       voiceService
-        .synthesize(req.operationId, req.providerId, req.modelId, req.profileId, req.language, req.speed, req.text)
+        .synthesize(
+          req.operationId,
+          req.providerId,
+          req.modelId,
+          req.profileId,
+          req.language,
+          req.speed,
+          req.text,
+          req.params
+        )
         .then((res) => ({
           operationId: req.operationId,
           providerId: req.providerId,

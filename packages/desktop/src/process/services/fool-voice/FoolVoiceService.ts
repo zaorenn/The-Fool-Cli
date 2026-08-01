@@ -1,6 +1,7 @@
 import type {
   VoiceCapability,
   VoiceCloneReferenceWav,
+  VoiceParams,
   VoicePcm16Wav,
   VoiceProviderId,
   VoiceSynthesizedWav,
@@ -9,6 +10,7 @@ import { FoolVoiceSettings } from '../../../common/types/foolVoice';
 import { VoiceModelCatalog } from './VoiceModelCatalog';
 import type { VoiceModelManager } from './VoiceModelManager';
 import type { SherpaVoiceProvider } from './SherpaVoiceProvider';
+import type { AudioCppVoiceProvider } from './audiocpp/AudioCppVoiceProvider';
 import type { OpenAICompatibleVoiceProvider } from './OpenAICompatibleVoiceProvider';
 
 export class FoolVoiceService {
@@ -17,7 +19,8 @@ export class FoolVoiceService {
   constructor(
     private modelManager: VoiceModelManager,
     private sherpaProvider: SherpaVoiceProvider,
-    private openaiProvider: OpenAICompatibleVoiceProvider
+    private openaiProvider: OpenAICompatibleVoiceProvider,
+    private audioCppProvider: AudioCppVoiceProvider
   ) {}
 
   public async getHealth(
@@ -31,10 +34,25 @@ export class FoolVoiceService {
         if (state.status !== 'ready') return 'unavailable';
       }
       return this.sherpaProvider.getHealth(modelId || '');
+    } else if (providerId === 'local-audiocpp') {
+      // No model id means "is the engine there at all", which the provider
+      // answers without starting anything.
+      return this.audioCppProvider.getHealth(modelId || '');
     } else if (providerId === 'openai-compatible') {
       return this.openaiProvider.getHealth();
     }
     return 'unsupported';
+  }
+
+  /**
+   * Stops the audio.cpp child, so its weights can be replaced or deleted.
+   *
+   * On Windows a running server holds the GGUF open, and `fs.rm` on an open file
+   * fails outright — so "remove this model" has to close the process first or it
+   * simply does not remove it.
+   */
+  public async stopAudioCpp(): Promise<void> {
+    await this.audioCppProvider.shutdown();
   }
 
   public async transcribe(
@@ -69,13 +87,24 @@ export class FoolVoiceService {
     profileId: string,
     language: string,
     speed: number,
-    text: string
+    text: string,
+    params?: VoiceParams
   ): Promise<{ audio: VoiceSynthesizedWav; durationMs: number }> {
     const controller = new AbortController();
     this.activeOperations.set(operationId, controller);
     try {
       if (providerId === 'local-sherpa') {
         return await this.sherpaProvider.synthesize(modelId, profileId, language, speed, text, controller.signal);
+      } else if (providerId === 'local-audiocpp') {
+        return await this.audioCppProvider.synthesize(
+          modelId,
+          profileId,
+          language,
+          speed,
+          text,
+          params,
+          controller.signal
+        );
       } else if (providerId === 'openai-compatible') {
         return await this.openaiProvider.synthesize(modelId, profileId, language, speed, text, controller.signal);
       } else {
@@ -112,9 +141,13 @@ export class FoolVoiceService {
 
   /**
    * Persists a voice cloned from a recording the renderer has already decoded
-   * and normalised. Cloning has only ever had one engine that can use it
-   * (Pocket, via `local-sherpa`), so unlike `transcribe`/`synthesize` there is
-   * no provider branch here to keep in step.
+   * and normalised.
+   *
+   * Still one code path with several engines behind it: a cloned voice is a WAV
+   * and a manifest in one directory, and the store offers that same pair to
+   * every engine that can clone. So unlike `transcribe`/`synthesize` there is no
+   * provider branch here to keep in step — adding an engine is a row in
+   * `CLONING_ENGINES`, not a case here.
    */
   public saveClonedVoice(
     voiceId: string,
