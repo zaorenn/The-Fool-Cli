@@ -10,6 +10,7 @@ import type { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybac
 import { summarizeForSpeech } from '@renderer/services/voice/narration/englishSummary';
 import { splitForSpeech } from '@renderer/services/voice/narration/speechChunks';
 import { selectTtsTarget } from '@renderer/services/voice/selectTtsTarget';
+import { createSpeechClipQueue } from '@renderer/services/voice/speechClipQueue';
 
 /**
  * Reading one passage aloud, wherever the request came from.
@@ -50,42 +51,31 @@ const unwrap = <T>(envelope: { ok: true; data: T } | { ok: false; error: { code:
  */
 const CLONED_PROFILE_PREFIX = 'cloned:';
 
-export type SpeakTextRequest = {
-  text: string;
-  settings: FoolVoiceSettings;
-  playback: AudioPlaybackService;
-  maxSpokenCharacters: number;
-  /** Records the operation id, so a caller can cancel a synthesis in flight. */
-  onOperation?: (operationId: string) => void;
-  /** Called once, when the first clip is about to play. */
-  onPlaybackStart?: () => void;
-  /**
-   * Called before every clip, the first one included.
-   *
-   * The passage is spoken as several clips, and anything timed from "the voice
-   * started" — the window in which its own echo must not be mistaken for the
-   * user interrupting — has to be measured from each of them, not just the first.
-   */
-  onClipStart?: () => void;
-  /**
-   * Asked before each clip; a false answer abandons the rest of the passage.
-   *
-   * For a caller whose reason to stop is its own rather than the player's. The
-   * voice session's is that it may be closed while the summary is still being
-   * written — a model load takes long enough for the user to have given up on
-   * the whole conversation — and speaking after that talks over a microphone
-   * that is already shut.
-   */
-  shouldContinue?: () => boolean;
-};
+export type PreparedSynthesis = { synthesize: (text: string) => Promise<VoiceSynthesizedWav> };
 
-export const speakText = async (request: SpeakTextRequest): Promise<SpeakOutcome> => {
-  const { settings } = request;
-  // Sanitised and, unless the reply itself is what should be heard, translated
-  // and shortened first.
-  const { text: spoken } = await summarizeForSpeech(request.text, settings, request.maxSpokenCharacters);
-  if (spoken.length === 0) return { spoken: false, reason: 'empty' };
+/** No text-to-speech model is installed to speak with. */
+export type SynthesisUnavailable = { unavailable: true };
 
+/**
+ * Resolves which installed voice speaks a passage and returns a ready
+ * `synthesize` function for it.
+ *
+ * This is the target/fallback resolution `speakText` always needed — catalog
+ * lookup, language/Turkish-voice selection, and falling back to something
+ * installed when the configured voice (or, for a cloned one, just its
+ * recording) is missing — pulled out so a caller that renders clips as text
+ * arrives (`useAutoReadAloud`) can reuse it instead of duplicating it.
+ *
+ * `sampleText` only informs which voice is picked (Turkish detection, same as
+ * `selectTtsTarget` always used the full passage for); the `synthesize` it
+ * returns can be called with different text on every clip.
+ */
+export const prepareSynthesis = async (
+  sampleText: string,
+  settings: FoolVoiceSettings,
+  playback: AudioPlaybackService,
+  onOperation?: (operationId: string) => void
+): Promise<PreparedSynthesis | SynthesisUnavailable> => {
   const catalog = unwrap(
     await ipcBridge.foolVoice.catalog.invoke({
       version: 1,
@@ -96,9 +86,9 @@ export const speakText = async (request: SpeakTextRequest): Promise<SpeakOutcome
   const installed = catalog.models
     .filter((model) => model.role === 'text-to-speech' && model.state.status === 'ready')
     .map((model) => model.id);
-  if (installed.length === 0) return { spoken: false, reason: 'no-voice' };
+  if (installed.length === 0) return { unavailable: true };
 
-  const target = selectTtsTarget(spoken, settings, installed);
+  const target = selectTtsTarget(sampleText, settings, installed);
 
   // A cloned voice is a recording, not a trained model: its id names a real,
   // installed engine (Pocket) whichever machine runs it, so "the model is
@@ -140,7 +130,7 @@ export const speakText = async (request: SpeakTextRequest): Promise<SpeakOutcome
 
   const synthesize = (text: string): Promise<VoiceSynthesizedWav> => {
     const operationId = newRequestId();
-    request.onOperation?.(operationId);
+    onOperation?.(operationId);
     const audio = ipcBridge.foolVoice.synthesize
       .invoke({
         version: 1,
@@ -164,11 +154,6 @@ export const speakText = async (request: SpeakTextRequest): Promise<SpeakOutcome
     return audio;
   };
 
-  const { playback } = request;
-  // Checked before the player is claimed as well as before each clip: the
-  // summary above can take a model load, and a caller may have given up during it.
-  if (request.shouldContinue?.() === false) return { spoken: true };
-
   playback.setOutputDevice(settings.devices.outputDeviceId);
   // Whatever was being said gives way to this, and the token taken straight
   // afterwards is what the rest of this passage speaks under: a stop from
@@ -176,25 +161,63 @@ export const speakText = async (request: SpeakTextRequest): Promise<SpeakOutcome
   // still queued behind it are dropped rather than spoken over the silence the
   // user just asked for.
   playback.stop();
-  const sequence = playback.currentGeneration();
+
+  return { synthesize };
+};
+
+export type SpeakTextRequest = {
+  text: string;
+  settings: FoolVoiceSettings;
+  playback: AudioPlaybackService;
+  maxSpokenCharacters: number;
+  /** Records the operation id, so a caller can cancel a synthesis in flight. */
+  onOperation?: (operationId: string) => void;
+  /** Called once, when the first clip is about to play. */
+  onPlaybackStart?: () => void;
+  /**
+   * Called before every clip, the first one included.
+   *
+   * The passage is spoken as several clips, and anything timed from "the voice
+   * started" — the window in which its own echo must not be mistaken for the
+   * user interrupting — has to be measured from each of them, not just the first.
+   */
+  onClipStart?: () => void;
+  /**
+   * Asked before each clip; a false answer abandons the rest of the passage.
+   *
+   * For a caller whose reason to stop is its own rather than the player's. The
+   * voice session's is that it may be closed while the summary is still being
+   * written — a model load takes long enough for the user to have given up on
+   * the whole conversation — and speaking after that talks over a microphone
+   * that is already shut.
+   */
+  shouldContinue?: () => boolean;
+};
+
+export const speakText = async (request: SpeakTextRequest): Promise<SpeakOutcome> => {
+  const { settings } = request;
+  // Sanitised and, unless the reply itself is what should be heard, translated
+  // and shortened first.
+  const { text: spoken } = await summarizeForSpeech(request.text, settings, request.maxSpokenCharacters);
+  if (spoken.length === 0) return { spoken: false, reason: 'empty' };
+
+  // Checked before the player is claimed as well as before each clip: the
+  // summary above can take a model load, and a caller may have given up during it.
+  if (request.shouldContinue?.() === false) return { spoken: true };
+
+  const { playback } = request;
+  const prepared = await prepareSynthesis(spoken, settings, playback, request.onOperation);
+  if ('unavailable' in prepared) return { spoken: false, reason: 'no-voice' };
+  const { synthesize } = prepared;
 
   const chunks = splitForSpeech(spoken);
-  // Rendering of the next clip is started before the current one plays, so the
-  // engine works through the answer while the speakers are busy with it.
-  let pending = synthesize(chunks[0]);
-
-  for (let index = 0; index < chunks.length; index += 1) {
-    const audio = await pending;
-    if (!playback.isCurrent(sequence) || request.shouldContinue?.() === false) return { spoken: true };
-
-    const next = chunks[index + 1];
-    pending = next === undefined ? pending : synthesize(next);
-
-    if (index === 0) request.onPlaybackStart?.();
-    request.onClipStart?.();
-    await playback.play(audio);
-    if (!playback.isCurrent(sequence) || request.shouldContinue?.() === false) return { spoken: true };
-  }
+  const queue = createSpeechClipQueue(playback, synthesize, {
+    onPlaybackStart: request.onPlaybackStart,
+    onClipStart: request.onClipStart,
+    shouldContinue: request.shouldContinue,
+  });
+  for (const chunk of chunks) queue.push(chunk);
+  await queue.finish();
 
   return { spoken: true };
 };

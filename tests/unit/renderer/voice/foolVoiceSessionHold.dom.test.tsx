@@ -24,6 +24,9 @@ const catalogInvoke = vi.fn();
 const play = vi.fn().mockResolvedValue(undefined);
 const playbackStop = vi.fn();
 
+const streamHandlers: Array<(message: unknown) => void> = [];
+const emitStream = (message: unknown): void => streamHandlers.forEach((handler) => handler(message));
+
 let frameHandler: ((frame: { rms: number }) => void) | null = null;
 let vadEvents: (string | null)[] = [];
 const beginUtterance = vi.fn();
@@ -48,7 +51,17 @@ vi.mock('@/common', () => ({
       catalog: { invoke: (request: unknown) => catalogInvoke(request) },
       stage: { emit: () => undefined },
     },
-    conversation: { responseStream: { on: () => () => undefined } },
+    conversation: {
+      responseStream: {
+        on: (handler: (message: unknown) => void) => {
+          streamHandlers.push(handler);
+          return () => {
+            const index = streamHandlers.indexOf(handler);
+            if (index >= 0) streamHandlers.splice(index, 1);
+          };
+        },
+      },
+    },
   },
 }));
 
@@ -121,6 +134,7 @@ describe('useFoolVoiceSession — the microphone hold', () => {
   beforeEach(() => {
     frameHandler = null;
     vadEvents = [];
+    streamHandlers.length = 0;
     transcribeInvoke.mockReset();
     synthesizeInvoke.mockReset();
     beginUtterance.mockClear();
@@ -148,8 +162,8 @@ describe('useFoolVoiceSession — the microphone hold', () => {
     synthesizeInvoke.mockResolvedValue({ ok: true, data: { audio } });
   });
 
-  const start = async (): Promise<void> => {
-    render(<Harness settings={DEFAULT_FOOL_VOICE_SETTINGS} />);
+  const start = async (settings: FoolVoiceSettings = DEFAULT_FOOL_VOICE_SETTINGS): Promise<void> => {
+    render(<Harness settings={settings} />);
     await act(async () => {
       await session?.start();
     });
@@ -202,5 +216,158 @@ describe('useFoolVoiceSession — the microphone hold', () => {
     transcribeInvoke.mockClear();
     await speakOnce();
     expect(transcribeInvoke).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * Streaming speech for the hands-free session — same idea as the typed-turn
+ * auto-read-aloud feature (start speaking on the first complete sentence
+ * rather than waiting for the whole reply), but only when the English
+ * summary is switched off: with it on, the reply has to be translated and
+ * shortened first, so there is nothing to speak until it is whole.
+ */
+describe('useFoolVoiceSession — streaming speech', () => {
+  const NO_SUMMARY: FoolVoiceSettings = {
+    ...DEFAULT_FOOL_VOICE_SETTINGS,
+    summary: { ...DEFAULT_FOOL_VOICE_SETTINGS.summary, translateToEnglish: false },
+  };
+
+  beforeEach(() => {
+    frameHandler = null;
+    vadEvents = [];
+    streamHandlers.length = 0;
+    transcribeInvoke.mockReset();
+    synthesizeInvoke.mockReset();
+    beginUtterance.mockClear();
+    takeUtteranceWav.mockReset();
+    play.mockClear();
+    play.mockResolvedValue(undefined);
+    playbackStop.mockClear();
+    healthInvoke.mockResolvedValue({ ok: true, data: { status: 'ready' } });
+    catalogInvoke.mockResolvedValue({
+      ok: true,
+      data: {
+        models: [
+          {
+            id: 'tts-piper-en-libritts-r',
+            providerId: 'local-sherpa',
+            role: 'text-to-speech',
+            state: { status: 'ready' },
+            profileIds: ['libritts-p0'],
+          },
+        ],
+        profiles: [],
+      },
+    });
+    transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'run the tests' } });
+    synthesizeInvoke.mockResolvedValue({ ok: true, data: { audio } });
+  });
+
+  const start = async (settings: FoolVoiceSettings = DEFAULT_FOOL_VOICE_SETTINGS): Promise<void> => {
+    render(<Harness settings={settings} />);
+    await act(async () => {
+      await session?.start();
+    });
+  };
+
+  it('starts speaking before the reply finishes, when the English summary is switched off', async () => {
+    await start(NO_SUMMARY);
+    await speakOnce();
+
+    await act(async () => {
+      emitStream({
+        type: 'text',
+        conversation_id: 'c1',
+        turn_id: 't1',
+        msg_id: 'm1',
+        data: 'First sentence. Still typing',
+      });
+      for (let tick = 0; tick < 6; tick += 1) await Promise.resolve();
+    });
+
+    // No `finish` message has been sent — speech did not wait for one.
+    expect(synthesizeInvoke).toHaveBeenCalledWith(
+      expect.objectContaining({ payload: expect.objectContaining({ text: 'First sentence.' }) })
+    );
+  });
+
+  it('does not speak until the reply finishes, when the English summary stays on', async () => {
+    await start();
+    await speakOnce();
+
+    await act(async () => {
+      emitStream({
+        type: 'text',
+        conversation_id: 'c1',
+        turn_id: 't1',
+        msg_id: 'm1',
+        data: 'First sentence. Still typing',
+      });
+      for (let tick = 0; tick < 6; tick += 1) await Promise.resolve();
+    });
+    expect(synthesizeInvoke).not.toHaveBeenCalled();
+
+    await act(async () => {
+      emitStream({ type: 'finish', conversation_id: 'c1', turn_id: 't1' });
+      for (let tick = 0; tick < 12; tick += 1) await Promise.resolve();
+    });
+    expect(synthesizeInvoke).toHaveBeenCalled();
+  });
+
+  it('appends a short evidence statement and reopens the microphone once the reply and its run are both done', async () => {
+    await start(NO_SUMMARY);
+    await speakOnce();
+
+    await act(async () => {
+      // Trailing space after the period, so the sentence is confirmed by real
+      // punctuation rather than by "nothing else has arrived yet" — the
+      // latter is deliberately held back one push longer (see
+      // `incrementalSpeechCollector.test.ts`'s replace-safety cases), which
+      // would make this assertion about the wrong thing.
+      emitStream({ type: 'text', conversation_id: 'c1', turn_id: 't1', msg_id: 'm1', data: 'Done working. ' });
+      for (let tick = 0; tick < 6; tick += 1) await Promise.resolve();
+    });
+    expect(synthesizeInvoke).toHaveBeenCalledWith(
+      expect.objectContaining({ payload: expect.objectContaining({ text: 'Done working.' }) })
+    );
+
+    await act(async () => {
+      emitStream({ type: 'acp_permission', conversation_id: 'c1', turn_id: 't1' });
+      emitStream({ type: 'finish', conversation_id: 'c1', turn_id: 't1' });
+      for (let tick = 0; tick < 12; tick += 1) await Promise.resolve();
+    });
+
+    expect(synthesizeInvoke).toHaveBeenCalledWith(
+      expect.objectContaining({ payload: expect.objectContaining({ text: expect.stringContaining('decision') }) })
+    );
+
+    // The microphone reopens once the answer and its evidence tail are done.
+    transcribeInvoke.mockClear();
+    await speakOnce();
+    expect(transcribeInvoke).toHaveBeenCalled();
+  });
+
+  // A run that ends with nothing said yet — tool calls only, no prose before
+  // `finish` — never gives `ensureIncrementalQueueReady` a sentence to claim
+  // the turn with. Without its own fallback, `finishIncrementalTurn` would
+  // see an unclaimed turn and do nothing, leaving the microphone held until
+  // the ten-minute safety timer.
+  it('reopens the microphone even when the run finishes with no speakable text of its own', async () => {
+    await start(NO_SUMMARY);
+    await speakOnce();
+
+    await act(async () => {
+      emitStream({ type: 'acp_permission', conversation_id: 'c1', turn_id: 't1' });
+      emitStream({ type: 'finish', conversation_id: 'c1', turn_id: 't1' });
+      for (let tick = 0; tick < 12; tick += 1) await Promise.resolve();
+    });
+
+    expect(synthesizeInvoke).toHaveBeenCalledWith(
+      expect.objectContaining({ payload: expect.objectContaining({ text: expect.stringContaining('decision') }) })
+    );
+
+    transcribeInvoke.mockClear();
+    await speakOnce();
+    expect(transcribeInvoke).toHaveBeenCalled();
   });
 });
