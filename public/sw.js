@@ -11,6 +11,10 @@ const PRECACHE_URLS = [
   new URL('./manifest.webmanifest', self.location.href).toString(),
   new URL('./pwa/icon-192.png', self.location.href).toString(),
   new URL('./pwa/icon-512.png', self.location.href).toString(),
+  // The launcher can ask for the home-screen icon while the host machine is
+  // asleep, which is exactly when an installed app most needs to still look
+  // like itself.
+  new URL('./pwa/icon-maskable-512.png', self.location.href).toString(),
 ];
 
 self.addEventListener('install', (event) => {
