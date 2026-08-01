@@ -6,7 +6,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ipcBridge } from '@/common';
-import type { VoiceDownloadProgress, VoiceModel, VoiceProfile } from '@/common/types/foolVoice';
+import {
+  localProviderFor,
+  type VoiceDownloadProgress,
+  type VoiceModel,
+  type VoiceProfile,
+} from '@/common/types/foolVoice';
 import { verifyVoiceModel, type VerifyResult } from './tts/voiceModelActions';
 
 export type InstallErrorCode = Extract<VoiceDownloadProgress, { state: 'failed' }>['errorCode'];
@@ -149,7 +154,11 @@ export const useVoiceCatalog = (): VoiceCatalogHandle => {
 
     const operationId = newRequestId();
     void ipcBridge.foolVoice.download
-      .invoke({ version: 1, requestId: operationId, payload: { operationId, providerId: 'local-sherpa', modelId } })
+      .invoke({
+        version: 1,
+        requestId: operationId,
+        payload: { operationId, providerId: localProviderFor(modelsRef.current, modelId), modelId },
+      })
       .then((response) => {
         if (response.ok === false) throw new Error(response.error.code);
       })

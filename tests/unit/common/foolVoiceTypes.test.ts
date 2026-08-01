@@ -6,6 +6,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import {
+  AUDIOCPP_CHATTERBOX_MODEL_ID,
   CLONING_MODEL_ID,
   DEFAULT_FOOL_VOICE_SETTINGS,
   FOOL_VOICE_PROVIDERS,
@@ -14,6 +15,8 @@ import {
   isVoiceDownloadProgressTransitionAllowed,
   isVoiceTurnTransitionAllowed,
   loadFoolVoiceSettings,
+  localProviderFor,
+  synthesisProviderFor,
   parseFoolVoiceSettings,
   type VoiceDownloadProgress,
   type VoiceModel,
@@ -371,5 +374,47 @@ describe('Voice download progress lifecycle', () => {
         progress({ sequence: 2, state: 'downloading' })
       )
     ).toBe(false);
+  });
+});
+
+/**
+ * Which provider a request is addressed to.
+ *
+ * Every synthesis call site used to name `local-sherpa` outright, which was
+ * true while sherpa was the only engine that spoke. It is not any more: a
+ * request for a Chatterbox voice sent to sherpa is refused as an unknown model,
+ * and the failure looks like a broken download rather than a misrouted call.
+ */
+describe('Routing a request to the provider that owns the model', () => {
+  const models = [
+    { id: 'tts-piper-en-libritts-r', providerId: 'local-sherpa' as const },
+    { id: AUDIOCPP_CHATTERBOX_MODEL_ID, providerId: 'local-audiocpp' as const },
+    { id: 'stt-phrase-v1', providerId: 'transcript-wake-word' as const },
+  ];
+
+  it('names the provider each model belongs to', () => {
+    expect(synthesisProviderFor(models, 'tts-piper-en-libritts-r')).toBe('local-sherpa');
+    expect(synthesisProviderFor(models, AUDIOCPP_CHATTERBOX_MODEL_ID)).toBe('local-audiocpp');
+  });
+
+  // The catalog is read asynchronously, so a call can be made against a model
+  // list that has not arrived yet. Guessing sherpa there is what the code did
+  // before this function existed, and is right far more often than it is wrong.
+  it('falls back to sherpa for a model it cannot find', () => {
+    expect(synthesisProviderFor(models, 'nothing-like-this')).toBe('local-sherpa');
+    expect(synthesisProviderFor([], 'tts-piper-en-libritts-r')).toBe('local-sherpa');
+  });
+
+  // Wake-word matching runs on a transcript and has no engine to address.
+  it('never routes synthesis to a provider that cannot speak', () => {
+    expect(synthesisProviderFor(models, 'stt-phrase-v1')).toBe('local-sherpa');
+  });
+
+  // Installing and removing are the local providers' business alone: the remote
+  // one has nothing on disk, so it must not be the answer even for its own model.
+  it('names only a local provider for an install or a removal', () => {
+    const withRemote = [...models, { id: 'tts-openai-1', providerId: 'openai-compatible' as const }];
+    expect(localProviderFor(withRemote, AUDIOCPP_CHATTERBOX_MODEL_ID)).toBe('local-audiocpp');
+    expect(localProviderFor(withRemote, 'tts-openai-1')).toBe('local-sherpa');
   });
 });

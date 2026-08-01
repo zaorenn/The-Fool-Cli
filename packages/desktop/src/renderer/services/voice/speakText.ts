@@ -5,7 +5,7 @@
  */
 
 import { ipcBridge } from '@/common';
-import type { FoolVoiceSettings, VoiceSynthesizedWav } from '@/common/types/foolVoice';
+import { synthesisProviderFor, type FoolVoiceSettings, type VoiceSynthesizedWav } from '@/common/types/foolVoice';
 import type { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybackService';
 import { summarizeForSpeech } from '@renderer/services/voice/narration/englishSummary';
 import { splitForSpeech } from '@renderer/services/voice/narration/speechChunks';
@@ -128,6 +128,13 @@ export const prepareSynthesis = async (
   const modelId = useConfigured ? target.modelId : fallbackModelId;
   const profileId = useConfigured ? target.profileId : 'speaker-0';
 
+  // Follows the model, not the stored setting. Falling back changes which model
+  // speaks, and the stored provider stayed behind — so a configured remote voice
+  // that fell back to a local one addressed a local model to the remote provider,
+  // and a Chatterbox voice went to sherpa, which has never heard of it.
+  const providerId = synthesisProviderFor(catalog.models, modelId);
+  const params = settings.tts.params[modelId];
+
   const synthesize = (text: string): Promise<VoiceSynthesizedWav> => {
     const operationId = newRequestId();
     onOperation?.(operationId);
@@ -137,12 +144,13 @@ export const prepareSynthesis = async (
         requestId: operationId,
         payload: {
           operationId,
-          providerId: settings.tts.providerId,
+          providerId,
           modelId,
           profileId,
           language: target.language,
           speed: settings.tts.speed,
           text,
+          ...(params ? { params } : {}),
         },
       })
       .then((envelope) => unwrap(envelope).audio);

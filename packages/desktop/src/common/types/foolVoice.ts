@@ -453,6 +453,39 @@ export const cloningRequiresTranscript = (modelId: string): boolean => TRANSCRIP
 export const anyCloningEngineRequiresTranscript = (modelIds: readonly string[] = CLONING_MODEL_IDS): boolean =>
   modelIds.some(cloningRequiresTranscript);
 
+/** The least a caller has to know about a model to address a request about it. */
+type ProviderOwnedModel = { id: string; providerId: VoiceProviderId };
+
+const providerOf = (models: readonly ProviderOwnedModel[], modelId: string): VoiceProviderId | undefined =>
+  models.find((model) => model.id === modelId)?.providerId;
+
+/**
+ * Which provider speaks a given model.
+ *
+ * Every synthesis call site used to name `local-sherpa` outright, which was true
+ * while sherpa was the only engine that could speak. Sending a Chatterbox voice
+ * there now gets it refused as an unknown model, and the refusal reads as a
+ * broken download rather than a misrouted request.
+ *
+ * Falls back rather than failing: the catalog arrives asynchronously, so a
+ * request can be built before the model list has loaded, and sherpa is what
+ * every one of these calls assumed before this function existed.
+ */
+export const synthesisProviderFor = (models: readonly ProviderOwnedModel[], modelId: string): SynthesisProviderId => {
+  const providerId = providerOf(models, modelId);
+  return providerId === 'local-audiocpp' || providerId === 'openai-compatible' ? providerId : 'local-sherpa';
+};
+
+/**
+ * Which provider installs and removes a given model.
+ *
+ * Narrower than {@link synthesisProviderFor} on purpose: only a local provider
+ * has anything on disk, so a remote model's own provider is not an answer the
+ * download and remove endpoints accept.
+ */
+export const localProviderFor = (models: readonly ProviderOwnedModel[], modelId: string): LocalVoiceProviderId =>
+  providerOf(models, modelId) === 'local-audiocpp' ? 'local-audiocpp' : 'local-sherpa';
+
 /** The phrase shipped before {@link WAKE_PHRASE_DEFAULT}, upgraded on read. */
 export const WAKE_PHRASE_LEGACY_DEFAULT = 'hey fool';
 

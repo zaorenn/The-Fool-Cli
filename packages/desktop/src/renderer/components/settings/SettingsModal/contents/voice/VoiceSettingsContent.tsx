@@ -8,7 +8,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Button, Input, Message, Select, Slider, Switch } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
-import type { VoiceProfile } from '@/common/types/foolVoice';
+import { localProviderFor, synthesisProviderFor, type VoiceProfile } from '@/common/types/foolVoice';
 import { useFoolVoiceSettings } from '@renderer/hooks/voice/useFoolVoiceSettings';
 import { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybackService';
 import { reconcileVoiceModels } from '@renderer/services/voice/reconcileVoiceModels';
@@ -73,18 +73,22 @@ const VoiceSettingsContent: React.FC = () => {
           requestId,
           payload: {
             operationId: requestId,
-            providerId: 'local-sherpa',
+            providerId: synthesisProviderFor(catalog.models, modelId),
             modelId,
             profileId,
             language,
             speed: settings.tts.speed,
             text: PREVIEW_TEXT[language] ?? PREVIEW_TEXT.en,
+            // The preview is the only place the knobs can be heard before a
+            // real reply is spoken with them, so it uses the saved values
+            // rather than the engine's defaults.
+            ...(settings.tts.params[modelId] ? { params: settings.tts.params[modelId] } : {}),
           },
         })
       );
       await playback.play(synthesis.audio);
     },
-    [playback, settings.devices.outputDeviceId, settings.tts.speed]
+    [catalog.models, playback, settings.devices.outputDeviceId, settings.tts.params, settings.tts.speed]
   );
 
   const handleSelectVoice = useCallback(
@@ -93,6 +97,11 @@ const VoiceSettingsContent: React.FC = () => {
         ...previous,
         tts: {
           ...previous.tts,
+          // A cloned voice appears once per engine that can render it, so the
+          // card that was clicked is what says which engine will speak — and
+          // the provider has to be recorded with it, or every later request
+          // goes to whichever engine happened to be stored first.
+          providerId: synthesisProviderFor(catalog.models, profile.modelId),
           modelId: profile.modelId,
           profileId: profile.id,
           language: profile.languages[0] ?? previous.tts.language,
@@ -132,17 +141,24 @@ const VoiceSettingsContent: React.FC = () => {
     [catalog, t]
   );
 
-  const handleBrowseSpeakers = useCallback((modelId: string) => {
-    setSpeakerCount(null);
-    setBrowsingModelId(modelId);
+  const handleBrowseSpeakers = useCallback(
+    (modelId: string) => {
+      setSpeakerCount(null);
+      setBrowsingModelId(modelId);
 
-    // The count comes from the loaded engine, so it reflects the weights that
-    // were actually downloaded.
-    void ipcBridge.foolVoice.speakers
-      .invoke({ version: 1, requestId: newRequestId(), payload: { providerId: 'local-sherpa', modelId } })
-      .then((response) => setSpeakerCount(response.ok ? response.data.speakerCount : 0))
-      .catch(() => setSpeakerCount(0));
-  }, []);
+      // The count comes from the loaded engine, so it reflects the weights that
+      // were actually downloaded.
+      void ipcBridge.foolVoice.speakers
+        .invoke({
+          version: 1,
+          requestId: newRequestId(),
+          payload: { providerId: localProviderFor(catalog.models, modelId), modelId },
+        })
+        .then((response) => setSpeakerCount(response.ok ? response.data.speakerCount : 0))
+        .catch(() => setSpeakerCount(0));
+    },
+    [catalog.models]
+  );
 
   const browsingModel = catalog.models.find((model) => model.id === browsingModelId) ?? null;
 
@@ -313,6 +329,7 @@ const VoiceSettingsContent: React.FC = () => {
               ...previous,
               tts: {
                 ...previous.tts,
+                providerId: synthesisProviderFor(catalog.models, browsingModel.id),
                 modelId: browsingModel.id,
                 profileId,
                 language: browsingModel.languages[0] ?? previous.tts.language,

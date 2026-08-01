@@ -108,3 +108,45 @@ describe('reconcileVoiceModels', () => {
     expect(reconcileVoiceModels(settings, models)).toBeNull();
   });
 });
+
+/**
+ * Two of the installable voices now speak only in a voice the user cloned, and
+ * one of them belongs to a different provider. Both facts have to survive being
+ * chosen automatically, or the fallback lands on a model that cannot speak or
+ * addresses one to an engine that has never heard of it.
+ */
+describe('reconcileVoiceModels with cloning engines installed', () => {
+  const cloningModel = (id: string, providerId: 'local-sherpa' | 'local-audiocpp'): VoiceModel =>
+    ({
+      ...speechModel(id, true, []),
+      providerId,
+      requiresClonedVoice: true,
+    }) as VoiceModel;
+
+  it('prefers a model that has a voice of its own', () => {
+    const models = [
+      listenModel(DEFAULT_FOOL_VOICE_SETTINGS.stt.modelId, true),
+      speechModel(DEFAULT_FOOL_VOICE_SETTINGS.tts.modelId, false),
+      cloningModel('tts-audiocpp-chatterbox', 'local-audiocpp'),
+      speechModel('tts-piper-tr-fettah', true, ['fettah-p0']),
+    ];
+
+    const next = reconcileVoiceModels(DEFAULT_FOOL_VOICE_SETTINGS, models);
+
+    expect(next?.tts.modelId).toBe('tts-piper-tr-fettah');
+    expect(next?.tts.profileId).toBe('fettah-p0');
+  });
+
+  it('carries the provider across with the model', () => {
+    const models = [
+      listenModel(DEFAULT_FOOL_VOICE_SETTINGS.stt.modelId, true),
+      speechModel(DEFAULT_FOOL_VOICE_SETTINGS.tts.modelId, false),
+      cloningModel('tts-audiocpp-chatterbox', 'local-audiocpp'),
+    ];
+
+    const next = reconcileVoiceModels(DEFAULT_FOOL_VOICE_SETTINGS, models);
+
+    expect(next?.tts.modelId).toBe('tts-audiocpp-chatterbox');
+    expect(next?.tts.providerId).toBe('local-audiocpp');
+  });
+});

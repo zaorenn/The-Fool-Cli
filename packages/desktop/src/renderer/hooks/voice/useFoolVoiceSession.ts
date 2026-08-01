@@ -816,16 +816,26 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
    */
   const openMicrophone = useCallback(
     async (options: { requireSpeechOutput: boolean }): Promise<boolean> => {
-      const required = options.requireSpeechOutput
-        ? [settings.stt.modelId, settings.tts.modelId]
-        : [settings.stt.modelId];
+      // Transcription is sherpa's alone; the voice that speaks belongs to
+      // whichever provider the picker recorded when it was chosen. Asking
+      // sherpa about an audio.cpp voice gets "unavailable", which reads here as
+      // a missing model and refuses to open the microphone at all.
+      const required: { modelId: string; providerId: 'local-sherpa' | 'local-audiocpp' }[] = [
+        { modelId: settings.stt.modelId, providerId: 'local-sherpa' },
+      ];
+      if (options.requireSpeechOutput) {
+        required.push({
+          modelId: settings.tts.modelId,
+          providerId: settings.tts.providerId === 'local-audiocpp' ? 'local-audiocpp' : 'local-sherpa',
+        });
+      }
 
-      for (const modelId of required) {
+      for (const { modelId, providerId } of required) {
         const health = unwrap(
           await ipcBridge.foolVoice.health.invoke({
             version: 1,
             requestId: newOperationId(),
-            payload: { providerId: 'local-sherpa', modelId },
+            payload: { providerId, modelId },
           })
         );
         if (health.status !== 'ready') {

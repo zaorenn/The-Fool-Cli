@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { FoolVoiceSettings, VoiceModel } from '@/common/types/foolVoice';
+import { synthesisProviderFor, type FoolVoiceSettings, type VoiceModel } from '@/common/types/foolVoice';
 
 /**
  * Points the voice settings at models that are actually installed.
@@ -36,12 +36,21 @@ export const reconcileVoiceModels = (
   }
 
   if (!isReady(settings.tts.modelId)) {
-    const replacement = ready('text-to-speech')[0];
+    // A model with no presets of its own can only speak in a voice the user
+    // cloned, so landing on one leaves the app mute — with no sign of why,
+    // because the model really is installed and really is ready. Preferred, not
+    // required: an engine like that is still better than no voice at all.
+    const speech = ready('text-to-speech');
+    const replacement =
+      speech.find((model) => model.role === 'text-to-speech' && model.profileIds.length > 0) ?? speech[0];
     if (replacement && replacement.role === 'text-to-speech') {
       next = {
         ...next,
         tts: {
           ...next.tts,
+          // The provider goes with the model. Left behind, it addressed an
+          // audio.cpp voice to sherpa, which reports it as an unknown model.
+          providerId: synthesisProviderFor(models, replacement.id),
           modelId: replacement.id,
           // A voice id belongs to its model, so it moves with it.
           profileId: replacement.profileIds[0] ?? 'speaker-0',

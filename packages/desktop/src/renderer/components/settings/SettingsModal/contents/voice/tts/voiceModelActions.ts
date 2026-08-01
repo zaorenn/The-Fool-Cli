@@ -5,7 +5,7 @@
  */
 
 import { ipcBridge } from '@/common';
-import type { VoiceModel, VoicePcm16Wav } from '@/common/types/foolVoice';
+import { synthesisProviderFor, type VoiceModel, type VoicePcm16Wav } from '@/common/types/foolVoice';
 
 /**
  * Proving that a model is usable, rather than merely present.
@@ -89,8 +89,11 @@ export const verifyVoiceModel = async (model: VoiceModel, profileId?: string): P
           version: 1,
           requestId,
           payload: {
+            // The model says which engine renders it. Naming sherpa here sent
+            // every audio.cpp check to a provider that has never heard of the
+            // model, and reported a perfectly good install as "Not usable".
             operationId: requestId,
-            providerId: 'local-sherpa',
+            providerId: synthesisProviderFor([model], model.id),
             modelId: model.id,
             profileId: profileId ?? model.profileIds[0] ?? 'verify',
             language: model.languages[0] ?? 'en',
