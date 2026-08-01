@@ -300,6 +300,10 @@ childProcess.execSync = function mockedExecSync(command, options) {
   if (commandText.includes('electron-vite build')) {
     ensurePlaceholder('main/index.js');
     ensurePlaceholder('preload/index.js');
+    // viteStaticCopy emits this during the real main build, and
+    // electron-builder maps it into the bundle. A fake that skipped it modelled
+    // a build that cannot actually be packaged.
+    ensurePlaceholder('main/static/images/brand/app.png');
     ensurePlaceholder('renderer/assets/index-test.js');
     ensurePlaceholder('renderer/assets/index-test.css');
     fs.writeFileSync(
@@ -342,5 +346,49 @@ childProcess.execSync = function mockedExecSync(command, options) {
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }
+  });
+});
+
+/**
+ * The incremental cache may only skip the Vite build when the output it is
+ * reusing is complete enough to package.
+ *
+ * `electron-builder.yml` maps directories out of `out/` into the app bundle
+ * (`from: out/main/static`), and those mappings are inputs the packaging step
+ * cannot recover from. A cached `out/` missing one of them passed both checks
+ * and failed minutes later inside electron-builder, naming a single file
+ * (`out/main/static/images/brand/app.png`) rather than the missing directory —
+ * which reads as a corrupt asset rather than a skipped build step.
+ */
+describe('incremental Vite cache validation', () => {
+  const builderSource = () => readFileSync(resolve(repoRoot, 'scripts/build-with-builder.js'), 'utf8');
+
+  /** Every `from: out/<path>` the packaging config depends on. */
+  const packagedOutPaths = (): string[] => {
+    const yml = readFileSync(resolve(repoRoot, 'packages/desktop/electron-builder.yml'), 'utf8');
+    return Array.from(yml.matchAll(/from:\s*out\/([^\s#]+)/g), (match) => match[1].trim());
+  };
+
+  it('depends on out/main/static, so the guard below is guarding something real', () => {
+    expect(packagedOutPaths()).toContain('main/static');
+  });
+
+  it('validates every out/ directory the packaging config maps from', () => {
+    const source = builderSource();
+    const validation = source.slice(source.indexOf('function validateViteBuildOutput'));
+
+    for (const relPath of packagedOutPaths()) {
+      expect(validation, `validateViteBuildOutput must check out/${relPath}`).toContain(relPath);
+    }
+  });
+
+  // Two checks that disagree is how the gap opened: the cheap one returned true
+  // and the thorough one was never consulted.
+  it('uses one completeness check rather than a weaker parallel one', () => {
+    const source = builderSource();
+    const existsFn = source.slice(source.indexOf('function viteBuildExists'));
+    const body = existsFn.slice(0, existsFn.indexOf('\n}'));
+
+    expect(body).toContain('validateViteBuildOutput');
   });
 });

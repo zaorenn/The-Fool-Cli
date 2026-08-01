@@ -258,16 +258,15 @@ function saveCurrentHash(hash) {
   } catch {}
 }
 
+/**
+ * Whether the existing out/ is complete enough to package.
+ *
+ * Delegates rather than repeating the checks: this used to carry its own,
+ * shorter list, and because it is consulted first the thorough one below was
+ * never reached when this returned true. One check, one answer.
+ */
 function viteBuildExists() {
-  const outDir = OUT_DIR;
-  const mainDir = path.join(outDir, 'main');
-  const rendererDir = path.join(outDir, 'renderer');
-
-  return (
-    fs.existsSync(path.join(mainDir, 'index.js')) &&
-    fs.existsSync(path.join(outDir, 'preload', 'index.js')) &&
-    validateRendererBuildOutput(rendererDir).valid
-  );
+  return validateViteBuildOutput().valid;
 }
 
 function collectHtmlAssetRefs(html, htmlDirRelative) {
@@ -360,6 +359,19 @@ function validateViteBuildOutput() {
     if (!fs.existsSync(path.join(outDir, relPath))) {
       problems.push(`Vite build output is incomplete: missing out/${relPath}`);
     }
+  }
+
+  // `electron-builder.yml` maps this directory into the bundle (`from:
+  // out/main/static`), and packaging cannot recover if it is absent — it fails
+  // naming one file inside it, which reads as a corrupt asset rather than a
+  // build step that never ran. It is produced by viteStaticCopy during the main
+  // build, so a cached out/ from a run that skipped or predated that copy looks
+  // fine by every other measure. Emptiness counts as missing: an empty
+  // directory satisfies existsSync and still packages nothing.
+  const staticDir = path.join(outDir, 'main/static');
+  const staticIsPopulated = fs.existsSync(staticDir) && fs.readdirSync(staticDir).length > 0;
+  if (!staticIsPopulated) {
+    problems.push('Vite build output is incomplete: missing or empty out/main/static');
   }
 
   const rendererValidation = validateRendererBuildOutput(path.join(outDir, 'renderer'));
