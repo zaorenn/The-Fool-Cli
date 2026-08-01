@@ -392,3 +392,39 @@ describe('incremental Vite cache validation', () => {
     expect(body).toContain('validateViteBuildOutput');
   });
 });
+
+/**
+ * A build must not be reported as signed on the strength of the log.
+ *
+ * electron-builder prints `• signing with signtool.exe path=…` for every
+ * executable it touches, with or without a certificate configured — the log of
+ * a signed build and an unsigned one are identical. A build was called "signed"
+ * from those lines and was not, which surfaces later as SmartScreen's "Windows
+ * protected your PC" on the first machine that downloads it.
+ *
+ * So the script asks Windows itself, and says which it got.
+ */
+describe('the build reports whether it signed anything', () => {
+  const source = readFileSync(resolve(__dirname, '../../../scripts/build-with-builder.js'), 'utf8');
+
+  it('asks Windows for the signature rather than inferring it', () => {
+    expect(source).toContain('Get-AuthenticodeSignature');
+    expect(source).toMatch(/reportWindowsSigningState\(/);
+  });
+
+  it('runs after a successful build, not instead of one', () => {
+    const completed = source.indexOf("console.log('✅ Build completed!')");
+    const report = source.indexOf('reportWindowsSigningState(targetArch)');
+    expect(completed).toBeGreaterThan(-1);
+    expect(report).toBeGreaterThan(completed);
+  });
+
+  // An unsigned build is the expected outcome without a certificate and is
+  // perfectly installable. Failing on it would block every local build.
+  it('reports rather than fails when nothing was signed', () => {
+    const fn = source.slice(source.indexOf('function reportWindowsSigningState'));
+    const body = fn.slice(0, fn.indexOf('\nfunction '));
+    expect(body).toContain('NOT signed');
+    expect(body).not.toMatch(/process\.exitCode|throw new Error/);
+  });
+});

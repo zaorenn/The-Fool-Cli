@@ -487,6 +487,51 @@ function killWindowsProcesses(imageNames) {
   }
 }
 
+/**
+ * Says whether the installer that was just produced is actually signed.
+ *
+ * electron-builder prints `• signing with signtool.exe path=…` for every
+ * executable it processes, whether or not a certificate was configured — so the
+ * log reads exactly the same for a signed build and an unsigned one. A build
+ * was reported as "signed" on the strength of those lines and was not, which is
+ * the kind of thing nobody discovers until a fresh machine shows SmartScreen's
+ * "Windows protected your PC" over the download.
+ *
+ * Reports rather than fails: an unsigned build is the expected outcome without a
+ * certificate, and is perfectly installable — it just warns.
+ */
+function reportWindowsSigningState(arch) {
+  if (process.platform !== 'win32') return;
+
+  const installers = fs
+    .readdirSync(OUT_DIR)
+    .filter((name) => name.endsWith('.exe') && !name.includes('__uninstaller') && name.includes(String(arch)));
+  if (installers.length === 0) return;
+
+  for (const installer of installers) {
+    const target = path.join(OUT_DIR, installer);
+    let status = 'Unknown';
+    try {
+      status = execSync(
+        `powershell -NoProfile -NonInteractive -Command "(Get-AuthenticodeSignature '${target.replace(/'/g, "''")}').Status"`,
+        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
+      ).trim();
+    } catch {
+      return; // No PowerShell to ask; silence beats a wrong claim either way.
+    }
+
+    if (status === 'Valid') {
+      console.log(`🔏 ${installer} is signed.`);
+    } else {
+      console.log(
+        `⚠️  ${installer} is NOT signed (${status}). Windows will show SmartScreen's "Windows protected your PC"` +
+          ' on a machine that has not seen this build before. Set CSC_LINK and CSC_KEY_PASSWORD to a code-signing' +
+          ' certificate to change that.'
+      );
+    }
+  }
+}
+
 function formatExecError(error) {
   return [error?.message, error?.stdout?.toString?.(), error?.stderr?.toString?.()].filter(Boolean).join('\n').trim();
 }
@@ -927,6 +972,7 @@ try {
   }
 
   console.log('✅ Build completed!');
+  reportWindowsSigningState(targetArch);
 } catch (error) {
   buildFailed = true;
   console.error('❌ Build failed:', error.message);
