@@ -367,3 +367,105 @@ describe('SpeakMessageButton', () => {
     expect(play.mock.calls.length).toBe(1);
   });
 });
+
+/**
+ * Which engine the request is addressed to, and what it carries.
+ *
+ * Reading a reply aloud used to name whatever provider the settings happened to
+ * hold. That was true while sherpa was the only one that could speak; with
+ * Chatterbox and IndexTTS2 installable it stopped being true in both directions
+ * — a stored provider outliving the model it was stored with, and a model whose
+ * provider was never stored at all.
+ */
+describe('SpeakMessageButton across providers', () => {
+  const audioCppModel = {
+    ...readyModel('tts-audiocpp-chatterbox', 'text-to-speech', []),
+    providerId: 'local-audiocpp',
+  };
+
+  beforeEach(() => {
+    settings = NO_SUMMARY;
+    catalogInvoke.mockReset();
+    synthesizeInvoke.mockReset();
+    play.mockReset();
+    play.mockResolvedValue(undefined);
+    synthesizeInvoke.mockResolvedValue(synthesis);
+  });
+
+  const payloadOf = () => (synthesizeInvoke.mock.calls[0][0] as { payload: Record<string, unknown> }).payload;
+
+  it('addresses the engine the chosen model belongs to', async () => {
+    catalogInvoke.mockResolvedValue({
+      ok: true,
+      data: { models: [audioCppModel], profiles: [{ id: 'cloned:ultron', modelId: 'tts-audiocpp-chatterbox' }] },
+    });
+    settings = {
+      ...NO_SUMMARY,
+      tts: { ...NO_SUMMARY.tts, modelId: 'tts-audiocpp-chatterbox', profileId: 'cloned:ultron' },
+    };
+
+    render(<SpeakMessageButton text='The tests pass.' />);
+    fireEvent.click(screen.getByTestId('speak-message'));
+
+    await waitFor(() => expect(synthesizeInvoke).toHaveBeenCalled());
+    expect(payloadOf()).toMatchObject({ providerId: 'local-audiocpp', modelId: 'tts-audiocpp-chatterbox' });
+  });
+
+  /**
+   * The configured voice is not installed, so another one speaks instead. The
+   * stored provider belongs to the voice that is gone — carrying it over sends
+   * a sherpa model to an engine that has never heard of it.
+   */
+  it('follows the model when it has to fall back to another voice', async () => {
+    catalogInvoke.mockResolvedValue({ ok: true, data: { models: [readyModel('tts-piper-en-libritts-r')] } });
+    settings = {
+      ...NO_SUMMARY,
+      tts: { ...NO_SUMMARY.tts, providerId: 'local-audiocpp', modelId: 'tts-audiocpp-chatterbox' },
+    };
+
+    render(<SpeakMessageButton text='The tests pass.' />);
+    fireEvent.click(screen.getByTestId('speak-message'));
+
+    await waitFor(() => expect(synthesizeInvoke).toHaveBeenCalled());
+    expect(payloadOf()).toMatchObject({ providerId: 'local-sherpa', modelId: 'tts-piper-en-libritts-r' });
+  });
+
+  // Parameters are stored per model id, and a reply is spoken with the ones
+  // belonging to the model that speaks it — never with another model's.
+  it('sends the saved parameters of the model that speaks', async () => {
+    catalogInvoke.mockResolvedValue({
+      ok: true,
+      data: { models: [audioCppModel], profiles: [{ id: 'cloned:ultron', modelId: 'tts-audiocpp-chatterbox' }] },
+    });
+    settings = {
+      ...NO_SUMMARY,
+      tts: {
+        ...NO_SUMMARY.tts,
+        modelId: 'tts-audiocpp-chatterbox',
+        profileId: 'cloned:ultron',
+        params: {
+          'tts-audiocpp-chatterbox': { exaggeration: 1.4 },
+          'tts-audiocpp-indextts2': { num_beams: 5 },
+        },
+      },
+    };
+
+    render(<SpeakMessageButton text='The tests pass.' />);
+    fireEvent.click(screen.getByTestId('speak-message'));
+
+    await waitFor(() => expect(synthesizeInvoke).toHaveBeenCalled());
+    expect(payloadOf().params).toEqual({ exaggeration: 1.4 });
+  });
+
+  // A sherpa voice takes no parameters, and the IPC validator rejects any it is
+  // given — so the key has to be absent, not present and empty.
+  it('sends no parameters at all for a model that has none', async () => {
+    catalogInvoke.mockResolvedValue({ ok: true, data: { models: [readyModel('tts-piper-en-libritts-r')] } });
+
+    render(<SpeakMessageButton text='The tests pass.' />);
+    fireEvent.click(screen.getByTestId('speak-message'));
+
+    await waitFor(() => expect(synthesizeInvoke).toHaveBeenCalled());
+    expect(payloadOf()).not.toHaveProperty('params');
+  });
+});
