@@ -1382,7 +1382,13 @@
     "cloneSavedUnusable": "{{name}} saved, but verification failed. Try a clearer recording.",
     "deleteCloned": "Delete this voice",
     "deleteClonedConfirm": "Delete {{name}}? This removes the recording — you can clone it again from the same file.",
-    "deleteClonedFailed": "Could not delete that voice."
+    "deleteClonedFailed": "Could not delete that voice.",
+    "params": "Generation parameters",
+    "paramsHint": "These are the engine's own parameter names. Anything left at its default is not sent.",
+    "paramsReset": "Reset to defaults",
+    "needsClonedVoice": "This engine has no voice of its own — it only speaks in a voice you clone. Drop a recording below to give it one.",
+    "cloneTextOptional": "What is said in the recording — optional, this engine does not read it.",
+    "cloneSavedNoEngine": "{{name}} saved. Install a cloning voice engine to hear it."
   },
   "themeCustomizer": {
     "title": "自訂主題",

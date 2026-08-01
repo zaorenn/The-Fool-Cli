@@ -12,7 +12,13 @@ import VoicePicker from '@renderer/components/settings/SettingsModal/contents/vo
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 
-const model = (id: string, installed: boolean): VoiceModel =>
+/**
+ * `profileIds` are the model's own presets, and the picker reads them to decide
+ * whether there is a speaker list worth browsing. A fixture that left them empty
+ * while rendering two preset cards described a catalog row that cannot exist —
+ * the real catalog lists every preset it ships.
+ */
+const model = (id: string, installed: boolean, profileIds: string[] = ['af_bella', 'am_adam']): VoiceModel =>
   ({
     id,
     providerId: 'local-sherpa',
@@ -24,8 +30,12 @@ const model = (id: string, installed: boolean): VoiceModel =>
     downloadBytes: null,
     installedBytes: null,
     audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
-    profileIds: [],
+    profileIds,
   }) as VoiceModel;
+
+/** An engine that can only ever speak in a voice the user cloned. */
+const cloningModel = (id: string, installed: boolean): VoiceModel =>
+  ({ ...model(id, installed, []), requiresClonedVoice: true }) as VoiceModel;
 
 const profile = (
   id: string,
@@ -284,5 +294,61 @@ describe('VoicePicker', () => {
 
     fireEvent.click(screen.getByTestId('voice-browse-kokoro'));
     expect(onBrowseSpeakers).toHaveBeenCalledTimes(2);
+  });
+});
+
+/**
+ * Chatterbox and IndexTTS2 have no voice of their own: their loaders accept only
+ * a cloning session. Until the user clones something they have no profiles at
+ * all, and the picker used to skip any model with no profiles — which hid the
+ * Install button along with the empty list, leaving a voice the app advertises
+ * with no way on screen to obtain it.
+ */
+describe('VoicePicker with an engine that speaks only in a cloned voice', () => {
+  const renderCloning = (installed: boolean, profiles: VoiceProfile[] = []) => {
+    const onInstall = vi.fn();
+    const onBrowseSpeakers = vi.fn();
+    render(
+      <VoicePicker
+        models={[cloningModel('tts-audiocpp-chatterbox', installed)]}
+        profiles={profiles}
+        selectedProfileId=''
+        selectedModelId=''
+        installs={{}}
+        verifications={{}}
+        onSelect={vi.fn()}
+        onPreview={vi.fn().mockResolvedValue(undefined)}
+        onInstall={onInstall}
+        onVerify={vi.fn()}
+        onBrowseSpeakers={onBrowseSpeakers}
+        onDelete={vi.fn()}
+      />
+    );
+    return { onInstall, onBrowseSpeakers };
+  };
+
+  it('can still be installed when it has no voices to list', () => {
+    const { onInstall } = renderCloning(false);
+
+    fireEvent.click(screen.getByTestId('voice-model-install-tts-audiocpp-chatterbox'));
+    expect(onInstall).toHaveBeenCalledWith('tts-audiocpp-chatterbox');
+  });
+
+  it('says why it is silent rather than looking broken', () => {
+    renderCloning(true);
+
+    expect(screen.getByTestId('voice-needs-clone-tts-audiocpp-chatterbox')).toBeTruthy();
+  });
+
+  // Two cloned voices are two cards, but there is no speaker list behind them —
+  // and this provider has no route to ask for one, so the request 404s.
+  it('never offers to browse speakers it does not have', () => {
+    renderCloning(true, [
+      profile('cloned:one', 'tts-audiocpp-chatterbox', 'One', { kind: 'cloned', deletable: true }),
+      profile('cloned:two', 'tts-audiocpp-chatterbox', 'Two', { kind: 'cloned', deletable: true }),
+    ]);
+
+    expect(screen.queryByTestId('voice-browse-tts-audiocpp-chatterbox')).toBeNull();
+    expect(screen.queryByTestId('voice-model-hint-tts-audiocpp-chatterbox')).toBeNull();
   });
 });

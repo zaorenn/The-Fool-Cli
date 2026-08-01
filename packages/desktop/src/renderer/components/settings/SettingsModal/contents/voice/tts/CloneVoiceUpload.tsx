@@ -9,7 +9,7 @@ import { Button, Input, Message, Spin, Upload } from '@arco-design/web-react';
 import { Check, CloseOne, Microphone } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
-import { CLONING_MODEL_ID, type VoiceModel } from '@/common/types/foolVoice';
+import { CLONING_MODEL_IDS, cloningRequiresTranscript, type VoiceModel } from '@/common/types/foolVoice';
 import { decodeAudioFileForCloning } from '@renderer/services/voice/decodeAudioFileForCloning';
 import { toBase64 } from '@renderer/services/voice/MicrophoneCapture';
 import { verifyVoiceModel } from './voiceModelActions';
@@ -17,6 +17,11 @@ import { verifyVoiceModel } from './voiceModelActions';
 export type CloneVoiceUploadProps = {
   /** Where an installed transcription model, if any, is found. */
   models: readonly VoiceModel[];
+  /**
+   * The voice currently selected, so a saved clone is proved on the engine that
+   * is about to speak it rather than on whichever cloning engine comes first.
+   */
+  preferredModelId?: string;
   /** Called once the voice is saved, so the caller re-reads the catalog and
    * the new voice appears in the picker. */
   onSaved: () => void;
@@ -27,7 +32,8 @@ type Stage =
   | { step: 'decoding' }
   | { step: 'review'; wav: ArrayBuffer; durationSec: number; displayName: string; referenceText: string }
   | { step: 'saving'; wav: ArrayBuffer; displayName: string; referenceText: string }
-  | { step: 'done'; displayName: string; usable: boolean };
+  /** `usable` is null when there was no engine installed to prove it on. */
+  | { step: 'done'; displayName: string; usable: boolean | null };
 
 /** `Name of the file.wav` → `name-of-the-file`, and never empty. */
 const slugify = (value: string): string => {
@@ -56,11 +62,26 @@ const unwrap = <T,>(envelope: { ok: true; data: T } | { ok: false; error: { code
  * the same file (not a downsample of the first) is what the transcription
  * bridge accepts — it validates exactly 16 kHz, no other rate.
  */
-const CloneVoiceUpload: React.FC<CloneVoiceUploadProps> = ({ models, onSaved }) => {
+const CloneVoiceUpload: React.FC<CloneVoiceUploadProps> = ({ models, preferredModelId, onSaved }) => {
   const { t } = useTranslation();
   const [stage, setStage] = useState<Stage>({ step: 'idle' });
 
   const installedSttModel = models.find((model) => model.role === 'speech-to-text' && model.state.status === 'ready');
+
+  // The engine the new clone is proved on. There are three that can render one
+  // and the recording is offered to all of them, so this is only about which
+  // one the "Save & Verify" check runs through — the selected voice if it can
+  // clone, otherwise any installed cloning engine.
+  const verifyModel =
+    models.find(
+      (model) => model.id === preferredModelId && CLONING_MODEL_IDS.includes(model.id) && model.state.status === 'ready'
+    ) ?? models.find((model) => CLONING_MODEL_IDS.includes(model.id) && model.state.status === 'ready');
+
+  // Only ZipVoice ever aligned the new text against what the clip says. None of
+  // the engines a clone is offered to now reads a transcript, so asking for one
+  // would be asking the user to type something nothing will look at — and on a
+  // machine with no transcription model installed, to type it by hand.
+  const transcriptRequired = verifyModel ? cloningRequiresTranscript(verifyModel.id) : false;
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -142,26 +163,33 @@ const CloneVoiceUpload: React.FC<CloneVoiceUploadProps> = ({ models, onSaved }) 
 
       onSaved();
 
-      const pocketModel = models.find((model) => model.id === CLONING_MODEL_ID);
-      const result = pocketModel
-        ? await verifyVoiceModel(pocketModel, saved.profileId)
-        : { status: 'unusable' as const };
-      setStage({ step: 'done', displayName, usable: result.status === 'usable' });
+      // Saved either way. With no cloning engine installed there is nothing to
+      // prove it on yet, which is a different answer from "it does not work" —
+      // the recording is on disk and speaks as soon as an engine arrives.
+      const result = verifyModel ? await verifyVoiceModel(verifyModel, saved.profileId) : null;
+      setStage({ step: 'done', displayName, usable: result === null ? null : result.status === 'usable' });
     } catch {
       Message.error(t('settings.voice.cloneSaveFailed'));
       setStage({ step: 'review', wav, durationSec: 0, displayName, referenceText });
     }
-  }, [stage, models, onSaved, t]);
+  }, [stage, verifyModel, onSaved, t]);
 
   if (stage.step === 'done') {
     return (
       <div className='flex items-center gap-8px py-8px' data-testid='clone-voice-done'>
-        {stage.usable ? (
+        {stage.usable === null && (
+          <span className='flex items-center gap-4px text-13px text-t-secondary'>
+            <Check theme='outline' size='14' />
+            {t('settings.voice.cloneSavedNoEngine', { name: stage.displayName })}
+          </span>
+        )}
+        {stage.usable === true && (
           <span className='flex items-center gap-4px text-13px text-success'>
             <Check theme='outline' size='14' />
             {t('settings.voice.cloneSavedUsable', { name: stage.displayName })}
           </span>
-        ) : (
+        )}
+        {stage.usable === false && (
           <span className='flex items-center gap-4px text-13px text-danger'>
             <CloseOne theme='outline' size='14' />
             {t('settings.voice.cloneSavedUnusable', { name: stage.displayName })}
@@ -187,7 +215,9 @@ const CloneVoiceUpload: React.FC<CloneVoiceUploadProps> = ({ models, onSaved }) 
         />
         <Input.TextArea
           value={stage.referenceText}
-          placeholder={t('settings.voice.cloneTextPlaceholder')}
+          placeholder={t(
+            transcriptRequired ? 'settings.voice.cloneTextPlaceholder' : 'settings.voice.cloneTextOptional'
+          )}
           disabled={saving}
           autoSize={{ minRows: 2, maxRows: 4 }}
           onChange={(value) => setStage({ ...stage, referenceText: value })}
@@ -197,7 +227,9 @@ const CloneVoiceUpload: React.FC<CloneVoiceUploadProps> = ({ models, onSaved }) 
             size='mini'
             type='primary'
             loading={saving}
-            disabled={stage.referenceText.trim().length === 0 || stage.displayName.trim().length === 0}
+            disabled={
+              (transcriptRequired && stage.referenceText.trim().length === 0) || stage.displayName.trim().length === 0
+            }
             onClick={handleSave}
           >
             {t('settings.voice.cloneSaveAndVerify')}

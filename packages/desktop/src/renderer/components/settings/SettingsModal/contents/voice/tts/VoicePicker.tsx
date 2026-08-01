@@ -94,7 +94,16 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
     <div className='flex flex-col gap-16px' data-testid='voice-picker'>
       {speechModels.map((model) => {
         const modelProfiles = profiles.filter((profile) => profile.modelId === model.id);
-        if (modelProfiles.length === 0) return null;
+        // An engine that can only speak in a cloned voice has no profiles until
+        // the user makes one, and hiding it for that reason hid the Install
+        // button too — leaving a voice that is advertised as available with no
+        // way on screen to get it.
+        const needsClone = model.role === 'text-to-speech' && model.requiresClonedVoice === true;
+        if (modelProfiles.length === 0 && !needsClone) return null;
+        // Presets of the model's own, not cards on screen. Two cloned voices are
+        // two cards, but a cloning engine has no speaker list behind them to
+        // browse — and the audio.cpp provider has no route to ask for one.
+        const hasOwnSpeakerList = model.role === 'text-to-speech' && model.profileIds.length > 1;
         const installed = isInstalled(model);
         const install = installs[model.id];
         const verification = verifications[model.id];
@@ -111,7 +120,7 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
 
               {/* Models with more voices than presets get a pointer to the full
                   list, so the other 890-odd speakers are findable. */}
-              {installed && modelProfiles.length > 1 && (
+              {installed && hasOwnSpeakerList && (
                 <Tooltip content={t('settings.voice.moreVoicesHint')} mini>
                   <Button
                     type='text'
@@ -164,6 +173,12 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
                 </span>
               )}
             </header>
+
+            {needsClone && (
+              <p className='text-12px text-t-tertiary mb-8px' data-testid={`voice-needs-clone-${model.id}`}>
+                {t('settings.voice.needsClonedVoice')}
+              </p>
+            )}
 
             <div className='grid grid-cols-2 gap-8px sm:grid-cols-3'>
               {modelProfiles.map((profile) => {
@@ -237,7 +252,7 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
               })}
             </div>
 
-            {installed && modelProfiles.length > 1 && (
+            {installed && hasOwnSpeakerList && (
               <Button
                 type='text'
                 size='mini'

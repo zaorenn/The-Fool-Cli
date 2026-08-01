@@ -193,3 +193,105 @@ describe('CloneVoiceUpload', () => {
     expect(screen.getByTestId('file-input')).not.toBeDisabled();
   });
 });
+
+/**
+ * Three engines can render a cloned voice now, not one. The recording is offered
+ * to all of them, so what this component still has to choose is which engine the
+ * "Save & Verify" check speaks through — and whether a transcript is worth
+ * insisting on at all.
+ */
+describe('CloneVoiceUpload across several cloning engines', () => {
+  const chatterbox = {
+    id: 'tts-audiocpp-chatterbox',
+    role: 'text-to-speech' as const,
+    state: { status: 'ready' as const },
+    profileIds: [],
+    requiresClonedVoice: true as const,
+  };
+
+  beforeEach(() => {
+    decodeAudioFileForCloningMock.mockReset();
+    transcribeInvoke.mockReset();
+    cloneVoiceInvoke.mockReset();
+    verifyVoiceModelMock.mockReset();
+    messageError.mockClear();
+
+    decodeAudioFileForCloningMock.mockResolvedValue({
+      wav: new ArrayBuffer(8),
+      samples: new Float32Array(4),
+      sampleRateHz: 24000,
+      durationSec: 4,
+    });
+    cloneVoiceInvoke.mockResolvedValue({ ok: true, data: { profileId: 'cloned:ultron-clip' } });
+    verifyVoiceModelMock.mockResolvedValue({ status: 'usable' });
+  });
+
+  it('proves the clone on the engine that is about to speak it', async () => {
+    render(
+      <CloneVoiceUpload
+        models={[pocketModel, chatterbox]}
+        preferredModelId='tts-audiocpp-chatterbox'
+        onSaved={vi.fn()}
+      />
+    );
+
+    dropFile();
+    await waitFor(() => expect(screen.getByTestId('clone-voice-review')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('settings.voice.cloneSaveAndVerify'));
+
+    await waitFor(() => expect(screen.getByTestId('clone-voice-done')).toBeInTheDocument());
+    expect(verifyVoiceModelMock).toHaveBeenCalledWith(chatterbox, 'cloned:ultron-clip');
+  });
+
+  // The selected voice is a Piper preset, which cannot clone. Verification still
+  // has to happen on something, and any installed cloning engine will do.
+  it('falls back to an installed cloning engine when the selected voice cannot clone', async () => {
+    render(<CloneVoiceUpload models={[pocketModel, chatterbox]} preferredModelId='tts-piper-en' onSaved={vi.fn()} />);
+
+    dropFile();
+    await waitFor(() => expect(screen.getByTestId('clone-voice-review')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('settings.voice.cloneSaveAndVerify'));
+
+    await waitFor(() => expect(screen.getByTestId('clone-voice-done')).toBeInTheDocument());
+    expect(verifyVoiceModelMock).toHaveBeenCalledWith(pocketModel, 'cloned:ultron-clip');
+  });
+
+  /**
+   * None of the three engines a clone is offered to reads a transcript — they
+   * build a speaker embedding from the audio alone. Requiring one asked the user
+   * to type something nothing would look at, and on a machine with no
+   * transcription model installed it made cloning impossible without typing the
+   * clip out by hand.
+   */
+  it('saves a voice with no transcript at all', async () => {
+    render(<CloneVoiceUpload models={[chatterbox]} onSaved={vi.fn()} />);
+
+    dropFile();
+    await waitFor(() => expect(screen.getByTestId('clone-voice-review')).toBeInTheDocument());
+
+    const save = screen.getByText('settings.voice.cloneSaveAndVerify') as HTMLButtonElement;
+    expect(save.disabled).toBe(false);
+
+    fireEvent.click(save);
+    await waitFor(() => expect(screen.getByTestId('clone-voice-done')).toBeInTheDocument());
+    const [[request]] = cloneVoiceInvoke.mock.calls;
+    expect(request.payload.referenceText).toBe('');
+  });
+
+  // Saved is saved. With no engine on disk there is nothing to prove it on, which
+  // is a different answer from "it does not work" — the recording is there and
+  // speaks the moment an engine arrives.
+  it('does not call a saved voice broken merely because no engine is installed', async () => {
+    render(
+      <CloneVoiceUpload models={[{ ...chatterbox, state: { status: 'not-installed' as const } }]} onSaved={vi.fn()} />
+    );
+
+    dropFile();
+    await waitFor(() => expect(screen.getByTestId('clone-voice-review')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('settings.voice.cloneSaveAndVerify'));
+
+    await waitFor(() => expect(screen.getByTestId('clone-voice-done')).toBeInTheDocument());
+    expect(verifyVoiceModelMock).not.toHaveBeenCalled();
+    expect(screen.getByText('settings.voice.cloneSavedNoEngine')).toBeInTheDocument();
+  });
+});

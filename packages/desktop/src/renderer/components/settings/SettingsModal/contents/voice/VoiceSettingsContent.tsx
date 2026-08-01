@@ -8,7 +8,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Button, Input, Message, Select, Slider, Switch } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
-import { localProviderFor, synthesisProviderFor, type VoiceProfile } from '@/common/types/foolVoice';
+import { localProviderFor, synthesisProviderFor, type VoiceParams, type VoiceProfile } from '@/common/types/foolVoice';
 import { useFoolVoiceSettings } from '@renderer/hooks/voice/useFoolVoiceSettings';
 import { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybackService';
 import { reconcileVoiceModels } from '@renderer/services/voice/reconcileVoiceModels';
@@ -18,6 +18,7 @@ import VoiceAgentSection from './VoiceAgentSection';
 import WakeWordSection from './WakeWordSection';
 import CloneVoiceUpload from './tts/CloneVoiceUpload';
 import SpeakerBrowser from './tts/SpeakerBrowser';
+import VoiceParamsSection from './tts/VoiceParamsSection';
 import VoicePicker from './tts/VoicePicker';
 import { useVoiceCatalog } from './useVoiceCatalog';
 
@@ -160,7 +161,23 @@ const VoiceSettingsContent: React.FC = () => {
     [catalog.models]
   );
 
+  const handleParamsChange = useCallback(
+    (params: VoiceParams) => {
+      update((previous) => {
+        const next = { ...previous.tts.params };
+        // An empty bag is stored as no bag at all: absent means "the engine's
+        // defaults", so keeping an empty record around would only be a slot for
+        // a stale model id to live in.
+        if (Object.keys(params).length === 0) delete next[previous.tts.modelId];
+        else next[previous.tts.modelId] = params;
+        return { ...previous, tts: { ...previous.tts, params: next } };
+      });
+    },
+    [update]
+  );
+
   const browsingModel = catalog.models.find((model) => model.id === browsingModelId) ?? null;
+  const selectedTtsModel = catalog.models.find((model) => model.id === settings.tts.modelId);
 
   const sttModels = catalog.models.filter((model) => model.role === 'speech-to-text');
   const selectedSttModel = catalog.models.find((model) => model.id === settings.stt.modelId);
@@ -302,7 +319,16 @@ const VoiceSettingsContent: React.FC = () => {
             onBrowseSpeakers={handleBrowseSpeakers}
             onDelete={handleDeleteClonedVoice}
           />
-          <CloneVoiceUpload models={catalog.models} onSaved={() => void catalog.refresh()} />
+          <CloneVoiceUpload
+            models={catalog.models}
+            preferredModelId={settings.tts.modelId}
+            onSaved={() => void catalog.refresh()}
+          />
+          <VoiceParamsSection
+            model={selectedTtsModel}
+            params={settings.tts.params[settings.tts.modelId] ?? {}}
+            onChange={handleParamsChange}
+          />
         </>
       ),
     },

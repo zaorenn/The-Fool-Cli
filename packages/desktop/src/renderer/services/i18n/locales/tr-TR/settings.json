@@ -1380,7 +1380,13 @@
     "cloneSavedUnusable": "{{name}} kaydedildi ama doğrulama başarısız. Daha net bir kayıt deneyin.",
     "deleteCloned": "Bu sesi sil",
     "deleteClonedConfirm": "{{name}} silinsin mi? Bu kayıt dosyasını kaldırır — aynı dosyadan tekrar klonlayabilirsiniz.",
-    "deleteClonedFailed": "O ses silinemedi."
+    "deleteClonedFailed": "O ses silinemedi.",
+    "params": "Üretim parametreleri",
+    "paramsHint": "Bunlar motorun kendi parametre adlarıdır. Varsayılanında bırakılan hiçbir değer gönderilmez.",
+    "paramsReset": "Varsayılanlara dön",
+    "needsClonedVoice": "Bu motorun kendine ait bir sesi yok — yalnızca klonladığınız bir sesle konuşur. Ona bir ses vermek için aşağıya bir kayıt bırakın.",
+    "cloneTextOptional": "Kayıtta ne söylendiği — isteğe bağlı, bu motor okumuyor.",
+    "cloneSavedNoEngine": "{{name}} kaydedildi. Duyabilmek için bir ses klonlama motoru kurun."
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",
