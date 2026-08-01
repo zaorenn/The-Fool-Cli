@@ -247,12 +247,25 @@ describe('Fool voice bridge shell', () => {
     expect(cloneVoice).not.toHaveBeenCalled();
   });
 
-  it('rejects an empty reference text before invoking a provider handler', async () => {
+  // A transcript is optional now. Of the engines a clone is offered to, none
+  // reads it — insisting on one would ask the user to type something nothing
+  // looks at, and would refuse a Chatterbox clone outright on a machine with no
+  // transcription model installed to produce one.
+  it('accepts a clone with no reference text', async () => {
+    const cloneVoice = vi.fn().mockReturnValue({ operationId: 'op-clone-1', profileId: 'cloned:ultron' });
+    initFoolVoiceBridge({ cloneVoice });
+    const blank = { ...cloneVoiceRequest, payload: { ...cloneVoiceRequest.payload, referenceText: '' } };
+
+    await expect(ipcBridge.foolVoice.cloneVoice.invoke(blank)).resolves.toMatchObject({ ok: true });
+    expect(cloneVoice).toHaveBeenCalledWith(expect.objectContaining({ referenceText: '' }));
+  });
+
+  it('still rejects a reference text that is not a string', async () => {
     const cloneVoice = vi.fn();
     initFoolVoiceBridge({ cloneVoice });
-    const blank = { ...cloneVoiceRequest, payload: { ...cloneVoiceRequest.payload, referenceText: '   ' } };
+    const wrong = { ...cloneVoiceRequest, payload: { ...cloneVoiceRequest.payload, referenceText: 7 } };
 
-    await expect(ipcBridge.foolVoice.cloneVoice.invoke(blank)).resolves.toMatchObject({
+    await expect(ipcBridge.foolVoice.cloneVoice.invoke(wrong)).resolves.toMatchObject({
       ok: false,
       error: { code: 'invalid-request' },
     });

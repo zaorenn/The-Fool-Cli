@@ -5,3 +5,4 @@ export * from './audioCodec';
 export * from './SherpaVoiceProvider';
 export * from './OpenAICompatibleVoiceProvider';
 export * from './FoolVoiceService';
+export * from './audiocpp';

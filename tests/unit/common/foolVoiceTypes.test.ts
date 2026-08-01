@@ -183,7 +183,7 @@ describe('Fool voice settings contract', () => {
 });
 
 describe('Fool voice provider and model discriminants', () => {
-  it('keeps default providers independent and does not advertise streaming or cloning', () => {
+  it('keeps default providers independent and does not advertise streaming', () => {
     expect(FOOL_VOICE_PROVIDERS).toEqual([
       {
         id: 'local-sherpa',
@@ -191,6 +191,13 @@ describe('Fool voice provider and model discriminants', () => {
         displayName: 'Local Sherpa',
         privacy: 'local',
         capabilities: ['transcribe', 'synthesize', 'manage-models'],
+      },
+      {
+        id: 'local-audiocpp',
+        kind: 'local',
+        displayName: 'Local audio.cpp',
+        privacy: 'local',
+        capabilities: ['synthesize', 'manage-models', 'voice-cloning'],
       },
       {
         id: 'openai-compatible',
@@ -207,8 +214,19 @@ describe('Fool voice provider and model discriminants', () => {
         capabilities: ['wake-word'],
       },
     ]);
-    expect(FOOL_VOICE_PROVIDERS.flatMap(({ capabilities }) => capabilities)).not.toContain('voice-cloning');
+    // Streaming synthesis stays unadvertised: neither audio.cpp model this app
+    // ships supports it — both are offline-only — so the app still chunks a
+    // passage into sentences itself.
     expect(FOOL_VOICE_PROVIDERS.flatMap(({ capabilities }) => capabilities)).not.toContain('stream-transcription');
+    expect(FOOL_VOICE_PROVIDERS.flatMap(({ capabilities }) => capabilities)).not.toContain('stream-synthesis');
+  });
+
+  it('keeps every local provider private and every model it installs on this machine', () => {
+    const local = FOOL_VOICE_PROVIDERS.filter((provider) => provider.kind === 'local');
+
+    expect(local.map(({ id }) => id)).toEqual(['local-sherpa', 'local-audiocpp']);
+    expect(local.every(({ privacy }) => privacy === 'local')).toBe(true);
+    expect(local.every(({ capabilities }) => capabilities.includes('manage-models'))).toBe(true);
   });
 
   it('narrows managed models and cloned profiles by their public discriminants', () => {

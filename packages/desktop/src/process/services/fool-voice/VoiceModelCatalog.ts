@@ -1,4 +1,10 @@
-import type { VoiceModel, VoiceProfile } from '../../../common/types/foolVoice';
+import {
+  AUDIOCPP_CHATTERBOX_MODEL_ID,
+  AUDIOCPP_INDEXTTS2_MODEL_ID,
+  type VoiceModel,
+  type VoiceProfile,
+} from '../../../common/types/foolVoice';
+import { AUDIOCPP_MODEL_SPECS, getAudioCppModelSpec } from './audiocpp/audioCppEngineSpecs';
 
 const RELEASE_BASE = 'https://github.com/k2-fsa/sherpa-onnx/releases/download';
 
@@ -169,6 +175,41 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
     installedBytes: null,
     audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
     profileIds: [],
+  },
+  {
+    id: AUDIOCPP_CHATTERBOX_MODEL_ID,
+    providerId: 'local-audiocpp',
+    displayName: 'Chatterbox (Voice cloning, expressive, Türkçe)',
+    languages: getAudioCppModelSpec(AUDIOCPP_CHATTERBOX_MODEL_ID)?.languages ?? ['en'],
+    role: 'text-to-speech',
+    distribution: 'managed',
+    state: { status: 'not-installed' },
+    downloadBytes: null,
+    installedBytes: null,
+    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
+    // No presets, and no way to acquire one: this engine's loader accepts only
+    // cloning and voice-conversion sessions, so it can *only* ever speak in a
+    // voice the user cloned.
+    profileIds: [],
+    requiresClonedVoice: true,
+    paramSpecs: getAudioCppModelSpec(AUDIOCPP_CHATTERBOX_MODEL_ID)?.params,
+  },
+  {
+    id: AUDIOCPP_INDEXTTS2_MODEL_ID,
+    providerId: 'local-audiocpp',
+    displayName: 'IndexTTS2 (Voice cloning, emotion control)',
+    languages: getAudioCppModelSpec(AUDIOCPP_INDEXTTS2_MODEL_ID)?.languages ?? ['en'],
+    role: 'text-to-speech',
+    distribution: 'managed',
+    state: { status: 'not-installed' },
+    downloadBytes: null,
+    installedBytes: null,
+    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
+    // Its loader does advertise a plain-TTS task, but the request parser throws
+    // without speaker audio, so in practice this is a cloning engine too.
+    profileIds: [],
+    requiresClonedVoice: true,
+    paramSpecs: getAudioCppModelSpec(AUDIOCPP_INDEXTTS2_MODEL_ID)?.params,
   },
   {
     id: 'stt-phrase-v1',
@@ -421,6 +462,123 @@ export const MANAGED_CATALOG_ENTRIES: Record<string, ManagedCatalogEntry> = {
   },
 };
 
+/**
+ * The prebuilt audio.cpp package that runs the GGUF voices.
+ *
+ * Downloaded on first install of any audio.cpp model rather than bundled into
+ * the installer: it keeps the installer small and the clean-machine install path
+ * unchanged, and it is how voice models already work here.
+ *
+ * Version-pinned down to the asset name, because the name carries a commit hash
+ * (`-3178daf4`) that changes independently of the tag — a pin on the tag alone
+ * would not resolve to a file.
+ */
+export type EngineCatalogEntry = {
+  engineId: string;
+  /** Release tag, used only as the on-disk directory name. */
+  version: string;
+  url: string;
+  sha256: string | null;
+  archiveBytes: number;
+  /** Paths inside the zip, which stores its files at the archive root. */
+  expectedFiles: string[];
+  /** The executable to spawn, relative to the extracted directory. */
+  binaryPath: string;
+};
+
+/**
+ * The Windows CPU package, `balance` profile.
+ *
+ * Upstream builds three CPU variants and its own packaging script documents what
+ * separates them: `fast` compiles with `-CpuArch native` and may bake in AVX-512,
+ * which upstream itself calls "not the safest choice for broad public
+ * distribution"; `portable` drops to a baseline arch with llamafile SGEMM off,
+ * the slowest but most compatible; `balance` targets AVX2 and is upstream's
+ * "recommended default for most modern Windows PCs". This app ships to whatever
+ * machine the user has, so `balance` it is.
+ *
+ * `sha256` is unset because no download has been made on this project to measure
+ * it from — the same footing the Whisper tiny and Pocket entries are on. The
+ * manifest check after extraction is what proves the archive was the right one.
+ */
+export const AUDIOCPP_ENGINE: EngineCatalogEntry = {
+  engineId: 'audiocpp',
+  version: 'release-0.5',
+  url: 'https://github.com/0xShug0/audio.cpp/releases/download/release-0.5/audiocpp-windows-cpu-balance-3178daf4.zip',
+  sha256: null,
+  archiveBytes: 11399800,
+  // Flat, not under `bin/`: upstream's packaging script stages the build's `bin`
+  // directory plus the MSVC and OpenMP redistributables, then archives the
+  // staging directory's *contents*.
+  expectedFiles: ['audiocpp_server.exe', 'MSVCP140.dll', 'VCRUNTIME140.dll'],
+  binaryPath: 'audiocpp_server.exe',
+};
+
+/**
+ * A model whose weights arrive as plain files rather than inside an archive.
+ *
+ * The GGUF builds are single files on Hugging Face, and a GGUF carries its own
+ * model spec and auxiliary assets as embedded metadata — which is why upstream's
+ * own package manifest for `chatterbox_q8_0` lists exactly one file, and why the
+ * folder it comes from contains nothing else.
+ */
+export type AudioCppFile = {
+  url: string;
+  /** Null when no checksum has been measured from a real download here. */
+  sha256: string | null;
+  bytes: number;
+  /** Where it lands, relative to the model directory. */
+  destination: string;
+};
+
+export type AudioCppCatalogEntry = {
+  modelId: string;
+  engineId: string;
+  files: AudioCppFile[];
+  /** Paths that must exist under the model directory once installed. */
+  expectedFiles: string[];
+  /** Total transfer size, for the progress bar. */
+  archiveBytes: number;
+};
+
+const HUGGINGFACE_GGUF = 'https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/main';
+
+/**
+ * Sizes are what the Hugging Face API reports for the LFS objects, not
+ * guesses — both are multi-gigabyte, so a progress bar that lies about the
+ * total is worse here than anywhere else in this catalog.
+ */
+export const AUDIOCPP_CATALOG_ENTRIES: Record<string, AudioCppCatalogEntry> = {
+  [AUDIOCPP_CHATTERBOX_MODEL_ID]: {
+    modelId: AUDIOCPP_CHATTERBOX_MODEL_ID,
+    engineId: AUDIOCPP_ENGINE.engineId,
+    files: [
+      {
+        url: `${HUGGINGFACE_GGUF}/Chatterbox-GGUF/chatterbox-q8_0.gguf`,
+        sha256: null,
+        bytes: 2088393668,
+        destination: 'chatterbox-q8_0.gguf',
+      },
+    ],
+    expectedFiles: ['chatterbox-q8_0.gguf'],
+    archiveBytes: 2088393668,
+  },
+  [AUDIOCPP_INDEXTTS2_MODEL_ID]: {
+    modelId: AUDIOCPP_INDEXTTS2_MODEL_ID,
+    engineId: AUDIOCPP_ENGINE.engineId,
+    files: [
+      {
+        url: `${HUGGINGFACE_GGUF}/IndexTTS2-GGUF/index-tts2-q8_0.gguf`,
+        sha256: null,
+        bytes: 3633888608,
+        destination: 'index-tts2-q8_0.gguf',
+      },
+    ],
+    expectedFiles: ['index-tts2-q8_0.gguf'],
+    archiveBytes: 3633888608,
+  },
+};
+
 export class VoiceModelCatalog {
   public static getModels(): readonly VoiceModel[] {
     return FOOL_VOICE_MODELS;
@@ -432,5 +590,18 @@ export class VoiceModelCatalog {
 
   public static getManagedEntry(modelId: string): ManagedCatalogEntry | undefined {
     return MANAGED_CATALOG_ENTRIES[modelId];
+  }
+
+  public static getAudioCppEntry(modelId: string): AudioCppCatalogEntry | undefined {
+    return AUDIOCPP_CATALOG_ENTRIES[modelId];
+  }
+
+  public static getEngine(engineId: string): EngineCatalogEntry | undefined {
+    return engineId === AUDIOCPP_ENGINE.engineId ? AUDIOCPP_ENGINE : undefined;
+  }
+
+  /** Every audio.cpp model, as the runtime's server config needs to see them. */
+  public static getAudioCppModelSpecs(): typeof AUDIOCPP_MODEL_SPECS {
+    return AUDIOCPP_MODEL_SPECS;
   }
 }

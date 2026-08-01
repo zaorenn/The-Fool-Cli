@@ -6,7 +6,7 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { CLONING_MODEL_ID, type VoiceProfile } from '../../../common/types/foolVoice';
+import { CLONING_ENGINES, type VoiceProfile } from '../../../common/types/foolVoice';
 
 /**
  * Voices cloned from a recording the user supplied.
@@ -24,25 +24,18 @@ import { CLONING_MODEL_ID, type VoiceProfile } from '../../../common/types/foolV
 /** Profile ids carry this prefix so the engine knows to look for a reference. */
 export const CLONED_PROFILE_PREFIX = 'cloned:';
 
-/**
- * Engines that can speak in a voice they were not trained on.
- *
- * Pocket only. It clones from the recording alone — no transcript to get wrong —
- * and keeps the speaker embedding between requests rather than deriving it from
- * the clip every sentence, which is what made it the faster of the two on a
- * machine with no GPU. Every machine this runs on has no GPU.
- *
- * Offering both put the same recording on the screen twice, once under each
- * engine, and a cloned voice carries one id whichever engine renders it — so
- * neither card could say which of the two would actually speak.
- */
-const CLONING_MODEL_IDS = [CLONING_MODEL_ID];
-
 export type ClonedVoice = {
   id: string;
   displayName: string;
   languages: readonly string[];
-  /** What is said in the recording, word for word. */
+  /**
+   * What is said in the recording, word for word.
+   *
+   * Empty when the user did not supply one, which is the normal case now: of
+   * the engines a clone is offered to, none reads it. Kept on the record rather
+   * than dropped, because it costs nothing and an engine that aligns against
+   * the clip's text can still be added later without re-recording every voice.
+   */
   referenceText: string;
   referenceWavPath: string;
 };
@@ -73,10 +66,13 @@ const readVoice = (root: string, id: string): ClonedVoice | null => {
     // byte order mark that `JSON.parse` refuses. Dropping one silently loses the
     // voice, which is a baffling way for a recording to stop working.
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8').replace(/^﻿/, '')) as Partial<ClonedVoice>;
+    // A missing transcript no longer discards the voice. It used to, because the
+    // only engine that could clone was ZipVoice, which aligns the new text
+    // against what the clip says. Pocket, Chatterbox and IndexTTS2 build a
+    // speaker embedding from the audio alone and never look at it — so a clip
+    // with no transcript is a perfectly good voice to three of the four engines,
+    // and throwing it away made an optional field silently mandatory.
     const referenceText = typeof manifest.referenceText === 'string' ? manifest.referenceText.trim() : '';
-    // Without the transcript the engine has nothing to align the clip against,
-    // and the result is noise rather than a voice.
-    if (referenceText.length === 0) return null;
 
     return {
       id,
@@ -160,15 +156,17 @@ export class ClonedVoiceStore {
    *
    * Offered against every engine that can clone, because the reference belongs
    * to the user rather than to a model: the same recording is the same voice
-   * whichever engine renders it.
+   * whichever engine renders it. That is why a profile carries its engine's
+   * provider id as well as its model id — the same clip appears once per engine
+   * under one profile id, and only the pair says which one will speak.
    */
   public profiles(): VoiceProfile[] {
     return this.list().flatMap((voice) =>
-      CLONING_MODEL_IDS.map(
-        (modelId): VoiceProfile => ({
+      CLONING_ENGINES.map(
+        (engine): VoiceProfile => ({
           id: clonedProfileId(voice.id),
-          providerId: 'local-sherpa',
-          modelId,
+          providerId: engine.providerId,
+          modelId: engine.modelId,
           kind: 'cloned',
           state: 'ready',
           displayName: voice.displayName,
