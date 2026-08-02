@@ -1,7 +1,6 @@
 import {
   AUDIOCPP_CHATTERBOX_MODEL_ID,
   AUDIOCPP_INDEXTTS2_MODEL_ID,
-  AUDIOCPP_MOSS_NANO_MODEL_ID,
   AUDIOCPP_POCKET_MODEL_ID,
   type VoiceModel,
   type VoiceProfile,
@@ -195,21 +194,6 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
     profileIds: [],
     requiresClonedVoice: true,
     paramSpecs: getAudioCppModelSpec(AUDIOCPP_POCKET_MODEL_ID)?.params,
-  },
-  {
-    id: AUDIOCPP_MOSS_NANO_MODEL_ID,
-    providerId: 'local-audiocpp',
-    displayName: 'MOSS-TTS-Nano (Voice cloning, fast, 19 languages)',
-    languages: getAudioCppModelSpec(AUDIOCPP_MOSS_NANO_MODEL_ID)?.languages ?? ['en'],
-    role: 'text-to-speech',
-    distribution: 'managed',
-    state: { status: 'not-installed' },
-    downloadBytes: null,
-    installedBytes: null,
-    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
-    profileIds: [],
-    requiresClonedVoice: true,
-    paramSpecs: getAudioCppModelSpec(AUDIOCPP_MOSS_NANO_MODEL_ID)?.params,
   },
   {
     id: AUDIOCPP_CHATTERBOX_MODEL_ID,
@@ -606,20 +590,6 @@ export const AUDIOCPP_CATALOG_ENTRIES: Record<string, AudioCppCatalogEntry> = {
     // roughly 150 MB of voices the picker already has better ones for.
     expectedFiles: ['pocket-tts-english-q8_0.gguf'],
     archiveBytes: 127856704,
-  },
-  [AUDIOCPP_MOSS_NANO_MODEL_ID]: {
-    modelId: AUDIOCPP_MOSS_NANO_MODEL_ID,
-    engineId: AUDIOCPP_ENGINE.engineId,
-    files: [
-      {
-        url: `${HUGGINGFACE_GGUF}/MOSS-TTS-Nano-100M-GGUF/moss-tts-nano-100m-q8_0.gguf`,
-        sha256: null,
-        bytes: 193337984,
-        destination: 'moss-tts-nano-100m-q8_0.gguf',
-      },
-    ],
-    expectedFiles: ['moss-tts-nano-100m-q8_0.gguf'],
-    archiveBytes: 193337984,
   },
   [AUDIOCPP_CHATTERBOX_MODEL_ID]: {
     modelId: AUDIOCPP_CHATTERBOX_MODEL_ID,

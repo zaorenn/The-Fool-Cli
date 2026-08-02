@@ -432,9 +432,6 @@ export const AUDIOCPP_INDEXTTS2_MODEL_ID = 'tts-audiocpp-indextts2';
  */
 export const AUDIOCPP_POCKET_MODEL_ID = 'tts-audiocpp-pocket';
 
-/** MOSS-TTS-Nano: 100M parameters, 19 languages, cloning, and eleven knobs. */
-export const AUDIOCPP_MOSS_NANO_MODEL_ID = 'tts-audiocpp-moss-nano';
-
 /**
  * Every engine that can speak in a voice it was not trained on.
  *
@@ -445,7 +442,6 @@ export const AUDIOCPP_MOSS_NANO_MODEL_ID = 'tts-audiocpp-moss-nano';
 export const CLONING_ENGINES: readonly { modelId: string; providerId: LocalVoiceProviderId }[] = [
   { modelId: CLONING_MODEL_ID, providerId: 'local-sherpa' },
   { modelId: AUDIOCPP_POCKET_MODEL_ID, providerId: 'local-audiocpp' },
-  { modelId: AUDIOCPP_MOSS_NANO_MODEL_ID, providerId: 'local-audiocpp' },
   { modelId: AUDIOCPP_CHATTERBOX_MODEL_ID, providerId: 'local-audiocpp' },
   { modelId: AUDIOCPP_INDEXTTS2_MODEL_ID, providerId: 'local-audiocpp' },
 ];
