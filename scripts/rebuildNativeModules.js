@@ -201,33 +201,41 @@ function rebuildSingleModule(options) {
 
   if (mustUsePrebuild) {
     console.log(`     Linux cross-compilation detected (${normalizedBuildArch} → ${targetArch})`);
+  }
 
-    // Check if module already has prebuilds
-    const prebuildsDir = path.join(moduleRoot, 'prebuilds', `${platform}-${targetArch}`);
-    if (fs.existsSync(prebuildsDir)) {
-      const files = fs.readdirSync(prebuildsDir);
-      const hasNodeFile = files.some((f) => f.endsWith('.node'));
-      if (hasNodeFile) {
-        console.log(`     ✓ Found existing prebuilds in ${prebuildsDir}, skipping rebuild`);
+  // A module that already ships a binary for this target does not need one
+  // built. This is checked for every platform, not only the cross-compiling
+  // one: `uiohook-napi` ships an N-API build per platform, and N-API is stable
+  // across Node and Electron versions, so there is nothing a rebuild would
+  // change. Trying anyway sent the build to node-gyp, which cannot find
+  // Visual Studio 2026 — it only knows up to 2022 — and failed the whole
+  // installer over a binary that was already sitting there.
+  const prebuildsDir = path.join(moduleRoot, 'prebuilds', `${platform}-${targetArch}`);
+  if (fs.existsSync(prebuildsDir)) {
+    const files = fs.readdirSync(prebuildsDir);
+    const hasNodeFile = files.some((f) => f.endsWith('.node'));
+    if (hasNodeFile) {
+      console.log(`     ✓ Found existing prebuilds in ${prebuildsDir}, skipping rebuild`);
 
-        // Delete build/ and bin/ to prevent node-gyp-build from loading wrong architecture
-        // node-gyp-build search order: bin/ -> build/Release/ -> prebuilds/
-        const buildDir = path.join(moduleRoot, 'build');
-        if (fs.existsSync(buildDir)) {
-          console.log(`     Removing build/ directory to force use of prebuilds/`);
-          fs.rmSync(buildDir, { recursive: true, force: true });
-        }
-
-        const binDir = path.join(moduleRoot, 'bin');
-        if (fs.existsSync(binDir)) {
-          console.log(`     Removing bin/ directory to force use of prebuilds/`);
-          fs.rmSync(binDir, { recursive: true, force: true });
-        }
-
-        return true;
+      // Delete build/ and bin/ to prevent node-gyp-build from loading wrong architecture
+      // node-gyp-build search order: bin/ -> build/Release/ -> prebuilds/
+      const buildDir = path.join(moduleRoot, 'build');
+      if (fs.existsSync(buildDir)) {
+        console.log(`     Removing build/ directory to force use of prebuilds/`);
+        fs.rmSync(buildDir, { recursive: true, force: true });
       }
-    }
 
+      const binDir = path.join(moduleRoot, 'bin');
+      if (fs.existsSync(binDir)) {
+        console.log(`     Removing bin/ directory to force use of prebuilds/`);
+        fs.rmSync(binDir, { recursive: true, force: true });
+      }
+
+      return true;
+    }
+  }
+
+  if (mustUsePrebuild) {
     console.log(`     No existing prebuilds found, trying prebuild-install...`);
   }
 
