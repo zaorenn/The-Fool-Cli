@@ -66,6 +66,27 @@ pub struct ImageUrl {
 /// Media types that are widely accepted as vision input by major providers.
 pub const SUPPORTED_IMAGE_MEDIA_TYPES: &[&str] = &["image/jpeg", "image/png", "image/gif", "image/webp"];
 
+/// Largest image payload we will base64-encode into a model turn.
+pub const MAX_IMAGE_INPUT_BYTES: u64 = 20 * 1024 * 1024;
+
+/// Identify an image media type from its leading magic bytes.
+///
+/// Extensions lie; the wire format is what the provider has to decode. Returns
+/// `None` for anything outside [`SUPPORTED_IMAGE_MEDIA_TYPES`].
+pub fn sniff_image_media_type(bytes: &[u8]) -> Option<&'static str> {
+    if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+        Some("image/png")
+    } else if bytes.starts_with(b"\xff\xd8\xff") {
+        Some("image/jpeg")
+    } else if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
+        Some("image/gif")
+    } else if bytes.len() >= 12 && bytes.starts_with(b"RIFF") && &bytes[8..12] == b"WEBP" {
+        Some("image/webp")
+    } else {
+        None
+    }
+}
+
 /// Map a file extension to a supported image media type.
 ///
 /// Returns `None` for extensions that are not reliably accepted as image
@@ -107,6 +128,14 @@ impl fmt::Display for ImageUrlError {
 impl error::Error for ImageUrlError {}
 
 impl ImageUrl {
+    /// Build a data URI from raw image bytes whose media type has already been
+    /// established (normally by [`sniff_image_media_type`]).
+    pub fn from_image_bytes(media_type: &str, bytes: &[u8]) -> Self {
+        Self {
+            url: format!("data:{media_type};base64,{}", STANDARD.encode(bytes)),
+        }
+    }
+
     /// Validate that this URL is a supported base64-encoded image data URI.
     pub fn validate(&self) -> Result<(), ImageUrlError> {
         let rest = self.url.strip_prefix("data:").ok_or(ImageUrlError::InvalidFormat)?;

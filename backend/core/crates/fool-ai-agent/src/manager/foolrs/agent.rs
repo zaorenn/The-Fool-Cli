@@ -19,6 +19,7 @@ use foolrs_config::config::{CliArgs, Config, McpServerConfig, ProviderType};
 use foolrs_mcp::manager::McpManager;
 use foolrs_protocol::commands::{ApprovalScope, SessionMode};
 use foolrs_protocol::{ToolApprovalManager, ToolApprovalResult};
+use foolrs_types::message::ImageInputCapability;
 use serde_json::Value;
 use tokio::sync::{Mutex, Notify, broadcast};
 use tokio::time::timeout;
@@ -117,6 +118,10 @@ pub struct FoolrsAgentManager {
     approval_manager: Arc<ToolApprovalManager>,
     confirmations: Arc<RwLock<Vec<Confirmation>>>,
     final_input_dump: Option<FoolrsFinalInputDumpContext>,
+    /// Whether this manager's model accepts image input, resolved once at
+    /// construction. The engine's own copy is private and the model cannot be
+    /// swapped underneath a live manager, so caching it here is safe.
+    image_input_capability: ImageInputCapability,
     /// Signalled by `cancel()` to abort an in-flight `engine.run()` via
     /// `tokio::select!` in `send_message()`.
     cancel_notify: Arc<Notify>,
@@ -280,6 +285,7 @@ impl FoolrsAgentManager {
             approval_manager,
             confirmations,
             final_input_dump,
+            image_input_capability,
             cancel_notify: Arc::new(Notify::new()),
             turn_finished_notify: Arc::new(Notify::new()),
         })
@@ -392,13 +398,16 @@ impl IAgentTask for FoolrsAgentManager {
         self.runtime.reset_for_new_turn(ConversationStatus::Running);
         self.dump_foolrs_final_input(&data);
 
-        // Keep attachment paths in the provider-independent history. Images
-        // are loaded on demand by foolrs's ViewImage tool.
+        // Attachment paths stay in the provider-independent history. Image
+        // attachments also travel as image blocks when the model can read them,
+        // so a pasted screenshot is seen without depending on the model
+        // choosing to call ViewImage.
         debug!(
             attachment_count = data.files.len(),
+            image_input_capability = ?self.image_input_capability,
             "Building structured Foolrs content blocks"
         );
-        let content_blocks = build_content_blocks(&data.content, &data.files);
+        let content_blocks = build_content_blocks(&data.content, &data.files, self.image_input_capability).await;
         debug!(
             block_count = content_blocks.len(),
             "Built structured Foolrs content blocks"
