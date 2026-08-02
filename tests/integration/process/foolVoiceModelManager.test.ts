@@ -78,8 +78,10 @@ describe('VoiceModelManager', () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(() => new Promise(() => {}));
 
     const first = manager.downloadModel('op-1', 'stt-whisper-tiny-int8-v1');
-    // Let the first call reach its fetch and register itself.
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    // Let the first call reach its fetch and register itself. Waited for rather
+    // than slept through: the call goes via the disk, and a fixed delay is a bet
+    // on how busy the machine is.
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
 
     await expect(manager.downloadModel('op-2', 'stt-whisper-tiny-int8-v1')).resolves.toBe('already-running');
     expect(fetchSpy).toHaveBeenCalledTimes(1);
@@ -98,8 +100,10 @@ describe('VoiceModelManager', () => {
     const second = manager.downloadModel('op-2', 'stt-whisper-tiny-int8-v1');
 
     await expect(second).resolves.toBe('already-running');
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    // The first download still has to reach its fetch, and it gets there
+    // through the disk. Twenty milliseconds was enough on an idle machine and
+    // lost the race on a busy one; waiting for the call itself cannot.
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
 
     void first;
     fetchSpy.mockRestore();

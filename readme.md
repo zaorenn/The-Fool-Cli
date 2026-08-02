@@ -89,10 +89,10 @@ cd The-Fool-Cli
 
 bun install
 node scripts/buildFoolcore.js
-bun run start
+bun run dev
 ```
 
-You need [Bun](https://bun.sh) and a stable Rust toolchain. `buildFoolcore.js` compiles the Rust backend and stages it where the app expects it. Full notes, including how to iterate on the backend, are in [`docs/contributing/development.md`](docs/contributing/development.md).
+You need [Bun](https://bun.sh), Node 22–24, and a stable Rust toolchain — on Windows, the MSVC one plus Microsoft C++ Build Tools, which `bun install` also uses to rebuild the native modules. `buildFoolcore.js` compiles the Rust backend and stages it where the app expects it; the backend downloads the Node runtime and agent CLIs it needs on first run. Full notes, including how to iterate on the backend, are in [`docs/contributing/development.md`](docs/contributing/development.md).
 
 To package an installer:
 

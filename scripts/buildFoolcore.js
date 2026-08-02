@@ -137,14 +137,30 @@ if (existsSync(path.join(managedDir, 'manifest.json'))) {
   console.log(`[foolcore] managed-resources already staged (${readdirSync(managedDir).length} entries)`);
 } else {
   const source = resolveManagedResourcesSource();
-  if (!source) {
-    fail(
-      `No managed-resources bundle found for ${runtimeKey}. The packaged app needs a Node runtime and the ` +
-        `agent CLIs next to the binary, and cargo does not build them. Point FOOL_MANAGED_RESOURCES_DIR at a copy.`
+  if (source) {
+    console.log(`[foolcore] staging managed-resources from ${source}`);
+    cpSync(source, managedDir, { recursive: true });
+  } else {
+    // Not fatal, because it is not fatal for `bun run dev`.
+    //
+    // This tree is a Node runtime and the agent CLIs. It is not in the
+    // repository and cargo cannot build it, so a fresh source clone has no way
+    // to produce one — and this step used to stop there, which meant nobody
+    // could get from a source download to a running app. The backend defaults
+    // to `ManagedResourcesMode::Download` and fetches what it needs at runtime,
+    // so a dev run is fine without it.
+    //
+    // Packaging is a different question and stays gated: `afterPack.js` runs
+    // `verifyBundledFoolcoreResources`, which refuses to produce an installer
+    // with this directory missing. So the warning cannot become a shipped
+    // installer that fails on the user's machine.
+    console.warn(
+      `[foolcore] no managed-resources bundle for ${runtimeKey}; staging the binary alone.\n` +
+        `[foolcore] Fine for development — the backend downloads the Node runtime and agent CLIs it needs.\n` +
+        `[foolcore] Building an installer needs the bundle: point FOOL_MANAGED_RESOURCES_DIR at a copy, or\n` +
+        `[foolcore] install a release of the app first and it will be found automatically.`
     );
   }
-  console.log(`[foolcore] staging managed-resources from ${source}`);
-  cpSync(source, managedDir, { recursive: true });
 }
 
 // The bundle manifest is what `afterPack.js` reads to confirm the right
@@ -163,7 +179,10 @@ writeFileSync(
       generatedAt: new Date().toISOString(),
       sourceType: 'build',
       source: { profile, repository: 'backend/core' },
-      files: [binaryName, 'managed-resources/'],
+      // What was actually staged, not what a complete bundle contains. A
+      // manifest that lists a directory it does not have sends the install
+      // diagnostics looking for a fault somewhere else.
+      files: existsSync(managedDir) ? [binaryName, 'managed-resources/'] : [binaryName],
     },
     null,
     2

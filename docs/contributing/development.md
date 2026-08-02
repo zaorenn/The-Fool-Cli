@@ -3,9 +3,12 @@
 ## Prerequisites
 
 - [Bun](https://bun.sh) for the desktop app's dependencies and scripts
+- Node.js 22 or 23 (`>=22 <25`, as declared in `package.json`) — `bun install` rebuilds native modules against Electron and needs it
 - A stable Rust toolchain for the backend (`rustup` installs one; the exact version is pinned in `backend/core/rust-toolchain.toml`)
 
-On Windows, install the Rust MSVC toolchain. If Rust compilation fails because native build tools are missing, install **Microsoft C++ Build Tools** from the Visual Studio installer, then reopen your terminal.
+On Windows, install the Rust MSVC toolchain. If Rust compilation fails because native build tools are missing, install **Microsoft C++ Build Tools** from the Visual Studio installer, then reopen your terminal. The same build tools are what `bun install` uses to rebuild `better-sqlite3` and `uiohook-napi` — without them the app starts but loses the database and hold-to-talk.
+
+Nothing else is fetched by hand. On its first run the backend downloads the Node runtime and the agent CLIs it needs into your user data directory; a packaged installer carries them instead, which is the only difference between the two.
 
 ## Repository Layout
 
