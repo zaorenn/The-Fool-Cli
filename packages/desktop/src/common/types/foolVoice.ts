@@ -422,6 +422,20 @@ export const AUDIOCPP_CHATTERBOX_MODEL_ID = 'tts-audiocpp-chatterbox';
 export const AUDIOCPP_INDEXTTS2_MODEL_ID = 'tts-audiocpp-indextts2';
 
 /**
+ * Pocket through audio.cpp rather than sherpa.
+ *
+ * The same 122 MB weights that already answer in a second or two here, reached
+ * through the engine that can carry generation parameters. Sherpa's synthesis
+ * call takes `{ text, sid, speed }` and nothing else, so every knob Pocket
+ * actually reads — temperature, the end-of-speech threshold, the noise clamp —
+ * was unreachable from inside the app.
+ */
+export const AUDIOCPP_POCKET_MODEL_ID = 'tts-audiocpp-pocket';
+
+/** MOSS-TTS-Nano: 100M parameters, 19 languages, cloning, and eleven knobs. */
+export const AUDIOCPP_MOSS_NANO_MODEL_ID = 'tts-audiocpp-moss-nano';
+
+/**
  * Every engine that can speak in a voice it was not trained on.
  *
  * A cloned voice is a recording the user owns, not a trained artefact, so the
@@ -430,6 +444,8 @@ export const AUDIOCPP_INDEXTTS2_MODEL_ID = 'tts-audiocpp-indextts2';
  */
 export const CLONING_ENGINES: readonly { modelId: string; providerId: LocalVoiceProviderId }[] = [
   { modelId: CLONING_MODEL_ID, providerId: 'local-sherpa' },
+  { modelId: AUDIOCPP_POCKET_MODEL_ID, providerId: 'local-audiocpp' },
+  { modelId: AUDIOCPP_MOSS_NANO_MODEL_ID, providerId: 'local-audiocpp' },
   { modelId: AUDIOCPP_CHATTERBOX_MODEL_ID, providerId: 'local-audiocpp' },
   { modelId: AUDIOCPP_INDEXTTS2_MODEL_ID, providerId: 'local-audiocpp' },
 ];

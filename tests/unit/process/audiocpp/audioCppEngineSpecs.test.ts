@@ -13,14 +13,27 @@ import {
   validateAudioCppParams,
   wireParamsFor,
 } from '@process/services/fool-voice/audiocpp/audioCppEngineSpecs';
-import { AUDIOCPP_CHATTERBOX_MODEL_ID, AUDIOCPP_INDEXTTS2_MODEL_ID } from '@/common/types/foolVoice';
+import {
+  AUDIOCPP_CHATTERBOX_MODEL_ID,
+  AUDIOCPP_INDEXTTS2_MODEL_ID,
+  AUDIOCPP_MOSS_NANO_MODEL_ID,
+  AUDIOCPP_POCKET_MODEL_ID,
+} from '@/common/types/foolVoice';
 
 const CHATTERBOX = AUDIOCPP_CHATTERBOX_MODEL_ID;
 const INDEXTTS2 = AUDIOCPP_INDEXTTS2_MODEL_ID;
 
 describe('audio.cpp model specs', () => {
-  it('describes both shipped models and nothing else', () => {
-    expect(AUDIOCPP_MODEL_SPECS.map((spec) => spec.modelId)).toEqual([CHATTERBOX, INDEXTTS2]);
+  // Ordered fastest first, because that is the order the picker shows them in
+  // and the first one a user tries is the one that decides whether they think
+  // local speech is usable at all.
+  it('describes every shipped model and nothing else', () => {
+    expect(AUDIOCPP_MODEL_SPECS.map((spec) => spec.modelId)).toEqual([
+      AUDIOCPP_POCKET_MODEL_ID,
+      AUDIOCPP_MOSS_NANO_MODEL_ID,
+      CHATTERBOX,
+      INDEXTTS2,
+    ]);
     expect(isAudioCppModel(CHATTERBOX)).toBe(true);
     expect(isAudioCppModel('tts-piper-en-libritts-r')).toBe(false);
   });
@@ -223,5 +236,111 @@ describe('wireParamsFor', () => {
 
   it('keeps booleans that were switched off, which are not the same as absent', () => {
     expect(wireParamsFor(CHATTERBOX, { do_sample: false })).toEqual({ do_sample: false });
+  });
+});
+
+/**
+ * The two engines that exist for speed.
+ *
+ * Chatterbox takes tens of seconds a sentence on a CPU because it is a two
+ * gigabyte transformer; these two are 122 MB and 184 MB and answer in one or
+ * two. Every default below was read from the engine's own struct initialisers,
+ * not from documentation — the Chatterbox work established that upstream's
+ * prose disagrees with its code, and a wrong default here is inaudible.
+ */
+describe('the fast cloning engines', () => {
+  const pocket = getAudioCppModelSpec(AUDIOCPP_POCKET_MODEL_ID);
+  const moss = getAudioCppModelSpec(AUDIOCPP_MOSS_NANO_MODEL_ID);
+
+  it('addresses each model by the family its loader registers', () => {
+    expect(pocket?.family).toBe('pocket_tts');
+    expect(moss?.family).toBe('moss_tts_nano');
+  });
+
+  /**
+   * `include/engine/models/pocket_tts/types.h:46-59`, plus `text_chunk_size`
+   * from `src/models/pocket_tts/session.cpp:30`.
+   */
+  it('carries Pocket’s defaults as its own header declares them', () => {
+    const byName = Object.fromEntries((pocket?.params ?? []).map((param) => [param.name, param.default]));
+    expect(byName).toEqual({
+      temperature: 0.7,
+      eos_threshold: -4,
+      noise_clamp: -1,
+      max_tokens: 50,
+      max_steps: 0,
+      frames_after_eos: -1,
+      text_chunk_size: 256,
+      truncate_clone_audio: false,
+    });
+  });
+
+  /**
+   * `include/engine/models/moss/moss_tts_nano/types.h:11-27`. The audio head's
+   * knobs arrive under unprefixed names — `session.cpp:97-108` writes
+   * `temperature` into `audio_temperature`, and so on — which is why the audio
+   * defaults sit under the short names and the text ones under `text_*`.
+   */
+  it('carries MOSS-TTS-Nano’s defaults under the names the server reads', () => {
+    const byName = Object.fromEntries((moss?.params ?? []).map((param) => [param.name, param.default]));
+    expect(byName).toEqual({
+      temperature: 1.7,
+      top_p: 0.8,
+      top_k: 25,
+      repetition_penalty: 1,
+      text_temperature: 1.5,
+      text_top_p: 1,
+      text_top_k: 50,
+      max_tokens: 300,
+      active_codebooks: 16,
+      do_sample: true,
+    });
+  });
+
+  // Three of Pocket's defaults are sentinels meaning "the model decides", so a
+  // range that started above them would make the default unreachable — the user
+  // could never get back to it after moving the slider once.
+  it('lets Pocket’s sentinel defaults be selected again', () => {
+    for (const name of ['max_steps', 'frames_after_eos', 'noise_clamp']) {
+      const spec = pocket?.params.find((param) => param.name === name);
+      expect(spec?.type).toBe('number');
+      if (spec?.type !== 'number') throw new Error('unreachable');
+      expect(spec.min).toBeLessThanOrEqual(spec.default);
+      expect(spec.max).toBeGreaterThanOrEqual(spec.default);
+    }
+  });
+
+  // `active_codebooks` above the model's own `n_vq` is a 500 from the server,
+  // not a clamp. The struct's value is the only ceiling knowable from here.
+  it('keeps active_codebooks inside the range the session will accept', () => {
+    const spec = moss?.params.find((param) => param.name === 'active_codebooks');
+    if (spec?.type !== 'number') throw new Error('active_codebooks must be numeric');
+    expect(spec.max).toBe(16);
+    expect(spec.integer).toBe(true);
+  });
+
+  // Neither reads the request's `reference_text`. Pocket does take a clone
+  // transcript, but through its own `voice_clone_text` option — sent as
+  // `reference_text` it lands under a key nothing looks at.
+  it('does not claim either engine reads the reference transcript', () => {
+    expect(pocket?.usesReferenceText).toBe(false);
+    expect(moss?.usesReferenceText).toBe(false);
+    expect(pocket?.requiresVoiceReference).toBe(true);
+    expect(moss?.requiresVoiceReference).toBe(true);
+  });
+
+  it('validates a value against the model it was sent for, not the other one', () => {
+    // Pocket has no top_p at all; MOSS does.
+    expect(validateAudioCppParams(AUDIOCPP_POCKET_MODEL_ID, { top_p: 0.8 })).toEqual({
+      key: 'top_p',
+      reason: 'unknown',
+    });
+    expect(validateAudioCppParams(AUDIOCPP_MOSS_NANO_MODEL_ID, { top_p: 0.8 })).toBeNull();
+    // MOSS's audio temperature goes above 2, where Chatterbox's stops.
+    expect(validateAudioCppParams(AUDIOCPP_MOSS_NANO_MODEL_ID, { temperature: 2.5 })).toBeNull();
+    expect(validateAudioCppParams(CHATTERBOX, { temperature: 2.5 })).toEqual({
+      key: 'temperature',
+      reason: 'range',
+    });
   });
 });

@@ -7,6 +7,8 @@
 import {
   AUDIOCPP_CHATTERBOX_MODEL_ID,
   AUDIOCPP_INDEXTTS2_MODEL_ID,
+  AUDIOCPP_MOSS_NANO_MODEL_ID,
+  AUDIOCPP_POCKET_MODEL_ID,
   type VoiceParams,
   type VoiceParamSpec,
   type VoiceParamValue,
@@ -125,7 +127,116 @@ const INDEXTTS2_PARAMS: readonly VoiceParamSpec[] = [
   { name: 'use_random_emotion', type: 'boolean', default: false },
 ];
 
+/**
+ * Pocket, run through audio.cpp.
+ *
+ * Defaults are `GenerationRequest` in
+ * `include/engine/models/pocket_tts/types.h:46-59`, with `text_chunk_size` from
+ * `src/models/pocket_tts/session.cpp:30`. Three of them are sentinels rather
+ * than values — `max_steps: 0`, `frames_after_eos: -1` and `noise_clamp: -1`
+ * all mean "let the model decide" — so each range starts at its sentinel and a
+ * slider left alone sends nothing at all.
+ *
+ * `seed` is deliberately absent: the session draws a random one per request
+ * when the key is missing, and pinning it is a debugging aid rather than a
+ * voice control. `voice_embedding_path`, `noise_file` and `voice_clone_text`
+ * are absent for the same reason — they are paths and stored clone data, not
+ * knobs.
+ */
+const POCKET_PARAMS: readonly VoiceParamSpec[] = [
+  { name: 'temperature', type: 'number', min: 0.05, max: 2, step: 0.05, default: 0.7 },
+  { name: 'eos_threshold', type: 'number', min: -20, max: 0, step: 0.5, default: -4 },
+  { name: 'noise_clamp', type: 'number', min: -1, max: 5, step: 0.1, default: -1 },
+  { name: 'max_tokens', type: 'number', min: 10, max: 2048, step: 1, integer: true, default: 50 },
+  { name: 'max_steps', type: 'number', min: 0, max: 4096, step: 1, integer: true, default: 0 },
+  { name: 'frames_after_eos', type: 'number', min: -1, max: 100, step: 1, integer: true, default: -1 },
+  { name: 'text_chunk_size', type: 'number', min: 32, max: 1024, step: 1, integer: true, default: 256 },
+  { name: 'truncate_clone_audio', type: 'boolean', default: false },
+];
+
+/**
+ * MOSS-TTS-Nano.
+ *
+ * Defaults are `MossTTSNanoSamplingOptions` and `MossTTSNanoGenerationOptions`
+ * in `include/engine/models/moss/moss_tts_nano/types.h:11-27`. The model
+ * samples text and audio through separate heads, which is why there are two
+ * temperature/top-p/top-k triples rather than one: the `text_*` set shapes what
+ * it decides to say, the unprefixed set shapes how it sounds.
+ *
+ * Two HTTP keys do not match the struct field they set, and the struct is not
+ * where to read their names: `max_tokens` writes `max_new_frames`
+ * (`session.cpp:71`), and `temperature`/`top_p`/`top_k`/`repetition_penalty`
+ * write the `audio_*` fields (`session.cpp:97-108`).
+ *
+ * `active_codebooks` is bounded by the model's own `n_vq`, and a value above it
+ * is a 500 rather than a clamp — so the ceiling here is the struct's 16. The
+ * session sets the real default from the loaded config before reading options,
+ * so a slider left alone still gets whatever that config says.
+ */
+const MOSS_NANO_PARAMS: readonly VoiceParamSpec[] = [
+  { name: 'temperature', type: 'number', min: 0.05, max: 3, step: 0.05, default: 1.7 },
+  { name: 'top_p', type: 'number', min: 0.05, max: 1, step: 0.05, default: 0.8 },
+  { name: 'top_k', type: 'number', min: 1, max: 200, step: 1, integer: true, default: 25 },
+  { name: 'repetition_penalty', type: 'number', min: 1, max: 4, step: 0.05, default: 1 },
+  { name: 'text_temperature', type: 'number', min: 0.05, max: 3, step: 0.05, default: 1.5 },
+  { name: 'text_top_p', type: 'number', min: 0.05, max: 1, step: 0.05, default: 1 },
+  { name: 'text_top_k', type: 'number', min: 1, max: 200, step: 1, integer: true, default: 50 },
+  { name: 'max_tokens', type: 'number', min: 32, max: 2048, step: 1, integer: true, default: 300 },
+  { name: 'active_codebooks', type: 'number', min: 1, max: 16, step: 1, integer: true, default: 16 },
+  { name: 'do_sample', type: 'boolean', default: true },
+];
+
 export const AUDIOCPP_MODEL_SPECS: readonly AudioCppModelSpec[] = [
+  {
+    modelId: AUDIOCPP_POCKET_MODEL_ID,
+    serverModelId: 'pocket',
+    family: 'pocket_tts',
+    // Cloning only. Pocket does ship preset voices, but they are 26 separate
+    // embedding files next to the weights and none of them is downloaded here —
+    // this entry exists to give the cloned voices their parameters.
+    task: 'clon',
+    mode: 'offline',
+    weightsFile: 'pocket-tts-english-q8_0.gguf',
+    languages: ['en', 'de', 'it', 'pt', 'es'],
+    requiresVoiceReference: true,
+    // Pocket does read a clone transcript, but through the `voice_clone_text`
+    // option rather than the request's `reference_text` field — which is what
+    // this flag controls. Sending it there would land under a key it never reads.
+    usesReferenceText: false,
+    params: POCKET_PARAMS,
+  },
+  {
+    modelId: AUDIOCPP_MOSS_NANO_MODEL_ID,
+    serverModelId: 'moss_nano',
+    family: 'moss_tts_nano',
+    task: 'clon',
+    mode: 'offline',
+    weightsFile: 'moss-tts-nano-100m-q8_0.gguf',
+    languages: [
+      'en',
+      'tr',
+      'zh',
+      'ja',
+      'ko',
+      'de',
+      'fr',
+      'es',
+      'it',
+      'pt',
+      'ru',
+      'ar',
+      'fa',
+      'pl',
+      'cs',
+      'da',
+      'el',
+      'hu',
+      'sv',
+    ],
+    requiresVoiceReference: true,
+    usesReferenceText: false,
+    params: MOSS_NANO_PARAMS,
+  },
   {
     modelId: AUDIOCPP_CHATTERBOX_MODEL_ID,
     serverModelId: 'chatterbox',
