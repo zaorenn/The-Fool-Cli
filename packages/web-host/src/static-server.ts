@@ -110,6 +110,30 @@ function spliceToTcpEndpoint(client: Socket, targetPort: number, initialBytes: B
  * Keeping the rule simple means we can decide after the first ~50 bytes
  * instead of waiting for the full header block.
  */
+/**
+ * Whether the client opened with a TLS handshake rather than an HTTP request.
+ *
+ * This server speaks plain HTTP and has no TLS listener, but browsers keep
+ * trying: Brave upgrades connections to HTTPS by default and Chrome is rolling
+ * out the same. So a phone opening the LAN URL often sends a ClientHello here
+ * before it ever sends a request line.
+ *
+ * Left to the peek loop that goes nowhere good. A ClientHello is mostly random
+ * bytes, so it usually happens to contain a newline and gets spliced to the
+ * HTTP server, which answers a TLS handshake in plaintext; when it does not,
+ * the socket waits for a request line that will never arrive. To the browser
+ * both look like a server that has not answered yet, so the automatic fall back
+ * to HTTP stalls or never fires and the page fails to load.
+ *
+ * A TLS record is `0x16` for handshake, then the two-byte version. Both are
+ * checked: a lone `0x16` is a legitimate first byte of nothing in HTTP, but the
+ * pair is not something a request line can begin with.
+ */
+function looksLikeTlsHandshake(buf: Buffer): boolean {
+  if (buf.length < 3) return false;
+  return buf[0] === 0x16 && buf[1] === 0x03 && buf[2] <= 0x04;
+}
+
 function peekWsRoute(buf: Buffer): boolean | null {
   const newlineIdx = buf.indexOf(0x0a); // \n
   if (newlineIdx < 0) return null;
@@ -190,6 +214,13 @@ export async function startStaticServer(opts: StaticServerOptions): Promise<Stat
     };
     const onData = (chunk: Buffer): void => {
       peeked = Buffer.concat([peeked, chunk]);
+      // Refused at once, so the browser's fall back to http:// fires instantly
+      // rather than waiting on a connection that was never going to answer.
+      if (looksLikeTlsHandshake(peeked)) {
+        cleanup();
+        client.destroy();
+        return;
+      }
       const decision = peekWsRoute(peeked);
       if (decision === null && peeked.length < PEEK_LIMIT_BYTES) return;
       cleanup();

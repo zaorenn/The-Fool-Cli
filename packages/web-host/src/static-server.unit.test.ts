@@ -3,6 +3,7 @@ import { promises as fs } from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
+import net from 'node:net';
 import type { AddressInfo } from 'node:net';
 import { startStaticServer, type StaticServerHandle } from './static-server.js';
 
@@ -356,5 +357,56 @@ describe('static-server', () => {
     // may still be undefined on CI machines without a LAN interface
     expect(typeof h2.networkUrl === 'string' || h2.networkUrl === undefined).toBe(true);
     await h2.stop();
+  });
+
+  /**
+   * A browser that tries HTTPS first must be told 'no' immediately.
+   *
+   * This server speaks plain HTTP and has no TLS listener. Brave upgrades
+   * connections to HTTPS by default, and Chrome is rolling the same thing out —
+   * so the first thing that arrives on this port from a phone is often a TLS
+   * ClientHello, not a request line.
+   *
+   * The peek loop was never going to find a request line in it. A ClientHello
+   * carries random bytes, so about six times in seven it happens to contain a
+   * newline and gets spliced to the HTTP server, which answers a TLS handshake
+   * in plaintext; the seventh time there is no newline at all and the socket
+   * sits there until the peek limit or a timeout. Both look to the browser like
+   * a server that might still be coming — so the automatic fallback to HTTP
+   * either stalls or never happens, and the page does not load.
+   *
+   * Closing the socket at once turns it into an instant, unambiguous failure,
+   * which is exactly what the fallback is waiting for.
+   */
+  it('refuses a TLS handshake at once instead of leaving the browser waiting', async () => {
+    const backend = await startMockBackend((_req, res) => res.end('nope'));
+    stopBackend = backend.close;
+    handle = await startStaticServer({ staticDir, backendPort: backend.port, port: 0 });
+
+    const url = new URL(handle.localUrl);
+    const socket = net.connect({ host: url.hostname, port: Number(url.port) });
+    await new Promise<void>((resolve, reject) => {
+      socket.once('connect', () => resolve());
+      socket.once('error', reject);
+    });
+
+    // A ClientHello with no newline anywhere in it — the case that used to hang.
+    const clientHello = Buffer.concat([Buffer.from([0x16, 0x03, 0x01, 0x00, 0x20]), Buffer.alloc(32, 0x41)]);
+    socket.write(clientHello);
+
+    const outcome = await new Promise<string>((resolve) => {
+      const timer = setTimeout(() => resolve('still-open'), 2000);
+      const settle = (what: string) => () => {
+        clearTimeout(timer);
+        resolve(what);
+      };
+      socket.once('close', settle('closed'));
+      socket.once('end', settle('closed'));
+      socket.once('error', settle('closed'));
+      socket.once('data', settle('answered-in-plaintext'));
+    });
+    socket.destroy();
+
+    expect(outcome).toBe('closed');
   });
 });
