@@ -26,6 +26,9 @@ files:
   - package.json
   # Native modules and their runtime dependencies
   - node_modules/better-sqlite3/**/*
+  # The keyboard hook behind hold-to-talk. A native .node, so it has to reach the
+  # bundle and be unpacked below — inside the asar it cannot be dlopen'd.
+  - node_modules/uiohook-napi/**/*
   - node_modules/bcrypt/**/*
   - node_modules/node-pty/**/*
   - node_modules/@mapbox/**/*
@@ -202,6 +205,7 @@ nodeGypRebuild: false
 
 asarUnpack:
   - '**/node_modules/better-sqlite3/**/*'
+  - '**/node_modules/uiohook-napi/**/*'
   - '**/node_modules/bcrypt/**/*'
   - '**/node_modules/node-pty/**/*'
   - '**/node_modules/@mapbox/**/*'

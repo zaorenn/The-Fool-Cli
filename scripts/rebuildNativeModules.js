@@ -73,12 +73,12 @@ function getModulesToRebuild(platform) {
   // Linux: Skip node-pty (no ARM64 prebuilds available, cross-compilation requires ARM64 toolchain)
   // macOS: Skip node-pty (cross-compilation from ARM64→x64 fails, use @lydell/node-pty-* prebuilts)
   if (platform === 'win32' || platform === 'windows') {
-    return ['better-sqlite3'];
+    return ['better-sqlite3', 'uiohook-napi'];
   } else if (platform === 'linux') {
-    return ['better-sqlite3'];
+    return ['better-sqlite3', 'uiohook-napi'];
   }
   // macOS: only rebuild better-sqlite3, skip node-pty
-  return ['better-sqlite3'];
+  return ['better-sqlite3', 'uiohook-napi'];
 }
 
 /**

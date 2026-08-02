@@ -8,6 +8,7 @@ import { ipcBridge } from '@/common';
 import { VOICE_STAGE_OFF, type VoiceStage, type VoiceStageEvent } from '@/common/types/voiceStage';
 import type { PetState } from '@process/pet/petTypes';
 import { destroyFoolsControl, repositionFoolsControl, updateFoolsControl } from './foolsControlWindow';
+import { HoldToTalkHook } from './holdToTalkHook';
 
 /**
  * Fans the voice stage out to the surfaces that show it.
@@ -74,6 +75,43 @@ const handle = (event: VoiceStageEvent): void => {
   petBridge.pose(pose);
 };
 
+let holdToTalk: HoldToTalkHook | null = null;
+
+/**
+ * Hold right Ctrl to talk.
+ *
+ * Mapped onto the push-to-talk event the shortcut already raises, which is a
+ * toggle: the first one opens the turn and the second closes it. So the key
+ * going down opens it and the key coming up closes it, and every path that ends
+ * a turn today — the notch retracting, the reply being spoken — is reused
+ * unchanged rather than given a second implementation to drift from.
+ *
+ * A cancel closes the turn the same way, because by then it is already open: the
+ * combination rule fires while the key is still down, so `RightCtrl+C` opens the
+ * microphone for a few milliseconds and then shuts it, and the copy goes through
+ * to the app underneath untouched.
+ */
+const startHoldToTalk = (): void => {
+  holdToTalk?.stop();
+  holdToTalk = new HoldToTalkHook({
+    onEffect: (effect) => {
+      // `start` opens the turn; `commit` and both cancels close the one it
+      // opened. Nothing else is needed — the toggle is symmetric.
+      ipcBridge.foolVoice.pushToTalk.emit();
+      if (effect.kind === 'cancel') {
+        console.info(`[HoldToTalk] turn abandoned: ${effect.reason}`);
+      }
+    },
+    logWarn: (message, error) => console.warn(message, error),
+  });
+
+  if (!holdToTalk.start()) {
+    // The native hook is optional: without it the app keeps the shortcut it
+    // always had, and only hold-to-talk is missing.
+    holdToTalk = null;
+  }
+};
+
 /**
  * Starts listening for stage events.
  *
@@ -86,6 +124,8 @@ export function initVoiceStageHub(): void {
   unsubscribe?.();
   unsubscribe = ipcBridge.foolVoice.stage.on(handle);
 
+  startHoldToTalk();
+
   // The tray shows whether the microphone is open and offers to close it. The
   // renderer owns the setting, so it says; this only relays.
   unsubscribeWakeListening?.();
@@ -95,6 +135,8 @@ export function initVoiceStageHub(): void {
 }
 
 export function disposeVoiceStageHub(): void {
+  holdToTalk?.stop();
+  holdToTalk = null;
   unsubscribe?.();
   unsubscribe = null;
   unsubscribeWakeListening?.();
