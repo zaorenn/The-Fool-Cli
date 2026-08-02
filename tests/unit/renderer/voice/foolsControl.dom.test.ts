@@ -25,6 +25,7 @@ const mountNotch = async (): Promise<(event: VoiceStageEvent) => void> => {
       </div>
       <div id="body">
         <div id="transcript" data-placeholder=""></div>
+        <div id="reply"></div>
         <div id="activity"></div>
       </div>
     </div>`;
@@ -131,6 +132,31 @@ describe("Fool's Control", () => {
     push(stage({ hint: 'say wake up fool', notice: 'waking the model' }));
 
     expect(document.getElementById('hint')?.textContent).toBe('waking the model');
+  });
+
+  /**
+   * Both halves of the turn, on one surface: the question and the answer. The
+   * answer is the *spoken* text, so a long reply shows the summary that is
+   * actually being read rather than paragraphs nobody will hear.
+   */
+  it('shows the assistant’s reply alongside what was asked', async () => {
+    const push = await mountNotch();
+
+    push(stage({ stage: 'speaking', transcript: 'what is the build status', reply: 'All tests pass.' }));
+
+    expect(document.getElementById('transcript')?.textContent).toBe('what is the build status');
+    expect(document.getElementById('reply')?.textContent).toBe('All tests pass.');
+    expect((document.getElementById('notch') as HTMLDivElement).classList.contains('wide')).toBe(true);
+  });
+
+  // A reply with nothing said before it — read-aloud pressed on a message —
+  // still deserves the open notch.
+  it('opens for a reply even when nothing was transcribed', async () => {
+    const push = await mountNotch();
+
+    push(stage({ stage: 'speaking', reply: 'All tests pass.' }));
+
+    expect((document.getElementById('notch') as HTMLDivElement).classList.contains('wide')).toBe(true);
   });
 
   it('retracts into the edge when the turn is over', async () => {

@@ -39,6 +39,7 @@ const stageLabel = document.getElementById('stage') as HTMLSpanElement;
 const hint = document.getElementById('hint') as HTMLSpanElement;
 const canvas = document.getElementById('wave') as HTMLCanvasElement;
 const transcript = document.getElementById('transcript') as HTMLDivElement;
+const reply = document.getElementById('reply') as HTMLDivElement;
 const activity = document.getElementById('activity') as HTMLDivElement;
 const context = canvas.getContext('2d');
 
@@ -216,7 +217,8 @@ window.foolsControlAPI.onStage((event) => {
   // just the pill: there is nothing to say yet, and a wide notch sitting open
   // over the user's screen for no reason is worse than a small one.
   const activityLines = event.activity ?? [];
-  notch.classList.toggle('wide', event.transcript.length > 0 || activityLines.length > 0);
+  const replyText = event.reply ?? '';
+  notch.classList.toggle('wide', event.transcript.length > 0 || replyText.length > 0 || activityLines.length > 0);
 
   stageLabel.textContent = event.stageLabel;
   // The notice replaces the hint rather than the stage: there is room for both,
@@ -224,6 +226,7 @@ window.foolsControlAPI.onStage((event) => {
   hint.textContent = event.notice || event.hint;
   transcript.textContent = event.transcript;
   transcript.dataset.placeholder = event.placeholder;
+  reply.textContent = replyText;
   renderActivity(activityLines);
 
   live = event.stage === 'hearing';

@@ -16,6 +16,7 @@ import {
 } from '@renderer/hooks/voice/useFoolVoiceSession';
 import { useFoolVoiceSettings } from '@renderer/hooks/voice/useFoolVoiceSettings';
 import { usePushToTalkShortcut } from '@renderer/hooks/voice/usePushToTalkShortcut';
+import { getSpeechPlayer } from '@renderer/services/voice/speechPlayer';
 
 export type WakeListenerState = 'off' | 'listening' | 'awake';
 
@@ -95,6 +96,16 @@ export const useWakeWordListener = (): void => {
   // The desktop-wide shortcut takes a turn on this same session, so it never
   // competes with the wake listener for the microphone — and with the pet off, it
   // opens capture for that one turn and closes it again afterwards.
+  // Right Ctrl pressed while the reply is being read means "stop talking".
+  // Silencing the player is enough: the clip queue behind it drops everything
+  // still pending rather than carrying on into the silence the user just asked
+  // for, and the session stays open for the next question.
+  useEffect(() => {
+    const emitter = ipcBridge.foolVoice?.interruptSpeech;
+    if (typeof emitter?.on !== 'function') return;
+    return emitter.on(() => getSpeechPlayer().stop());
+  }, []);
+
   usePushToTalkShortcut(settings.activation.pushToTalkShortcut, () => {
     void sessionRef.current.awakenNow().catch((): void => {
       // A refused microphone leaves the shortcut a no-op rather than raising an

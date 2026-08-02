@@ -80,6 +80,15 @@ export type VoiceStageEvent = {
    * yet, and the notch stays collapsed.
    */
   activity: readonly VoiceActivityLine[];
+  /**
+   * What the assistant is saying back, as it is being said.
+   *
+   * The *spoken* text, not the written reply: what reaches the notch is what
+   * `summarizeForSpeech` produced, so a long answer shows the short version that
+   * is actually being read aloud rather than paragraphs nobody will hear. Empty
+   * until there is one.
+   */
+  reply: string;
 };
 
 /** One thing the agent did, or is doing, during a spoken turn. */
@@ -101,6 +110,7 @@ export const VOICE_STAGE_OFF: VoiceStageEvent = {
   notice: '',
   awake: false,
   activity: [],
+  reply: '',
 };
 
 /** True while the microphone is open, whatever the loop is doing with it. */

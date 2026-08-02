@@ -58,6 +58,8 @@ let notice = '';
  * would mean every caller having to know about them.
  */
 let activity: readonly VoiceActivityLine[] = [];
+/** What the assistant is saying back, for Fool's Control. */
+let reply = '';
 
 /**
  * How long a level update may wait to be coalesced.
@@ -132,6 +134,7 @@ export const publishVoiceStage = (input: StageInput): void => {
     notice,
     awake: input.awake ?? false,
     activity,
+    reply,
   };
 
   // A different stage, or new words, is news: send it now.
@@ -141,7 +144,8 @@ export const publishVoiceStage = (input: StageInput): void => {
     event.stageLabel !== current.stageLabel ||
     event.notice !== current.notice ||
     event.awake !== current.awake ||
-    event.activity !== current.activity;
+    event.activity !== current.activity ||
+    event.reply !== current.reply;
 
   if (isNews) {
     queued = null;
@@ -185,6 +189,18 @@ export const publishVoiceActivity = (lines: readonly VoiceActivityLine[]): void 
   send({ ...current, activity: lines, accent: readAccent() });
 };
 
+/**
+ * Shows what the assistant is saying back.
+ *
+ * Given the spoken text rather than the written one: the notch is a read-out of
+ * the turn that is happening out loud, and an answer that was summarised down to
+ * a sentence before being read should appear as that sentence.
+ */
+export const publishVoiceReply = (text: string): void => {
+  reply = text;
+  send({ ...current, reply: text, accent: readAccent() });
+};
+
 export const clearVoiceNotice = (): void => {
   if (notice.length === 0) return;
   notice = '';
@@ -196,6 +212,7 @@ export const publishVoiceStageOff = (): void => {
   queued = null;
   notice = '';
   activity = [];
+  reply = '';
   if (frame !== null) {
     window.clearTimeout(frame);
     frame = null;

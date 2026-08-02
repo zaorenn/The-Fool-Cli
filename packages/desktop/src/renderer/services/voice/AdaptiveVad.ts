@@ -49,6 +49,30 @@ const MULTIPLIER_AT_MOST_SENSITIVE = 1.3;
 const FLOOR_FOLLOW_RATE = 0.12;
 
 /**
+ * Which of the calibration frames, sorted quietest first, becomes the floor.
+ *
+ * The floor is what the room sounds like when nothing is happening — and the
+ * calibration window is one second, so "nothing" is not what it always hears. A
+ * chair, a cough, or a word said before the microphone was ready lands in it,
+ * and an average lets that one frame set the bar for the whole session: the
+ * threshold is the floor multiplied again, so an eighth of a second of noise is
+ * enough to make the user shout for the rest of the turn.
+ *
+ * A low quantile throws that away and keeps the quiet majority. Not the minimum,
+ * which would latch onto a single dropped or muted frame and set the bar too low
+ * instead.
+ */
+const CALIBRATION_QUANTILE = 0.25;
+
+/** The value at `fraction` through the sorted samples. */
+const quantile = (samples: readonly number[], fraction: number): number => {
+  if (samples.length === 0) return 0;
+  const sorted = [...samples].sort((a, b) => a - b);
+  const index = Math.min(sorted.length - 1, Math.floor(sorted.length * fraction));
+  return sorted[index];
+};
+
+/**
  * Energy-based voice activity detection.
  *
  * Pure by design: it consumes an RMS level and a clock reading and returns an
@@ -58,8 +82,8 @@ export class AdaptiveVad {
   private readonly config: VadConfig;
 
   private calibrationStartMs: number | null = null;
-  private ambientSum = 0;
-  private ambientCount = 0;
+  /** Every frame heard during calibration, so an outlier can be discarded. */
+  private ambientSamples: number[] = [];
   private threshold: number | null = null;
   /** The calibrated ambient level the threshold is derived from. */
   private floor: number | null = null;
@@ -104,8 +128,7 @@ export class AdaptiveVad {
   /** Forgets the room as well, for a new device or a new session. */
   public recalibrate(): void {
     this.calibrationStartMs = null;
-    this.ambientSum = 0;
-    this.ambientCount = 0;
+    this.ambientSamples = [];
     this.threshold = null;
     this.floor = null;
     this.resetUtterance();
@@ -131,12 +154,11 @@ export class AdaptiveVad {
 
   private calibrate(rms: number, nowMs: number): VadEvent {
     this.calibrationStartMs ??= nowMs;
-    this.ambientSum += rms;
-    this.ambientCount += 1;
+    this.ambientSamples.push(rms);
 
     if (nowMs - this.calibrationStartMs < this.config.calibrationMs) return 'calibrating';
 
-    this.floor = Math.max(this.ambientSum / this.ambientCount, MINIMUM_FLOOR);
+    this.floor = Math.max(quantile(this.ambientSamples, CALIBRATION_QUANTILE), MINIMUM_FLOOR);
     // A higher sensitivity setting lowers the bar a speaker has to clear.
     const span = MULTIPLIER_AT_LEAST_SENSITIVE - MULTIPLIER_AT_MOST_SENSITIVE;
     this.multiplier = MULTIPLIER_AT_LEAST_SENSITIVE - span * this.config.sensitivity;

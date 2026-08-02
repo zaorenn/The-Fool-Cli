@@ -146,35 +146,18 @@ const clearHideTimer = (): void => {
 };
 
 /**
- * Whether the user is already looking at the app.
+ * Shows the notch while voice is live and takes it away shortly after.
  *
- * The notch exists for talking to the pet across the room with the window
- * minimised or behind something. Thrown over a focused window it covers the very
- * screen the user is reading — and the composer already draws the waveform and
- * the state, so it would be saying it twice.
+ * It shows whatever else is on screen, the app included. The caption strip this
+ * grew out of hid itself whenever a window of ours had focus, on the grounds
+ * that the composer draws the same waveform and the strip would be saying it
+ * twice — but that reasoning was about a card sitting over the middle of the
+ * screen. The notch lives in the top edge, and hold-to-talk is pressed most
+ * often while looking straight at the app, which is exactly when hiding it made
+ * it look broken.
  */
-const appIsInView = (): boolean =>
-  BrowserWindow.getAllWindows().some(
-    (window) =>
-      window !== controlWindow &&
-      !window.isDestroyed() &&
-      window.isVisible() &&
-      !window.isMinimized() &&
-      window.isFocused()
-  );
-
-/** Shows the notch while voice is live and takes it away shortly after. */
 export function updateFoolsControl(event: VoiceStageEvent): void {
   pending = event;
-
-  if (appIsInView()) {
-    // Nothing to show over the top of; take away anything already up.
-    if (controlWindow) {
-      clearHideTimer();
-      destroyFoolsControl();
-    }
-    return;
-  }
 
   if (shouldShowCaption(event)) {
     clearHideTimer();

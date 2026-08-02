@@ -181,6 +181,22 @@
 
       /* What the agent is doing about it, newest last — the small chat window
          half of this surface. */
+      /* The answer, in the accent so the two halves of the turn are never
+         mistaken for one another: the question is plain, the reply is the app
+         speaking. */
+      #reply {
+        margin-top: 8px;
+        font-size: 14px;
+        line-height: 1.4;
+        max-height: 60px;
+        overflow: hidden;
+        color: var(--accent);
+      }
+
+      #reply:empty {
+        display: none;
+      }
+
       #activity {
         margin-top: 10px;
         display: flex;
@@ -241,6 +257,7 @@
       </div>
       <div id="body">
         <div id="transcript" data-placeholder=""></div>
+        <div id="reply"></div>
         <div id="activity"></div>
       </div>
     </div>

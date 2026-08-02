@@ -186,3 +186,42 @@ describe('AdaptiveVad', () => {
     expect(vad.push(0.04, 4100)).toBe('speech-started');
   });
 });
+
+/**
+ * Calibration lasts one second and used to average what it heard.
+ *
+ * An average is the wrong statistic for a noise floor. The floor is what the
+ * room sounds like when nothing is happening; the average of the window
+ * includes whatever *did* happen in it — a chair, a cough, a word said too
+ * early — and one loud frame in eight drags it up several times over. The bar
+ * is that floor multiplied again, so the user then has to shout to clear a
+ * threshold set by a noise that lasted an eighth of a second.
+ */
+describe('AdaptiveVad calibration is robust to a noisy moment', () => {
+  const noisyCalibration = (vad: AdaptiveVad): void => {
+    // A quiet room, and one loud frame in the middle of the window.
+    for (let time = 0; time <= 1000; time += 50) {
+      vad.push(time === 500 ? 0.4 : 0.01, time);
+    }
+  };
+
+  it('still hears an ordinary speaking voice afterwards', () => {
+    const vad = new AdaptiveVad(config);
+    noisyCalibration(vad);
+
+    // 0.06 RMS is a normal voice at a normal distance — well above a 0.01 room.
+    const events = feed(vad, 0.06, 1050, 1400);
+
+    expect(events).toContain('speech-started');
+  });
+
+  // The same room without the noise must not become *more* sensitive than
+  // before — the fix is about ignoring an outlier, not about lowering the bar.
+  it('does not drop the bar in a room that was quiet all along', () => {
+    const quiet = new AdaptiveVad(config);
+    calibrate(quiet);
+
+    // A fan, a fridge, a passing car: still not speech.
+    expect(feed(quiet, 0.02, 1050, 1400)).not.toContain('speech-started');
+  });
+});

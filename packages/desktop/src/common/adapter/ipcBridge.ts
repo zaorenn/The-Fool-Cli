@@ -236,6 +236,8 @@ export const foolVoice = {
   >('fool.voice.shortcut'),
   /** Raised when that shortcut is pressed, wherever the user was. */
   pushToTalk: bridge.buildEmitter<void>('fool.voice.push-to-talk'),
+  /** Silences a reply that is being read aloud, without ending the session. */
+  interruptSpeech: bridge.buildEmitter<void>('fool.voice.interrupt-speech'),
   /**
    * Whether the wake word is holding the microphone.
    *

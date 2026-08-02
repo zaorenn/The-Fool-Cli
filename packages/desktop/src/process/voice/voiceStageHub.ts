@@ -95,8 +95,17 @@ const startHoldToTalk = (): void => {
   holdToTalk?.stop();
   holdToTalk = new HoldToTalkHook({
     onEffect: (effect) => {
-      // `start` opens the turn; `commit` and both cancels close the one it
-      // opened. Nothing else is needed — the toggle is symmetric.
+      // Pressed while the reply is being read, the key means "stop talking" —
+      // the natural thing to reach for when the answer is already wrong or
+      // already long enough. It silences the reply without ending the session,
+      // so the next press is a fresh question rather than a resumption.
+      if (effect.kind === 'start' && lastStage === 'speaking') {
+        ipcBridge.foolVoice.interruptSpeech.emit();
+        return;
+      }
+
+      // Otherwise: `start` opens the turn; `commit` and both cancels close the
+      // one it opened. Nothing else is needed — the toggle is symmetric.
       ipcBridge.foolVoice.pushToTalk.emit();
       if (effect.kind === 'cancel') {
         console.info(`[HoldToTalk] turn abandoned: ${effect.reason}`);
@@ -105,7 +114,9 @@ const startHoldToTalk = (): void => {
     logWarn: (message, error) => console.warn(message, error),
   });
 
-  if (!holdToTalk.start()) {
+  if (holdToTalk.start()) {
+    console.info('[HoldToTalk] listening for right Ctrl');
+  } else {
     // The native hook is optional: without it the app keeps the shortcut it
     // always had, and only hold-to-talk is missing.
     holdToTalk = null;

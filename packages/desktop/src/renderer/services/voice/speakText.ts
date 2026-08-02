@@ -11,6 +11,7 @@ import { summarizeForSpeech } from '@renderer/services/voice/narration/englishSu
 import { splitForSpeech } from '@renderer/services/voice/narration/speechChunks';
 import { selectTtsTarget } from '@renderer/services/voice/selectTtsTarget';
 import { createSpeechClipQueue } from '@renderer/services/voice/speechClipQueue';
+import { publishVoiceReply } from '@renderer/services/voice/publishVoiceStage';
 
 /**
  * Reading one passage aloud, wherever the request came from.
@@ -208,6 +209,11 @@ export const speakText = async (request: SpeakTextRequest): Promise<SpeakOutcome
   // and shortened first.
   const { text: spoken } = await summarizeForSpeech(request.text, settings, request.maxSpokenCharacters);
   if (spoken.length === 0) return { spoken: false, reason: 'empty' };
+
+  // The notch shows what is being read, which is this — the summary, not the
+  // written answer it came from. Published before the first clip is rendered so
+  // the words are on screen while the voice is still catching up to them.
+  publishVoiceReply(spoken);
 
   // Checked before the player is claimed as well as before each clip: the
   // summary above can take a model load, and a caller may have given up during it.
