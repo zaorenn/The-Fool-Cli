@@ -195,3 +195,14 @@ registerLocalModelsBridge();
 // Fans the voice stage out to the pet and the caption strip. Registered here with
 // the other bridges so it is listening before the first wake word.
 initVoiceStageHub();
+
+/**
+ * Stops the audio.cpp child process.
+ *
+ * Exported for app quit. This process spawns the engine directly rather than
+ * through foolcore, so stopping the backend does not take it with it — orphaned,
+ * it keeps its GGUF open, and on Windows an open file is enough to make the next
+ * install or build of it fail. It was previously stopped only when a model was
+ * removed.
+ */
+export const stopVoiceEngines = (): Promise<void> => voiceService.stopAudioCpp();

@@ -76,6 +76,7 @@ import {
   setIsQuitting,
 } from './process/utils/tray';
 import { readCloseToTrayPreference } from './process/utils/closeToTraySetting';
+import { stopVoiceEngines } from './process/utils/initBridge';
 // @ts-expect-error - electron-squirrel-startup doesn't have types
 import electronSquirrelStartup from 'electron-squirrel-startup';
 
@@ -1045,7 +1046,16 @@ installQuitCleanup({
   },
   // Stop foolcore subprocess — backend shutdown kills all agent children
   // transitively (no separate frontend workerTaskManager remains).
-  stopBackend: () => backendManager.stop(),
+  //
+  // The audio.cpp voice engine is not one of those children: this process
+  // spawns it directly, so foolcore going away leaves it running. Orphaned it
+  // holds its GGUF open, which on Windows is enough to make the next install or
+  // build of that file fail outright — and it was only ever stopped when a
+  // model was removed, never when the app closed.
+  stopBackend: async () => {
+    await stopVoiceEngines().catch((error) => console.error('[App] Failed to stop the voice engine:', error));
+    await backendManager.stop();
+  },
   destroyPetWindow: async () => {
     const { destroyPetWindow } = await import('./process/pet/petManager');
     destroyPetWindow();

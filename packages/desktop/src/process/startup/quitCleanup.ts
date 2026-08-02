@@ -52,16 +52,25 @@ async function runQuitCleanup(deps: QuitCleanupDeps): Promise<void> {
   deps.markExplicitQuit();
   deps.destroyTray();
 
+  // Before anything is waited on, and outside the timeout that guards the rest.
+  //
+  // The pet is two frameless always-on-top windows sitting over everything the
+  // user has open, so it is how they can tell whether the quit took. Destroying
+  // it used to come after the backend had been stopped and shared that
+  // ten-second budget — and a backend that would not stop spent the whole of it,
+  // so the pet was never reached: the main window went, the jester stayed, and
+  // the app looked like it had ignored the tray menu.
+  //
+  // Nothing here is worth waiting for. It closes windows this process owns.
+  try {
+    await deps.destroyPetWindow();
+  } catch {
+    /* pet not initialized */
+  }
+
   const cleanup = async () => {
     deps.disposeCronResumeListener();
-
     await deps.stopBackend().catch((err) => deps.logError('[App] Failed to stop backend:', err));
-
-    try {
-      await deps.destroyPetWindow();
-    } catch {
-      /* pet not initialized */
-    }
   };
 
   await runWithTimeout(cleanup(), deps.timeoutMs ?? DEFAULT_QUIT_CLEANUP_TIMEOUT_MS, deps.logWarn);
