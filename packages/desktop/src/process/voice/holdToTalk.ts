@@ -29,6 +29,8 @@
  * `pushToTalkShortcut.ts`, which is the second-press variant that exists today.
  */
 
+import { MAX_NOTCH_CHOICE_KEYS } from '@/common/types/voiceStage';
+
 /** What the machine wants the rest of the app to do. */
 export type HoldToTalkEffect =
   /** The key went down alone: open the microphone. */
@@ -44,7 +46,12 @@ export type HoldToTalkEffect =
    * Tapped twice, quickly. The user wants to point at something on screen
    * rather than talk about it.
    */
-  | { kind: 'capture-region' };
+  | { kind: 'capture-region' }
+  /**
+   * A numbered key was pressed while the app was waiting on a permission
+   * request. `index` is zero-based, into the options as the notch numbered them.
+   */
+  | { kind: 'choose-option'; index: number };
 
 export type HoldToTalkOptions = {
   /**
@@ -96,6 +103,15 @@ export class HoldToTalk {
    * not make.
    */
   private lastTapAtMs: number | null = null;
+  /**
+   * How many numbered options are currently answerable, zero when nothing is
+   * being asked.
+   *
+   * The gate that keeps this gesture out of everybody's way: with nothing
+   * pending the number keys are ordinary typing and this machine has no opinion
+   * about them at all.
+   */
+  private pendingChoices = 0;
 
   public constructor(options: HoldToTalkOptions = {}) {
     this.minimumHoldMs = options.minimumHoldMs ?? DEFAULT_MINIMUM_HOLD_MS;
@@ -153,6 +169,32 @@ export class HoldToTalk {
       return { kind: 'capture-region' };
     }
     return { kind: 'cancel', reason: 'too-short' };
+  }
+
+  /**
+   * How many options the app is waiting on an answer to, if any.
+   *
+   * Anything past {@link MAX_NOTCH_CHOICE_KEYS} is listed without a key: those
+   * options exist, they are simply not reachable from the keyboard. Zero — the
+   * usual state — leaves the number keys entirely alone.
+   */
+  public setPendingChoices(count: number): void {
+    this.pendingChoices = Math.min(Math.max(0, Math.trunc(count)), MAX_NOTCH_CHOICE_KEYS);
+  }
+
+  /**
+   * A number key went down. `digit` is 1-based, as it is on the keyboard.
+   *
+   * Answers only when something is actually being asked, and only when the talk
+   * key is not down: `RightCtrl+1` is a combination like any other, and it
+   * belongs to whatever the user is typing into, not to us. Returns null the
+   * rest of the time, which is nearly always — the caller does nothing with it,
+   * and the keystroke goes through untouched.
+   */
+  public numberKeyPressed(digit: number): HoldToTalkEffect | null {
+    if (this.state.name !== 'idle') return null;
+    if (!Number.isInteger(digit) || digit < 1 || digit > this.pendingChoices) return null;
+    return { kind: 'choose-option', index: digit - 1 };
   }
 
   /**

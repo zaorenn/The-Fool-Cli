@@ -47,7 +47,7 @@ import type {
   VoiceTranscribeRequest,
   VoiceTranscribeResponse,
 } from '@/common/types/foolVoice';
-import type { VoiceStageEvent } from '@/common/types/voiceStage';
+import type { VoicePermissionRequest, VoiceStageEvent } from '@/common/types/voiceStage';
 import type { OpenDialogOptions } from 'electron';
 import type {
   ICssTheme,
@@ -254,6 +254,23 @@ export const foolVoice = {
    * always-open microphone without the user opening the app.
    */
   wakeListening: bridge.buildEmitter<{ listening: boolean }>('fool.voice.wake-listening'),
+  /**
+   * The permission request the app is waiting on, or null once it is answered.
+   *
+   * Published by the window that owns the request so the notch can show it: a
+   * turn started by holding a key is a turn the user is not watching the app
+   * for, and a request that appears only in the main window stops the turn
+   * silently. Already translated, like everything else the notch is sent.
+   */
+  permissionRequest: bridge.buildEmitter<VoicePermissionRequest | null>('fool.voice.permission-request'),
+  /**
+   * A numbered option chosen from the keyboard while the notch was showing it.
+   *
+   * Raised by the main process, which owns the desktop-wide key hook, and
+   * answered by the same panel that draws the request — so the notch has one
+   * way to answer and the app has one way to resolve, not two.
+   */
+  permissionChoice: bridge.buildEmitter<{ index: number }>('fool.voice.permission-choice'),
 };
 
 // ---------------------------------------------------------------------------

@@ -166,18 +166,30 @@ class ConfigServiceImpl {
    *
    * Only keys whose value actually moved are announced, so a window hearing
    * about its own write — which it already applied — stays quiet.
+   *
+   * The whole batch lands in the cache before anybody is told about any of it.
+   * A subscriber reads the cache, not just the value it was handed: the theme
+   * listener resolves `theme.activeId` against `theme.userThemes`. Announcing
+   * from inside the write loop handed the first listener a half-applied change,
+   * so a theme created and selected in one write resolved its new id against
+   * the list that did not contain it yet, found nothing, and fell back to
+   * Light — which is indistinguishable from the write never having worked.
    */
   async refreshKeys(keys: readonly string[]): Promise<void> {
     if (keys.length === 0) return;
     const query = encodeURIComponent(keys.join(','));
     const fresh = await fetchJson<Record<string, unknown>>('GET', `/api/settings/client?keys=${query}`);
 
+    const moved: Array<[string, unknown]> = [];
     for (const key of keys) {
       // A key the response omits was deleted, and falls back to its default.
       const next = fresh?.[key];
       if (sameValue(this.cache.get(key), next)) continue;
       if (next === undefined) this.cache.delete(key);
       else this.cache.set(key, next);
+      moved.push([key, next]);
+    }
+    for (const [key, next] of moved) {
       this.notify(key as ConfigKey, next);
     }
   }

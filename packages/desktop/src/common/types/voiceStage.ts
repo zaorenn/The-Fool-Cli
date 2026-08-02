@@ -98,6 +98,46 @@ export type VoiceActivityLine = {
   done: boolean;
 };
 
+/**
+ * How many options a single keystroke can reach in the notch.
+ *
+ * The notch is read at a glance from across the room, and the keys are pressed
+ * without looking at it. Three is what a person can hold in their head that way;
+ * past that the numbering is doing more harm than the shortcut is worth, so a
+ * fourth option is listed but has to be clicked in the app.
+ */
+export const MAX_NOTCH_CHOICE_KEYS = 3;
+
+/**
+ * A choice the agent is waiting on, mirrored into the notch.
+ *
+ * The whole point of hold-to-talk is that the user is looking at something else,
+ * which is exactly when a permission request drawn only in the main window is
+ * never seen and the turn simply stops. Everything here is already translated,
+ * like the rest of what the notch is sent: that window loads no i18n runtime.
+ */
+export type VoicePermissionRequest = {
+  /** Identifies the request. The same id twice is the same question, not a new one. */
+  id: string;
+  /** What is being asked. */
+  title: string;
+  /** How to answer it from the keyboard. */
+  hint: string;
+  /** The options in the order they are numbered. */
+  options: readonly string[];
+};
+
+/**
+ * What the notch window is actually sent.
+ *
+ * The stage is published by the voice loop and the request by the conversation;
+ * they are two unrelated things that happen to share one small window, so they
+ * are joined here at the edge rather than folded into each other's vocabulary.
+ */
+export type FoolsControlPayload = VoiceStageEvent & {
+  permission: VoicePermissionRequest | null;
+};
+
 export const VOICE_STAGE_OFF: VoiceStageEvent = {
   stage: 'off',
   level: 0,

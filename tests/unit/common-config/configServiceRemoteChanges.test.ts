@@ -132,6 +132,27 @@ describe('configService following backend preference changes', () => {
     expect(seen).toHaveBeenCalledWith(undefined);
   });
 
+  /**
+   * A subscriber reads the cache, not only the value it was handed — the theme
+   * listener resolves `theme.activeId` against `theme.userThemes`. Announcing
+   * from inside the write loop showed the first listener a half-applied change,
+   * so a theme created and selected in one write resolved its new id against
+   * the list that did not yet contain it and fell back to Light.
+   */
+  it('has the whole batch in the cache before it tells anybody', async () => {
+    const configService = await loadService({ 'theme.activeId': 'light', 'theme.userThemes': [] });
+    const seenWhenTold: unknown[] = [];
+    configService.subscribe('theme.activeId', () => {
+      seenWhenTold.push(configService.get('theme.userThemes'));
+    });
+
+    const created = { id: 'midnight-ember', name: 'Midnight Ember' };
+    fetchMock.mockResolvedValue(jsonResponse({ 'theme.activeId': 'midnight-ember', 'theme.userThemes': [created] }));
+    await announce(['theme.activeId', 'theme.userThemes']);
+
+    expect(seenWhenTold).toEqual([[created]]);
+  });
+
   it('reads only the keys the announcement named', async () => {
     await loadService({ 'pet.size': 280 });
 

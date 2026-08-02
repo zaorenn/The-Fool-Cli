@@ -9,6 +9,7 @@ import { VOICE_STAGE_OFF, type VoiceStage, type VoiceStageEvent } from '@/common
 import type { PetState } from '@process/pet/petTypes';
 import { destroyFoolsControl, repositionFoolsControl, updateFoolsControl } from './foolsControlWindow';
 import { HoldToTalkHook } from './holdToTalkHook';
+import { voiceActionsFor } from './holdToTalkActions';
 
 /**
  * Fans the voice stage out to the surfaces that show it.
@@ -128,26 +129,24 @@ const startHoldToTalk = (): void => {
   holdToTalk?.stop();
   holdToTalk = new HoldToTalkHook({
     onEffect: (effect) => {
-      // Two taps: draw a box, and whatever is inside it goes to the composer.
-      // Deliberately before everything else, because this gesture never opens
-      // a turn — the picture is the message.
-      if (effect.kind === 'capture-region') {
-        void captureRegionToComposer();
-        return;
+      // What to do about the decision lives in `holdToTalkActions`, where it can
+      // be tested without Electron. It was inline here, and being inline is how
+      // a capture came to leave the microphone open: the branch handled the
+      // gesture and returned without closing the turn its own press had opened.
+      for (const action of voiceActionsFor(effect, lastStage)) {
+        switch (action.kind) {
+          case 'toggle-turn':
+            ipcBridge.foolVoice.pushToTalk.emit();
+            break;
+          case 'interrupt-speech':
+            ipcBridge.foolVoice.interruptSpeech.emit();
+            break;
+          case 'capture-region':
+            void captureRegionToComposer();
+            break;
+        }
       }
 
-      // Pressed while the reply is being read, the key means "stop talking" —
-      // the natural thing to reach for when the answer is already wrong or
-      // already long enough. It silences the reply without ending the session,
-      // so the next press is a fresh question rather than a resumption.
-      if (effect.kind === 'start' && lastStage === 'speaking') {
-        ipcBridge.foolVoice.interruptSpeech.emit();
-        return;
-      }
-
-      // Otherwise: `start` opens the turn; `commit` and both cancels close the
-      // one it opened. Nothing else is needed — the toggle is symmetric.
-      ipcBridge.foolVoice.pushToTalk.emit();
       if (effect.kind === 'cancel') {
         console.info(`[HoldToTalk] turn abandoned: ${effect.reason}`);
       }

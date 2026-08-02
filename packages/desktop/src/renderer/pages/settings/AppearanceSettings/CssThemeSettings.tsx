@@ -275,7 +275,11 @@ const CssThemeSettings: React.FC = () => {
 
   // 加载主题列表 / Load theme list
   useEffect(() => {
+    // Guards the gallery against an out-of-order load: the extension themes are
+    // fetched asynchronously, so a reload started later can still answer first.
+    let generation = 0;
     const loadThemes = async () => {
+      const current = ++generation;
       try {
         const userThemes = (configService.get('theme.userThemes') as Theme[]) ?? [];
 
@@ -311,12 +315,21 @@ const CssThemeSettings: React.FC = () => {
           allThemes.push(theme);
         }
 
+        if (current !== generation) return;
         setThemes(allThemes);
       } catch (error) {
         console.error('Failed to load CSS themes:', error);
       }
     };
     void loadThemes();
+    // A theme added, edited, or removed from outside this window — the config
+    // CLI an agent drives, another window — reaches the config cache and stopped
+    // there, so the gallery kept listing whatever it read when it opened. Worse,
+    // saving any theme from here then wrote that stale list back and silently
+    // dropped the one that had been added.
+    return configService.subscribe('theme.userThemes', () => {
+      void loadThemes();
+    });
   }, []);
 
   /**
