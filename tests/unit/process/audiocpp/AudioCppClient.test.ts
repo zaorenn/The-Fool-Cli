@@ -80,7 +80,21 @@ const sendJson = (response: ServerResponse, status: number, payload: unknown): v
 };
 
 afterEach(async () => {
-  await Promise.all(servers.splice(0).map((server) => new Promise<void>((resolve) => server.close(() => resolve()))));
+  await Promise.all(
+    servers.splice(0).map(
+      (server) =>
+        new Promise<void>((resolve) => {
+          // `close` stops the server accepting new connections and waits for the
+          // open ones to end themselves. A keep-alive socket never does, so the
+          // callback does not fire until the peer gives up — and when it is torn
+          // down underneath, the reset arrives on a socket nobody is listening
+          // to any more and vitest reports an uncaught ECONNRESET that fails a
+          // run in which every test passed.
+          server.closeAllConnections();
+          server.close(() => resolve());
+        })
+    )
+  );
 });
 
 describe('AudioCppClient.synthesize', () => {
