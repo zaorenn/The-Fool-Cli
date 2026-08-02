@@ -570,6 +570,7 @@ mod foolrs_config_option_tests {
             session_directory: std::env::temp_dir().join("foolrs-agent-task-test-sessions"),
             session_mode: None,
             skills: Vec::new(),
+            skill_dirs: Vec::new(),
             extra_mcp_servers: std::collections::HashMap::new(),
             bedrock_config: None,
             runtime_env: Vec::new(),

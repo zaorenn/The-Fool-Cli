@@ -34,13 +34,28 @@ pub(super) async fn build(
     let mut overrides = build_context.config;
     let resolved_skills = overrides.skills.clone();
 
+    // Where those skills actually live.
+    //
+    // Foolrs is embedded, not a CLI that reads the workspace, so it loads
+    // skills from paths it is handed. Without this the names travelled as far
+    // as the prompt dump and no further: an assistant configured with
+    // `officecli-docx` got a label and none of the skill. The auto-inject
+    // builtins come along for every agent, which is the point — every model
+    // reaches the same shared set.
+    let skill_dirs = deps
+        .skill_manager
+        .resolve_skill_dirs_for_user(&ctx.user_id, Some(&resolved_skills), None)
+        .await;
+    debug!(
+        conversation_id = %ctx.conversation_id,
+        skill_count = resolved_skills.len(),
+        resolved_dir_count = skill_dirs.len(),
+        "Resolved foolrs skill directories"
+    );
+
     // Merge preset assistant rules into system_prompt (used as custom_prompt
     // in foolrs's build_system_prompt). Mirrors the old architecture's
     // `init_history` injection of `[Assistant System Rules]`.
-    // FoolrsBuildExtra parses `skills` so Team preset snapshots preserve the
-    // target contract. Native skill materialization for Foolrs is tracked as a
-    // separate follow-up because this factory currently has no stable Foolrs
-    // skill-loading path.
     if let Some(rules) = overrides.preset_rules.take() {
         overrides.system_prompt = Some(match overrides.system_prompt.take() {
             Some(existing) => format!("{existing}\n\n{rules}"),
@@ -194,6 +209,7 @@ pub(super) async fn build(
         session_directory,
         session_mode: overrides.session_mode,
         skills: resolved_skills,
+        skill_dirs,
         extra_mcp_servers,
         bedrock_config,
         runtime_env: ctx.runtime_env,

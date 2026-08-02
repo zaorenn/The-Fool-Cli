@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock};
 
 use fool_db::ISkillRepository;
@@ -37,6 +37,34 @@ pub struct SkillDefinition {
 pub struct SkillIndex {
     pub name: String,
     pub description: String,
+}
+
+/// Whether a discovered skill belongs to an agent with this configuration.
+///
+/// Auto-inject builtins are on for everyone unless the agent names them in its
+/// exclusions; everything else — opt-in builtins, custom, cron and extension
+/// skills — is off until the agent asks for it. Shared by cache-filling
+/// discovery and by directory resolution so a change here reaches both.
+fn skill_applies(
+    item: &fool_extension::SkillListItem,
+    enabled_skills: Option<&[String]>,
+    exclude_builtin_skills: Option<&[String]>,
+) -> bool {
+    let is_auto_inject = item
+        .relative_location
+        .as_deref()
+        .is_some_and(|relative| relative.starts_with("auto-inject/"));
+    let enabled = || enabled_skills.is_some_and(|names| names.iter().any(|name| name == &item.name));
+
+    match item.source {
+        fool_extension::SkillSource::Builtin if is_auto_inject => {
+            !exclude_builtin_skills.is_some_and(|names| names.iter().any(|name| name == &item.name))
+        }
+        fool_extension::SkillSource::Builtin
+        | fool_extension::SkillSource::Custom
+        | fool_extension::SkillSource::Cron
+        | fool_extension::SkillSource::Extension => enabled(),
+    }
 }
 
 /// Manages skill discovery, indexing, and on-demand loading.
@@ -114,26 +142,7 @@ impl AcpSkillManager {
         cache.clear();
 
         for item in items {
-            let is_auto_inject = item
-                .relative_location
-                .as_deref()
-                .is_some_and(|r| r.starts_with("auto-inject/"));
-
-            let keep = match item.source {
-                fool_extension::SkillSource::Builtin => {
-                    if is_auto_inject {
-                        !exclude_builtin_skills.is_some_and(|ex| ex.iter().any(|n| n == &item.name))
-                    } else {
-                        enabled_skills.is_some_and(|en| en.iter().any(|n| n == &item.name))
-                    }
-                }
-                fool_extension::SkillSource::Custom
-                | fool_extension::SkillSource::Cron
-                | fool_extension::SkillSource::Extension => {
-                    enabled_skills.is_some_and(|en| en.iter().any(|n| n == &item.name))
-                }
-            };
-            if !keep {
+            if !skill_applies(&item, enabled_skills, exclude_builtin_skills) {
                 continue;
             }
 
@@ -163,6 +172,40 @@ impl AcpSkillManager {
 
         debug!(count = index.len(), "Skills discovered");
         index
+    }
+
+    /// The directories of the skills this agent should load, one per skill.
+    ///
+    /// Same selection as [`Self::discover_skills_for_user`] — the rule lives in
+    /// [`skill_applies`] so the two cannot drift — but it touches no cache. The
+    /// manager is shared app-wide, and a per-conversation call that rewrote the
+    /// cache would answer for whichever conversation asked last.
+    ///
+    /// Each path is the directory holding the skill's `SKILL.md`, which is what
+    /// an embedded agent needs to load it in place rather than have it copied
+    /// somewhere first.
+    pub async fn resolve_skill_dirs_for_user(
+        &self,
+        user_id: &str,
+        enabled_skills: Option<&[String]>,
+        exclude_builtin_skills: Option<&[String]>,
+    ) -> Vec<PathBuf> {
+        let items = match self.list_available_skills_for_user(user_id).await {
+            Ok(items) => items,
+            Err(error) => {
+                warn!(error = %error, "resolve_skill_dirs: listing skills failed");
+                return Vec::new();
+            }
+        };
+
+        let mut dirs: Vec<PathBuf> = items
+            .into_iter()
+            .filter(|item| skill_applies(item, enabled_skills, exclude_builtin_skills))
+            .filter_map(|item| PathBuf::from(&item.location).parent().map(Path::to_path_buf))
+            .collect();
+        dirs.sort();
+        dirs.dedup();
+        dirs
     }
 
     /// Populate the cache with only the named skills (no filtering by
@@ -463,5 +506,90 @@ mod tests {
             tmp.path(),
         )));
         assert!(mgr.get_skill("nonexistent").await.is_none());
+    }
+
+    // -----------------------------------------------------------------------
+    // skill_applies: which skills belong to an agent
+    //
+    // The rule behind both `discover_skills_for_user` and
+    // `resolve_skill_dirs_for_user`. Tested here rather than through either,
+    // because the interesting part is the rule and it has to stay the same
+    // rule for both.
+    // -----------------------------------------------------------------------
+
+    fn builtin_item(name: &str, relative: &str, location: &str) -> fool_extension::SkillListItem {
+        fool_extension::SkillListItem {
+            name: name.to_owned(),
+            description: format!("{name} description"),
+            location: location.to_owned(),
+            relative_location: Some(relative.to_owned()),
+            is_custom: false,
+            source: fool_extension::SkillSource::Builtin,
+        }
+    }
+
+    fn custom_item(name: &str, location: &str) -> fool_extension::SkillListItem {
+        fool_extension::SkillListItem {
+            name: name.to_owned(),
+            description: format!("{name} description"),
+            location: location.to_owned(),
+            relative_location: None,
+            is_custom: true,
+            source: fool_extension::SkillSource::Custom,
+        }
+    }
+
+    /// The shared set: on for every agent, whatever it enabled.
+    #[test]
+    fn auto_inject_builtins_apply_without_being_enabled() {
+        let item = builtin_item("cron", "auto-inject/cron/SKILL.md", "/corpus/auto-inject/cron/SKILL.md");
+
+        assert!(skill_applies(&item, None, None));
+        assert!(skill_applies(&item, Some(&[]), None));
+    }
+
+    #[test]
+    fn an_agent_can_exclude_an_auto_inject_builtin() {
+        let item = builtin_item("cron", "auto-inject/cron/SKILL.md", "/corpus/auto-inject/cron/SKILL.md");
+
+        assert!(!skill_applies(&item, None, Some(&["cron".to_owned()])));
+    }
+
+    #[test]
+    fn opt_in_builtins_apply_only_when_enabled() {
+        let item = builtin_item(
+            "officecli-docx",
+            "officecli-docx/SKILL.md",
+            "/corpus/officecli-docx/SKILL.md",
+        );
+
+        assert!(!skill_applies(&item, None, None));
+        assert!(!skill_applies(&item, Some(&["something-else".to_owned()]), None));
+        assert!(skill_applies(&item, Some(&["officecli-docx".to_owned()]), None));
+    }
+
+    /// Exclusions name auto-inject skills; an enabled opt-in skill is not
+    /// silently dropped by an unrelated exclusion list.
+    #[test]
+    fn excluding_a_builtin_does_not_disable_an_enabled_opt_in() {
+        let item = builtin_item(
+            "officecli-docx",
+            "officecli-docx/SKILL.md",
+            "/corpus/officecli-docx/SKILL.md",
+        );
+
+        assert!(skill_applies(
+            &item,
+            Some(&["officecli-docx".to_owned()]),
+            Some(&["cron".to_owned()])
+        ));
+    }
+
+    #[test]
+    fn custom_skills_apply_only_when_enabled() {
+        let item = custom_item("my-skill", "/home/user/skills/my-skill/SKILL.md");
+
+        assert!(!skill_applies(&item, None, None));
+        assert!(skill_applies(&item, Some(&["my-skill".to_owned()]), None));
     }
 }

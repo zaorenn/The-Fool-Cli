@@ -102,7 +102,7 @@ fn make_tool(skills: Vec<SkillMetadata>, cwd: &Path) -> SkillTool {
 #[tokio::test]
 async fn e1_project_skill_discovered() {
     let (_guard, root) = make_project();
-    let skills = load_all_skills(&root, &[], false, None).await;
+    let skills = load_all_skills(&root, &[], &[], false, None).await;
 
     let greet = find_skill(&skills, "greet");
     assert!(greet.is_some(), "E1 FAIL: 'greet' skill not discovered");
@@ -117,7 +117,7 @@ async fn e1_project_skill_discovered() {
 #[tokio::test]
 async fn e2_legacy_commands_discovered() {
     let (_guard, root) = make_project();
-    let skills = load_all_skills(&root, &[], false, None).await;
+    let skills = load_all_skills(&root, &[], &[], false, None).await;
 
     let legacy = find_skill(&skills, "legacy-cmd");
     assert!(legacy.is_some(), "E2 FAIL: 'legacy-cmd' not discovered");
@@ -131,7 +131,7 @@ async fn e2_legacy_commands_discovered() {
 #[tokio::test]
 async fn e3_nested_namespace() {
     let (_guard, root) = make_project();
-    let skills = load_all_skills(&root, &[], false, None).await;
+    let skills = load_all_skills(&root, &[], &[], false, None).await;
 
     let migrate = find_skill(&skills, "db:migrate");
     assert!(migrate.is_some(), "E3 FAIL: 'db:migrate' not discovered");
@@ -145,7 +145,7 @@ async fn e3_nested_namespace() {
 #[tokio::test]
 async fn e4_variable_substitution() {
     let (_guard, root) = make_project();
-    let skills = load_all_skills(&root, &[], false, None).await;
+    let skills = load_all_skills(&root, &[], &[], false, None).await;
     let tool = make_tool(skills, &root);
 
     let result = tool.execute(json!({"skill": "greet", "args": "Alice"})).await;
@@ -166,7 +166,7 @@ async fn e4_variable_substitution() {
 #[cfg(not(windows))] // Shell expansion uses Unix commands; skip on Windows
 async fn e5_shell_expansion() {
     let (_guard, root) = make_project();
-    let skills = load_all_skills(&root, &[], false, None).await;
+    let skills = load_all_skills(&root, &[], &[], false, None).await;
     let tool = make_tool(skills, &root);
 
     let result = tool.execute(json!({"skill": "shell-demo"})).await;
@@ -188,7 +188,7 @@ async fn e5_shell_expansion() {
 #[tokio::test]
 async fn e6_conditional_activation() {
     let (_guard, root) = make_project();
-    let skills = load_all_skills(&root, &[], false, None).await;
+    let skills = load_all_skills(&root, &[], &[], false, None).await;
 
     let rust_review = find_skill(&skills, "rust-review").expect("E6 FAIL: 'rust-review' not found");
     assert!(!rust_review.paths.is_empty(), "E6 FAIL: paths should not be empty");
@@ -208,7 +208,7 @@ async fn e6_conditional_activation() {
 async fn e7_system_prompt_injection() {
     let (_guard, root) = make_project();
     let cwd = root.to_string_lossy().to_string();
-    let skills = load_all_skills(&root, &[], false, None).await;
+    let skills = load_all_skills(&root, &[], &[], false, None).await;
 
     let prompt = build_system_prompt(
         &mut SystemPromptCache::new(),
@@ -240,7 +240,7 @@ async fn e7_system_prompt_injection() {
 #[tokio::test]
 async fn e8_full_execution() {
     let (_guard, root) = make_project();
-    let skills = load_all_skills(&root, &[], false, None).await;
+    let skills = load_all_skills(&root, &[], &[], false, None).await;
     let tool = make_tool(skills, &root);
 
     let result = tool.execute(json!({"skill": "db:migrate", "args": "production"})).await;
@@ -265,7 +265,7 @@ async fn e8_full_execution() {
 #[tokio::test]
 async fn e9_deduplication() {
     let (_guard, root) = make_project();
-    let skills = load_all_skills(&root, &[], false, None).await;
+    let skills = load_all_skills(&root, &[], &[], false, None).await;
 
     let mut name_counts = std::collections::HashMap::new();
     for skill in &skills {
@@ -284,7 +284,7 @@ async fn e9_deduplication() {
 #[tokio::test]
 async fn e10_skill_not_found() {
     let (_guard, root) = make_project();
-    let skills = load_all_skills(&root, &[], false, None).await;
+    let skills = load_all_skills(&root, &[], &[], false, None).await;
     let tool = make_tool(skills, &root);
 
     let result = tool.execute(json!({"skill": "nonexistent-skill"})).await;
@@ -304,7 +304,7 @@ async fn e10_skill_not_found() {
 #[tokio::test]
 async fn e11_legacy_command_execution() {
     let (_guard, root) = make_project();
-    let skills = load_all_skills(&root, &[], false, None).await;
+    let skills = load_all_skills(&root, &[], &[], false, None).await;
     let tool = make_tool(skills, &root);
 
     let result = tool.execute(json!({"skill": "legacy-cmd", "args": "test-arg"})).await;
@@ -320,4 +320,86 @@ async fn e11_legacy_command_execution() {
         result.content
     );
     println!("E11 PASS: legacy command executed with variable substitution");
+}
+
+// ---------------------------------------------------------------------------
+// E12: Skills the host names by path
+// ---------------------------------------------------------------------------
+
+/// Build a corpus laid out the way The Fool ships one: a flat set of opt-in
+/// skills alongside an `auto-inject/` directory of always-on ones.
+fn make_corpus() -> (TempDir, PathBuf) {
+    let tmp = TempDir::new().unwrap();
+    let root = tmp.path().to_path_buf();
+
+    let docx = root.join("officecli-docx");
+    fs::create_dir_all(&docx).unwrap();
+    fs::write(
+        docx.join("SKILL.md"),
+        "---\nname: officecli-docx\ndescription: Create and edit Word documents\n---\n\nUse officecli to build a .docx.\n",
+    )
+    .unwrap();
+
+    let cron = root.join("auto-inject").join("cron");
+    fs::create_dir_all(&cron).unwrap();
+    fs::write(
+        cron.join("SKILL.md"),
+        "---\nname: cron\ndescription: Schedule recurring work\n---\n\nSchedule it.\n",
+    )
+    .unwrap();
+
+    (tmp, root)
+}
+
+#[tokio::test]
+async fn e12_named_skill_dirs_are_loaded() {
+    let (_project, project_root) = make_project();
+    let (_corpus, corpus) = make_corpus();
+
+    let picked = vec![corpus.join("officecli-docx"), corpus.join("auto-inject").join("cron")];
+    let skills = load_all_skills(&project_root, &[], &picked, false, None).await;
+
+    assert!(
+        find_skill(&skills, "officecli-docx").is_some(),
+        "E12 FAIL: opt-in skill named by path was not loaded"
+    );
+    // The corpus layout must not leak into the name: this skill lives under
+    // `auto-inject/` but the host asked for it by path, so it is `cron`.
+    assert!(
+        find_skill(&skills, "cron").is_some(),
+        "E12 FAIL: auto-inject skill should be named 'cron', got: {:?}",
+        skills.iter().map(|s| &s.name).collect::<Vec<_>>()
+    );
+    assert!(
+        find_skill(&skills, "auto-inject:cron").is_none(),
+        "E12 FAIL: the corpus directory leaked into the skill name"
+    );
+    // The project's own skills still load alongside them.
+    assert!(find_skill(&skills, "greet").is_some(), "E12 FAIL: project skill lost");
+    println!("E12 PASS: host-named skill directories load under their own names");
+}
+
+#[tokio::test]
+async fn e12b_missing_named_skill_dir_is_skipped() {
+    let (_project, project_root) = make_project();
+    let (_corpus, corpus) = make_corpus();
+
+    // A selection outlives the skill it names — an uninstalled skill must not
+    // stop the rest of the agent's skills from loading.
+    let picked = vec![
+        corpus.join("officecli-docx"),
+        corpus.join("was-uninstalled"),
+        corpus.join("auto-inject"), // a directory with no SKILL.md of its own
+    ];
+    let skills = load_all_skills(&project_root, &[], &picked, false, None).await;
+
+    assert!(
+        find_skill(&skills, "officecli-docx").is_some(),
+        "E12b FAIL: a missing sibling stopped a present skill from loading"
+    );
+    assert!(
+        find_skill(&skills, "auto-inject").is_none(),
+        "E12b FAIL: a directory without SKILL.md became a skill"
+    );
+    println!("E12b PASS: missing and manifest-less directories are skipped");
 }

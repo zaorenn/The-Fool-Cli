@@ -103,6 +103,7 @@ fn make_foolrs_config() -> FoolrsResolvedConfig {
         session_directory: std::env::temp_dir().join("foolrs-test-sessions"),
         session_mode: None,
         skills: Vec::new(),
+        skill_dirs: Vec::new(),
         extra_mcp_servers: Default::default(),
         bedrock_config: None,
         runtime_env: Vec::new(),

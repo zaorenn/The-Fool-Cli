@@ -33,14 +33,22 @@ pub struct LoadedSkill {
 /// Deduplicates first by canonical path (symlinks resolved), then by name (first wins).
 /// Bundled skills always take precedence over same-named MCP or filesystem skills.
 ///
-/// If `bare` is true, only `add_dirs` are consulted (used for isolated
-/// environments where the user/project directories should be ignored).
+/// `add_dirs` are *project* roots: each contributes its `.foolrs/skills`
+/// subdirectory. `skill_dirs` are individual skill directories — each one
+/// containing a `SKILL.md` — named by their own directory and nothing above it.
+/// That distinction is what lets a host hand over a hand-picked set of skills
+/// that live scattered across a corpus without their names inheriting the
+/// corpus layout.
+///
+/// If `bare` is true, only `add_dirs` and `skill_dirs` are consulted (used for
+/// isolated environments where the user/project directories should be ignored).
 /// Bundled skills are included in bare mode as well.
 ///
 /// Pass `mcp_manager: Some(&manager)` to include MCP-discovered skills.
 pub async fn load_all_skills(
     cwd: &Path,
     add_dirs: &[PathBuf],
+    skill_dirs: &[PathBuf],
     bare: bool,
     mcp_manager: Option<&McpManager>,
 ) -> Vec<SkillMetadata> {
@@ -59,6 +67,7 @@ pub async fn load_all_skills(
         for batch in join_all(futures).await {
             all.extend(batch);
         }
+        all.extend(load_named_skill_dirs(skill_dirs).await);
         // Bundled skills prepended so they win deduplication
         all.splice(0..0, bundled_loaded);
         return deduplicate_by_name(deduplicate(all));
@@ -91,6 +100,9 @@ pub async fn load_all_skills(
         all.extend(batch);
     }
 
+    // 3b. Skills the host picked out by path, named by their own directory.
+    all.extend(load_named_skill_dirs(skill_dirs).await);
+
     // 4. User-level legacy commands (lowest user priority)
     if let Some(dir) = user_commands_dir()
         && dir.is_dir()
@@ -122,6 +134,29 @@ pub async fn load_all_skills(
     // Path-based dedup first (handles symlinked duplicates), then name-based
     // dedup to enforce MCP vs. filesystem priority.
     deduplicate_by_name(deduplicate(all))
+}
+
+/// Load skills the caller named by path, one directory per skill.
+///
+/// Each entry must be the directory holding a `SKILL.md`. The name comes from
+/// that directory alone — the parent is used as the namespace base — so a skill
+/// picked out of `<corpus>/auto-inject/cron` is `cron`, not `auto-inject:cron`.
+/// This is what separates a hand-picked set from a scanned tree: the caller
+/// chose these individually, so the corpus layout they happen to live in is not
+/// part of their identity.
+///
+/// A path that is missing, is not a directory, or holds no `SKILL.md` is
+/// skipped. Skill selections outlive the skills themselves — one uninstalled
+/// skill must not stop an agent from starting.
+async fn load_named_skill_dirs(skill_dirs: &[PathBuf]) -> Vec<LoadedSkill> {
+    let futures: Vec<_> = skill_dirs.iter().map(|dir| load_named_skill_dir(dir)).collect();
+    join_all(futures).await.into_iter().flatten().collect()
+}
+
+async fn load_named_skill_dir(dir: &Path) -> Option<LoadedSkill> {
+    let base_dir = dir.parent()?;
+    let skill_file = find_exact_file(dir, "SKILL.md").await?;
+    load_skill_file(&skill_file, base_dir, dir, SkillSource::Project, LoadedFrom::Skills).await
 }
 
 /// Call `bundled::prepare_bundled_skills()` and wrap results as `LoadedSkill`.

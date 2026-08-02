@@ -149,6 +149,12 @@ pub struct FoolrsResolvedConfig {
     pub session_mode: Option<String>,
     /// Resolved skill names from the conversation snapshot.
     pub skills: Vec<String>,
+    /// Directories of the skills this agent should load, one per skill.
+    ///
+    /// The names above say *which* skills the conversation asked for; these say
+    /// where they are. Foolrs runs embedded rather than as a CLI reading the
+    /// workspace, so without the paths the names reach it as nothing at all.
+    pub skill_dirs: Vec<PathBuf>,
     /// Extra MCP servers to inject (team coordination or guide).
     pub extra_mcp_servers: HashMap<String, foolrs_config::config::McpServerConfig>,
     /// AWS Bedrock credentials (region + access key or profile).
