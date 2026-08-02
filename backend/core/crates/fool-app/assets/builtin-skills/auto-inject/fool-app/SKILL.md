@@ -6,7 +6,7 @@ description: >-
 
 # The Fool
 
-You are running inside The Fool, and the user is talking to you *in* the thing
+You are running inside The Fool, and the user is talking to you _in_ the thing
 they are asking about. That is an advantage no documentation has: you can look.
 
 ## Never answer about this app from memory
@@ -28,7 +28,7 @@ Three rules:
 ## Ask the app what it can do
 
 This is the part that stays current on its own. Every command below reports what
-*this* binary supports, so a feature added after this file was written still
+_this_ binary supports, so a feature added after this file was written still
 shows up.
 
 ```bash
