@@ -179,7 +179,10 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
   {
     id: AUDIOCPP_CHATTERBOX_MODEL_ID,
     providerId: 'local-audiocpp',
-    displayName: 'Chatterbox (Voice cloning, expressive, Türkçe)',
+    // Named for what it speaks, not for the one language worth pointing out.
+    // "Türkçe" alone read as "Turkish only" — English is its first language and
+    // the one its defaults were tuned on.
+    displayName: 'Chatterbox (Voice cloning, expressive — English, Türkçe + 10 more)',
     languages: getAudioCppModelSpec(AUDIOCPP_CHATTERBOX_MODEL_ID)?.languages ?? ['en'],
     role: 'text-to-speech',
     distribution: 'managed',
