@@ -24,6 +24,13 @@ export interface WebviewHostProps {
   onDidFinishLoad?: () => void;
   /** Called when the page fails to load */
   onDidFailLoad?: (errorCode: number, errorDescription: string) => void;
+  /**
+   * Hands the underlying `<webview>` to the owner, and `null` on unmount.
+   *
+   * Only the in-app browser uses this, so that an agent can be given something
+   * to drive. Everything else embeds a page it does not need to steer.
+   */
+  onWebviewRef?: (element: Electron.WebviewTag | null) => void;
 }
 
 const MIN_ZOOM_FACTOR = 0.75;
@@ -48,6 +55,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
   style,
   onDidFinishLoad,
   onDidFailLoad,
+  onWebviewRef,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -634,7 +642,12 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
         onWheel={handleOuterWheelZoom}
       >
         <webview
-          ref={webviewRef as any}
+          ref={
+            ((element: Electron.WebviewTag | null) => {
+              webviewRef.current = element;
+              onWebviewRef?.(element);
+            }) as any
+          }
           src={currentUrl}
           className='border-0 absolute left-0 top-0'
           style={{

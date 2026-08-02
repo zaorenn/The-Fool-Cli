@@ -9,7 +9,9 @@ import { Close } from '@icon-park/react';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import WebviewHost from '@/renderer/components/media/WebviewHost';
+import { registerAgentBrowserWebview } from './agentBrowserController';
 import { BROWSER_HOME_URL, BROWSER_PARTITION } from './browserSession';
+import { useAgentBrowserBridge } from './useAgentBrowserBridge';
 
 export type BrowserPanelProps = {
   open: boolean;
@@ -26,6 +28,12 @@ export type BrowserPanelProps = {
 const BrowserPanel: React.FC<BrowserPanelProps> = ({ open, onClose }) => {
   const { t } = useTranslation();
   const [everOpened, setEverOpened] = useState(false);
+
+  // Registered unconditionally, before the early return below: a command that
+  // arrives while the panel has never been opened must be answered with "the
+  // browser is not open" rather than met with silence the caller has to time
+  // out on.
+  useAgentBrowserBridge();
 
   if (open && !everOpened) setEverOpened(true);
   if (!everOpened) return null;
@@ -56,6 +64,11 @@ const BrowserPanel: React.FC<BrowserPanelProps> = ({ open, onClose }) => {
           showNavBar
           partition={BROWSER_PARTITION}
           className='h-full'
+          // Hands the webview to the agent controller, which is how a browser
+          // tool call reaches this page. Registered while the panel is mounted
+          // and cleared when it goes, so a command can never land on a webview
+          // that is no longer on screen.
+          onWebviewRef={registerAgentBrowserWebview}
           onDidFailLoad={(_code, description) => {
             console.warn('[browser] navigation failed:', description);
           }}

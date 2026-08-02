@@ -67,12 +67,32 @@ export const isActCommand = (name: string): name is ActCommand => (ACT_COMMANDS 
  */
 export const commandActsOnPage = (name: string): boolean => isActCommand(name);
 
-type ParseResult = { ok: true; command: BrowserCommand } | { ok: false; error: string };
+export type ParseSuccess = { ok: true; command: BrowserCommand };
+export type ParseFailure = { ok: false; error: string };
+export type ParseResult = ParseSuccess | ParseFailure;
+
+/**
+ * Narrowing helpers rather than bare `if (!result.ok)`.
+ *
+ * This project compiles without `strictNullChecks`, and without it TypeScript
+ * does not narrow a union by a boolean discriminant — `result.error` after
+ * `!result.ok` is an error, not a string. A user-defined type guard narrows in
+ * either mode, so the check is written once here instead of being worked around
+ * at each call site.
+ */
+export const parseFailed = (result: ParseResult): result is ParseFailure => !result.ok;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const readString = (value: unknown, field: string, maxLength: number): { ok: true; value: string } | ParseResult => {
+/** A checked string, kept separate from {@link ParseResult} so neither type's
+ * narrowing depends on the other's shape. */
+type StringFailure = { ok: false; error: string };
+type StringResult = { ok: true; value: string } | StringFailure;
+
+const stringFailed = (result: StringResult): result is StringFailure => !result.ok;
+
+const readString = (value: unknown, field: string, maxLength: number): StringResult => {
   if (typeof value !== 'string' || value.trim().length === 0) {
     return { ok: false, error: `"${field}" must be a non-empty string` };
   }
@@ -109,7 +129,7 @@ export function parseBrowserCommand(payload: unknown): ParseResult {
       const selector = payload.selector;
       if (selector !== undefined) {
         const parsed = readString(selector, 'selector', MAX_SELECTOR_LENGTH);
-        if (!('value' in parsed)) return parsed;
+        if (stringFailed(parsed)) return parsed;
       }
       const maxChars = payload.maxChars;
       if (maxChars !== undefined && (typeof maxChars !== 'number' || !Number.isFinite(maxChars) || maxChars <= 0)) {
@@ -127,21 +147,21 @@ export function parseBrowserCommand(payload: unknown): ParseResult {
 
     case 'navigate': {
       const parsed = readString(payload.url, 'url', MAX_TEXT_LENGTH);
-      if (!('value' in parsed)) return parsed;
+      if (stringFailed(parsed)) return parsed;
       return { ok: true, command: { name, url: parsed.value } };
     }
 
     case 'click': {
       const parsed = readString(payload.selector, 'selector', MAX_SELECTOR_LENGTH);
-      if (!('value' in parsed)) return parsed;
+      if (stringFailed(parsed)) return parsed;
       return { ok: true, command: { name, selector: parsed.value } };
     }
 
     case 'type': {
       const selector = readString(payload.selector, 'selector', MAX_SELECTOR_LENGTH);
-      if (!('value' in selector)) return selector;
+      if (stringFailed(selector)) return selector;
       const text = readString(payload.text, 'text', MAX_TEXT_LENGTH);
-      if (!('value' in text)) return text;
+      if (stringFailed(text)) return text;
       if (payload.submit !== undefined && typeof payload.submit !== 'boolean') {
         return { ok: false, error: '"submit" must be a boolean' };
       }
