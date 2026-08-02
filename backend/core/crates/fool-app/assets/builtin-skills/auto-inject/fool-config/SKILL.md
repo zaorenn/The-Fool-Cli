@@ -536,6 +536,51 @@ above — there is no separate theme command. Two keys matter:
 - `theme.userThemes` — the array of themes the user owns.
 - `theme.activeId` — the `id` of the one currently applied.
 
+### The ids that already exist
+
+`theme.userThemes` is **empty on a fresh install**, so at first the only ids that
+mean anything are the four built in. Writing an id that is not one of these and
+is not in `theme.userThemes` leaves the app on whatever it had:
+
+| `theme.activeId` | What the user sees                                  |
+| ---------------- | --------------------------------------------------- |
+| `the-fool`       | The Fool's own dark red theme. The shipped default. |
+| `dark`           | Plain dark.                                         |
+| `light`          | Plain light.                                        |
+| `system`         | Follows the operating system's light/dark setting.  |
+
+So "make it dark" is one write, with no theme object to build:
+
+```json
+{ "theme.activeId": "dark" }
+```
+
+### Changing colours without building a theme
+
+`ui.themeOverrides` sits **on top of** whatever `theme.activeId` selected, and it
+is what to reach for when the user asks for a colour rather than a theme — "make
+it green", "I want a blue accent". Four keys, hex values, and any you leave out
+keep the theme's own colour:
+
+```json
+{ "ui.themeOverrides": { "colors": { "primary": "#1d9e75" } } }
+```
+
+Send `"ui.themeOverrides": null` to drop every override and go back to the plain
+theme. Do not build a whole entry in `theme.userThemes` for a colour change —
+that is for a theme the user wants to keep and switch back to.
+
+### Both keys are safe to write on their own
+
+`settings client put` upserts the keys it is given and leaves every other
+preference alone; it does **not** replace the whole preference map. So a theme
+change is one small write, not a read-modify-write of everything. (The warning
+about replacing structures applies _within_ a composite value like `fool.voice`:
+writing that key replaces that object entirely.)
+
+Verified end to end through this CLI: `theme.activeId` `the-fool` → `dark` with a
+`primary` override applied, and `pet.enabled` untouched by the write.
+
 A theme object:
 
 ```json
