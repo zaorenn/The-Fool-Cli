@@ -179,7 +179,7 @@ export default defineConfig(({ mode }) => {
             petPreload: resolve('packages/desktop/src/preload/petPreload.ts'),
             petHitPreload: resolve('packages/desktop/src/preload/petHitPreload.ts'),
             petConfirmPreload: resolve('packages/desktop/src/preload/petConfirmPreload.ts'),
-            voiceCaptionPreload: resolve('packages/desktop/src/preload/voiceCaptionPreload.ts'),
+            foolsControlPreload: resolve('packages/desktop/src/preload/foolsControlPreload.ts'),
           },
         },
       },
@@ -253,7 +253,7 @@ export default defineConfig(({ mode }) => {
             pet: resolve(rendererRoot, 'pet/pet.html'),
             'pet-hit': resolve(rendererRoot, 'pet/pet-hit.html'),
             'pet-confirm': resolve(rendererRoot, 'pet/pet-confirm.html'),
-            'voice-caption': resolve(rendererRoot, 'voice/caption.html'),
+            'fools-control': resolve(rendererRoot, 'voice/foolsControl.html'),
           },
           external: ['node:crypto', 'crypto'],
           onwarn(warning, warn) {

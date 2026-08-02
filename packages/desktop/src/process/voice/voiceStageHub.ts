@@ -7,13 +7,13 @@
 import { ipcBridge } from '@/common';
 import { VOICE_STAGE_OFF, type VoiceStage, type VoiceStageEvent } from '@/common/types/voiceStage';
 import type { PetState } from '@process/pet/petTypes';
-import { destroyCaptionWindow, repositionCaptionWindow, updateCaption } from './captionWindow';
+import { destroyFoolsControl, repositionFoolsControl, updateFoolsControl } from './foolsControlWindow';
 
 /**
  * Fans the voice stage out to the surfaces that show it.
  *
  * The main window owns the voice loop and is the only place that knows what is
- * happening; the pet window and the caption strip are read-outs. This hub is the
+ * happening; the pet window and Fool's Control are read-outs. This hub is the
  * one place that decides which pose and which strip go with which stage, so the
  * two can never disagree.
  */
@@ -57,7 +57,7 @@ export function setPetStageBridge(bridge: PetBridge | null): void {
 
 const handle = (event: VoiceStageEvent): void => {
   lastStage = event.stage;
-  updateCaption(event);
+  updateFoolsControl(event);
 
   if (!petBridge) return;
   petBridge.send(event);
@@ -79,7 +79,7 @@ const handle = (event: VoiceStageEvent): void => {
  *
  * Runs at import time alongside the other bridges, which is *before* Electron is
  * ready — so nothing here may touch `screen`, `BrowserWindow` or anything else
- * that needs the app to have started. Both live in the caption window, which is
+ * that needs the app to have started. Both live in the Fool's Control window, which is
  * only ever created in response to an event.
  */
 export function initVoiceStageHub(): void {
@@ -99,7 +99,7 @@ export function disposeVoiceStageHub(): void {
   unsubscribe = null;
   unsubscribeWakeListening?.();
   unsubscribeWakeListening = null;
-  destroyCaptionWindow();
+  destroyFoolsControl();
   lastStage = VOICE_STAGE_OFF.stage;
   lastPose = null;
 }

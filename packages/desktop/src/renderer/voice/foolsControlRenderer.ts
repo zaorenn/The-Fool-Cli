@@ -7,10 +7,10 @@
 import type { VoiceStageEvent } from '@/common/types/voiceStage';
 
 /**
- * Draws the caption strip.
+ * Draws Fool's Control.
  *
- * Deliberately dependency-free: this window is one card, and pulling React and
- * the i18n runtime into a second renderer to draw a waveform and a sentence
+ * Deliberately dependency-free: this window is one notch, and pulling React and
+ * the i18n runtime into a second renderer to draw a waveform and a few lines
  * would cost more than it explains. Labels arrive already translated from the
  * main window, which owns the language.
  *
@@ -19,21 +19,27 @@ import type { VoiceStageEvent } from '@/common/types/voiceStage';
  * shape on screen is the shape of what was said a moment ago, scrolling away to
  * the left. Between utterances the trace relaxes to a slow travelling ripple
  * rather than stopping dead.
+ *
+ * The notch has two sizes and picks between them from the event alone: collapsed
+ * while it is only listening, expanded once there is a sentence or something
+ * being done about one. Nothing here decides *when* to appear — the main process
+ * owns that.
  */
 
 declare global {
   interface Window {
-    voiceCaptionAPI: {
-      onCaption: (callback: (event: VoiceStageEvent) => void) => () => void;
+    foolsControlAPI: {
+      onStage: (callback: (event: VoiceStageEvent) => void) => () => void;
     };
   }
 }
 
-const card = document.getElementById('card') as HTMLDivElement;
+const notch = document.getElementById('notch') as HTMLDivElement;
 const stageLabel = document.getElementById('stage') as HTMLSpanElement;
 const hint = document.getElementById('hint') as HTMLSpanElement;
 const canvas = document.getElementById('wave') as HTMLCanvasElement;
 const transcript = document.getElementById('transcript') as HTMLDivElement;
+const activity = document.getElementById('activity') as HTMLDivElement;
 const context = canvas.getContext('2d');
 
 /** One sample per frame at 60fps: about two seconds of history on screen. */
@@ -183,21 +189,42 @@ const stop = (): void => {
   draw();
 };
 
-window.addEventListener('resize', resize);
-resize();
+/**
+ * Rebuilt from the event rather than appended to.
+ *
+ * The event carries the whole list every time, so the notch cannot drift out of
+ * step with the turn — a line dropped upstream disappears here too, which an
+ * append-only log could not do.
+ */
+const renderActivity = (lines: VoiceStageEvent['activity']): void => {
+  activity.replaceChildren(
+    ...lines.map((line) => {
+      const row = document.createElement('div');
+      row.className = line.done ? 'act done' : 'act';
+      row.textContent = line.text;
+      return row;
+    })
+  );
+};
 
-window.voiceCaptionAPI.onCaption((event) => {
+window.foolsControlAPI.onStage((event) => {
   accent = event.accent || '#c4123f';
   document.body.style.setProperty('--accent', accent);
 
-  card.classList.toggle('shown', event.stage !== 'off');
+  notch.classList.toggle('shown', event.stage !== 'off');
+  // Expanded once there is something to read. Waiting for the wake phrase is
+  // just the pill: there is nothing to say yet, and a wide notch sitting open
+  // over the user's screen for no reason is worse than a small one.
+  const activityLines = event.activity ?? [];
+  notch.classList.toggle('wide', event.transcript.length > 0 || activityLines.length > 0);
+
   stageLabel.textContent = event.stageLabel;
-  // The notice replaces the hint rather than the stage: on the strip there is
-  // room for both, and "waking the model" is exactly the sort of thing the hint
-  // slot is for.
+  // The notice replaces the hint rather than the stage: there is room for both,
+  // and "waking the model" is exactly the sort of thing the hint slot is for.
   hint.textContent = event.notice || event.hint;
   transcript.textContent = event.transcript;
   transcript.dataset.placeholder = event.placeholder;
+  renderActivity(activityLines);
 
   live = event.stage === 'hearing';
   if (live) currentLevel = Math.max(currentLevel, event.level);
@@ -209,3 +236,6 @@ window.voiceCaptionAPI.onCaption((event) => {
   resize();
   start();
 });
+
+window.addEventListener('resize', resize);
+resize();

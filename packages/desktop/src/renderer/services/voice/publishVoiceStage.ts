@@ -5,7 +5,12 @@
  */
 
 import { ipcBridge } from '@/common';
-import { VOICE_STAGE_OFF, type VoiceStage, type VoiceStageEvent } from '@/common/types/voiceStage';
+import {
+  VOICE_STAGE_OFF,
+  type VoiceActivityLine,
+  type VoiceStage,
+  type VoiceStageEvent,
+} from '@/common/types/voiceStage';
 import i18next from 'i18next';
 
 /**
@@ -44,6 +49,15 @@ let queued: VoiceStageEvent | null = null;
 let frame: number | null = null;
 /** Survives stage changes: a model keeps loading while the loop moves on. */
 let notice = '';
+/**
+ * What the agent is doing about the turn, for Fool's Control.
+ *
+ * Held here beside `notice` rather than passed on every call: the tool calls
+ * that produce these lines arrive from a different part of the app than the
+ * stage changes do, and threading them through every `publishVoiceStage` caller
+ * would mean every caller having to know about them.
+ */
+let activity: readonly VoiceActivityLine[] = [];
 
 /**
  * How long a level update may wait to be coalesced.
@@ -117,6 +131,7 @@ export const publishVoiceStage = (input: StageInput): void => {
     placeholder: i18next.t('conversation.chat.voice.stagePlaceholder'),
     notice,
     awake: input.awake ?? false,
+    activity,
   };
 
   // A different stage, or new words, is news: send it now.
@@ -125,7 +140,8 @@ export const publishVoiceStage = (input: StageInput): void => {
     event.transcript !== current.transcript ||
     event.stageLabel !== current.stageLabel ||
     event.notice !== current.notice ||
-    event.awake !== current.awake;
+    event.awake !== current.awake ||
+    event.activity !== current.activity;
 
   if (isNews) {
     queued = null;
@@ -156,6 +172,19 @@ export const publishVoiceNotice = (text: string): void => {
   send({ ...current, notice: text, accent: readAccent() });
 };
 
+/**
+ * Replaces what Fool's Control says the agent is doing.
+ *
+ * The whole list every time, not an append: the caller owns the turn and knows
+ * which lines are still true, and a surface that could only be added to would
+ * keep showing a step that was abandoned. Sent immediately for the same reason
+ * a notice is — it is the answer to "is this thing stuck?".
+ */
+export const publishVoiceActivity = (lines: readonly VoiceActivityLine[]): void => {
+  activity = lines;
+  send({ ...current, activity: lines, accent: readAccent() });
+};
+
 export const clearVoiceNotice = (): void => {
   if (notice.length === 0) return;
   notice = '';
@@ -166,6 +195,7 @@ export const clearVoiceNotice = (): void => {
 export const publishVoiceStageOff = (): void => {
   queued = null;
   notice = '';
+  activity = [];
   if (frame !== null) {
     window.clearTimeout(frame);
     frame = null;

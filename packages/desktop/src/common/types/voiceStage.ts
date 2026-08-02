@@ -68,6 +68,25 @@ export type VoiceStageEvent = {
    * happening, so it keys off this rather than off the microphone being open.
    */
   awake: boolean;
+  /**
+   * What the agent is doing about what was said, oldest first.
+   *
+   * This is the half of Fool's Control that behaves like a small chat window:
+   * "creating a note", "writing to notes.txt", each line marked done as it
+   * finishes. Already translated, like the labels above, because neither extra
+   * window loads the i18n runtime.
+   *
+   * Empty for a turn that is only being transcribed — there is nothing to say
+   * yet, and the notch stays collapsed.
+   */
+  activity: readonly VoiceActivityLine[];
+};
+
+/** One thing the agent did, or is doing, during a spoken turn. */
+export type VoiceActivityLine = {
+  text: string;
+  /** False while it is still running; the notch dims a line once it is done. */
+  done: boolean;
 };
 
 export const VOICE_STAGE_OFF: VoiceStageEvent = {
@@ -81,13 +100,14 @@ export const VOICE_STAGE_OFF: VoiceStageEvent = {
   placeholder: '',
   notice: '',
   awake: false,
+  activity: [],
 };
 
 /** True while the microphone is open, whatever the loop is doing with it. */
 export const isMicrophoneOpen = (stage: VoiceStage): boolean => stage !== 'off';
 
 /**
- * Whether the caption strip belongs on screen.
+ * Whether Fool's Control belongs on screen.
  *
  * Only for a turn in flight: the wake phrase has been heard, or the loop has
  * already moved past listening. Passive listening shows on the pet alone, so an
