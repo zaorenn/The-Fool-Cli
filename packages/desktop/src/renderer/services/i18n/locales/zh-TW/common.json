@@ -169,5 +169,6 @@
   "selectedCount": "已選 {{count}}",
   "selectedSkills": "已選技能",
   "tray.wakeListening": "監聽喚醒詞",
-  "regionSelect.hint": "拖曳以擷取區域  ·  Esc 取消"
+  "regionSelect.hint": "拖曳以擷取區域  ·  Esc 取消",
+  "tray.resetTheme": "重設主題"
 }

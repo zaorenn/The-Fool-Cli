@@ -191,6 +191,18 @@ const buildTrayContextMenu = async (): Promise<Electron.Menu> => {
   });
   template.push({ type: 'separator' });
   template.push({
+    label: i18n.t('common.tray.resetTheme'),
+    click: () => {
+      // The one menu item that has to work when the window shows nothing at
+      // all. A theme that hides the interface takes the settings screen with
+      // it, so the way out cannot itself be inside the app — it is here.
+      showAndFocusMainWindow();
+      mainWindowRef?.webContents.send('tray:reset-theme');
+    },
+  });
+
+  template.push({ type: 'separator' });
+  template.push({
     label: `🐾 ${i18n.t('pet.desktopPet')}`,
     submenu: [
       {

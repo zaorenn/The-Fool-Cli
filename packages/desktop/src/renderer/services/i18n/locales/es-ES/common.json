@@ -169,5 +169,6 @@
   "selectedCount": "{{count}} seleccionado(s)",
   "selectedSkills": "Habilidades seleccionadas",
   "tray.wakeListening": "Escuchar la palabra de activación",
-  "regionSelect.hint": "Arrastra para capturar una región  ·  Esc para cancelar"
+  "regionSelect.hint": "Arrastra para capturar una región  ·  Esc para cancelar",
+  "tray.resetTheme": "Restablecer tema"
 }

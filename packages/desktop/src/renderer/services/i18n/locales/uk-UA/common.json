@@ -170,5 +170,6 @@
   "selectedCount": "Вибрано {{count}}",
   "selectedSkills": "Вибрані навички",
   "tray.wakeListening": "Слухати ключову фразу",
-  "regionSelect.hint": "Перетягніть, щоб вибрати область  ·  Esc — скасувати"
+  "regionSelect.hint": "Перетягніть, щоб вибрати область  ·  Esc — скасувати",
+  "tray.resetTheme": "Скинути тему"
 }

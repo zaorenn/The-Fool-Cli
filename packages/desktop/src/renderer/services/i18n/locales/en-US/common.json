@@ -169,5 +169,6 @@
   "selectedCount": "Selected {{count}}",
   "selectedSkills": "Selected skills",
   "tray.wakeListening": "Listen for the wake word",
-  "regionSelect.hint": "Drag to capture a region  ·  Esc to cancel"
+  "regionSelect.hint": "Drag to capture a region  ·  Esc to cancel",
+  "tray.resetTheme": "Reset theme"
 }

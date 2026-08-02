@@ -312,6 +312,7 @@ export type I18nKey =
   | 'common.tray.pauseAll'
   | 'common.tray.quit'
   | 'common.tray.recentChats'
+  | 'common.tray.resetTheme'
   | 'common.tray.restart'
   | 'common.tray.runningTasks'
   | 'common.tray.showWindow'

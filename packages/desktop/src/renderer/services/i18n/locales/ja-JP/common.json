@@ -169,5 +169,6 @@
   "selectedCount": "選択済み {{count}}",
   "selectedSkills": "選択済みスキル",
   "tray.wakeListening": "ウェイクワードを待ち受ける",
-  "regionSelect.hint": "ドラッグして範囲を選択  ·  Esc でキャンセル"
+  "regionSelect.hint": "ドラッグして範囲を選択  ·  Esc でキャンセル",
+  "tray.resetTheme": "テーマをリセット"
 }

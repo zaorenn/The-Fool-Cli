@@ -169,5 +169,6 @@
   "selectedCount": "{{count}} ausgewählt",
   "selectedSkills": "Ausgewählte Skills",
   "tray.wakeListening": "Auf das Weckwort hören",
-  "regionSelect.hint": "Ziehen, um einen Bereich aufzunehmen  ·  Esc zum Abbrechen"
+  "regionSelect.hint": "Ziehen, um einen Bereich aufzunehmen  ·  Esc zum Abbrechen",
+  "tray.resetTheme": "Design zurücksetzen"
 }

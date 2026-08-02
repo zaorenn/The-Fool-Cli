@@ -2,6 +2,38 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.2.51
+
+### A theme can no longer hide the app
+
+Adding a theme with unlucky CSS made the window go blank — and the settings
+screen that would have undone it went with it, so there was nothing left to
+click. Theme CSS is injected with `!important` on every declaration, which is
+what lets a theme restyle the app at all and also what let one rule beat
+everything the app had to say about being visible.
+
+- Rules that would hide the whole window are dropped before the stylesheet is
+  applied — hiding declarations aimed at `html`, `body`, `*`, `:root` or
+  `#root`. The rest of the rule is kept, so a theme that hides the app and also
+  sets a background keeps its background.
+- A safety net is applied after every theme, pinning the document and the app
+  root visible, for anything phrased in a way the check did not anticipate.
+- **Right-click the tray icon → Reset theme** puts the appearance back to the
+  default and clears every colour override, without deleting the themes you have
+  made. It is in the tray because that is the one surface still working when the
+  window is not.
+- The Jester is told the rules, so the themes it writes stay applicable.
+
+### The Jester
+
+- It can now act on the app rather than only describe it: build, apply and
+  delete themes, research an MCP server and install it, find and import skills,
+  and use the browser.
+- **Built-in MCP servers reach the agent.** The chrome-devtools and
+  image-generation servers the app ships were skipped on the way to the agent
+  and nothing else added them — the switch in settings was real and had no
+  effect. Both still ship disabled; turning one on now does something.
+
 ## 2.2.50
 
 The first release under this name. It carries the desktop app and the backend in one repository, adds a voice layer that was not in the upstream project, and moves every piece of the product identity — data folder, binaries, protocol handler, update feed — off the upstream name.

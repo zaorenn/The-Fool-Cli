@@ -169,5 +169,6 @@
   "selectedCount": "선택됨 {{count}}",
   "selectedSkills": "선택된 스킬",
   "tray.wakeListening": "웨이크워드 듣기",
-  "regionSelect.hint": "드래그하여 영역 캡처  ·  Esc로 취소"
+  "regionSelect.hint": "드래그하여 영역 캡처  ·  Esc로 취소",
+  "tray.resetTheme": "테마 초기화"
 }

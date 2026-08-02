@@ -167,5 +167,6 @@
     "second_short": "s"
   },
   "tray.wakeListening": "Écouter le mot de réveil",
-  "regionSelect.hint": "Faites glisser pour capturer une zone  ·  Échap pour annuler"
+  "regionSelect.hint": "Faites glisser pour capturer une zone  ·  Échap pour annuler",
+  "tray.resetTheme": "Réinitialiser le thème"
 }

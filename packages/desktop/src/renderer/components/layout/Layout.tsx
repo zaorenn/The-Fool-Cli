@@ -41,6 +41,7 @@ import { useDirectorySelection } from '@renderer/hooks/file/useDirectorySelectio
 import { cleanupSiderTooltips } from '@renderer/utils/ui/siderTooltip';
 import { useConversationShortcuts } from '@renderer/hooks/ui/useConversationShortcuts';
 import { isElectronDesktop } from '@renderer/utils/platform';
+import { resetThemeToDefault } from '@renderer/utils/theme/resetTheme';
 import '@renderer/styles/layout.css';
 
 const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 18, strokeWidth = 4 }) => (
@@ -317,7 +318,14 @@ const Layout: React.FC<{
       window.dispatchEvent(new CustomEvent('fool-open-update-modal', { detail: { source: 'tray' } }));
     };
 
+    // Put the appearance back when a theme has made the window unreadable. The
+    // tray is the only surface left to ask from at that point.
+    const handleResetTheme = () => {
+      void resetThemeToDefault();
+    };
+
     // Listen for tray events / 监听托盘事件
+    window.addEventListener('tray:reset-theme', handleResetTheme as EventListener);
     window.addEventListener('tray:navigate-to-guid', handleNavigateToGuid as EventListener);
     window.addEventListener('tray:navigate-to-conversation', handleNavigateToConversation as EventListener);
     window.addEventListener('tray:open-about', handleOpenAbout as EventListener);
@@ -325,6 +333,7 @@ const Layout: React.FC<{
     window.addEventListener('tray:check-update', handleCheckUpdate as EventListener);
 
     return () => {
+      window.removeEventListener('tray:reset-theme', handleResetTheme as EventListener);
       window.removeEventListener('tray:navigate-to-guid', handleNavigateToGuid as EventListener);
       window.removeEventListener('tray:navigate-to-conversation', handleNavigateToConversation as EventListener);
       window.removeEventListener('tray:open-about', handleOpenAbout as EventListener);

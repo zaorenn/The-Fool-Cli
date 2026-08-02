@@ -485,7 +485,17 @@ async fn load_user_mcp_servers(
         let selected = selected_ids
             .map(|ids| ids.iter().any(|id| id == &row.id))
             .unwrap_or(row.enabled);
-        if !selected || row.builtin {
+        // Built-in servers used to be skipped here, and nothing else added
+        // them: `resolve_mcp_servers` only handles the team server. So the
+        // chrome-devtools and image-generation servers the app ships and the
+        // user can switch on in settings reached no agent at all — the switch
+        // was real, the effect was not.
+        //
+        // They follow the same rule as any other row now: an assistant that
+        // names its servers gets exactly those, and one that names none gets
+        // whatever the user enabled. Both ship disabled, so this turns nothing
+        // on by itself.
+        if !selected {
             continue;
         }
 
@@ -996,6 +1006,77 @@ mod tests {
 
         assert!(extra_mcp_servers.contains_key("mcp-docs"));
         assert_eq!(extra_mcp_servers["mcp-docs"].transport, TransportType::StreamableHttp);
+    }
+
+    /// The servers the app ships — chrome-devtools, image generation — used to
+    /// be dropped here for being built in, and nothing else injected them. The
+    /// user's switch in settings did nothing.
+    #[tokio::test]
+    async fn an_enabled_builtin_server_reaches_the_agent() {
+        let repo = MockMcpRepo {
+            rows: vec![make_row(
+                "chrome-devtools",
+                "http",
+                r#"{"url":"http://localhost:9333/mcp"}"#,
+                true,
+                true,
+            )],
+        };
+
+        let servers = load_user_mcp_servers(&repo, None, TEST_USER_ID, "conv-builtin", test_broadcaster()).await;
+
+        assert!(
+            servers.contains_key("chrome-devtools"),
+            "an enabled builtin must be injected like any other server, got {:?}",
+            servers.keys().collect::<Vec<_>>()
+        );
+    }
+
+    /// Both shipped builtins are disabled until the user turns them on, so
+    /// nothing starts running merely because it exists.
+    #[tokio::test]
+    async fn a_disabled_builtin_server_stays_out() {
+        let repo = MockMcpRepo {
+            rows: vec![make_row(
+                "chrome-devtools",
+                "http",
+                r#"{"url":"http://localhost:9333/mcp"}"#,
+                false,
+                true,
+            )],
+        };
+
+        let servers = load_user_mcp_servers(&repo, None, TEST_USER_ID, "conv-builtin-off", test_broadcaster()).await;
+
+        assert!(servers.is_empty(), "a disabled server must not be injected");
+    }
+
+    /// An assistant that names its servers gets those and no others — a builtin
+    /// the user enabled globally must not be added behind that choice.
+    #[tokio::test]
+    async fn a_named_selection_still_excludes_an_unnamed_builtin() {
+        let repo = MockMcpRepo {
+            rows: vec![
+                make_row("chrome-devtools", "http", r#"{"url":"http://localhost:9333/mcp"}"#, true, true),
+                make_row("mcp-docs", "http", r#"{"url":"http://localhost:54321/mcp"}"#, true, false),
+            ],
+        };
+        let selected = vec!["mcp_mcp-docs".to_owned()];
+
+        let servers = load_user_mcp_servers(
+            &repo,
+            Some(&selected),
+            TEST_USER_ID,
+            "conv-builtin-named",
+            test_broadcaster(),
+        )
+        .await;
+
+        assert!(servers.contains_key("mcp-docs"));
+        assert!(
+            !servers.contains_key("chrome-devtools"),
+            "a named selection must not pick up unnamed servers"
+        );
     }
 
     #[cfg(unix)]

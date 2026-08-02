@@ -75,6 +75,7 @@ const trayEvents = [
   'tray:pause-all-tasks',
   'tray:check-update',
   'tray:toggle-wake-listening',
+  'tray:reset-theme',
 ];
 
 for (const channel of trayEvents) {

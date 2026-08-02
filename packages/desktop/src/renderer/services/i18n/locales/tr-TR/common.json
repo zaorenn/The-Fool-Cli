@@ -169,5 +169,6 @@
   "selectedCount": "{{count}} seçili",
   "selectedSkills": "Seçili beceriler",
   "tray.wakeListening": "Uyandırma sözcüğünü dinle",
-  "regionSelect.hint": "Bölge seçmek için sürükleyin  ·  İptal için Esc"
+  "regionSelect.hint": "Bölge seçmek için sürükleyin  ·  İptal için Esc",
+  "tray.resetTheme": "Temayı sıfırla"
 }

@@ -12,9 +12,11 @@ import { BUILTIN_THEMES } from '@renderer/theme/builtinThemes';
 import { reassertThemeOverrides } from './applyThemeOverrides';
 import { processCustomCss } from './customCssProcessor';
 import { getSystemPrefersDark } from './systemAppearance';
+import { stripFatalThemeCss, THEME_SAFETY_NET_CSS } from './themeSafetyNet';
 
 const TOKENS_STYLE_ID = 'theme-tokens';
 const DECORATION_STYLE_ID = 'theme-decoration';
+const SAFETY_NET_STYLE_ID = 'theme-safety-net';
 
 function upsertStyle(id: string, css: string | null, root: Document = document): void {
   const existing = root.getElementById(id);
@@ -41,10 +43,16 @@ export function applyTheme(theme: Theme, root: Document = document): void {
   root.documentElement.setAttribute('data-theme', theme.appearance);
   root.body?.setAttribute('arco-theme', theme.appearance);
   upsertStyle(TOKENS_STYLE_ID, tokensToCss(theme.tokens), root);
-  upsertStyle(DECORATION_STYLE_ID, theme.css ? processCustomCss(theme.css) : null, root);
+  // Stripped before it is processed, because processing is what adds the
+  // `!important` that would make a window-hiding rule unbeatable.
+  upsertStyle(DECORATION_STYLE_ID, theme.css ? processCustomCss(stripFatalThemeCss(theme.css)) : null, root);
   // The theme's stylesheet has just been moved to the end of <head>; the user's
   // colour overrides have to follow it or the preset wins on source order.
   reassertThemeOverrides(root);
+  // Last of all, and re-appended on every change so it stays last: a theme may
+  // restyle the application freely, but it may not leave the user looking at a
+  // blank window with no way back to the settings that would undo it.
+  upsertStyle(SAFETY_NET_STYLE_ID, THEME_SAFETY_NET_CSS, root);
 }
 
 /** Resolve `activeId` locally, apply, persist, and publish to main for cross-window broadcast. */
