@@ -379,7 +379,7 @@ describe('SpeakMessageButton', () => {
  */
 describe('SpeakMessageButton across providers', () => {
   const audioCppModel = {
-    ...readyModel('tts-audiocpp-chatterbox', 'text-to-speech', []),
+    ...readyModel('tts-audiocpp-pocket', 'text-to-speech', []),
     providerId: 'local-audiocpp',
   };
 
@@ -397,18 +397,18 @@ describe('SpeakMessageButton across providers', () => {
   it('addresses the engine the chosen model belongs to', async () => {
     catalogInvoke.mockResolvedValue({
       ok: true,
-      data: { models: [audioCppModel], profiles: [{ id: 'cloned:ultron', modelId: 'tts-audiocpp-chatterbox' }] },
+      data: { models: [audioCppModel], profiles: [{ id: 'cloned:ultron', modelId: 'tts-audiocpp-pocket' }] },
     });
     settings = {
       ...NO_SUMMARY,
-      tts: { ...NO_SUMMARY.tts, modelId: 'tts-audiocpp-chatterbox', profileId: 'cloned:ultron' },
+      tts: { ...NO_SUMMARY.tts, modelId: 'tts-audiocpp-pocket', profileId: 'cloned:ultron' },
     };
 
     render(<SpeakMessageButton text='The tests pass.' />);
     fireEvent.click(screen.getByTestId('speak-message'));
 
     await waitFor(() => expect(synthesizeInvoke).toHaveBeenCalled());
-    expect(payloadOf()).toMatchObject({ providerId: 'local-audiocpp', modelId: 'tts-audiocpp-chatterbox' });
+    expect(payloadOf()).toMatchObject({ providerId: 'local-audiocpp', modelId: 'tts-audiocpp-pocket' });
   });
 
   /**
@@ -420,7 +420,7 @@ describe('SpeakMessageButton across providers', () => {
     catalogInvoke.mockResolvedValue({ ok: true, data: { models: [readyModel('tts-piper-en-libritts-r')] } });
     settings = {
       ...NO_SUMMARY,
-      tts: { ...NO_SUMMARY.tts, providerId: 'local-audiocpp', modelId: 'tts-audiocpp-chatterbox' },
+      tts: { ...NO_SUMMARY.tts, providerId: 'local-audiocpp', modelId: 'tts-audiocpp-pocket' },
     };
 
     render(<SpeakMessageButton text='The tests pass.' />);
@@ -435,16 +435,16 @@ describe('SpeakMessageButton across providers', () => {
   it('sends the saved parameters of the model that speaks', async () => {
     catalogInvoke.mockResolvedValue({
       ok: true,
-      data: { models: [audioCppModel], profiles: [{ id: 'cloned:ultron', modelId: 'tts-audiocpp-chatterbox' }] },
+      data: { models: [audioCppModel], profiles: [{ id: 'cloned:ultron', modelId: 'tts-audiocpp-pocket' }] },
     });
     settings = {
       ...NO_SUMMARY,
       tts: {
         ...NO_SUMMARY.tts,
-        modelId: 'tts-audiocpp-chatterbox',
+        modelId: 'tts-audiocpp-pocket',
         profileId: 'cloned:ultron',
         params: {
-          'tts-audiocpp-chatterbox': { exaggeration: 1.4 },
+          'tts-audiocpp-pocket': { exaggeration: 1.4 },
           'tts-audiocpp-indextts2': { num_beams: 5 },
         },
       },

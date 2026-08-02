@@ -415,12 +415,6 @@ const LEGACY_CLONING_MODEL_ID = 'tts-zipvoice-distill-int8';
 /** The engine they are rendered by now, and the one a new record defaults to. */
 export const CLONING_MODEL_ID = 'tts-pocket-int8-2026-01-26';
 
-/** Chatterbox through audio.cpp: expressive, 19 languages, Turkish among them. */
-export const AUDIOCPP_CHATTERBOX_MODEL_ID = 'tts-audiocpp-chatterbox';
-
-/** IndexTTS2 through audio.cpp: Chinese and English, with emotion control. */
-export const AUDIOCPP_INDEXTTS2_MODEL_ID = 'tts-audiocpp-indextts2';
-
 /**
  * Pocket through audio.cpp rather than sherpa.
  *
@@ -442,8 +436,6 @@ export const AUDIOCPP_POCKET_MODEL_ID = 'tts-audiocpp-pocket';
 export const CLONING_ENGINES: readonly { modelId: string; providerId: LocalVoiceProviderId }[] = [
   { modelId: CLONING_MODEL_ID, providerId: 'local-sherpa' },
   { modelId: AUDIOCPP_POCKET_MODEL_ID, providerId: 'local-audiocpp' },
-  { modelId: AUDIOCPP_CHATTERBOX_MODEL_ID, providerId: 'local-audiocpp' },
-  { modelId: AUDIOCPP_INDEXTTS2_MODEL_ID, providerId: 'local-audiocpp' },
 ];
 
 export const CLONING_MODEL_IDS: readonly string[] = CLONING_ENGINES.map((engine) => engine.modelId);

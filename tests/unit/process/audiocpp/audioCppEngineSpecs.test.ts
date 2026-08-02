@@ -13,272 +13,67 @@ import {
   validateAudioCppParams,
   wireParamsFor,
 } from '@process/services/fool-voice/audiocpp/audioCppEngineSpecs';
-import {
-  AUDIOCPP_CHATTERBOX_MODEL_ID,
-  AUDIOCPP_INDEXTTS2_MODEL_ID,
-  AUDIOCPP_POCKET_MODEL_ID,
-} from '@/common/types/foolVoice';
+import { AUDIOCPP_POCKET_MODEL_ID } from '@/common/types/foolVoice';
 
-const CHATTERBOX = AUDIOCPP_CHATTERBOX_MODEL_ID;
-const INDEXTTS2 = AUDIOCPP_INDEXTTS2_MODEL_ID;
+const POCKET = AUDIOCPP_POCKET_MODEL_ID;
 
+/**
+ * One engine, and it is here because it is fast.
+ *
+ * Chatterbox, IndexTTS2 and MOSS-TTS-Nano were all shipped through this file
+ * and all three were withdrawn after being measured on real hardware: roughly
+ * forty seconds a sentence for the first two, and between nine and twenty-eight
+ * for the third. Pocket does the same sentence in 0.43 s warm, 1.20 s cold.
+ */
 describe('audio.cpp model specs', () => {
-  // Ordered fastest first, because that is the order the picker shows them in
-  // and the first one a user tries is the one that decides whether they think
-  // local speech is usable at all.
   it('describes every shipped model and nothing else', () => {
-    expect(AUDIOCPP_MODEL_SPECS.map((spec) => spec.modelId)).toEqual([AUDIOCPP_POCKET_MODEL_ID, CHATTERBOX, INDEXTTS2]);
-    expect(isAudioCppModel(CHATTERBOX)).toBe(true);
+    expect(AUDIOCPP_MODEL_SPECS.map((spec) => spec.modelId)).toEqual([POCKET]);
+    expect(isAudioCppModel(POCKET)).toBe(true);
     expect(isAudioCppModel('tts-piper-en-libritts-r')).toBe(false);
   });
 
-  // The config's `task` decides which session the loader builds, and Chatterbox
-  // throws "Chatterbox supports VoiceCloning and VoiceConversion" for anything
-  // else. `clone`, with an `e`, is UI metadata the parser does not know.
   /**
    * The task is per model, and assuming otherwise is what shipped Pocket
-   * broken: every entry declared `clon`, and Pocket answers that with
-   * `500 PocketTTS only supports VoiceTaskKind::Tts`. It names the session the
-   * loader builds — not whether a voice gets cloned, which both of these do.
-   */
-  it('asks each model for the session kind its own loader accepts', () => {
-    const byModel = Object.fromEntries(AUDIOCPP_MODEL_SPECS.map((spec) => [spec.modelId, spec.task]));
-    expect(byModel).toEqual({
-      [AUDIOCPP_POCKET_MODEL_ID]: 'tts',
-      [CHATTERBOX]: 'clon',
-      [INDEXTTS2]: 'clon',
-    });
-    for (const spec of AUDIOCPP_MODEL_SPECS) expect(spec.mode).toBe('offline');
-  });
-
-  it('marks every model as unable to speak without a reference clip', () => {
-    for (const spec of AUDIOCPP_MODEL_SPECS) {
-      expect(spec.requiresVoiceReference).toBe(true);
-      // Neither reads `reference_text`: both build a speaker embedding from the
-      // audio alone.
-      expect(spec.usesReferenceText).toBe(false);
-    }
-  });
-
-  it('names Turkish among the languages Chatterbox speaks', () => {
-    expect(getAudioCppModelSpec(CHATTERBOX)?.languages).toContain('tr');
-  });
-
-  // Every name here is the snake_case HTTP spelling. A hyphenated key is a CLI
-  // flag: sent over HTTP it lands under a name no model reads, and synthesis
-  // returns default-parameter audio while looking entirely successful.
-  it('never declares a parameter under its CLI flag spelling', () => {
-    for (const spec of AUDIOCPP_MODEL_SPECS) {
-      for (const param of spec.params) {
-        expect(param.name).not.toContain('-');
-        expect(param.name).toBe(param.name.toLowerCase());
-      }
-    }
-  });
-
-  it('declares no parameter twice within a model', () => {
-    for (const spec of AUDIOCPP_MODEL_SPECS) {
-      expect(new Set(spec.params.map((param) => param.name)).size).toBe(spec.params.length);
-    }
-  });
-
-  // Read from the struct initialisers, which are what applies when a key is
-  // omitted. Upstream's own prose contradicts three of them.
-  it.each([
-    ['top_p', 1],
-    ['repetition_penalty', 1.2],
-    ['max_tokens', 384],
-    ['guidance_scale', 0.5],
-    ['temperature', 0.8],
-    ['text_chunk_size', 128],
-  ])('pins Chatterbox %s to the value the code uses', (name, expected) => {
-    const param = getAudioCppModelSpec(CHATTERBOX)?.params.find((candidate) => candidate.name === name);
-    expect(param?.default).toBe(expected);
-  });
-
-  it.each([
-    ['top_p', 0.8],
-    ['top_k', 30],
-    ['repetition_penalty', 10],
-    ['num_beams', 3],
-    ['max_tokens', 1500],
-    ['emotion_alpha', 1],
-    ['interval_silence_ms', 200],
-  ])('pins IndexTTS2 %s to the value the code uses', (name, expected) => {
-    const param = getAudioCppModelSpec(INDEXTTS2)?.params.find((candidate) => candidate.name === name);
-    expect(param?.default).toBe(expected);
-  });
-
-  it('keeps every default inside the range it declares', () => {
-    for (const spec of AUDIOCPP_MODEL_SPECS) {
-      expect(validateAudioCppParams(spec.modelId, defaultAudioCppParams(spec.modelId))).toBeNull();
-    }
-  });
-
-  // The engine itself rejects these, and its rejection arrives as a 500 with
-  // free-form text — indistinguishable from a real fault. Better refused here.
-  it("keeps IndexTTS2's own bounds, so a value it would throw on never leaves", () => {
-    expect(validateAudioCppParams(INDEXTTS2, { top_p: 0 })).toEqual({ key: 'top_p', reason: 'range' });
-    expect(validateAudioCppParams(INDEXTTS2, { top_k: 0 })).toEqual({ key: 'top_k', reason: 'range' });
-    expect(validateAudioCppParams(INDEXTTS2, { num_beams: 0 })).toEqual({ key: 'num_beams', reason: 'range' });
-    expect(validateAudioCppParams(INDEXTTS2, { emotion_alpha: 1.5 })).toEqual({
-      key: 'emotion_alpha',
-      reason: 'range',
-    });
-    expect(validateAudioCppParams(INDEXTTS2, { interval_silence_ms: -1 })).toEqual({
-      key: 'interval_silence_ms',
-      reason: 'range',
-    });
-  });
-});
-
-describe('validateAudioCppParams', () => {
-  it('accepts nothing at all', () => {
-    expect(validateAudioCppParams(CHATTERBOX, undefined)).toBeNull();
-    expect(validateAudioCppParams(CHATTERBOX, {})).toBeNull();
-  });
-
-  it('accepts a declared parameter inside its range', () => {
-    expect(validateAudioCppParams(CHATTERBOX, { temperature: 1.2, do_sample: false })).toBeNull();
-  });
-
-  it('names an undeclared key rather than passing it through', () => {
-    expect(validateAudioCppParams(CHATTERBOX, { speed: 1.5 })).toEqual({ key: 'speed', reason: 'unknown' });
-  });
-
-  // The hyphenated form is the exact mistake this schema exists to catch: it
-  // would be accepted by the server, ignored by the model, and produce audio.
-  it('rejects the CLI flag spelling of a parameter it does declare', () => {
-    expect(validateAudioCppParams(CHATTERBOX, { 'top-p': 0.9 })).toEqual({ key: 'top-p', reason: 'unknown' });
-  });
-
-  it("rejects a parameter belonging to the other model's schema", () => {
-    expect(validateAudioCppParams(CHATTERBOX, { num_beams: 3 })).toEqual({ key: 'num_beams', reason: 'unknown' });
-    expect(validateAudioCppParams(INDEXTTS2, { exaggeration: 0.5 })).toEqual({
-      key: 'exaggeration',
-      reason: 'unknown',
-    });
-  });
-
-  it('rejects the wrong type for a declared parameter', () => {
-    expect(validateAudioCppParams(CHATTERBOX, { temperature: '1.2' })).toEqual({ key: 'temperature', reason: 'type' });
-    expect(validateAudioCppParams(CHATTERBOX, { do_sample: 1 })).toEqual({ key: 'do_sample', reason: 'type' });
-  });
-
-  it('rejects a value outside the declared range', () => {
-    expect(validateAudioCppParams(CHATTERBOX, { temperature: 9 })).toEqual({ key: 'temperature', reason: 'range' });
-    expect(validateAudioCppParams(CHATTERBOX, { guidance_scale: -1 })).toEqual({
-      key: 'guidance_scale',
-      reason: 'range',
-    });
-  });
-
-  it('rejects a fraction where the engine counts in whole tokens', () => {
-    expect(validateAudioCppParams(CHATTERBOX, { max_tokens: 384.5 })).toEqual({ key: 'max_tokens', reason: 'range' });
-  });
-
-  it('rejects a non-finite number, which JSON would not survive anyway', () => {
-    expect(validateAudioCppParams(CHATTERBOX, { temperature: Number.NaN })).toEqual({
-      key: 'temperature',
-      reason: 'type',
-    });
-  });
-
-  it('rejects an over-long text parameter', () => {
-    expect(validateAudioCppParams(INDEXTTS2, { emotion_text: 'a'.repeat(201) })).toEqual({
-      key: 'emotion_text',
-      reason: 'range',
-    });
-    expect(validateAudioCppParams(INDEXTTS2, { emotion_text: 'quietly amused' })).toBeNull();
-  });
-
-  it('rejects anything that is not an object of values', () => {
-    expect(validateAudioCppParams(CHATTERBOX, [])).toEqual({ key: '', reason: 'type' });
-    expect(validateAudioCppParams(CHATTERBOX, 'temperature=1')).toEqual({ key: '', reason: 'type' });
-    expect(validateAudioCppParams(CHATTERBOX, { temperature: { value: 1 } })).toEqual({
-      key: 'temperature',
-      reason: 'type',
-    });
-  });
-
-  // A model with no schema is not a model with a permissive schema.
-  it('accepts nothing for a model that declares no parameters', () => {
-    expect(validateAudioCppParams('tts-piper-en-libritts-r', {})).toBeNull();
-    expect(validateAudioCppParams('tts-piper-en-libritts-r', { speed: 1 })).toEqual({
-      key: 'speed',
-      reason: 'unknown',
-    });
-  });
-});
-
-describe('wireParamsFor', () => {
-  it('sends only what differs from the engine’s own default', () => {
-    expect(wireParamsFor(CHATTERBOX, { temperature: 0.8, guidance_scale: 0.9 })).toEqual({ guidance_scale: 0.9 });
-  });
-
-  it('sends nothing when every value is the shipped default', () => {
-    expect(wireParamsFor(CHATTERBOX, defaultAudioCppParams(CHATTERBOX))).toEqual({});
-  });
-
-  it('drops an empty text parameter rather than sending an empty string', () => {
-    expect(wireParamsFor(INDEXTTS2, { emotion_text: '' })).toEqual({});
-    expect(wireParamsFor(INDEXTTS2, { emotion_text: 'wistful' })).toEqual({ emotion_text: 'wistful' });
-  });
-
-  // Belt and braces behind the bridge validator: a stored record written by an
-  // older build must not reach the engine as garbage.
-  it('drops an unknown or out-of-range value instead of forwarding it', () => {
-    expect(wireParamsFor(CHATTERBOX, { 'top-p': 0.5, temperature: 99, exaggeration: 1.5 })).toEqual({
-      exaggeration: 1.5,
-    });
-  });
-
-  it('sends nothing for a model with no schema', () => {
-    expect(wireParamsFor('tts-piper-en-libritts-r', { speed: 2 })).toEqual({});
-  });
-
-  it('keeps booleans that were switched off, which are not the same as absent', () => {
-    expect(wireParamsFor(CHATTERBOX, { do_sample: false })).toEqual({ do_sample: false });
-  });
-});
-
-/**
- * Pocket, the one engine here that is fast enough to use.
- *
- * Measured against the real server on this machine: 1.20 s cold, then 0.43 s
- * and 0.44 s warm for "The fool is ready." in a cloned voice. Chatterbox needs
- * around forty seconds for the same sentence.
- */
-describe('the fast cloning engine', () => {
-  const pocket = getAudioCppModelSpec(AUDIOCPP_POCKET_MODEL_ID);
-
-  it('addresses the model by the family its loader registers', () => {
-    expect(pocket?.family).toBe('pocket_tts');
-  });
-
-  /**
-   * The exact mirror of Chatterbox, and the reason this shipped broken: asked
-   * for a `clon` session Pocket answers `500 PocketTTS only supports
-   * VoiceTaskKind::Tts`, which the app reported as "Not usable" after a long
-   * wait. The task names the session the loader builds, not whether a voice is
-   * cloned — Pocket clones from a `voice_ref` inside a `tts` session.
+   * broken: every entry declared `clon`, because Chatterbox accepted nothing
+   * else, and Pocket answers that with
+   * `500 PocketTTS only supports VoiceTaskKind::Tts`.
+   *
+   * It names the session the loader builds, not whether a voice gets cloned —
+   * Pocket clones from a `voice_ref` inside a `tts` session.
    */
   it('asks Pocket for the only session kind its loader accepts', () => {
-    expect(pocket?.task).toBe('tts');
-    expect(getAudioCppModelSpec(CHATTERBOX)?.task).toBe('clon');
+    expect(getAudioCppModelSpec(POCKET)?.task).toBe('tts');
+    expect(getAudioCppModelSpec(POCKET)?.mode).toBe('offline');
   });
 
-  it('still requires a reference recording, session kind notwithstanding', () => {
-    expect(pocket?.requiresVoiceReference).toBe(true);
+  it('cannot speak without a reference clip, session kind notwithstanding', () => {
+    expect(getAudioCppModelSpec(POCKET)?.requiresVoiceReference).toBe(true);
+  });
+
+  // Pocket does read a clone transcript, but through its own `voice_clone_text`
+  // option — sent as the request's `reference_text` it lands under a key
+  // nothing looks at.
+  it('does not claim Pocket reads the reference transcript', () => {
+    expect(getAudioCppModelSpec(POCKET)?.usesReferenceText).toBe(false);
+  });
+
+  it('names the weights file the installer puts on disk', () => {
+    expect(getAudioCppModelSpec(POCKET)?.weightsFile).toBe('pocket-tts-english-q8_0.gguf');
+    expect(getAudioCppModelSpec(POCKET)?.family).toBe('pocket_tts');
   });
 
   /**
-   * `include/engine/models/pocket_tts/types.h:46-59`, plus `text_chunk_size`
-   * from `src/models/pocket_tts/session.cpp:30`.
+   * Every default is `GenerationRequest` in
+   * `include/engine/models/pocket_tts/types.h:46-59`, except `text_chunk_size`
+   * which is `kDefaultTextChunkSize` in `src/models/pocket_tts/session.cpp:30`.
+   *
+   * Read from the code rather than the documentation on purpose: upstream's
+   * prose disagreed with its own struct initialisers for three of Chatterbox's
+   * values, and a wrong default here is inaudible — the voice simply is not
+   * what it should be, with nothing on screen to say so.
    */
   it('carries Pocket’s defaults as its own header declares them', () => {
-    const byName = Object.fromEntries((pocket?.params ?? []).map((param) => [param.name, param.default]));
-    expect(byName).toEqual({
+    expect(defaultAudioCppParams(POCKET)).toEqual({
       temperature: 0.7,
       eos_threshold: -4,
       noise_clamp: -1,
@@ -292,26 +87,51 @@ describe('the fast cloning engine', () => {
 
   // Three defaults are sentinels meaning "the model decides", so a range that
   // started above them would put the default out of reach after one drag.
-  it('lets Pocket’s sentinel defaults be selected again', () => {
+  it('lets the sentinel defaults be selected again', () => {
     for (const name of ['max_steps', 'frames_after_eos', 'noise_clamp']) {
-      const spec = pocket?.params.find((param) => param.name === name);
+      const spec = getAudioCppModelSpec(POCKET)?.params.find((param) => param.name === name);
       if (spec?.type !== 'number') throw new Error(`${name} must be numeric`);
       expect(spec.min).toBeLessThanOrEqual(spec.default);
       expect(spec.max).toBeGreaterThanOrEqual(spec.default);
     }
   });
 
-  // Pocket does read a clone transcript, but through its own `voice_clone_text`
-  // option — sent as `reference_text` it lands under a key nothing looks at.
-  it('does not claim Pocket reads the reference transcript', () => {
-    expect(pocket?.usesReferenceText).toBe(false);
+  it('rejects a key the model does not declare', () => {
+    expect(validateAudioCppParams(POCKET, { top_p: 0.8 })).toEqual({ key: 'top_p', reason: 'unknown' });
+    expect(validateAudioCppParams(POCKET, { temperature: 0.4 })).toBeNull();
   });
 
-  it('validates a value against the model it was sent for', () => {
-    expect(validateAudioCppParams(AUDIOCPP_POCKET_MODEL_ID, { top_p: 0.8 })).toEqual({
-      key: 'top_p',
+  it('rejects the wrong type and a value outside the declared bounds', () => {
+    expect(validateAudioCppParams(POCKET, { temperature: 'warm' })).toEqual({ key: 'temperature', reason: 'type' });
+    expect(validateAudioCppParams(POCKET, { temperature: 99 })).toEqual({ key: 'temperature', reason: 'range' });
+    expect(validateAudioCppParams(POCKET, { max_tokens: 12.5 })).toEqual({ key: 'max_tokens', reason: 'range' });
+  });
+
+  it('accepts an empty bag, and refuses parameters for a model with no schema', () => {
+    expect(validateAudioCppParams(POCKET, {})).toBeNull();
+    expect(validateAudioCppParams(POCKET, undefined)).toBeNull();
+    expect(validateAudioCppParams('tts-piper-en-libritts-r', { temperature: 0.5 })).toEqual({
+      key: 'temperature',
       reason: 'unknown',
     });
-    expect(validateAudioCppParams(AUDIOCPP_POCKET_MODEL_ID, { temperature: 0.4 })).toBeNull();
+  });
+
+  /**
+   * A key left at its default is dropped rather than transmitted: the engine
+   * applies the same value from its own struct initialiser, and an omitted key
+   * is one fewer thing to be wrong about when upstream changes a default.
+   */
+  it('sends only what the user actually changed', () => {
+    expect(wireParamsFor(POCKET, { temperature: 0.7, eos_threshold: -6 })).toEqual({ eos_threshold: -6 });
+    expect(wireParamsFor(POCKET, defaultAudioCppParams(POCKET))).toEqual({});
+    expect(wireParamsFor(POCKET, undefined)).toEqual({});
+  });
+
+  it('drops a value the schema would have rejected rather than sending it on', () => {
+    expect(wireParamsFor(POCKET, { temperature: 99, eos_threshold: -6 })).toEqual({ eos_threshold: -6 });
+  });
+
+  it('sends nothing for a model it has no schema for', () => {
+    expect(wireParamsFor('tts-piper-en-libritts-r', { temperature: 0.5 })).toEqual({});
   });
 });

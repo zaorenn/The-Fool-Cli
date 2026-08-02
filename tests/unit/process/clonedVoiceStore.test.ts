@@ -14,7 +14,7 @@ import {
   isValidVoiceId,
   parseClonedProfileId,
 } from '@process/services/fool-voice/ClonedVoiceStore';
-import { AUDIOCPP_CHATTERBOX_MODEL_ID, AUDIOCPP_INDEXTTS2_MODEL_ID, CLONING_ENGINES } from '@/common/types/foolVoice';
+import { AUDIOCPP_POCKET_MODEL_ID, AUDIOCPP_INDEXTTS2_MODEL_ID, CLONING_ENGINES } from '@/common/types/foolVoice';
 
 let root: string;
 
@@ -113,14 +113,20 @@ describe('ClonedVoiceStore', () => {
     expect(new Set(profiles.map((profile) => profile.id))).toEqual(new Set(['cloned:ultron']));
   });
 
-  it('offers the audio.cpp engines alongside the sherpa one', () => {
+  /**
+   * One recording, offered to every engine that can render it — the clip
+   * belongs to the user, not to a model. Which engines those are is data in
+   * `CLONING_ENGINES` rather than a branch here, which is what let three of
+   * them be withdrawn for being slow without touching this file.
+   */
+  it('offers the audio.cpp engine alongside the sherpa one', () => {
     addVoice('ultron', ultron);
 
     const modelIds = new ClonedVoiceStore(root).profiles().map((profile) => profile.modelId);
 
     expect(modelIds).toContain('tts-pocket-int8-2026-01-26');
-    expect(modelIds).toContain(AUDIOCPP_CHATTERBOX_MODEL_ID);
-    expect(modelIds).toContain(AUDIOCPP_INDEXTTS2_MODEL_ID);
+    expect(modelIds).toContain(AUDIOCPP_POCKET_MODEL_ID);
+    expect(new Set(modelIds).size).toBe(modelIds.length);
   });
 });
 

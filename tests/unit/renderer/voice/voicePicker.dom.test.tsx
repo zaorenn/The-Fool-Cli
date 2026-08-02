@@ -310,7 +310,7 @@ describe('VoicePicker with an engine that speaks only in a cloned voice', () => 
     const onBrowseSpeakers = vi.fn();
     render(
       <VoicePicker
-        models={[cloningModel('tts-audiocpp-chatterbox', installed)]}
+        models={[cloningModel('tts-audiocpp-pocket', installed)]}
         profiles={profiles}
         selectedProfileId=''
         selectedModelId=''
@@ -330,25 +330,25 @@ describe('VoicePicker with an engine that speaks only in a cloned voice', () => 
   it('can still be installed when it has no voices to list', () => {
     const { onInstall } = renderCloning(false);
 
-    fireEvent.click(screen.getByTestId('voice-model-install-tts-audiocpp-chatterbox'));
-    expect(onInstall).toHaveBeenCalledWith('tts-audiocpp-chatterbox');
+    fireEvent.click(screen.getByTestId('voice-model-install-tts-audiocpp-pocket'));
+    expect(onInstall).toHaveBeenCalledWith('tts-audiocpp-pocket');
   });
 
   it('says why it is silent rather than looking broken', () => {
     renderCloning(true);
 
-    expect(screen.getByTestId('voice-needs-clone-tts-audiocpp-chatterbox')).toBeTruthy();
+    expect(screen.getByTestId('voice-needs-clone-tts-audiocpp-pocket')).toBeTruthy();
   });
 
   // Two cloned voices are two cards, but there is no speaker list behind them —
   // and this provider has no route to ask for one, so the request 404s.
   it('never offers to browse speakers it does not have', () => {
     renderCloning(true, [
-      profile('cloned:one', 'tts-audiocpp-chatterbox', 'One', { kind: 'cloned', deletable: true }),
-      profile('cloned:two', 'tts-audiocpp-chatterbox', 'Two', { kind: 'cloned', deletable: true }),
+      profile('cloned:one', 'tts-audiocpp-pocket', 'One', { kind: 'cloned', deletable: true }),
+      profile('cloned:two', 'tts-audiocpp-pocket', 'Two', { kind: 'cloned', deletable: true }),
     ]);
 
-    expect(screen.queryByTestId('voice-browse-tts-audiocpp-chatterbox')).toBeNull();
-    expect(screen.queryByTestId('voice-model-hint-tts-audiocpp-chatterbox')).toBeNull();
+    expect(screen.queryByTestId('voice-browse-tts-audiocpp-pocket')).toBeNull();
+    expect(screen.queryByTestId('voice-model-hint-tts-audiocpp-pocket')).toBeNull();
   });
 });

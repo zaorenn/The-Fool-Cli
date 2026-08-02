@@ -127,7 +127,7 @@ describe('reconcileVoiceModels with cloning engines installed', () => {
     const models = [
       listenModel(DEFAULT_FOOL_VOICE_SETTINGS.stt.modelId, true),
       speechModel(DEFAULT_FOOL_VOICE_SETTINGS.tts.modelId, false),
-      cloningModel('tts-audiocpp-chatterbox', 'local-audiocpp'),
+      cloningModel('tts-audiocpp-pocket', 'local-audiocpp'),
       speechModel('tts-piper-tr-fettah', true, ['fettah-p0']),
     ];
 
@@ -141,12 +141,12 @@ describe('reconcileVoiceModels with cloning engines installed', () => {
     const models = [
       listenModel(DEFAULT_FOOL_VOICE_SETTINGS.stt.modelId, true),
       speechModel(DEFAULT_FOOL_VOICE_SETTINGS.tts.modelId, false),
-      cloningModel('tts-audiocpp-chatterbox', 'local-audiocpp'),
+      cloningModel('tts-audiocpp-pocket', 'local-audiocpp'),
     ];
 
     const next = reconcileVoiceModels(DEFAULT_FOOL_VOICE_SETTINGS, models);
 
-    expect(next?.tts.modelId).toBe('tts-audiocpp-chatterbox');
+    expect(next?.tts.modelId).toBe('tts-audiocpp-pocket');
     expect(next?.tts.providerId).toBe('local-audiocpp');
   });
 });

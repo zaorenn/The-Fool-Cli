@@ -6,7 +6,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import {
-  AUDIOCPP_CHATTERBOX_MODEL_ID,
+  AUDIOCPP_POCKET_MODEL_ID,
   CLONING_MODEL_ID,
   DEFAULT_FOOL_VOICE_SETTINGS,
   FOOL_VOICE_PROVIDERS,
@@ -388,13 +388,13 @@ describe('Voice download progress lifecycle', () => {
 describe('Routing a request to the provider that owns the model', () => {
   const models = [
     { id: 'tts-piper-en-libritts-r', providerId: 'local-sherpa' as const },
-    { id: AUDIOCPP_CHATTERBOX_MODEL_ID, providerId: 'local-audiocpp' as const },
+    { id: AUDIOCPP_POCKET_MODEL_ID, providerId: 'local-audiocpp' as const },
     { id: 'stt-phrase-v1', providerId: 'transcript-wake-word' as const },
   ];
 
   it('names the provider each model belongs to', () => {
     expect(synthesisProviderFor(models, 'tts-piper-en-libritts-r')).toBe('local-sherpa');
-    expect(synthesisProviderFor(models, AUDIOCPP_CHATTERBOX_MODEL_ID)).toBe('local-audiocpp');
+    expect(synthesisProviderFor(models, AUDIOCPP_POCKET_MODEL_ID)).toBe('local-audiocpp');
   });
 
   // The catalog is read asynchronously, so a call can be made against a model
@@ -414,7 +414,7 @@ describe('Routing a request to the provider that owns the model', () => {
   // one has nothing on disk, so it must not be the answer even for its own model.
   it('names only a local provider for an install or a removal', () => {
     const withRemote = [...models, { id: 'tts-openai-1', providerId: 'openai-compatible' as const }];
-    expect(localProviderFor(withRemote, AUDIOCPP_CHATTERBOX_MODEL_ID)).toBe('local-audiocpp');
+    expect(localProviderFor(withRemote, AUDIOCPP_POCKET_MODEL_ID)).toBe('local-audiocpp');
     expect(localProviderFor(withRemote, 'tts-openai-1')).toBe('local-sherpa');
   });
 });

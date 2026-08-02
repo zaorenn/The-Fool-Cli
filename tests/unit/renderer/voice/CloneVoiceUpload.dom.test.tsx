@@ -202,7 +202,7 @@ describe('CloneVoiceUpload', () => {
  */
 describe('CloneVoiceUpload across several cloning engines', () => {
   const chatterbox = {
-    id: 'tts-audiocpp-chatterbox',
+    id: 'tts-audiocpp-pocket',
     role: 'text-to-speech' as const,
     state: { status: 'ready' as const },
     profileIds: [],
@@ -228,11 +228,7 @@ describe('CloneVoiceUpload across several cloning engines', () => {
 
   it('proves the clone on the engine that is about to speak it', async () => {
     render(
-      <CloneVoiceUpload
-        models={[pocketModel, chatterbox]}
-        preferredModelId='tts-audiocpp-chatterbox'
-        onSaved={vi.fn()}
-      />
+      <CloneVoiceUpload models={[pocketModel, chatterbox]} preferredModelId='tts-audiocpp-pocket' onSaved={vi.fn()} />
     );
 
     dropFile();

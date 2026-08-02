@@ -20,9 +20,9 @@ const SPECS: VoiceParamSpec[] = [
 
 const speechModel = (paramSpecs?: VoiceParamSpec[]): VoiceModel =>
   ({
-    id: 'tts-audiocpp-chatterbox',
+    id: 'tts-audiocpp-pocket',
     providerId: 'local-audiocpp',
-    displayName: 'Chatterbox',
+    displayName: 'Pocket',
     languages: ['en'],
     role: 'text-to-speech',
     distribution: 'managed',

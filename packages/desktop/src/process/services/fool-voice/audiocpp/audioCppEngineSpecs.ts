@@ -5,8 +5,6 @@
  */
 
 import {
-  AUDIOCPP_CHATTERBOX_MODEL_ID,
-  AUDIOCPP_INDEXTTS2_MODEL_ID,
   AUDIOCPP_POCKET_MODEL_ID,
   type VoiceParams,
   type VoiceParamSpec,
@@ -56,75 +54,14 @@ export type AudioCppModelSpec = {
   /**
    * Whether the engine refuses to speak without a reference clip.
    *
-   * True for both models shipped here, for different reasons that land in the
-   * same place: Chatterbox's loader accepts only cloning and voice-conversion
-   * sessions, and IndexTTS2's request parser throws
-   * `"IndexTTS2 request requires --voice-ref or voice.speaker.audio"` even
-   * though its loader does advertise a plain-TTS task.
+   * True for Pocket: it loads as a plain-TTS session but produces nothing
+   * usable without a reference clip to imitate.
    */
   requiresVoiceReference: boolean;
-  /** Whether the engine reads `reference_text`. Neither of these does. */
+  /** Whether the engine reads `reference_text`. Pocket does not. */
   usesReferenceText: boolean;
   params: readonly VoiceParamSpec[];
 };
-
-/**
- * Chatterbox.
- *
- * Defaults are the struct initialisers in `include/engine/models/chatterbox/tts.h`,
- * which are what actually applies when a key is omitted: neither the CLI nor the
- * family spec injects a default of its own. Three of them contradict upstream's
- * `docs/tts.md` — `top_p` 1.0 not 0.8, `repetition_penalty` 1.2 not 2.0,
- * `max_tokens` 384 not 1000 — and the code wins.
- *
- * Ranges are this app's, not upstream's: the engine declares none, so these are
- * chosen to keep a slider inside values that produce speech rather than noise.
- */
-const CHATTERBOX_PARAMS: readonly VoiceParamSpec[] = [
-  { name: 'guidance_scale', type: 'number', min: 0, max: 1, step: 0.05, default: 0.5 },
-  { name: 'temperature', type: 'number', min: 0.05, max: 2, step: 0.05, default: 0.8 },
-  { name: 'exaggeration', type: 'number', min: 0, max: 2, step: 0.05, default: 0.5 },
-  { name: 'top_p', type: 'number', min: 0.05, max: 1, step: 0.05, default: 1 },
-  { name: 'min_p', type: 'number', min: 0, max: 1, step: 0.01, default: 0.05 },
-  { name: 'repetition_penalty', type: 'number', min: 1, max: 4, step: 0.05, default: 1.2 },
-  { name: 's3gen_cfg_rate', type: 'number', min: 0, max: 1, step: 0.05, default: 0.7 },
-  { name: 'max_tokens', type: 'number', min: 32, max: 2048, step: 1, integer: true, default: 384 },
-  // Neither of these two has a flat top-level alias upstream, so they only ever
-  // work nested inside `options` — which is where every parameter goes here.
-  { name: 'do_sample', type: 'boolean', default: true },
-  { name: 'text_chunk_size', type: 'number', min: 16, max: 512, step: 1, integer: true, default: 128 },
-  { name: 'stop_on_eos', type: 'boolean', default: true },
-];
-
-/**
- * IndexTTS2.
- *
- * Defaults are `IndexTTS2GenerationOptions` and `IndexTTS2Request` in
- * `include/engine/models/index_tts2/types.h`. Four bounds are the engine's own
- * and are enforced here so a rejected value is reported as an invalid request
- * rather than as a 500 from the server: `top_p` in (0, 1], `top_k` > 0,
- * `temperature` > 0, `num_beams` > 0, `max_tokens` > 0, `emotion_alpha` in
- * [0, 1], `interval_silence_ms` >= 0.
- *
- * `emotion_vector` is deliberately absent: it is eight comma-separated floats
- * in one string, and the parser throws on anything that is not exactly eight.
- * Emotion is reachable here through `emotion_text` instead.
- */
-const INDEXTTS2_PARAMS: readonly VoiceParamSpec[] = [
-  { name: 'temperature', type: 'number', min: 0.05, max: 2, step: 0.05, default: 0.8 },
-  { name: 'top_p', type: 'number', min: 0.05, max: 1, step: 0.05, default: 0.8 },
-  { name: 'top_k', type: 'number', min: 1, max: 100, step: 1, integer: true, default: 30 },
-  { name: 'repetition_penalty', type: 'number', min: 1, max: 20, step: 0.5, default: 10 },
-  { name: 'length_penalty', type: 'number', min: -2, max: 2, step: 0.1, default: 0 },
-  { name: 'num_beams', type: 'number', min: 1, max: 8, step: 1, integer: true, default: 3 },
-  { name: 'max_tokens', type: 'number', min: 32, max: 4096, step: 1, integer: true, default: 1500 },
-  { name: 'do_sample', type: 'boolean', default: true },
-  { name: 'emotion_alpha', type: 'number', min: 0, max: 1, step: 0.05, default: 1 },
-  { name: 'interval_silence_ms', type: 'number', min: 0, max: 2000, step: 10, integer: true, default: 200 },
-  { name: 'use_emotion_text', type: 'boolean', default: false },
-  { name: 'emotion_text', type: 'text', maxLength: 200, default: '' },
-  { name: 'use_random_emotion', type: 'boolean', default: false },
-];
 
 /**
  * Pocket, run through audio.cpp.
@@ -159,11 +96,9 @@ export const AUDIOCPP_MODEL_SPECS: readonly AudioCppModelSpec[] = [
     serverModelId: 'pocket',
     family: 'pocket_tts',
     // `tts`, and it has to be: this loader answers anything else with
-    // "PocketTTS only supports VoiceTaskKind::Tts". The exact mirror of
-    // Chatterbox, which refuses `tts` and accepts only `clon` — so the task is
-    // about the session the loader builds, not about whether a voice is cloned.
-    // Pocket clones perfectly well from a `voice_ref` inside a `tts` session,
-    // measured at 0.43 s a sentence on this machine.
+    // "PocketTTS only supports VoiceTaskKind::Tts". The task names the session
+    // the loader builds, not whether a voice is cloned — Pocket clones from a
+    // `voice_ref` inside a `tts` session, measured at 0.43 s a sentence here.
     task: 'tts',
     mode: 'offline',
     weightsFile: 'pocket-tts-english-q8_0.gguf',
@@ -174,34 +109,6 @@ export const AUDIOCPP_MODEL_SPECS: readonly AudioCppModelSpec[] = [
     // this flag controls. Sending it there would land under a key it never reads.
     usesReferenceText: false,
     params: POCKET_PARAMS,
-  },
-  {
-    modelId: AUDIOCPP_CHATTERBOX_MODEL_ID,
-    serverModelId: 'chatterbox',
-    family: 'chatterbox',
-    // `tts` is rejected outright by this loader: it accepts VoiceCloning and
-    // VoiceConversion and nothing else.
-    task: 'clon',
-    mode: 'offline',
-    weightsFile: 'chatterbox-q8_0.gguf',
-    languages: ['en', 'tr', 'de', 'es', 'fr', 'it', 'pt', 'nl', 'pl', 'ko', 'ar', 'hi'],
-    requiresVoiceReference: true,
-    usesReferenceText: false,
-    params: CHATTERBOX_PARAMS,
-  },
-  {
-    modelId: AUDIOCPP_INDEXTTS2_MODEL_ID,
-    serverModelId: 'index_tts2',
-    family: 'index_tts2',
-    // Its loader accepts Tts as well, but the request parser refuses any request
-    // without speaker audio, so cloning is the only path that ever completes.
-    task: 'clon',
-    mode: 'offline',
-    weightsFile: 'index-tts2-q8_0.gguf',
-    languages: ['en', 'zh'],
-    requiresVoiceReference: true,
-    usesReferenceText: false,
-    params: INDEXTTS2_PARAMS,
   },
 ];
 

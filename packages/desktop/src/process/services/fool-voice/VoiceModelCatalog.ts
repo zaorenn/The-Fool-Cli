@@ -1,10 +1,4 @@
-import {
-  AUDIOCPP_CHATTERBOX_MODEL_ID,
-  AUDIOCPP_INDEXTTS2_MODEL_ID,
-  AUDIOCPP_POCKET_MODEL_ID,
-  type VoiceModel,
-  type VoiceProfile,
-} from '../../../common/types/foolVoice';
+import { AUDIOCPP_POCKET_MODEL_ID, type VoiceModel, type VoiceProfile } from '../../../common/types/foolVoice';
 import { AUDIOCPP_MODEL_SPECS, getAudioCppModelSpec } from './audiocpp/audioCppEngineSpecs';
 
 const RELEASE_BASE = 'https://github.com/k2-fsa/sherpa-onnx/releases/download';
@@ -194,44 +188,6 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
     profileIds: [],
     requiresClonedVoice: true,
     paramSpecs: getAudioCppModelSpec(AUDIOCPP_POCKET_MODEL_ID)?.params,
-  },
-  {
-    id: AUDIOCPP_CHATTERBOX_MODEL_ID,
-    providerId: 'local-audiocpp',
-    // Named for what it speaks, not for the one language worth pointing out.
-    // "Türkçe" alone read as "Turkish only" — English is its first language and
-    // the one its defaults were tuned on.
-    displayName: 'Chatterbox (Voice cloning, expressive — English, Türkçe + 10 more)',
-    languages: getAudioCppModelSpec(AUDIOCPP_CHATTERBOX_MODEL_ID)?.languages ?? ['en'],
-    role: 'text-to-speech',
-    distribution: 'managed',
-    state: { status: 'not-installed' },
-    downloadBytes: null,
-    installedBytes: null,
-    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
-    // No presets, and no way to acquire one: this engine's loader accepts only
-    // cloning and voice-conversion sessions, so it can *only* ever speak in a
-    // voice the user cloned.
-    profileIds: [],
-    requiresClonedVoice: true,
-    paramSpecs: getAudioCppModelSpec(AUDIOCPP_CHATTERBOX_MODEL_ID)?.params,
-  },
-  {
-    id: AUDIOCPP_INDEXTTS2_MODEL_ID,
-    providerId: 'local-audiocpp',
-    displayName: 'IndexTTS2 (Voice cloning, emotion control)',
-    languages: getAudioCppModelSpec(AUDIOCPP_INDEXTTS2_MODEL_ID)?.languages ?? ['en'],
-    role: 'text-to-speech',
-    distribution: 'managed',
-    state: { status: 'not-installed' },
-    downloadBytes: null,
-    installedBytes: null,
-    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
-    // Its loader does advertise a plain-TTS task, but the request parser throws
-    // without speaker audio, so in practice this is a cloning engine too.
-    profileIds: [],
-    requiresClonedVoice: true,
-    paramSpecs: getAudioCppModelSpec(AUDIOCPP_INDEXTTS2_MODEL_ID)?.params,
   },
   {
     id: 'stt-phrase-v1',
@@ -590,34 +546,6 @@ export const AUDIOCPP_CATALOG_ENTRIES: Record<string, AudioCppCatalogEntry> = {
     // roughly 150 MB of voices the picker already has better ones for.
     expectedFiles: ['pocket-tts-english-q8_0.gguf'],
     archiveBytes: 127856704,
-  },
-  [AUDIOCPP_CHATTERBOX_MODEL_ID]: {
-    modelId: AUDIOCPP_CHATTERBOX_MODEL_ID,
-    engineId: AUDIOCPP_ENGINE.engineId,
-    files: [
-      {
-        url: `${HUGGINGFACE_GGUF}/Chatterbox-GGUF/chatterbox-q8_0.gguf`,
-        sha256: null,
-        bytes: 2088393668,
-        destination: 'chatterbox-q8_0.gguf',
-      },
-    ],
-    expectedFiles: ['chatterbox-q8_0.gguf'],
-    archiveBytes: 2088393668,
-  },
-  [AUDIOCPP_INDEXTTS2_MODEL_ID]: {
-    modelId: AUDIOCPP_INDEXTTS2_MODEL_ID,
-    engineId: AUDIOCPP_ENGINE.engineId,
-    files: [
-      {
-        url: `${HUGGINGFACE_GGUF}/IndexTTS2-GGUF/index-tts2-q8_0.gguf`,
-        sha256: null,
-        bytes: 3633888608,
-        destination: 'index-tts2-q8_0.gguf',
-      },
-    ],
-    expectedFiles: ['index-tts2-q8_0.gguf'],
-    archiveBytes: 3633888608,
   },
 };
 
