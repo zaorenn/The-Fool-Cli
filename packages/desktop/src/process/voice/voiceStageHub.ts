@@ -78,6 +78,36 @@ const handle = (event: VoiceStageEvent): void => {
 let holdToTalk: HoldToTalkHook | null = null;
 
 /**
+ * Draws the overlay, captures what was drawn, and hands it to the composer.
+ *
+ * The window modules are imported lazily for the reason given on
+ * `initVoiceStageHub`: this file is loaded before Electron is ready, and
+ * anything that touches `screen` or `BrowserWindow` at import time takes the
+ * app down. Nothing is raised when the user cancels — an overlay dismissed with
+ * Escape should leave no trace.
+ */
+const captureRegionToComposer = async (): Promise<void> => {
+  try {
+    const [{ captureSelection }, { selectRegion }] = await Promise.all([
+      import('./screenCapture'),
+      import('./regionSelectWindow'),
+    ]);
+
+    const chosen = await selectRegion();
+    if (!chosen) return;
+
+    const shot = await captureSelection(chosen.display, chosen.selection);
+    if (!shot) {
+      console.warn('[HoldToTalk] the region was selected but could not be captured');
+      return;
+    }
+    ipcBridge.foolVoice.regionCaptured.emit(shot);
+  } catch (error) {
+    console.warn('[HoldToTalk] the region capture failed', error);
+  }
+};
+
+/**
  * Hold right Ctrl to talk.
  *
  * Mapped onto the push-to-talk event the shortcut already raises, which is a
@@ -90,11 +120,22 @@ let holdToTalk: HoldToTalkHook | null = null;
  * combination rule fires while the key is still down, so `RightCtrl+C` opens the
  * microphone for a few milliseconds and then shuts it, and the copy goes through
  * to the app underneath untouched.
+ *
+ * Two quick taps mean something else entirely — point at the screen rather than
+ * talk about it — and never open a turn at all.
  */
 const startHoldToTalk = (): void => {
   holdToTalk?.stop();
   holdToTalk = new HoldToTalkHook({
     onEffect: (effect) => {
+      // Two taps: draw a box, and whatever is inside it goes to the composer.
+      // Deliberately before everything else, because this gesture never opens
+      // a turn — the picture is the message.
+      if (effect.kind === 'capture-region') {
+        void captureRegionToComposer();
+        return;
+      }
+
       // Pressed while the reply is being read, the key means "stop talking" —
       // the natural thing to reach for when the answer is already wrong or
       // already long enough. It silences the reply without ending the session,

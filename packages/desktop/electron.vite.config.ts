@@ -180,6 +180,7 @@ export default defineConfig(({ mode }) => {
             petHitPreload: resolve('packages/desktop/src/preload/petHitPreload.ts'),
             petConfirmPreload: resolve('packages/desktop/src/preload/petConfirmPreload.ts'),
             foolsControlPreload: resolve('packages/desktop/src/preload/foolsControlPreload.ts'),
+            regionSelectPreload: resolve('packages/desktop/src/preload/regionSelectPreload.ts'),
           },
         },
       },
@@ -254,6 +255,7 @@ export default defineConfig(({ mode }) => {
             'pet-hit': resolve(rendererRoot, 'pet/pet-hit.html'),
             'pet-confirm': resolve(rendererRoot, 'pet/pet-confirm.html'),
             'fools-control': resolve(rendererRoot, 'voice/foolsControl.html'),
+            'region-select': resolve(rendererRoot, 'voice/regionSelect.html'),
           },
           external: ['node:crypto', 'crypto'],
           onwarn(warning, warn) {

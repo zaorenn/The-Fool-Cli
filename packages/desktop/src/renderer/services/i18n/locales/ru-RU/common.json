@@ -168,5 +168,6 @@
   },
   "selectedCount": "Выбрано {{count}}",
   "selectedSkills": "Выбранные навыки",
-  "tray.wakeListening": "Слушать ключевую фразу"
+  "tray.wakeListening": "Слушать ключевую фразу",
+  "regionSelect.hint": "Перетащите, чтобы выбрать область  ·  Esc — отмена"
 }

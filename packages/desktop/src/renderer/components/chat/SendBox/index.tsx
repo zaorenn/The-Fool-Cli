@@ -34,6 +34,7 @@ import { useCompositionInput } from '@renderer/hooks/chat/useCompositionInput';
 import { useConversationExport } from '@renderer/hooks/file/useConversationExport';
 import { useDragUpload } from '@renderer/hooks/file/useDragUpload';
 import { useLatestRef } from '@renderer/hooks/ui/useLatestRef';
+import { useRegionCapture } from '@renderer/hooks/voice/useRegionCapture';
 import { usePasteService } from '@renderer/hooks/file/usePasteService';
 import { useMessageList } from '@renderer/pages/conversation/Messages/hooks';
 import type { FileMetadata } from '@renderer/services/FileService';
@@ -1294,6 +1295,10 @@ const SendBox: React.FC<{
   const sendMessageHandlerRef = useRef(sendMessageHandler);
   sendMessageHandlerRef.current = sendMessageHandler;
   const onFilesAddedRef = useLatestRef(onFilesAdded);
+
+  // Two taps on right Ctrl put a region of the screen here as an attachment,
+  // without sending — the picture is what the next question will be about.
+  useRegionCapture(onFilesAdded, conversationContext?.conversation_id);
 
   // Hands-free conversation hands its transcript here so submission keeps using
   // the normal send path, preserving all ACP/Foolrs routing and permissions.

@@ -5,13 +5,18 @@
  */
 
 /**
- * Hold a key to talk — and only when it is held alone.
+ * Hold a key to talk — and only when it is held alone. Tap it twice to point.
  *
  * The rule that makes this usable: right Ctrl is a real modifier that the user
  * still needs. `RightCtrl+C` has to copy. So a turn starts on the key going
  * down, but the moment any other key joins it the turn is abandoned and the
  * combination is left to the application underneath, untouched. Only a press
  * that was released without company ever speaks.
+ *
+ * The same key carries a second gesture at no cost to the first: two quick taps
+ * ask for a region capture. A tap on its own was already discarded as too brief
+ * to be speech, so a pair of them was dead input — nothing had to be taken away
+ * from the user to give it a meaning.
  *
  * This is the whole decision, kept as a pure state machine with no Electron and
  * no native hook in it, because the interesting part is the sequencing and that
@@ -34,7 +39,12 @@ export type HoldToTalkEffect =
    * Abandoned. Either another key joined the hold, or the press was too brief
    * to have been speech.
    */
-  | { kind: 'cancel'; reason: 'combination' | 'too-short' };
+  | { kind: 'cancel'; reason: 'combination' | 'too-short' }
+  /**
+   * Tapped twice, quickly. The user wants to point at something on screen
+   * rather than talk about it.
+   */
+  | { kind: 'capture-region' };
 
 export type HoldToTalkOptions = {
   /**
@@ -45,9 +55,15 @@ export type HoldToTalkOptions = {
    * Opening the microphone for it puts the notch on screen for nothing.
    */
   minimumHoldMs?: number;
+  /**
+   * How close two taps have to be to count as one gesture. Zero switches the
+   * gesture off, leaving both taps as ordinary misses.
+   */
+  doubleTapWindowMs?: number;
 };
 
 const DEFAULT_MINIMUM_HOLD_MS = 180;
+const DEFAULT_DOUBLE_TAP_WINDOW_MS = 400;
 
 type State =
   | { name: 'idle' }
@@ -69,9 +85,21 @@ type State =
 export class HoldToTalk {
   private state: State = { name: 'idle' };
   private readonly minimumHoldMs: number;
+  private readonly doubleTapWindowMs: number;
+  /**
+   * When the last tap-too-short was released, or null if the last thing that
+   * happened was anything else.
+   *
+   * Only a tap can be the first half of a double tap. A spoken turn or an
+   * abandoned combination clears this, so the tap that follows either of them
+   * starts counting from nothing rather than completing a gesture the user did
+   * not make.
+   */
+  private lastTapAtMs: number | null = null;
 
   public constructor(options: HoldToTalkOptions = {}) {
     this.minimumHoldMs = options.minimumHoldMs ?? DEFAULT_MINIMUM_HOLD_MS;
+    this.doubleTapWindowMs = options.doubleTapWindowMs ?? DEFAULT_DOUBLE_TAP_WINDOW_MS;
   }
 
   /** The talk key went down. */
@@ -103,11 +131,28 @@ export class HoldToTalk {
 
     // The cancel was already reported when the other key arrived; saying it
     // twice would have the caller close a microphone it has already closed.
-    if (state.name !== 'holding') return null;
+    if (state.name !== 'holding') {
+      this.lastTapAtMs = null;
+      return null;
+    }
 
     const heldMs = Math.max(0, atMs - state.since);
-    if (heldMs < this.minimumHoldMs) return { kind: 'cancel', reason: 'too-short' };
-    return { kind: 'commit', heldMs };
+    if (heldMs >= this.minimumHoldMs) {
+      this.lastTapAtMs = null;
+      return { kind: 'commit', heldMs };
+    }
+
+    // Too short to be speech — but two of those in quick succession are a
+    // deliberate gesture rather than two mistakes.
+    const previous = this.lastTapAtMs;
+    // Consumed either way, so a third tap opens a new pair instead of
+    // completing a second one against the same first half.
+    this.lastTapAtMs = atMs;
+    if (this.doubleTapWindowMs > 0 && previous !== null && atMs - previous <= this.doubleTapWindowMs) {
+      this.lastTapAtMs = null;
+      return { kind: 'capture-region' };
+    }
+    return { kind: 'cancel', reason: 'too-short' };
   }
 
   /**
@@ -120,6 +165,7 @@ export class HoldToTalk {
   public abort(): HoldToTalkEffect | null {
     const wasHolding = this.state.name === 'holding';
     this.state = { name: 'idle' };
+    this.lastTapAtMs = null;
     return wasHolding ? { kind: 'cancel', reason: 'combination' } : null;
   }
 

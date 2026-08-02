@@ -367,6 +367,16 @@ export type FoolVoiceSettings = {
      * screen defeats the point. Skipped in silence for a text-only model.
      */
     attachScreenshot: boolean;
+    /**
+     * What that screenshot is *of*.
+     *
+     * `window` photographs the app's own view of itself and nothing else, which
+     * is why it is the default — a voice assistant that silently starts
+     * photographing the whole desktop is not a setting anyone should acquire by
+     * upgrading. `screen` photographs the display the pointer is on, which is
+     * what "look at this error" actually needs, and is opted into.
+     */
+    screenshotSource: 'window' | 'screen';
   };
   playback: {
     volume: number;
@@ -570,6 +580,7 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     providerId: '',
     modelId: '',
     attachScreenshot: true,
+    screenshotSource: 'window',
   },
   playback: {
     volume: 0.85,
@@ -757,6 +768,7 @@ const settingsSchema = z
         providerId: z.string().max(128).default(''),
         modelId: z.string().max(256).default(''),
         attachScreenshot: z.boolean().default(true),
+        screenshotSource: z.enum(['window', 'screen']).default('window'),
       })
       .strict()
       .default({}),

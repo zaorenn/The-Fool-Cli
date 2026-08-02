@@ -19,6 +19,16 @@ export interface ElectronBridgeAPI {
   collectFeedbackLogs?: () => Promise<{ filename: string; data: number[] } | null>;
   // Feedback screenshot capture / 反馈截图
   captureFeedbackScreenshot?: () => Promise<{ filename: string; data: number[] } | null>;
+  /**
+   * The whole display the pointer is on — not just this window. Null when the
+   * capture is unavailable or fails.
+   */
+  captureScreen?: () => Promise<{ filename: string; data: number[] } | null>;
+  /**
+   * Opens the selection overlay and captures whatever the user drags a box
+   * around. Null when they cancel, or when the capture fails.
+   */
+  captureScreenRegion?: () => Promise<{ filename: string; data: number[] } | null>;
   // Forward feedback diagnostics logs to the main process console / 转发反馈诊断日志到主进程控制台
   logFeedbackEvent?: (payload: { details?: unknown; level: 'info' | 'warn' | 'error'; message: string }) => void;
   recoverCorruptedDatabase?: () => Promise<void>;

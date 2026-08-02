@@ -281,6 +281,7 @@ export type I18nKey =
   | 'common.readOnly'
   | 'common.refresh'
   | 'common.refreshSuccess'
+  | 'common.regionSelect.hint'
   | 'common.reload'
   | 'common.remove'
   | 'common.reply'

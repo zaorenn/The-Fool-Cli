@@ -19,9 +19,11 @@ import { uploadFileViaHttp } from '@renderer/services/FileService';
  * model gets nothing and is told nothing about it, because an attachment it
  * cannot read is worse than no attachment at all.
  *
- * What is captured is this window, not the whole desktop — the app's own view of
- * itself, through the capture the bug reporter already uses. Nothing outside the
- * app is photographed and sent anywhere.
+ * What is captured is this window by default — the app's own view of itself,
+ * through the capture the bug reporter already uses, so nothing outside the app
+ * is photographed. Voice settings can widen that to the whole display the
+ * pointer is on, which is what "look at this error" needs; it is opt-in for the
+ * obvious reason.
  */
 
 /** Kept small: this is sent on every spoken turn, not once. */
@@ -45,8 +47,17 @@ export const modelAcceptsImages = (provider: IProvider | undefined, modelId: str
   return hasSpecificModelCapability(provider, modelId, 'vision') === true;
 };
 
-const captureWindow = async (): Promise<ScreenshotCapture | null> => {
-  const capture = window.electronAPI?.captureFeedbackScreenshot;
+/**
+ * Runs whichever capture the settings asked for.
+ *
+ * Both are the same shape and both answer null the same way, so the choice is
+ * made once here rather than at every call site. Falling back from `screen` to
+ * the window would defeat the point of asking for the screen, so it does not:
+ * an unavailable capture is no screenshot.
+ */
+const captureFor = async (source: 'window' | 'screen'): Promise<ScreenshotCapture | null> => {
+  const capture =
+    source === 'screen' ? window.electronAPI?.captureScreen : window.electronAPI?.captureFeedbackScreenshot;
   if (typeof capture !== 'function') return null;
   try {
     return (await capture()) ?? null;
@@ -81,7 +92,7 @@ export const captureVoiceScreenshot = async (settings: FoolVoiceSettings): Promi
   );
   if (!modelAcceptsImages(provider, settings.session.modelId)) return null;
 
-  const shot = await captureWindow();
+  const shot = await captureFor(settings.session.screenshotSource);
   if (!shot) return null;
 
   try {

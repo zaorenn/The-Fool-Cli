@@ -168,5 +168,6 @@
   },
   "selectedCount": "{{count}} selecionado(s)",
   "selectedSkills": "Habilidades selecionadas",
-  "tray.wakeListening": "Ouvir a palavra de ativação"
+  "tray.wakeListening": "Ouvir a palavra de ativação",
+  "regionSelect.hint": "Arraste para capturar uma região  ·  Esc para cancelar"
 }

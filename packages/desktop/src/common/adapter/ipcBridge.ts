@@ -239,6 +239,15 @@ export const foolVoice = {
   /** Silences a reply that is being read aloud, without ending the session. */
   interruptSpeech: bridge.buildEmitter<void>('fool.voice.interrupt-speech'),
   /**
+   * A region of the screen the user drew a box around, on its way to the
+   * composer as an attachment.
+   *
+   * Raised by the main process, which owns both the keyboard gesture and the
+   * capture; the renderer's job is to upload it and attach it. Carries the PNG
+   * as a plain number array because that is what survives the IPC boundary.
+   */
+  regionCaptured: bridge.buildEmitter<{ filename: string; data: number[] }>('fool.voice.region-captured'),
+  /**
    * Whether the wake word is holding the microphone.
    *
    * Published by the renderer so the tray can show — and switch off — an

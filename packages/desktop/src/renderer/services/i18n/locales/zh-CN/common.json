@@ -168,5 +168,6 @@
   },
   "selectedCount": "已选 {{count}}",
   "selectedSkills": "已选技能",
-  "tray.wakeListening": "监听唤醒词"
+  "tray.wakeListening": "监听唤醒词",
+  "regionSelect.hint": "拖动以截取区域  ·  Esc 取消"
 }

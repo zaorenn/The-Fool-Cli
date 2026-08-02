@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Select a region</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        cursor: crosshair;
+        user-select: none;
+        -webkit-user-select: none;
+        font-family:
+          'Segoe UI',
+          -apple-system,
+          system-ui,
+          sans-serif;
+      }
+
+      /* The screen is dimmed so the selection reads as a hole cut in a veil.
+         Kept translucent rather than opaque: the user is picking out something
+         they can see, so it has to stay visible while they pick. */
+      body {
+        background: rgba(8, 9, 11, 0.35);
+        color: #f5f1e8;
+      }
+
+      /* The selection itself. Punched out of the veil with a huge spread shadow
+         rather than by stacking four dimming panels around it — one element,
+         and it stays exact at any size. */
+      #box {
+        position: fixed;
+        display: none;
+        border: 1px solid rgba(245, 241, 232, 0.9);
+        background: transparent;
+        box-shadow: 0 0 0 100vmax rgba(8, 9, 11, 0.35);
+        pointer-events: none;
+      }
+
+      #box.drawing {
+        display: block;
+      }
+
+      /* Dimensions, pinned just outside the corner of the box and flipped inside
+         when the box is against an edge. */
+      #size {
+        position: absolute;
+        top: -26px;
+        left: 0;
+        padding: 2px 7px;
+        border-radius: 5px;
+        background: rgba(8, 9, 11, 0.9);
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      #box.near-top #size {
+        top: 4px;
+      }
+
+      /* Shown until the first drag, then never again — it is an instruction, not
+         a status line. */
+      #hint {
+        position: fixed;
+        left: 50%;
+        top: 42px;
+        transform: translateX(-50%);
+        padding: 9px 18px;
+        border-radius: 999px;
+        background: rgba(8, 9, 11, 0.9);
+        border: 1px solid rgba(245, 241, 232, 0.1);
+        font-size: 13px;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+      }
+
+      #hint.gone {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="hint"></div>
+    <div id="box"><span id="size"></span></div>
+    <script type="module" src="./regionSelectRenderer.ts"></script>
+  </body>
+</html>

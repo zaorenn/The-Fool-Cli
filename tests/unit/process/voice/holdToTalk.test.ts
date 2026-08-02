@@ -120,4 +120,77 @@ describe('HoldToTalk', () => {
 
     expect(hold.release(4000)).toEqual({ kind: 'commit', heldMs: 0 });
   });
+
+  /**
+   * The second gesture on the same key.
+   *
+   * Two quick taps were already dead input — each one is discarded as too short
+   * to be speech — so nothing has to be taken away from the user to mean
+   * something by them.
+   */
+  describe('double tap', () => {
+    it('asks for a region capture on the second quick tap', () => {
+      const hold = new HoldToTalk({ minimumHoldMs: 180, doubleTapWindowMs: 400 });
+
+      hold.press(1000);
+      expect(hold.release(1080)).toEqual({ kind: 'cancel', reason: 'too-short' });
+
+      hold.press(1200);
+      expect(hold.release(1280)).toEqual({ kind: 'capture-region' });
+    });
+
+    it('leaves two taps far apart as two separate misses', () => {
+      const hold = new HoldToTalk({ minimumHoldMs: 180, doubleTapWindowMs: 400 });
+
+      hold.press(1000);
+      hold.release(1080);
+
+      hold.press(2000);
+      expect(hold.release(2080)).toEqual({ kind: 'cancel', reason: 'too-short' });
+    });
+
+    it('does not turn three taps into two captures', () => {
+      const hold = new HoldToTalk({ minimumHoldMs: 180, doubleTapWindowMs: 400 });
+
+      hold.press(1000);
+      hold.release(1080);
+      hold.press(1200);
+      expect(hold.release(1280)).toEqual({ kind: 'capture-region' });
+
+      // The third tap starts counting again rather than completing a second pair.
+      hold.press(1400);
+      expect(hold.release(1480)).toEqual({ kind: 'cancel', reason: 'too-short' });
+    });
+
+    it('does not read a tap after a spoken turn as half a double tap', () => {
+      const hold = new HoldToTalk({ minimumHoldMs: 180, doubleTapWindowMs: 400 });
+
+      hold.press(1000);
+      expect(hold.release(1500)).toEqual({ kind: 'commit', heldMs: 500 });
+
+      hold.press(1600);
+      expect(hold.release(1680)).toEqual({ kind: 'cancel', reason: 'too-short' });
+    });
+
+    it('does not read a tap after an abandoned combination as half a double tap', () => {
+      const hold = new HoldToTalk({ minimumHoldMs: 180, doubleTapWindowMs: 400 });
+
+      hold.press(1000);
+      hold.otherKeyPressed();
+      hold.release(1080);
+
+      hold.press(1200);
+      expect(hold.release(1280)).toEqual({ kind: 'cancel', reason: 'too-short' });
+    });
+
+    it('never fires when the gesture is switched off', () => {
+      const hold = new HoldToTalk({ minimumHoldMs: 180, doubleTapWindowMs: 0 });
+
+      hold.press(1000);
+      hold.release(1080);
+      hold.press(1100);
+
+      expect(hold.release(1180)).toEqual({ kind: 'cancel', reason: 'too-short' });
+    });
+  });
 });

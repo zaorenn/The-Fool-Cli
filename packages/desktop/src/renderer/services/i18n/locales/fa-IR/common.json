@@ -168,5 +168,6 @@
   },
   "selectedCount": "{{count}} انتخاب‌شده",
   "selectedSkills": "مهارت‌های انتخاب‌شده",
-  "tray.wakeListening": "گوش دادن به واژهٔ بیدارباش"
+  "tray.wakeListening": "گوش دادن به واژهٔ بیدارباش",
+  "regionSelect.hint": "برای گرفتن تصویر از ناحیه بکشید  ·  برای لغو Esc"
 }
