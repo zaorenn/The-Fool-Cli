@@ -23,7 +23,16 @@ async function startMockBackend(
   const port = (server.address() as AddressInfo).port;
   return {
     port,
-    close: () => new Promise<void>((r) => server.close(() => r())),
+    close: () =>
+      new Promise<void>((r) => {
+        // These stubs are driven by real `fetch`, and undici keeps its
+        // connections alive. `close` alone waits for sockets that are not going
+        // to end on their own, so the reset arrives after teardown on a socket
+        // with no error handler and vitest fails a run in which every test
+        // passed. Destroy them first and the wait has nothing to wait for.
+        server.closeAllConnections();
+        server.close(() => r());
+      }),
   };
 }
 
