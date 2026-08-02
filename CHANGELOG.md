@@ -2,7 +2,7 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
-## 2.1.43 — unreleased
+## 2.2.50
 
 The first release under this name. It carries the desktop app and the backend in one repository, adds a voice layer that was not in the upstream project, and moves every piece of the product identity — data folder, binaries, protocol handler, update feed — off the upstream name.
 
@@ -35,6 +35,22 @@ A full local speech stack, none of which existed upstream.
 - Updates are checked against and downloaded from this repository.
 - Closing the window asks once whether to keep running in the tray, then remembers the answer.
 
+### Seeing the screen
+
+- **A pasted screenshot reaches the model.** It never became an image part before: attachments arrived as a list of file paths, and the tool that could have opened them was withheld from every model not named in the built-in catalogue — including vision-capable ones. Images now travel as images.
+- **Capture the screen, or part of it.** Two quick taps on right Ctrl dim the screen and let you drag a box around anything; what you draw lands in the composer as an attachment, ready for the question you were going to ask about it. Holding the same key still starts a spoken turn, and `RightCtrl+C` still copies.
+- The screenshot that goes with a spoken turn can now be of the whole display rather than only the app window. Off by default.
+
+### Skills
+
+- **An assistant's skills reach the agent.** They did not before — the names were configured, stored and displayed, and never loaded, so an assistant switched on for one skill was running with none.
+- The shared skill set now reaches every agent and every model, rather than only the ones that asked for it by name.
+- The Jester learns the application from the application: a new built-in skill points it at what this build actually supports, so features added later are discovered rather than remembered.
+
 ### Performance
 
 - Conversation diffs are no longer re-parsed on every streamed chunk.
+
+### Building from source
+
+- `buildFoolcore.js` no longer stops on a bundle that is not in the repository and cannot be built from it. A source download now reaches a running app with `bun install`, one backend build, and `bun run dev`.
