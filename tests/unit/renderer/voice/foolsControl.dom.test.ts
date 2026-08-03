@@ -27,6 +27,11 @@ const mountNotch = async (): Promise<(event: VoiceStageEvent) => void> => {
         <div id="transcript" data-placeholder=""></div>
         <div id="reply"></div>
         <div id="activity"></div>
+        <div id="ask">
+          <div id="ask-title"></div>
+          <div id="ask-options"></div>
+          <div id="ask-hint"></div>
+        </div>
       </div>
     </div>`;
 

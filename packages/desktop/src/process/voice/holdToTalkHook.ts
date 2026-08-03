@@ -19,14 +19,43 @@ import { HoldToTalk, type HoldToTalkEffect, type HoldToTalkOptions } from './hol
  * a try so a machine where the hook will not load loses hold-to-talk rather than
  * the whole app.
  *
- * It sees every keystroke on the machine. Nothing is stored, nothing is sent
- * anywhere, and the only question asked of a key that is not the talk key is
- * whether one arrived at all — the combination rule needs to know that a key was
- * pressed, never which.
+ * It sees every keystroke on the machine. Nothing is stored and nothing is sent
+ * anywhere. Of a key that is not the talk key it asks two questions and no more:
+ * whether one arrived at all — the combination rule needs that, never which —
+ * and whether it was one of the three digits that answer a permission request,
+ * which are read only while a request is actually open.
  */
 
 /** `UiohookKey.CtrlRight`. Hard-coded so the module is not loaded to read it. */
 export const RIGHT_CTRL_KEYCODE = 3613;
+
+/**
+ * `UiohookKey['1'|'2'|'3']` and their numpad twins, in that order.
+ *
+ * Hard-coded for the same reason as the talk key. Both rows are here because a
+ * request answered from the numpad is the same answer; nothing else about the
+ * keys differs.
+ */
+/**
+ * `V`. Held together with the talk key it switches always-on listening off.
+ *
+ * Watched, never claimed: `RightCtrl+V` is `Ctrl+V`, and paste has to keep
+ * working. The hook reports the signal and then abandons the hold like any
+ * other combination, so the keystroke reaches the application underneath
+ * exactly as it does today.
+ */
+export const STOP_LISTENING_KEYCODE = 47;
+
+export const CHOICE_KEYCODES: readonly number[] = [2, 3, 4];
+export const NUMPAD_CHOICE_KEYCODES: readonly number[] = [79, 80, 81];
+
+/** The 1-based option a keycode stands for, or null if it stands for none. */
+export const choiceDigitFor = (keycode: number): number | null => {
+  const top = CHOICE_KEYCODES.indexOf(keycode);
+  if (top >= 0) return top + 1;
+  const pad = NUMPAD_CHOICE_KEYCODES.indexOf(keycode);
+  return pad >= 0 ? pad + 1 : null;
+};
 
 export type HoldToTalkHookDeps = {
   /** Called with what the machine decided. */
@@ -87,8 +116,20 @@ export class HoldToTalkHook {
     };
 
     this.onKeyDown = (event) => {
-      if (event.keycode === this.keycode) report(this.machine.press(Date.now()));
-      else report(this.machine.otherKeyPressed());
+      if (event.keycode === this.keycode) {
+        report(this.machine.press(Date.now()));
+        return;
+      }
+      // V is asked about first, because it can only mean anything while the
+      // hold is still live and the abandon below ends it.
+      if (event.keycode === STOP_LISTENING_KEYCODE) report(this.machine.stopKeyPressed());
+
+      // Both, in this order: any other key abandons a hold in progress, and a
+      // digit answers a pending request. The machine refuses the second when it
+      // was holding, so a combination is never also an answer.
+      report(this.machine.otherKeyPressed());
+      const digit = choiceDigitFor(event.keycode);
+      if (digit !== null) report(this.machine.numberKeyPressed(digit));
     };
     this.onKeyUp = (event) => {
       if (event.keycode === this.keycode) report(this.machine.release(Date.now()));
@@ -135,5 +176,16 @@ export class HoldToTalkHook {
 
   public get isRunning(): boolean {
     return this.hook !== null;
+  }
+
+  /**
+   * How many numbered options are open for an answer, zero when none are.
+   *
+   * With nothing pending the digits are ordinary typing and the machine has no
+   * opinion about them, so this is the switch that keeps the gesture out of the
+   * user's way the other 99% of the time.
+   */
+  public setPendingChoices(count: number): void {
+    this.machine.setPendingChoices(count);
   }
 }

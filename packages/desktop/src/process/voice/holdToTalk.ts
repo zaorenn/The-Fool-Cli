@@ -51,7 +51,15 @@ export type HoldToTalkEffect =
    * A numbered key was pressed while the app was waiting on a permission
    * request. `index` is zero-based, into the options as the notch numbered them.
    */
-  | { kind: 'choose-option'; index: number };
+  | { kind: 'choose-option'; index: number }
+  /**
+   * `RightCtrl+V` while always-on listening is running: switch it off.
+   *
+   * Reported *in addition to* the cancel that any other key causes, never
+   * instead of it — the combination still belongs to the application
+   * underneath, and V is paste.
+   */
+  | { kind: 'stop-wake-listening' };
 
 export type HoldToTalkOptions = {
   /**
@@ -195,6 +203,23 @@ export class HoldToTalk {
     if (this.state.name !== 'idle') return null;
     if (!Number.isInteger(digit) || digit < 1 || digit > this.pendingChoices) return null;
     return { kind: 'choose-option', index: digit - 1 };
+  }
+
+  /**
+   * The stop key went down. Only means anything while the talk key is held.
+   *
+   * `RightCtrl+V` is `Ctrl+V`, so this must be read as a *signal* and never as
+   * a claim on the keystroke: the caller reports this effect and then goes on
+   * to abandon the hold like any other combination, which is what lets the
+   * paste through to whatever the user is typing into. A bare V is typing and
+   * is none of this machine's business.
+   *
+   * Call it before {@link otherKeyPressed}, which moves the machine out of the
+   * holding state.
+   */
+  public stopKeyPressed(): HoldToTalkEffect | null {
+    if (this.state.name !== 'holding') return null;
+    return { kind: 'stop-wake-listening' };
   }
 
   /**

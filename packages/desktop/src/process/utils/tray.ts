@@ -344,6 +344,21 @@ export const setTrayWakeListening = (listening: boolean): void => {
 };
 
 /**
+ * Ask the renderer to stop always-on listening, from somewhere other than the
+ * tray menu — `RightCtrl+V`.
+ *
+ * Deliberately not shown-and-focused first: switching the microphone off is
+ * exactly the thing you want to do without the app taking over your screen,
+ * which is the same reasoning as the tray item itself.
+ *
+ * The channel is a *toggle*, so callers must only reach for this when listening
+ * is actually running; sent while it is off it would switch it on.
+ */
+export const requestWakeListeningOff = (): void => {
+  mainWindowRef?.webContents.send('tray:toggle-wake-listening');
+};
+
+/**
  * Fetch active count from backend, update cache if changed, and rebuild menu.
  */
 const fetchActiveCountAndMaybeRebuild = async (): Promise<void> => {

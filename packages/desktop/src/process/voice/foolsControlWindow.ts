@@ -6,7 +6,13 @@
 
 import path from 'node:path';
 import { app, BrowserWindow, screen } from 'electron';
-import { shouldShowCaption, VOICE_STAGE_OFF, type VoiceStageEvent } from '@/common/types/voiceStage';
+import {
+  shouldShowCaption,
+  VOICE_STAGE_OFF,
+  type FoolsControlPayload,
+  type VoicePermissionRequest,
+  type VoiceStageEvent,
+} from '@/common/types/voiceStage';
 
 /**
  * Fool's Control: a notch at the top of the screen that says what the app is
@@ -49,8 +55,12 @@ const HEIGHT = 280;
 let controlWindow: BrowserWindow | null = null;
 let ready = false;
 let pending: VoiceStageEvent = VOICE_STAGE_OFF;
+/** The request the app is waiting on, drawn under the turn. Null when none. */
+let pendingPermission: VoicePermissionRequest | null = null;
 let hideTimer: NodeJS.Timeout | null = null;
 let watchingDisplays = false;
+
+const payload = (): FoolsControlPayload => ({ ...pending, permission: pendingPermission });
 
 /**
  * Centred on the display and flush to its top edge.
@@ -107,12 +117,12 @@ const create = (): BrowserWindow => {
 
   window.webContents.once('did-finish-load', () => {
     ready = true;
-    window.webContents.send('voice:fools-control', pending);
+    window.webContents.send('voice:fools-control', payload());
     // Sent again a moment later: `did-finish-load` can beat the module script's
     // subscription, and a notch that missed the only event it was ever going to
     // get would sit there blank.
     setTimeout(() => {
-      if (!window.isDestroyed()) window.webContents.send('voice:fools-control', pending);
+      if (!window.isDestroyed()) window.webContents.send('voice:fools-control', payload());
     }, 150);
   });
 
@@ -146,7 +156,7 @@ const clearHideTimer = (): void => {
 };
 
 /**
- * Shows the notch while voice is live and takes it away shortly after.
+ * Puts the current state on screen, and decides whether the notch belongs there.
  *
  * It shows whatever else is on screen, the app included. The caption strip this
  * grew out of hid itself whenever a window of ours had focus, on the grounds
@@ -155,26 +165,48 @@ const clearHideTimer = (): void => {
  * screen. The notch lives in the top edge, and hold-to-talk is pressed most
  * often while looking straight at the app, which is exactly when hiding it made
  * it look broken.
+ *
+ * A pending request holds it open on its own, whatever the voice loop is doing:
+ * it is a question addressed to someone who is looking at another application,
+ * and retracting it after a few seconds would take the answer away with it.
  */
-export function updateFoolsControl(event: VoiceStageEvent): void {
-  pending = event;
-
-  if (shouldShowCaption(event)) {
+const render = (): void => {
+  if (shouldShowCaption(pending) || pendingPermission) {
     clearHideTimer();
     controlWindow ??= create();
     if (!controlWindow.isVisible()) controlWindow.showInactive();
-    if (ready) controlWindow.webContents.send('voice:fools-control', event);
+    if (ready) controlWindow.webContents.send('voice:fools-control', payload());
     return;
   }
 
   // Not a turn any more — passive listening included: let the last line be read,
   // then take the notch away.
-  if (controlWindow && ready) controlWindow.webContents.send('voice:fools-control', event);
+  if (controlWindow && ready) controlWindow.webContents.send('voice:fools-control', payload());
   clearHideTimer();
   hideTimer = setTimeout(() => {
     hideTimer = null;
     destroyFoolsControl();
   }, 2600);
+};
+
+/** Shows the notch while voice is live and takes it away shortly after. */
+export function updateFoolsControl(event: VoiceStageEvent): void {
+  pending = event;
+  render();
+}
+
+/**
+ * Shows, or takes away, the permission request the app is waiting on.
+ *
+ * Held on its own rather than folded into the stage: the request comes from the
+ * conversation and the stage from the voice loop, and the notch has to be able
+ * to show a request that arrives after the turn has already gone quiet — which
+ * is the usual case, because the agent works long after the user stopped
+ * talking.
+ */
+export function setFoolsControlPermission(request: VoicePermissionRequest | null): void {
+  pendingPermission = request;
+  render();
 }
 
 export function destroyFoolsControl(): void {
@@ -183,6 +215,7 @@ export function destroyFoolsControl(): void {
   controlWindow = null;
   ready = false;
   pending = VOICE_STAGE_OFF;
+  pendingPermission = null;
 }
 
 /** Keeps the notch centred when the display layout changes. */

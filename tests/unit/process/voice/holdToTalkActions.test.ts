@@ -91,3 +91,58 @@ describe('a whole gesture leaves the microphone closed', () => {
     expect(captures).toHaveLength(1);
   });
 });
+
+/**
+ * `RightCtrl+V`. The combination is watched, never claimed — V is paste, and
+ * paste has to keep working everywhere.
+ */
+describe('stopping wake listening with the V combination', () => {
+  it('reports the stop and still abandons the hold, so the paste goes through', () => {
+    const hold = new HoldToTalk({ minimumHoldMs: 180, doubleTapWindowMs: 400 });
+
+    hold.press(1000);
+    const stop = hold.stopKeyPressed();
+    const abandon = hold.otherKeyPressed();
+
+    expect(stop).toEqual({ kind: 'stop-wake-listening' });
+    // The combination rule still fires. That is what releases the keystroke to
+    // whatever the user is typing into.
+    expect(abandon).toEqual({ kind: 'cancel', reason: 'combination' });
+  });
+
+  it('means nothing when the talk key is not held', () => {
+    const hold = new HoldToTalk({ minimumHoldMs: 180, doubleTapWindowMs: 400 });
+
+    // A bare V is typing.
+    expect(hold.stopKeyPressed()).toBeNull();
+
+    hold.press(1000);
+    hold.release(1800);
+    expect(hold.stopKeyPressed()).toBeNull();
+  });
+
+  it('does not open or close a turn on its own', () => {
+    expect(voiceActionsFor({ kind: 'stop-wake-listening' }, 'listening')).toEqual([{ kind: 'stop-wake-listening' }]);
+  });
+
+  it('leaves the microphone toggle balanced across the whole combination', () => {
+    const hold = new HoldToTalk({ minimumHoldMs: 180, doubleTapWindowMs: 400 });
+    const effects = [hold.press(1000), hold.stopKeyPressed(), hold.otherKeyPressed(), hold.release(1100)];
+
+    const opens = effects
+      .filter((effect): effect is NonNullable<typeof effect> => effect !== null)
+      .flatMap((effect) => voiceActionsFor(effect, 'listening'))
+      .filter((action) => action.kind === 'toggle-turn').length;
+
+    expect(opens % 2).toBe(0);
+  });
+
+  it('still lets an ordinary combination cancel without stopping listening', () => {
+    const hold = new HoldToTalk({ minimumHoldMs: 180, doubleTapWindowMs: 400 });
+
+    hold.press(1000);
+    const actions = voiceActionsFor(hold.otherKeyPressed()!, 'listening');
+
+    expect(actions.some((action) => action.kind === 'stop-wake-listening')).toBe(false);
+  });
+});

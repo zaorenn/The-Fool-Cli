@@ -25,7 +25,11 @@ export type VoiceAction =
   /** Silence a reply being read aloud, without ending the session. */
   | { kind: 'interrupt-speech' }
   /** Draw a box on the screen and put what is inside it in the composer. */
-  | { kind: 'capture-region' };
+  | { kind: 'capture-region' }
+  /** Answer the permission request the notch is showing. Zero-based. */
+  | { kind: 'choose-option'; index: number }
+  /** Switch always-on wake listening off. */
+  | { kind: 'stop-wake-listening' };
 
 /**
  * The actions an effect calls for, in order.
@@ -50,6 +54,22 @@ export function voiceActionsFor(effect: HoldToTalkEffect, stage: VoiceStage): Vo
   // opening one.
   if (effect.kind === 'capture-region') {
     return [{ kind: 'toggle-turn' }, { kind: 'capture-region' }];
+  }
+
+  // A digit answering a request is not part of a turn at all: no press opened
+  // the microphone, so there is nothing here to balance. Before the toggle
+  // below, and deliberately so — falling through to it would have every answer
+  // switch the microphone on.
+  if (effect.kind === 'choose-option') {
+    return [{ kind: 'choose-option', index: effect.index }];
+  }
+
+  // `RightCtrl+V`. No toggle here either: the hold this arrived during is
+  // abandoned a moment later by the ordinary combination rule, and that cancel
+  // carries the close. Balancing it here as well would shut a turn nobody
+  // opened and leave the next press inverted — the same fault the capture had.
+  if (effect.kind === 'stop-wake-listening') {
+    return [{ kind: 'stop-wake-listening' }];
   }
 
   // `start` opens the turn; `commit` and both cancels close the one it opened.

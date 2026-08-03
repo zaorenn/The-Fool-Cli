@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { VoiceStageEvent } from '@/common/types/voiceStage';
+import { MAX_NOTCH_CHOICE_KEYS, type FoolsControlPayload, type VoiceStageEvent } from '@/common/types/voiceStage';
 
 /**
  * Draws Fool's Control.
@@ -29,7 +29,7 @@ import type { VoiceStageEvent } from '@/common/types/voiceStage';
 declare global {
   interface Window {
     foolsControlAPI: {
-      onStage: (callback: (event: VoiceStageEvent) => void) => () => void;
+      onStage: (callback: (event: FoolsControlPayload) => void) => () => void;
     };
   }
 }
@@ -41,6 +41,10 @@ const canvas = document.getElementById('wave') as HTMLCanvasElement;
 const transcript = document.getElementById('transcript') as HTMLDivElement;
 const reply = document.getElementById('reply') as HTMLDivElement;
 const activity = document.getElementById('activity') as HTMLDivElement;
+const ask = document.getElementById('ask') as HTMLDivElement;
+const askTitle = document.getElementById('ask-title') as HTMLDivElement;
+const askOptions = document.getElementById('ask-options') as HTMLDivElement;
+const askHint = document.getElementById('ask-hint') as HTMLDivElement;
 const context = canvas.getContext('2d');
 
 /** One sample per frame at 60fps: about two seconds of history on screen. */
@@ -208,17 +212,57 @@ const renderActivity = (lines: VoiceStageEvent['activity']): void => {
   );
 };
 
+/**
+ * The question the agent is waiting on, and how to answer it without looking.
+ *
+ * Only the first few options get a number: the keys are pressed while looking at
+ * something else, and past three the numbering asks more of the reader than the
+ * shortcut is worth. The rest are still listed — they exist, they just have to be
+ * clicked in the app.
+ */
+const renderAsk = (request: FoolsControlPayload['permission']): void => {
+  if (!request) {
+    askOptions.replaceChildren();
+    return;
+  }
+  askTitle.textContent = request.title;
+  askHint.textContent = request.hint;
+  askOptions.replaceChildren(
+    ...request.options.map((label, index) => {
+      const numbered = index < MAX_NOTCH_CHOICE_KEYS;
+      const row = document.createElement('div');
+      row.className = numbered ? 'opt' : 'opt bare';
+      if (numbered) {
+        const key = document.createElement('span');
+        key.className = 'optkey';
+        key.textContent = String(index + 1);
+        row.append(key);
+      }
+      const text = document.createElement('span');
+      text.textContent = label;
+      row.append(text);
+      return row;
+    })
+  );
+};
+
 window.foolsControlAPI.onStage((event) => {
   accent = event.accent || '#c4123f';
   document.body.style.setProperty('--accent', accent);
 
-  notch.classList.toggle('shown', event.stage !== 'off');
+  const request = event.permission ?? null;
+  notch.classList.toggle('shown', event.stage !== 'off' || Boolean(request));
   // Expanded once there is something to read. Waiting for the wake phrase is
   // just the pill: there is nothing to say yet, and a wide notch sitting open
   // over the user's screen for no reason is worse than a small one.
   const activityLines = event.activity ?? [];
   const replyText = event.reply ?? '';
-  notch.classList.toggle('wide', event.transcript.length > 0 || replyText.length > 0 || activityLines.length > 0);
+  notch.classList.toggle(
+    'wide',
+    event.transcript.length > 0 || replyText.length > 0 || activityLines.length > 0 || Boolean(request)
+  );
+  notch.classList.toggle('asking', Boolean(request));
+  renderAsk(request);
 
   stageLabel.textContent = event.stageLabel;
   // The notice replaces the hint rather than the stage: there is room for both,
@@ -232,7 +276,9 @@ window.foolsControlAPI.onStage((event) => {
   live = event.stage === 'hearing';
   if (live) currentLevel = Math.max(currentLevel, event.level);
 
-  if (event.stage === 'off') {
+  // A question outlives the turn that led to it, and a notch showing one with a
+  // dead flat trace reads as a window that has crashed.
+  if (event.stage === 'off' && !request) {
     stop();
     return;
   }

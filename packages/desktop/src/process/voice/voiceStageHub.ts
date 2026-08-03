@@ -7,7 +7,12 @@
 import { ipcBridge } from '@/common';
 import { VOICE_STAGE_OFF, type VoiceStage, type VoiceStageEvent } from '@/common/types/voiceStage';
 import type { PetState } from '@process/pet/petTypes';
-import { destroyFoolsControl, repositionFoolsControl, updateFoolsControl } from './foolsControlWindow';
+import {
+  destroyFoolsControl,
+  repositionFoolsControl,
+  setFoolsControlPermission,
+  updateFoolsControl,
+} from './foolsControlWindow';
 import { HoldToTalkHook } from './holdToTalkHook';
 import { voiceActionsFor } from './holdToTalkActions';
 
@@ -41,7 +46,16 @@ type PetBridge = {
 let petBridge: PetBridge | null = null;
 let unsubscribe: (() => void) | null = null;
 let unsubscribeWakeListening: (() => void) | null = null;
+let unsubscribePermission: (() => void) | null = null;
 let lastStage: VoiceStage = 'off';
+/**
+ * Whether the wake word is currently holding the microphone.
+ *
+ * Cached from the renderer's own announcements so `RightCtrl+V` can be a no-op
+ * when there is nothing to stop. Without this every paste made with the right
+ * Ctrl key would be doing invisible work.
+ */
+let wakeListening = false;
 /** The pose currently asked for, so a repeated stage does not re-request it. */
 let lastPose: PetState | 'idle' | null = null;
 
@@ -144,6 +158,19 @@ const startHoldToTalk = (): void => {
           case 'capture-region':
             void captureRegionToComposer();
             break;
+          case 'choose-option':
+            // Back to the panel that drew the request, which resolves it
+            // exactly as a click on the same option would.
+            ipcBridge.foolVoice.permissionChoice.emit({ index: action.index });
+            break;
+          case 'stop-wake-listening':
+            // Nothing running, nothing to stop — and saying so anyway would
+            // make every `Ctrl+V` toggle the microphone *on*, since the channel
+            // below is the tray's toggle rather than an explicit off.
+            if (wakeListening) {
+              void import('@process/utils/tray').then(({ requestWakeListeningOff }) => requestWakeListeningOff());
+            }
+            break;
         }
       }
 
@@ -181,7 +208,16 @@ export function initVoiceStageHub(): void {
   // renderer owns the setting, so it says; this only relays.
   unsubscribeWakeListening?.();
   unsubscribeWakeListening = ipcBridge.foolVoice.wakeListening.on(({ listening }) => {
+    wakeListening = listening;
     void import('@process/utils/tray').then(({ setTrayWakeListening }) => setTrayWakeListening(listening));
+  });
+
+  // A permission request the app is waiting on: onto the notch, and the digits
+  // that answer it are read from the keyboard for exactly as long as it is open.
+  unsubscribePermission?.();
+  unsubscribePermission = ipcBridge.foolVoice.permissionRequest.on((request) => {
+    setFoolsControlPermission(request);
+    holdToTalk?.setPendingChoices(request ? request.options.length : 0);
   });
 }
 
@@ -192,6 +228,8 @@ export function disposeVoiceStageHub(): void {
   unsubscribe = null;
   unsubscribeWakeListening?.();
   unsubscribeWakeListening = null;
+  unsubscribePermission?.();
+  unsubscribePermission = null;
   destroyFoolsControl();
   lastStage = VOICE_STAGE_OFF.stage;
   lastPose = null;
