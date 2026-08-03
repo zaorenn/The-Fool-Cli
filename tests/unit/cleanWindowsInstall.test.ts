@@ -102,6 +102,13 @@ describe('clean Windows install', () => {
     expect(buildScript).toContain('managed-resources');
     expect(buildScript).toContain('manifest.json');
   });
+  it('can populate a clean CI bundle without an installed copy of the app', () => {
+    const buildScript = read('scripts/buildFoolcore.js');
+
+    expect(buildScript).toContain("'prepare-managed-resources'");
+    expect(buildScript).toContain("'--locked'");
+    expect(buildScript).not.toContain("'--offline'");
+  });
 
   it('leaves nothing the packer verifies missing from the staged bundle', () => {
     const stageDir = resolve(projectRoot, 'resources/bundled-foolcore/win32-x64');

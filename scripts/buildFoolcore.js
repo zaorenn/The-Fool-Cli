@@ -33,6 +33,7 @@ const {
   existsSync,
   readdirSync,
   readFileSync,
+  rmSync,
   statSync,
   writeFileSync,
 } = require('fs');
@@ -82,10 +83,9 @@ if (skipCompile) {
 } else {
   console.log(`[foolcore] building ${profile} for ${runtimeKey}`);
   try {
-    // Offline on purpose: every dependency is either vendored in `backend/agent`
-    // or already in the cargo registry cache. A build that reaches the network
-    // here would mean a path dependency has silently gone back to being a git one.
-    execFileSync('cargo', ['build', `--${profile}`, '--bin', 'foolcore', '--offline'], {
+    // The lockfile makes release builds reproducible while still allowing a
+    // clean CI runner to populate its Cargo registry cache.
+    execFileSync('cargo', ['build', `--${profile}`, '--bin', 'foolcore', '--locked'], {
       cwd: coreDir,
       stdio: 'inherit',
       env: buildEnv,
@@ -133,6 +133,22 @@ function resolveManagedResourcesSource() {
 }
 
 const managedDir = path.join(stageDir, 'managed-resources');
+
+function prepareManagedResources() {
+  const dataDir = path.join(stageDir, '.prepare-data');
+  rmSync(dataDir, { recursive: true, force: true });
+  rmSync(managedDir, { recursive: true, force: true });
+  mkdirSync(managedDir, { recursive: true });
+
+  try {
+    execFileSync(staged, ['--data-dir', dataDir, 'prepare-managed-resources', '--bundle-out', managedDir], {
+      stdio: 'inherit',
+      env: { ...process.env, FOOL_BUNDLED_MANAGED_RESOURCES: '' },
+    });
+  } finally {
+    rmSync(dataDir, { recursive: true, force: true });
+  }
+}
 if (existsSync(path.join(managedDir, 'manifest.json'))) {
   console.log(`[foolcore] managed-resources already staged (${readdirSync(managedDir).length} entries)`);
 } else {
@@ -140,6 +156,13 @@ if (existsSync(path.join(managedDir, 'manifest.json'))) {
   if (source) {
     console.log(`[foolcore] staging managed-resources from ${source}`);
     cpSync(source, managedDir, { recursive: true });
+  } else if (process.env.CI) {
+    console.log(`[foolcore] preparing managed-resources for clean CI runner ${runtimeKey}`);
+    try {
+      prepareManagedResources();
+    } catch {
+      fail(`failed to prepare managed-resources for ${runtimeKey}`);
+    }
   } else {
     // Not fatal, because it is not fatal for `bun run dev`.
     //
