@@ -17,6 +17,8 @@ import {
 } from '@/common/config/imageGenerationMcpEnv';
 import { BUILTIN_IMAGE_GEN_NAME, type IMcpServer, type IProvider } from '@/common/config/storage';
 import { getBuiltinMcpScriptPath, type ProcessConfig as ProcessConfigType } from './initStorage';
+import { BUILTIN_BROWSER_NAME } from '../resources/builtinMcp/constants';
+import { browserControlHandshakePath } from '../voice/browserControlServer';
 import { migrateAssistantsToBackend } from './migrateAssistants';
 
 type ConfigFile = typeof ProcessConfigType;
@@ -167,7 +169,33 @@ function buildDefaultMcpServers(): McpImportServer[] {
     args: ['-y', 'chrome-devtools-mcp@latest'],
   };
 
+  // The in-app browser, as tools. Unlike chrome-devtools this needs nothing
+  // installed — the script ships with the app and the browser it drives is the
+  // panel already in the window. Off until the user turns it on, because it
+  // acts inside a browser that holds their logins.
+  const handshake = browserControlHandshakePath();
+  const browserScript = getBuiltinMcpScriptPath('builtin-mcp-browser');
+  const browserEnv = { FOOL_BROWSER_HANDSHAKE: handshake };
+  const browserConfig = { command: 'node', args: [browserScript], env: browserEnv };
+
+  // Offered only when the handshake path is known. Registering it without one
+  // would put a server in the user's list that can never reach the browser and
+  // has no way to say why.
+  const browserServers: McpImportServer[] = handshake
+    ? [
+        {
+          name: BUILTIN_BROWSER_NAME,
+          description: "Drive The Fool's own browser panel: open pages, read them, click and type.",
+          enabled: false,
+          builtin: true,
+          transport: { type: 'stdio', command: 'node', args: [browserScript], env: browserEnv },
+          original_json: JSON.stringify({ mcpServers: { [BUILTIN_BROWSER_NAME]: browserConfig } }, null, 2),
+        },
+      ]
+    : [];
+
   return [
+    ...browserServers,
     {
       name: BUILTIN_CHROME_DEVTOOLS_NAME,
       description: 'Default MCP server: chrome-devtools',

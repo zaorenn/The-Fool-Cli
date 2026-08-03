@@ -6,6 +6,9 @@
 
 // Keep this constant local to avoid pulling in common/config/storage side effects
 // when the built-in MCP server boots in a standalone stdio process.
+export const BUILTIN_BROWSER_ID = 'builtin-browser';
+export const BUILTIN_BROWSER_NAME = 'fool-browser';
+
 export const BUILTIN_IMAGE_GEN_ID = 'builtin-image-gen';
 export const BUILTIN_IMAGE_GEN_NAME = 'fool-image-generation';
 export const BUILTIN_IMAGE_GEN_LEGACY_NAMES = [
