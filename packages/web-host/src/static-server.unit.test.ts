@@ -183,6 +183,10 @@ describe('static-server', () => {
     const httpMod = await import('node:http');
     const backendServer = httpMod.createServer();
     backendServer.on('upgrade', (req, socket) => {
+      // The proxy tears this connection down as soon as the client goes away,
+      // and a raw upgrade socket with no error handler turns that reset into an
+      // uncaught exception — which fails the whole run while every test passes.
+      socket.on('error', () => {});
       const wsKey = (req.headers['sec-websocket-key'] as string) || '';
       const accept = createHash('sha1')
         .update(wsKey + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')
@@ -241,6 +245,10 @@ describe('static-server', () => {
     const httpMod = await import('node:http');
     const backendServer = httpMod.createServer();
     backendServer.on('upgrade', (req, socket) => {
+      // The proxy tears this connection down as soon as the client goes away,
+      // and a raw upgrade socket with no error handler turns that reset into an
+      // uncaught exception — which fails the whole run while every test passes.
+      socket.on('error', () => {});
       const wsKey = (req.headers['sec-websocket-key'] as string) || '';
       const accept = createHash('sha1')
         .update(wsKey + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')
@@ -296,6 +304,10 @@ describe('static-server', () => {
     const httpMod = await import('node:http');
     const backendServer = httpMod.createServer();
     backendServer.on('upgrade', (req, socket) => {
+      // The proxy tears this connection down as soon as the client goes away,
+      // and a raw upgrade socket with no error handler turns that reset into an
+      // uncaught exception — which fails the whole run while every test passes.
+      socket.on('error', () => {});
       const wsKey = (req.headers['sec-websocket-key'] as string) || '';
       const accept = createHash('sha1')
         .update(wsKey + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')
