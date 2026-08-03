@@ -2,9 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { execSync } = require('child_process');
-const { prepareFoolcore } = require('../packages/shared-scripts/src/prepare-foolcore.js');
-const { resolveFoolcoreVersion } = require('./resolveFoolcoreVersion.js');
+const { execFileSync, execSync } = require('child_process');
 
 const projectRoot = path.resolve(__dirname, '..');
 const platform = process.env.PACK_PLATFORM || process.platform;
@@ -25,11 +23,10 @@ console.log(`Packing web-cli for ${platform}-${arch}...`);
 
 // 1. Prepare bundled-foolcore
 console.log('1. Preparing foolcore...');
-prepareFoolcore({
-  projectRoot,
-  platform,
-  arch,
-  version: resolveFoolcoreVersion(projectRoot),
+execFileSync(process.execPath, [path.join(projectRoot, 'scripts', 'buildFoolcore.js')], {
+  cwd: projectRoot,
+  stdio: 'inherit',
+  env: { ...process.env, FOOL_BACKEND_ARCH: arch },
 });
 
 // 2. Create staging dir
@@ -81,7 +78,7 @@ if (fs.existsSync(rendererOutDir)) {
 const backendSrc = path.join(projectRoot, 'resources/bundled-foolcore', `${platform}-${arch}`);
 const backendDest = path.join(tarballContentDir, 'bundled-foolcore', `${platform}-${arch}`);
 if (!fs.existsSync(backendSrc)) {
-  throw new Error(`Backend bundle dir missing at ${backendSrc}. Ensure prepareFoolcore succeeded.`);
+  throw new Error(`Backend bundle dir missing at ${backendSrc}. Ensure buildFoolcore succeeded.`);
 }
 fs.mkdirSync(path.dirname(backendDest), { recursive: true });
 fs.cpSync(backendSrc, backendDest, { recursive: true });

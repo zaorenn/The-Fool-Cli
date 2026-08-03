@@ -364,7 +364,7 @@ jobs:
 
       - name: Prepare foolcore binary
         shell: bash
-        run: node scripts/prepareFoolcore.js
+        run: node scripts/buildFoolcore.js
         env:
           # Version is pinned in repo-root package.json (foolcoreVersion).
           # Set FOOL_BACKEND_VERSION here only to override for ad-hoc builds.

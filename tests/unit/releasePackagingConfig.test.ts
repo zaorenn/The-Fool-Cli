@@ -34,6 +34,16 @@ function yamlBlock(content: string, key: string): string {
 }
 
 describe('release packaging configuration', () => {
+  it('uses the checked-in foolcore source builder in every release path', () => {
+    const workflow = readProjectFile('.github/workflows/_build-reusable.yml');
+    const webCliPacker = readProjectFile('scripts/pack-web-cli.js');
+
+    expect(workflow).toContain('node scripts/buildFoolcore.js');
+    expect(workflow).not.toContain('node scripts/prepareFoolcore.js');
+    expect(webCliPacker).toContain("'scripts', 'buildFoolcore.js'");
+    expect(webCliPacker).not.toContain('prepare-foolcore.js');
+  });
+
   it('keeps mac zip artifacts enabled', () => {
     const config = readProjectFile('packages/desktop/electron-builder.yml');
     const macBlock = yamlBlock(config, 'mac');
