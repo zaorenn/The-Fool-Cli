@@ -941,7 +941,7 @@ const QR_LOGIN_HTML: &str = r#"<!DOCTYPE html>
   fetch('/api/auth/qr-login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ qrToken: token })
+    body: JSON.stringify({ qr_token: token })
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {

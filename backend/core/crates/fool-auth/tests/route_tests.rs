@@ -826,6 +826,11 @@ async fn qr_login_page_returns_html() {
     assert_eq!(resp.status(), StatusCode::OK);
     let content_type = resp.headers().get("content-type").unwrap().to_str().unwrap();
     assert!(content_type.contains("text/html"));
+
+    let body = resp.into_body().collect().await.unwrap().to_bytes();
+    let html = String::from_utf8(body.to_vec()).unwrap();
+    assert!(html.contains(r#"JSON.stringify({ qr_token: token })"#));
+    assert!(!html.contains(r#"JSON.stringify({ qrToken: token })"#));
 }
 
 // ===========================================================================
