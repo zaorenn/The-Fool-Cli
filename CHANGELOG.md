@@ -2,6 +2,23 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.2.52
+
+### The Jester can theme the app for real
+
+- **A theme it creates and applies now actually applies.** Creating a theme and selecting it is one write, and the app told its listeners about each key as it landed rather than after the batch. So the theme listener resolved the new `activeId` against a list of themes that did not contain it yet, found nothing, and fell back to Light — which looks exactly like the write never happening. It also never appeared in Settings → Appearance for the same reason.
+- A theme that would hide the window is refused before it is saved, and the rules for writing a safe one are now part of what the Jester knows.
+
+### Voice
+
+- **Region capture no longer leaves the microphone open.** Push-to-talk is a toggle; the capture gesture handled the second tap without closing the turn its own press had opened, so the microphone stayed live and every gesture afterwards was inverted.
+- **Permission requests appear in the notch**, answerable with 1, 2 and 3. Holding right Ctrl starts a turn from wherever you are looking, which is usually not this app — a request that only ever showed in the main window stalled the turn with nothing on screen to explain it.
+- **Right Ctrl + V switches off always-on listening.** The combination is watched, never claimed: paste keeps working everywhere, and the gesture does nothing at all when the wake word is not listening.
+
+### The browser, for agents
+
+- An agent can drive the built-in browser panel: open pages, read them, click, type, go back and forward. It is the browser you can see, with your sessions in it, so it ships switched on for nobody and every tool call still asks.
+
 ## 2.2.51
 
 ### A theme can no longer hide the app
