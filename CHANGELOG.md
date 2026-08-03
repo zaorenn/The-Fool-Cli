@@ -2,6 +2,26 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.2.53
+
+### Agentic voice conversation
+
+- Added a dedicated animated voice conversation surface with low-latency realtime audio, interruption handling and visible agent activity.
+- Voice turns can execute tools and return their results inside the same conversation instead of stopping at transcription or playback.
+- Added a supervised local speech-to-speech runtime and hardened realtime session setup so connection failures surface clearly.
+
+### First-run setup and built-ins
+
+- Added a first-run provider setup flow for Codex and Claude, with The Jester available to guide configuration.
+- Added built-in shared-memory and visual-companion skills so assistants can retain user-approved context and request interactive visual feedback.
+- Kept all new surfaces aligned with the existing theme tokens and internationalised the new user-facing controls.
+
+### Mobile access and packaging
+
+- Fixed QR/mobile access to prefer a reachable LAN address instead of link-local or virtual-adapter addresses.
+- Made release asset preparation resolve version metadata without depending on Node when CI already provides release metadata.
+- Made the Windows release packaging test select Git Bash explicitly, preventing WSL path translation from creating stray build artifacts.
+
 ## 2.2.52
 
 ### The Jester can theme the app for real
