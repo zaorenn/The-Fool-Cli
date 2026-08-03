@@ -117,7 +117,14 @@ echo "==> Writing architecture-specific updater metadata ..."
 # ---------------------------------------------------------------------------
 echo "==> Validating required metadata ..."
 
-VERSION="${MOCK_VERSION:-$(node -p "require('./package.json').version")}"
+VERSION="${MOCK_VERSION:-}"
+if [ -z "$VERSION" ] && [ -f "$OUTPUT_DIR/latest.yml" ]; then
+  VERSION="$(sed -n 's/^version:[[:space:]]*//p' "$OUTPUT_DIR/latest.yml" | head -n 1)"
+fi
+if [ -z "$VERSION" ]; then
+  command -v node >/dev/null 2>&1 || { echo "::error::Unable to resolve release version"; exit 1; }
+  VERSION="$(node -p "require('./package.json').version")"
+fi
 MISSING=0
 for required in latest.yml latest-mac.yml latest-linux.yml latest-linux-arm64.yml; do
   if [ ! -f "$OUTPUT_DIR/$required" ]; then

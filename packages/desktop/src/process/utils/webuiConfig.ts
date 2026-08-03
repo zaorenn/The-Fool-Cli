@@ -186,18 +186,34 @@ export function setDesktopWebUIInitialPassword(password: string | undefined): vo
   currentInitialPassword = password;
 }
 
-const getLanIP = (): string | null => {
-  const nets = networkInterfaces();
-  for (const name of Object.keys(nets)) {
-    const netInfo = nets[name];
-    if (!netInfo) continue;
-    for (const net of netInfo) {
-      const isIPv4 = net.family === 'IPv4' || (net.family as unknown) === 4;
-      if (isIPv4 && !net.internal) return net.address;
-    }
-  }
-  return null;
+type LanNetworkInterfaces = Record<string, readonly { address: string; family: string | number; internal: boolean }[]>;
+
+const PHYSICAL_INTERFACE_PATTERN = /(?:ethernet|wi-?fi|wlan|wireless)/i;
+const VIRTUAL_INTERFACE_PATTERN =
+  /(?:tailscale|zerotier|vethernet|wsl|docker|hyper-v|virtualbox|vmware|loopback|vpn|tun|tap)/i;
+
+const isPrivateIPv4 = (address: string): boolean =>
+  address.startsWith('10.') || address.startsWith('192.168.') || /^172\.(?:1[6-9]|2\d|3[01])\./.test(address);
+
+export const selectReachableLanIPv4 = (interfaces: LanNetworkInterfaces): string | null => {
+  const candidates = Object.entries(interfaces).flatMap(([name, addresses]) =>
+    addresses
+      .filter((entry) => {
+        const isIPv4 = entry.family === 'IPv4' || entry.family === 4;
+        return isIPv4 && !entry.internal && !entry.address.startsWith('169.254.') && entry.address !== '0.0.0.0';
+      })
+      .map((entry) => {
+        let score = isPrivateIPv4(entry.address) ? 20 : 0;
+        if (PHYSICAL_INTERFACE_PATTERN.test(name)) score += 100;
+        if (VIRTUAL_INTERFACE_PATTERN.test(name)) score -= 100;
+        return { address: entry.address, score };
+      })
+  );
+  candidates.sort((left, right) => right.score - left.score);
+  return candidates[0]?.address ?? null;
 };
+
+const getLanIP = (): string | null => selectReachableLanIPv4(networkInterfaces() as LanNetworkInterfaces);
 
 const toDesktopHandle = (handle: WebHostHandle, allowRemote: boolean): DesktopWebUIHandle => ({
   port: handle.port,

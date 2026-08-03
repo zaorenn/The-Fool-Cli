@@ -1387,6 +1387,47 @@
     "needsClonedVoice": "Bu motorun kendine ait bir sesi yok — yalnızca klonladığınız bir sesle konuşur. Ona bir ses vermek için aşağıya bir kayıt bırakın.",
     "cloneTextOptional": "Kayıtta ne söylendiği — isteğe bağlı, bu motor okumuyor.",
     "cloneSavedNoEngine": "{{name}} kaydedildi. Duyabilmek için bir ses klonlama motoru kurun.",
+    "conversationModeTitle": "Sesli Sohbet",
+    "conversationModeSubtitle": "Görünür agent eylemleriyle gerçek zamanlı konuşma",
+    "conversationWelcomeTitle": "Agentını bağla",
+    "conversationWelcomeSubtitle": "Codex veya Claude seç. Giriş, resmi CLI OAuth akışında kalır; ardından Jester The Fool kurulumunun kalanını seninle tamamlar.",
+    "conversationReadyHint": "Doğal biçimde konuş. Jester’dan uygulamayı kurmasını iste veya “temayı daha mavi yap” de.",
+    "conversationStart": "Sesli sohbeti başlat",
+    "conversationStop": "Sohbeti bitir",
+    "conversationInterrupt": "Sözünü kes",
+    "conversationEndpoint": "Speech-to-speech realtime adresi",
+    "conversationAgentActivity": "Agent etkinliği",
+    "conversationActivityEmpty": "Gerçek araç çağrıları ve devredilen işler gerçekleştikçe burada görünecek.",
+    "conversationActionRunning": "Üzerinde çalışıyor…",
+    "conversationThemeChanged": "Tema tonu {{tone}} olarak değiştirildi.",
+    "conversationDelegated": "Jester’a devredildi.",
+    "conversationSetupFailed": "Kurulum sohbeti başlatılamadı.",
+    "conversationProviderSetupPrompt": "{{provider}} sağlayıcısını resmi CLI tarafından yönetilen OAuth akışıyla The Fool’a bağla. Benden OAuth tokenı yapıştırmamı isteme. Kurulumu ve kimlik doğrulamayı denetle, tarayıcı veya cihaz akışında bana rehberlik et, agent sağlığını doğrula ve kalan uygulama kurulumunu tamamlamama yardım et.",
+    "conversationContinueWithJester": "Jester ile devam et",
+    "conversationConnectProvider": "{{provider}} bağla",
+    "conversationCheckAgain": "Yeniden denetle",
+    "conversationSetupWithJester": "Jester ile kur",
+    "conversationOauthNotice": "The Fool, Codex/Claude OAuth tokenlarını istemez veya saklamaz. Kimlik doğrulama resmi CLI’ın yönetiminde kalır.",
+    "conversationPhase": {
+      "idle": "Hazır",
+      "connecting": "Bağlanıyor",
+      "listening": "Dinliyor",
+      "thinking": "Düşünüyor",
+      "speaking": "Konuşuyor",
+      "acting": "Eylem gerçekleştiriyor",
+      "error": "İlgilenmen gerekiyor"
+    },
+    "conversationProviderStatus": {
+      "unavailable": "Kullanılamıyor",
+      "missing": "Kurulum gerekli",
+      "connected": "Bağlı",
+      "needs-auth": "Giriş gerekli",
+      "ready-to-check": "Denetime hazır"
+    },
+    "conversationProviderDescription": {
+      "codex": "Codex hesabını ve agentic kodlama çalışma zamanını The Fool genelinde kullan.",
+      "claude": "Claude hesabını ve agentic çalışma zamanını The Fool genelinde kullan."
+    },
     "desktopOnly": "Ses, The Fool'u çalıştıran bilgisayarda çalışır — motorları orada kurulur ve orada seslendirilir. Ses ayarlarını o makinede açın."
   },
   "themeCustomizer": {

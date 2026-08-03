@@ -17,6 +17,7 @@ import {
   AudioCppVoiceProvider,
 } from '../services/fool-voice';
 import { registerLocalModelsBridge } from '../services/local-models';
+import { speechToSpeechRuntime } from '../services/speech-to-speech';
 import { handleSummarize, handleSummaryPlan } from '../services/voice-summary';
 import { initVoiceStageHub } from '../voice/voiceStageHub';
 import { handleVoiceShortcut } from '../voice/pushToTalkShortcut';
@@ -70,6 +71,7 @@ const voiceService = new FoolVoiceService(modelManager, sherpaProvider, openaiPr
 
 initAllBridges({
   foolVoice: {
+    ensureRealtime: () => speechToSpeechRuntime.ensureReady(),
     catalog: async (req) => {
       const baseModels = VoiceModelCatalog.getModels();
       const models = await Promise.all(
@@ -215,3 +217,5 @@ void import('../voice/browserControlServer').then(async ({ startBrowserControlSe
  * removed.
  */
 export const stopVoiceEngines = (): Promise<void> => voiceService.stopAudioCpp();
+
+app.on('will-quit', () => speechToSpeechRuntime.stop());

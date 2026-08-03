@@ -7,13 +7,9 @@
 
 import { ipcBridge } from '@/common';
 import { configService } from '@/common/config/configService';
-import { emitter } from '@/renderer/utils/emitter';
 import { useEffect } from 'react';
 import type { TFunction } from 'i18next';
 import type { NavigateFunction } from 'react-router-dom';
-
-/** The built-in assistant, registered by migration 035. */
-const BUTLER_ASSISTANT_ID = 'fool-assistant';
 
 export type FirstRunSetupDeps = {
   navigate: NavigateFunction;
@@ -42,7 +38,7 @@ export const shouldGreetOnFirstRun = (alreadyGreeted: boolean | undefined, provi
  * agents and write themes. What was missing was simply putting a new user in
  * front of it instead of an empty prompt box.
  */
-export const useFirstRunSetup = ({ navigate, localeKey, t }: FirstRunSetupDeps): void => {
+export const useFirstRunSetup = ({ navigate }: FirstRunSetupDeps): void => {
   useEffect(() => {
     let cancelled = false;
 
@@ -60,29 +56,9 @@ export const useFirstRunSetup = ({ navigate, localeKey, t }: FirstRunSetupDeps):
           return;
         }
 
-        const conversation = await ipcBridge.conversation.create.invoke({
-          name: t('guid.firstRun.conversationName'),
-          assistant: { id: BUTLER_ASSISTANT_ID, locale: localeKey },
-          // No workspace: setup is about the app itself, so this conversation
-          // has no business being bound to a folder on disk.
-          extra: {},
-        });
-        if (cancelled || !conversation?.id) return;
-
-        // Claim the flag before navigating: if the opening turn fails, a retry
-        // loop that recreates a conversation on every launch is far worse than
-        // a user who opens settings themselves.
-        await configService.setLocal('system.firstRunGreeted', true);
-
         // Same handoff the welcome screen uses — the conversation view picks
         // this up and sends it as the opening turn.
-        sessionStorage.setItem(
-          `acp_initial_message_${conversation.id}`,
-          JSON.stringify({ input: t('guid.firstRun.openingMessage') })
-        );
-
-        emitter.emit('chat.history.refresh');
-        await navigate(`/conversation/${conversation.id}`);
+        await navigate('/welcome', { replace: true });
       } catch (error) {
         // A failed greeting must never block the app from opening.
         console.error('[first-run] Could not hand setup to the assistant:', error);

@@ -22,6 +22,8 @@ import type {
   VoiceHealthRequest,
   VoiceRemoveRequest,
   VoiceRemoveResponse,
+  VoiceRealtimeEnsureRequest,
+  VoiceRealtimeEnsureResponse,
   VoiceRequestEnvelope,
   VoiceResponseEnvelope,
   VoiceSpeakersRequest,
@@ -41,6 +43,7 @@ import type {
 type MaybePromise<T> = T | Promise<T>;
 
 export type FoolVoiceBridgeHandlers = {
+  ensureRealtime: (request: VoiceRealtimeEnsureRequest) => MaybePromise<VoiceRealtimeEnsureResponse>;
   catalog: (request: VoiceCatalogRequest) => MaybePromise<VoiceCatalogResponse>;
   download: (request: VoiceDownloadRequest) => MaybePromise<VoiceDownloadResponse>;
   remove: (request: VoiceRemoveRequest) => MaybePromise<VoiceRemoveResponse>;
@@ -184,6 +187,9 @@ const validateCatalogRequest = (payload: unknown): BridgeErrorCode | null =>
   isRecord(payload) && hasExactKeys(payload, ['includeProfiles']) && typeof payload.includeProfiles === 'boolean'
     ? null
     : 'invalid-request';
+
+const validateRealtimeEnsureRequest = (payload: unknown): BridgeErrorCode | null =>
+  isRecord(payload) && hasExactKeys(payload, []) ? null : 'invalid-request';
 
 const validateDownloadRequest = (payload: unknown): BridgeErrorCode | null =>
   isRecord(payload) &&
@@ -508,6 +514,13 @@ const validateSummarizeResponse = (response: VoiceSummarizeResponse): boolean =>
   typeof response.text === 'string' && [...response.text].length > 0;
 
 export function initFoolVoiceBridge(handlers: Partial<FoolVoiceBridgeHandlers> = {}): void {
+  registerHandler(
+    ipcBridge.foolVoice.ensureRealtime,
+    validateRealtimeEnsureRequest,
+    handlers.ensureRealtime,
+    undefined,
+    'realtime.ensure'
+  );
   registerHandler(
     ipcBridge.foolVoice.catalog,
     validateCatalogRequest,

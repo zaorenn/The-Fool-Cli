@@ -1281,3 +1281,9 @@ export type VoiceCancelResponse = {
   operationId: string;
   state: 'cancelling' | 'cancelled' | 'not-found' | 'already-terminal';
 };
+
+export type VoiceRealtimeEnsureRequest = Record<string, never>;
+export type VoiceRealtimeEnsureResponse = {
+  endpoint: string;
+  reused: boolean;
+};

@@ -5,6 +5,8 @@ import { useAuth } from '@renderer/hooks/context/AuthContext';
 import { TEAM_MODE_ENABLED } from '@/common/config/constants';
 const Conversation = React.lazy(() => import('@renderer/pages/conversation'));
 const Guid = React.lazy(() => import('@renderer/pages/guid'));
+const VoiceConversation = React.lazy(() => import('@renderer/pages/voice'));
+const Welcome = React.lazy(() => import('@renderer/pages/welcome'));
 const OverviewSettings = React.lazy(() => import('@renderer/pages/settings/OverviewSettings'));
 const AgentSettings = React.lazy(() => import('@renderer/pages/settings/AgentSettings'));
 const AgentRepairPage = React.lazy(() => import('@renderer/pages/settings/AgentSettings/AgentRepairPage'));
@@ -68,6 +70,8 @@ const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
         <Route element={<ProtectedLayout layout={layout} />}>
           <Route index element={<Navigate to='/guid' replace />} />
           <Route path='/guid' element={withRouteFallback(Guid)} />
+          <Route path='/welcome' element={withRouteFallback(Welcome)} />
+          <Route path='/voice' element={withRouteFallback(VoiceConversation)} />
           <Route path='/conversation/:id' element={withRouteFallback(Conversation)} />
           <Route
             path='/team/:id'

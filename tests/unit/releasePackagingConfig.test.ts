@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 
 const projectRoot = resolve(__dirname, '../..');
-const itWithBash = spawnSync('bash', ['--version'], { encoding: 'utf8' }).status === 0 ? it : it.skip;
+const windowsGitBash = 'C:\\Program Files\\Git\\bin\\bash.exe';
+const bashCommand = process.platform === 'win32' && existsSync(windowsGitBash) ? windowsGitBash : 'bash';
+const itWithBash = spawnSync(bashCommand, ['--version'], { encoding: 'utf8' }).status === 0 ? it : it.skip;
 
 /**
  * Hand a path to bash in a form bash will not eat.
@@ -68,17 +70,21 @@ describe('release packaging configuration', () => {
 
     try {
       const env = { ...process.env, MOCK_VERSION: '1.0.0' };
-      const createResult = spawnSync('bash', ['scripts/create-mock-release-artifacts.sh', toBashPath(artifactsDir)], {
-        cwd: projectRoot,
-        env,
-        encoding: 'utf8',
-      });
+      const createResult = spawnSync(
+        bashCommand,
+        ['scripts/create-mock-release-artifacts.sh', toBashPath(artifactsDir)],
+        {
+          cwd: projectRoot,
+          env,
+          encoding: 'utf8',
+        }
+      );
       expect(createResult.status).toBe(0);
 
       rmSync(resolve(artifactsDir, 'macos-build-arm64', 'The Fool-1.0.0-mac-arm64.zip'), { force: true });
 
       const prepareResult = spawnSync(
-        'bash',
+        bashCommand,
         ['scripts/prepare-release-assets.sh', toBashPath(artifactsDir), toBashPath(outputDir)],
         {
           cwd: projectRoot,

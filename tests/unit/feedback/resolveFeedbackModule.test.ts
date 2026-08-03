@@ -18,6 +18,7 @@ describe('resolveFeedbackModule', () => {
   it.each([
     ['/conversation/abc-123', 'conversation-session'],
     ['/team/team-1', 'agent-team'],
+    ['/voice', 'conversation-session'],
     ['/scheduled', 'scheduled-task'],
     ['/scheduled/job-42', 'scheduled-task'],
     ['/assistants', 'assistant-preset'],
@@ -58,7 +59,7 @@ describe('resolveFeedbackModule', () => {
     );
     // Pages where preselecting a module makes no sense (multi-purpose or
     // pre-auth surfaces where the user picks the module themselves).
-    const moduleLess = new Set(['/guid', '/login', '/test/components']);
+    const moduleLess = new Set(['/guid', '/login', '/welcome', '/test/components']);
     const paths = [...routerSrc.matchAll(/path='([^*'][^']*)'/g)].map((m) => m[1]);
     expect(paths.length).toBeGreaterThan(10);
     for (const routePath of paths) {

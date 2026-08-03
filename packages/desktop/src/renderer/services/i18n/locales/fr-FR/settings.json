@@ -1387,6 +1387,47 @@
     "needsClonedVoice": "This engine has no voice of its own — it only speaks in a voice you clone. Drop a recording below to give it one.",
     "cloneTextOptional": "What is said in the recording — optional, this engine does not read it.",
     "cloneSavedNoEngine": "{{name}} saved. Install a cloning voice engine to hear it.",
+    "conversationModeTitle": "Voice Chat",
+    "conversationModeSubtitle": "Realtime speech with visible agent actions",
+    "conversationWelcomeTitle": "Connect your agent",
+    "conversationWelcomeSubtitle": "Choose Codex or Claude. Sign-in stays inside the official CLI OAuth flow; then Jester can finish the rest of The Fool setup with you.",
+    "conversationReadyHint": "Start talking naturally. Ask Jester to configure the app or say “make the theme more blue.”",
+    "conversationStart": "Start voice chat",
+    "conversationStop": "End conversation",
+    "conversationInterrupt": "Interrupt",
+    "conversationEndpoint": "Speech-to-speech realtime endpoint",
+    "conversationAgentActivity": "Agent activity",
+    "conversationActivityEmpty": "Real tool calls and delegated work will appear here as they happen.",
+    "conversationActionRunning": "Working on it…",
+    "conversationThemeChanged": "Theme tone changed to {{tone}}.",
+    "conversationDelegated": "Handed to Jester.",
+    "conversationSetupFailed": "Could not start the setup conversation.",
+    "conversationProviderSetupPrompt": "Connect {{provider}} to The Fool using its official CLI-owned OAuth flow. Do not ask me to paste OAuth tokens. Check installation and authentication, guide me through the browser or device flow, verify the agent health, then help me finish the remaining app setup.",
+    "conversationContinueWithJester": "Continue with Jester",
+    "conversationConnectProvider": "Connect {{provider}}",
+    "conversationCheckAgain": "Check again",
+    "conversationSetupWithJester": "Set up with Jester",
+    "conversationOauthNotice": "The Fool never asks for or stores Codex/Claude OAuth tokens. Authentication remains owned by the official CLI.",
+    "conversationPhase": {
+      "idle": "Ready",
+      "connecting": "Connecting",
+      "listening": "Listening",
+      "thinking": "Thinking",
+      "speaking": "Speaking",
+      "acting": "Taking action",
+      "error": "Needs attention"
+    },
+    "conversationProviderStatus": {
+      "unavailable": "Unavailable",
+      "missing": "Install required",
+      "connected": "Connected",
+      "needs-auth": "Sign-in required",
+      "ready-to-check": "Ready to check"
+    },
+    "conversationProviderDescription": {
+      "codex": "Use your Codex account and its agentic coding runtime across The Fool.",
+      "claude": "Use your Claude account and its agentic runtime across The Fool."
+    },
     "desktopOnly": "Voice runs on the computer that hosts The Fool — its engines are installed and played there. Open Voice settings on that machine."
   },
   "themeCustomizer": {

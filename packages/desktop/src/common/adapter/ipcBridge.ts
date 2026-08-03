@@ -32,6 +32,8 @@ import type {
   VoiceHealthRequest,
   VoiceRemoveRequest,
   VoiceRemoveResponse,
+  VoiceRealtimeEnsureRequest,
+  VoiceRealtimeEnsureResponse,
   VoiceRequestEnvelope,
   VoiceResponseEnvelope,
   VoiceSpeakersRequest,
@@ -172,6 +174,10 @@ const httpGetClientSetting = <T>(key: string) => ({
 });
 
 export const foolVoice = {
+  ensureRealtime: bridge.buildProvider<
+    VoiceResponseEnvelope<VoiceRealtimeEnsureResponse>,
+    VoiceRequestEnvelope<VoiceRealtimeEnsureRequest>
+  >('fool.voice.realtime.ensure'),
   catalog: bridge.buildProvider<VoiceResponseEnvelope<VoiceCatalogResponse>, VoiceRequestEnvelope<VoiceCatalogRequest>>(
     'fool.voice.catalog'
   ),
