@@ -2,6 +2,17 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.2.54
+
+### Mobile access
+
+- Fixed the QR login page to send the token field expected by the authentication endpoint, so phones can complete mobile pairing.
+
+### Release packaging
+
+- Routed desktop and web release jobs through the checked-in FoolCore source builder instead of missing helper files.
+- Made clean CI runners build locked dependencies and generate the managed runtime bundle required by installers.
+
 ## 2.2.53
 
 ### Agentic voice conversation
