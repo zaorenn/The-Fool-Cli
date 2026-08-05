@@ -16,6 +16,7 @@ import {
   type NormalizedRealtimeEvent,
   type RealtimeCredential,
   type RealtimeProviderId,
+  type VoiceConversationProviderId,
 } from '@/common/realtime';
 import type { FoolVoiceSettings } from '@/common/types/foolVoice';
 import { useTalkToJester } from '@renderer/hooks/assistant/useTalkToJester';
@@ -27,7 +28,9 @@ import {
   publishVoiceStageOff,
 } from '@renderer/services/voice/publishVoiceStage';
 import { applyThemeOverrides } from '@renderer/utils/theme/applyThemeOverrides';
+import { AdaptiveVad, type VadEvent } from '@renderer/services/voice/AdaptiveVad';
 import { RealtimeVoiceClient } from './RealtimeVoiceClient';
+import { LocalVoicePipeline } from './localPipeline';
 import { PcmAudioOutput, PcmMicrophone } from './pcmAudio';
 
 /**
@@ -100,6 +103,30 @@ const NOTCH_STAGE = {
 /** Level below which the microphone is treated as quiet, for the `hearing` state. */
 const SPEECH_LEVEL = 0.06;
 
+/**
+ * The rate a local block is played at when it does not name its own.
+ *
+ * Every block the pipeline emits does name one, so this is only what the
+ * speaker is opened with before the first of them arrives.
+ */
+const LOCAL_OUTPUT_FALLBACK_RATE = 24000;
+
+/**
+ * The detector's vocabulary, in the pipeline's.
+ *
+ * `utterance-truncated` is a turn that ran past the maximum length rather than
+ * one that ended in silence, and the pipeline answers it the same way: the
+ * alternative is discarding a minute of speech for being too long.
+ */
+const VAD_TO_PIPELINE: Record<VadEvent, 'speech-started' | 'speech' | 'utterance-ended' | 'idle'> = {
+  idle: 'idle',
+  calibrating: 'idle',
+  'speech-started': 'speech-started',
+  speech: 'speech',
+  'utterance-ended': 'utterance-ended',
+  'utterance-truncated': 'utterance-ended',
+};
+
 export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
   const { t, i18n } = useTranslation();
   const talkToJester = useTalkToJester();
@@ -112,6 +139,8 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
   const [activities, setActivities] = useState<ConversationActivity[]>([]);
 
   const clientRef = useRef<RealtimeVoiceClient | null>(null);
+  /** Set instead of `clientRef` when the conversation is assembled locally. */
+  const localRef = useRef<LocalVoicePipeline | null>(null);
   const microphoneRef = useRef<PcmMicrophone | null>(null);
   const outputRef = useRef<PcmAudioOutput | null>(null);
   /** Held for the length of the conversation, so nothing else opens capture. */
@@ -267,7 +296,7 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
             applyPhase('speaking');
             publish('speaking');
           }
-          void outputRef.current?.enqueue(event.pcm16Base64);
+          void outputRef.current?.enqueue(event.pcm16Base64, event.sampleRate);
           break;
         case 'interrupted':
           // Barge-in. Whatever is queued for the speaker is no longer wanted;
@@ -295,6 +324,8 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
     microphoneRef.current = null;
     clientRef.current?.disconnect();
     clientRef.current = null;
+    localRef.current?.close();
+    localRef.current = null;
     outputRef.current?.close();
     outputRef.current = null;
     releaseMicrophoneClaim.current?.();
@@ -308,22 +339,90 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
   // of it — an open microphone with nothing on screen is the worst outcome here.
   useEffect(() => stop, [stop]);
 
-  const start = useCallback(async () => {
-    setError('');
-    setUserTranscript('');
-    setAssistantTranscript('');
-    setActivities([]);
-    standbyRef.current = false;
-    applyPhase('connecting');
-    publish('connecting');
-    // Claimed before the socket rather than after the microphone: the wake-word
-    // listener has to have stood down before this conversation opens capture,
-    // not while it is already running.
-    releaseMicrophoneClaim.current ??= claimManualVoiceSession();
+  /**
+   * The speaker, ready for whichever side is about to talk.
+   *
+   * `sampleRate` is the rate blocks are assumed to be at when they do not say;
+   * a socket provider fixes one for the whole session, and the local pipeline
+   * labels every block with the rate its voice model actually rendered at.
+   */
+  const openOutput = useCallback(
+    (sampleRate: number) => {
+      const output = new PcmAudioOutput();
+      output.configure(sampleRate, settingsRef.current.playback.volume);
+      void output.setOutputDevice(settingsRef.current.devices.outputDeviceId);
+      output.onDrained = () => {
+        if (phaseRef.current === 'speaking') {
+          applyPhase('listening');
+          publish('listening');
+        }
+      };
+      outputRef.current = output;
+    },
+    [applyPhase, publish]
+  );
 
-    try {
+  /**
+   * Draws the level meter, for as long as the floor is the user's.
+   *
+   * A meter that moves during the reply is drawing the echo the canceller is
+   * already removing, which reads as the assistant interrupting itself.
+   */
+  const showLevel = useCallback(
+    (level: number, speaking: boolean) => {
+      if (phaseRef.current !== 'listening' && phaseRef.current !== 'hearing') return;
+      const next = speaking ? 'hearing' : 'listening';
+      if (next !== phaseRef.current) applyPhase(next);
+      publish(next, { level });
+    },
+    [applyPhase, publish]
+  );
+
+  /**
+   * A conversation assembled here rather than held with a server.
+   *
+   * The one structural difference is who notices that the user stopped talking:
+   * a hosted provider does it at its end and streams audio continuously, and
+   * here the app has to, so the same detector the hold-to-talk loop uses runs
+   * over the level meter and hands the pipeline its verdict with every block.
+   */
+  const startLocal = useCallback(async () => {
+    const pipeline = new LocalVoicePipeline({
+      settings: settingsRef.current,
+      interfaceLanguage: i18n.language,
+      onEvent: handleEvent,
+    });
+    await pipeline.connect();
+    localRef.current = pipeline;
+    setProviderName(t('settings.voice.conversationProviderName.local-pipeline'));
+
+    openOutput(LOCAL_OUTPUT_FALLBACK_RATE);
+
+    const vad = new AdaptiveVad(settingsRef.current.vad);
+    // The room, not the last conversation: the device may have changed, and the
+    // floor a previous session settled on is not evidence about this one.
+    vad.recalibrate();
+    let verdict: VadEvent = 'idle';
+
+    const microphone = new PcmMicrophone();
+    await microphone.start({
+      sampleRate: pipeline.inputSampleRate,
+      deviceId: settingsRef.current.devices.inputDeviceId,
+      // Called for the same block, immediately before `onAudio`, which is what
+      // lets the verdict below be the one for the block being handed over.
+      onLevel: (level) => {
+        verdict = vad.push(level, performance.now());
+        showLevel(level, vad.isSpeaking());
+      },
+      onAudio: (audio) => pipeline.pushAudio(audio, VAD_TO_PIPELINE[verdict]),
+    });
+    microphoneRef.current = microphone;
+  }, [handleEvent, i18n.language, openOutput, showLevel, t]);
+
+  /** A conversation held with a speech-to-speech server over a socket. */
+  const startRemote = useCallback(
+    async (providerId: RealtimeProviderId) => {
       const realtime = settingsRef.current.realtime;
-      const providerId = realtime.providerId as RealtimeProviderId;
       const spec = REALTIME_PROVIDER_SPECS[providerId];
       const model = realtime.model.trim() || spec.defaultModel;
 
@@ -364,32 +463,40 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
       await client.connect();
       clientRef.current = client;
 
-      const output = new PcmAudioOutput();
-      output.configure(client.outputSampleRate, settingsRef.current.playback.volume);
-      void output.setOutputDevice(settingsRef.current.devices.outputDeviceId);
-      output.onDrained = () => {
-        if (phaseRef.current === 'speaking') {
-          applyPhase('listening');
-          publish('listening');
-        }
-      };
-      outputRef.current = output;
+      openOutput(client.outputSampleRate);
 
       const microphone = new PcmMicrophone();
       await microphone.start({
         sampleRate: client.inputSampleRate,
         deviceId: settingsRef.current.devices.inputDeviceId,
         onAudio: (audio) => client.appendAudio(audio),
-        onLevel: (level) => {
-          // Only while the floor is the user's: a level meter that moves during
-          // the reply is drawing the echo the canceller is already removing.
-          if (phaseRef.current !== 'listening' && phaseRef.current !== 'hearing') return;
-          const next = level > SPEECH_LEVEL ? 'hearing' : 'listening';
-          if (next !== phaseRef.current) applyPhase(next);
-          publish(next, { level });
-        },
+        onLevel: (level) => showLevel(level, level > SPEECH_LEVEL),
       });
       microphoneRef.current = microphone;
+    },
+    [handleEvent, i18n.language, openOutput, showLevel]
+  );
+
+  const start = useCallback(async () => {
+    setError('');
+    setUserTranscript('');
+    setAssistantTranscript('');
+    setActivities([]);
+    standbyRef.current = false;
+    applyPhase('connecting');
+    publish('connecting');
+    // Claimed before the socket rather than after the microphone: the wake-word
+    // listener has to have stood down before this conversation opens capture,
+    // not while it is already running.
+    releaseMicrophoneClaim.current ??= claimManualVoiceSession();
+
+    try {
+      const providerId = settingsRef.current.realtime.providerId as VoiceConversationProviderId;
+      if (providerId === 'local-pipeline') {
+        await startLocal();
+      } else {
+        await startRemote(providerId);
+      }
 
       applyPhase('listening');
       publish('listening');
@@ -399,12 +506,13 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
       setError(t(`settings.voice.conversationError.${code}`, { defaultValue: code }));
       applyPhase('idle');
     }
-  }, [applyPhase, handleEvent, i18n.language, publish, stop, t]);
+  }, [applyPhase, publish, startLocal, startRemote, stop, t]);
 
   /** Cuts a reply short by hand, for when the user would rather press a button. */
   const interrupt = useCallback(() => {
     outputRef.current?.flush();
     clientRef.current?.interrupt();
+    localRef.current?.interrupt();
     applyPhase('listening');
     publish('listening');
   }, [applyPhase, publish]);

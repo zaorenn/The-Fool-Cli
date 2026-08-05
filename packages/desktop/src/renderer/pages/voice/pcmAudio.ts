@@ -245,14 +245,16 @@ export class PcmAudioOutput {
     }
   }
 
-  async enqueue(base64: string): Promise<void> {
+  async enqueue(base64: string, sampleRate?: number): Promise<void> {
     const context = this.ensureContext();
     if (context.state === 'suspended') await context.resume();
 
     const samples = pcm16Base64ToFloat32(base64);
     if (samples.length === 0) return;
 
-    const buffer = context.createBuffer(1, samples.length, this.sampleRate);
+    // A block that names its own rate wins: the context is opened once, and a
+    // buffer created at the block's rate is resampled by the graph on playback.
+    const buffer = context.createBuffer(1, samples.length, sampleRate ?? this.sampleRate);
     buffer.getChannelData(0).set(samples);
 
     const source = context.createBufferSource();

@@ -7,7 +7,7 @@
 import { geminiLiveAdapter, GEMINI_LIVE_DEFAULT_MODEL, GEMINI_LIVE_VOICES } from './geminiLive';
 import { localS2SAdapter, LOCAL_S2S_ENDPOINT } from './localS2S';
 import { openAIRealtimeAdapter, OPENAI_REALTIME_DEFAULT_MODEL, OPENAI_REALTIME_VOICES } from './openaiRealtime';
-import type { RealtimeAdapter, RealtimeProviderId, RealtimeToolSchema } from './types';
+import type { RealtimeAdapter, RealtimeProviderId, RealtimeToolSchema, VoiceConversationProviderId } from './types';
 
 const ADAPTERS: Record<RealtimeProviderId, RealtimeAdapter> = {
   'openai-realtime': openAIRealtimeAdapter,
@@ -32,7 +32,7 @@ export const getRealtimeAdapter = (providerId: RealtimeProviderId): RealtimeAdap
  * be inventing a second place for it to be wrong.
  */
 export type RealtimeProviderSpec = {
-  id: RealtimeProviderId;
+  id: VoiceConversationProviderId;
   /** Provider platforms whose credentials can open this kind of session. */
   platforms: readonly string[];
   defaultModel: string;
@@ -42,7 +42,7 @@ export type RealtimeProviderSpec = {
   requiresCredential: boolean;
 };
 
-export const REALTIME_PROVIDER_SPECS: Record<RealtimeProviderId, RealtimeProviderSpec> = {
+export const REALTIME_PROVIDER_SPECS: Record<VoiceConversationProviderId, RealtimeProviderSpec> = {
   'openai-realtime': {
     id: 'openai-realtime',
     platforms: ['openai', 'openai-compatible', 'azure-openai', 'new-api'],
@@ -67,9 +67,33 @@ export const REALTIME_PROVIDER_SPECS: Record<RealtimeProviderId, RealtimeProvide
     defaultVoice: 'default',
     requiresCredential: false,
   },
+  // No voice list of its own: it speaks with whatever text-to-speech model the
+  // voice settings installed, including a cloned one, and duplicating that
+  // picker here would be a second place to choose the same thing. The model
+  // named here is the one that thinks, and it is whatever the local server has
+  // loaded — which is why the default is empty rather than a guess.
+  'local-pipeline': {
+    id: 'local-pipeline',
+    platforms: [],
+    defaultModel: '',
+    voices: [],
+    defaultVoice: '',
+    requiresCredential: false,
+  },
 };
 
-export const REALTIME_PROVIDER_IDS: readonly RealtimeProviderId[] = ['openai-realtime', 'gemini-live', 'local-s2s'];
+/**
+ * Picker order, most useful first.
+ *
+ * The local pipeline leads because it is the only one that works on a fresh
+ * install with nothing bought.
+ */
+export const REALTIME_PROVIDER_IDS: readonly VoiceConversationProviderId[] = [
+  'local-pipeline',
+  'openai-realtime',
+  'gemini-live',
+  'local-s2s',
+];
 
 /**
  * The things the voice may do to the app while a conversation is happening.

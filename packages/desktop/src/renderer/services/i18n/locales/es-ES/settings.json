@@ -1435,7 +1435,8 @@
     "conversationProviderName": {
       "openai-realtime": "ChatGPT (OpenAI Realtime)",
       "gemini-live": "Gemini Live",
-      "local-s2s": "En este equipo"
+      "local-s2s": "Servidor local en tiempo real",
+      "local-pipeline": "En este ordenador"
     },
     "conversationVoice": "Voz",
     "conversationLanguage": "Idioma",
@@ -1452,6 +1453,11 @@
     "conversationInstructionsExtra": "Algo que añadir",
     "conversationInstructionsPlaceholder": "Di quién eres y qué quieres de esta conversación. Por ejemplo: estoy en B1, corrige mi pasado y hablemos de cine.",
     "conversationModel": "Modelo",
+    "conversationLocalModel": "Modelo que piensa",
+    "conversationLocalModelPlaceholder": "Elige un modelo cargado",
+    "conversationLocalUnreachable": "Ningún servidor local responde",
+    "conversationLocalEndpoint": "Servidor local",
+    "conversationLocalVoiceHint": "La voz, su emoción y la clonación están en Ajustes → Voz.",
     "conversationToneUnknown": "Ese color no es uno de los tonos de la aplicación.",
     "conversationActionUnsupported": "La voz no puede hacer eso.",
     "conversationError": {
@@ -1464,7 +1470,15 @@
       "SPEECH_RUNTIME_MISSING": "El motor de voz local no está instalado. Elige otro proveedor o instálalo primero.",
       "provider-failed": "El proveedor no pudo iniciar la conversación.",
       "unavailable": "El chat de voz no está disponible en esta versión.",
-      "invalid-request": "Solicitud rechazada. Revisa los ajustes de la conversación."
+      "invalid-request": "Solicitud rechazada. Revisa los ajustes de la conversación.",
+      "LOCAL_STT_MISSING": "No hay ningún modelo de transcripción instalado. Añade uno en Ajustes → Voz.",
+      "LOCAL_TTS_MISSING": "No hay ninguna voz instalada para hablar. Añade una en Ajustes → Voz.",
+      "LOCAL_LLM_UNREACHABLE": "Ningún servidor de modelos local respondió. Inicia LM Studio o revisa la dirección.",
+      "LOCAL_NO_LLM_MODEL": "El servidor local funciona pero no tiene ningún modelo cargado.",
+      "LOCAL_TRANSCRIBE_FAILED": "No se pudo transcribir lo que dijiste.",
+      "LOCAL_LLM_FAILED": "El modelo local rechazó la petición.",
+      "LOCAL_SYNTHESIZE_FAILED": "No se pudo pronunciar la respuesta.",
+      "LOCAL_PIPELINE_FAILED": "La conversación local falló."
     },
     "conversationLanguageName": {
       "en": "English",

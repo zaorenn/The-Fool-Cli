@@ -1435,7 +1435,8 @@
     "conversationProviderName": {
       "openai-realtime": "ChatGPT (OpenAI Realtime)",
       "gemini-live": "Gemini Live",
-      "local-s2s": "Bu bilgisayarda"
+      "local-s2s": "Yerel gerçek zamanlı sunucu",
+      "local-pipeline": "Bu bilgisayarda"
     },
     "conversationVoice": "Ses",
     "conversationLanguage": "Dil",
@@ -1452,6 +1453,11 @@
     "conversationInstructionsExtra": "Eklemek istedikleriniz",
     "conversationInstructionsPlaceholder": "Kim olduğunuzu ve bu konuşmadan ne beklediğinizi yazın. Örneğin: B1 seviyesindeyim, geçmiş zaman hatalarımı düzelt ve filmlerden konuşalim.",
     "conversationModel": "Model",
+    "conversationLocalModel": "Düşünen model",
+    "conversationLocalModelPlaceholder": "Yüklü bir model seç",
+    "conversationLocalUnreachable": "Yanıt veren yerel sunucu yok",
+    "conversationLocalEndpoint": "Yerel sunucu",
+    "conversationLocalVoiceHint": "Ses, duygusu ve ses klonlama Ayarlar → Ses altında.",
     "conversationToneUnknown": "Bu renk uygulamanın tonlarından biri değil.",
     "conversationActionUnsupported": "Bu, sesin yapabileceği bir şey değil.",
     "conversationError": {
@@ -1464,7 +1470,15 @@
       "SPEECH_RUNTIME_MISSING": "Cihaz üzerindeki konuşma çalışma zamanı kurulu değil. Başka bir sağlayıcı seçin ya da önce kurun.",
       "provider-failed": "Sağlayıcı konuşmayı başlatamadı.",
       "unavailable": "Sesli sohbet bu sürümde kullanılamıyor.",
-      "invalid-request": "İstek reddedildi. Konuşma ayarlarını kontrol edin."
+      "invalid-request": "İstek reddedildi. Konuşma ayarlarını kontrol edin.",
+      "LOCAL_STT_MISSING": "Kurulu bir yazıya dökme modeli yok. Ayarlar → Ses altından ekle.",
+      "LOCAL_TTS_MISSING": "Konuşacak kurulu bir ses yok. Ayarlar → Ses altından ekle.",
+      "LOCAL_LLM_UNREACHABLE": "Yerel model sunucusu yanıt vermedi. LM Studio’yu başlat ya da adresi kontrol et.",
+      "LOCAL_NO_LLM_MODEL": "Yerel sunucu çalışıyor ama yüklü model yok.",
+      "LOCAL_TRANSCRIBE_FAILED": "Söylediğin yazıya dökülemedi.",
+      "LOCAL_LLM_FAILED": "Yerel model isteği geri çevirdi.",
+      "LOCAL_SYNTHESIZE_FAILED": "Yanıt seslendirilemedi.",
+      "LOCAL_PIPELINE_FAILED": "Yerel sohbet başarısız oldu."
     },
     "conversationLanguageName": {
       "en": "English",

@@ -1436,7 +1436,8 @@
     "conversationProviderName": {
       "openai-realtime": "ChatGPT (OpenAI Realtime)",
       "gemini-live": "Gemini Live",
-      "local-s2s": "На цьому комп'ютері"
+      "local-s2s": "Локальний realtime-сервер",
+      "local-pipeline": "На цьому комп’ютері"
     },
     "conversationVoice": "Голос",
     "conversationLanguage": "Мова",
@@ -1453,6 +1454,11 @@
     "conversationInstructionsExtra": "Що додати",
     "conversationInstructionsPlaceholder": "Скажіть, хто ви і чого чекаєте від розмови. Наприклад: у мене B1, виправляйте минулий час, поговорімо про кіно.",
     "conversationModel": "Модель",
+    "conversationLocalModel": "Модель, що думає",
+    "conversationLocalModelPlaceholder": "Оберіть завантажену модель",
+    "conversationLocalUnreachable": "Локальний сервер не відповідає",
+    "conversationLocalEndpoint": "Локальний сервер",
+    "conversationLocalVoiceHint": "Голос, його емоція та клонування — у «Налаштування → Голос».",
     "conversationToneUnknown": "Цей колір не належить до палітри застосунку.",
     "conversationActionUnsupported": "Голос цього не вміє.",
     "conversationError": {
@@ -1465,7 +1471,15 @@
       "SPEECH_RUNTIME_MISSING": "Локальне мовне середовище не встановлено. Оберіть іншого провайдера або спочатку встановіть його.",
       "provider-failed": "Провайдер не зміг розпочати розмову.",
       "unavailable": "Голосовий чат недоступний у цій збірці.",
-      "invalid-request": "Запит відхилено. Перевірте налаштування розмови."
+      "invalid-request": "Запит відхилено. Перевірте налаштування розмови.",
+      "LOCAL_STT_MISSING": "Модель розпізнавання мовлення не встановлено. Додайте її в «Налаштування → Голос».",
+      "LOCAL_TTS_MISSING": "Немає встановленого голосу. Додайте його в «Налаштування → Голос».",
+      "LOCAL_LLM_UNREACHABLE": "Локальний сервер моделей не відповів. Запустіть LM Studio або перевірте адресу.",
+      "LOCAL_NO_LLM_MODEL": "Локальний сервер працює, але модель не завантажено.",
+      "LOCAL_TRANSCRIBE_FAILED": "Не вдалося розпізнати сказане.",
+      "LOCAL_LLM_FAILED": "Локальна модель відхилила запит.",
+      "LOCAL_SYNTHESIZE_FAILED": "Не вдалося озвучити відповідь.",
+      "LOCAL_PIPELINE_FAILED": "Локальна розмова не вдалася."
     },
     "conversationLanguageName": {
       "en": "English",

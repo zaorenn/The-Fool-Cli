@@ -1436,7 +1436,8 @@
     "conversationProviderName": {
       "openai-realtime": "ChatGPT（OpenAI Realtime）",
       "gemini-live": "Gemini Live",
-      "local-s2s": "本机运行"
+      "local-s2s": "本地实时服务器",
+      "local-pipeline": "在这台电脑上"
     },
     "conversationVoice": "音色",
     "conversationLanguage": "语言",
@@ -1453,6 +1454,11 @@
     "conversationInstructionsExtra": "补充说明",
     "conversationInstructionsPlaceholder": "说明你是谁，以及希望从这次对话中得到什么。例如：我是B1水平，请纠正我的过去时，我们聊聊电影。",
     "conversationModel": "模型",
+    "conversationLocalModel": "负责思考的模型",
+    "conversationLocalModelPlaceholder": "选择一个已加载的模型",
+    "conversationLocalUnreachable": "没有本地服务器响应",
+    "conversationLocalEndpoint": "本地服务器",
+    "conversationLocalVoiceHint": "音色、情绪与声音克隆在「设置 → 语音」中。",
     "conversationToneUnknown": "该颜色不属于应用的色调。",
     "conversationActionUnsupported": "语音无法完成这个操作。",
     "conversationError": {
@@ -1465,7 +1471,15 @@
       "SPEECH_RUNTIME_MISSING": "本机语音运行时尚未安装。请选择其他提供商，或先完成安装。",
       "provider-failed": "提供商无法启动对话。",
       "unavailable": "此版本不支持语音对话。",
-      "invalid-request": "请求被拒绝。请检查对话设置。"
+      "invalid-request": "请求被拒绝。请检查对话设置。",
+      "LOCAL_STT_MISSING": "未安装转写模型。请在「设置 → 语音」中添加。",
+      "LOCAL_TTS_MISSING": "未安装可用于朗读的音色。请在「设置 → 语音」中添加。",
+      "LOCAL_LLM_UNREACHABLE": "本地模型服务器没有响应。请启动 LM Studio 或检查地址。",
+      "LOCAL_NO_LLM_MODEL": "本地服务器已运行，但没有加载模型。",
+      "LOCAL_TRANSCRIBE_FAILED": "无法转写你说的话。",
+      "LOCAL_LLM_FAILED": "本地模型拒绝了该请求。",
+      "LOCAL_SYNTHESIZE_FAILED": "无法朗读回复。",
+      "LOCAL_PIPELINE_FAILED": "本地对话失败。"
     },
     "conversationLanguageName": {
       "en": "English",

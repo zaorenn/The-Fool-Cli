@@ -14,8 +14,19 @@
  * adapter that speaks its own dialect and hands back the events named here.
  */
 
-/** A speech-to-speech backend the conversation page can be pointed at. */
+/** A speech-to-speech backend reached over a socket, through an adapter. */
 export type RealtimeProviderId = 'openai-realtime' | 'gemini-live' | 'local-s2s';
+
+/**
+ * Everything the conversation page can be pointed at, socket or not.
+ *
+ * `local-pipeline` is the odd one and is kept out of {@link RealtimeProviderId}
+ * for that reason: there is no server to speak a dialect to, because the app
+ * assembles the conversation itself out of the transcriber, an OpenAI-compatible
+ * chat endpoint and an installed voice. It has a spec and appears in the picker
+ * like the others; it has no adapter, and the type says so.
+ */
+export type VoiceConversationProviderId = RealtimeProviderId | 'local-pipeline';
 
 export type VoiceConversationPhase = 'listening' | 'thinking' | 'speaking' | 'acting';
 
@@ -31,7 +42,15 @@ export type NormalizedRealtimeEvent =
   | { kind: 'ready' }
   | { kind: 'user-transcript'; text: string; final: boolean }
   | { kind: 'assistant-transcript'; text: string; final: boolean }
-  | { kind: 'audio'; pcm16Base64: string }
+  /**
+   * A block of PCM16 to play.
+   *
+   * `sampleRate` is carried per block rather than fixed per provider because a
+   * local voice renders at whatever rate its own model uses — 22.05 kHz for one
+   * installed engine, 24 kHz for another — and playing one at the other's rate
+   * is the difference between a voice and a chipmunk.
+   */
+  | { kind: 'audio'; pcm16Base64: string; sampleRate?: number }
   | { kind: 'phase'; phase: VoiceConversationPhase }
   | { kind: 'interrupted' }
   | { kind: 'tool-call'; callId: string; name: string; argumentsJson: string }

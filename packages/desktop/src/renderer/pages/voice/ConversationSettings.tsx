@@ -14,9 +14,10 @@ import {
   REALTIME_PROVIDER_IDS,
   REALTIME_PROVIDER_SPECS,
   type PersonaPresetId,
-  type RealtimeProviderId,
+  type VoiceConversationProviderId,
 } from '@/common/realtime';
 import type { FoolVoiceSettings } from '@/common/types/foolVoice';
+import { LOCAL_LLM_DEFAULT_ENDPOINT, listLocalModels } from './localPipeline';
 
 /**
  * The four decisions that change what a conversation is like.
@@ -42,7 +43,7 @@ type ConversationSettingsProps = {
  * process's own selection rule: the first enabled provider on a platform that
  * can carry this kind of session, with a key in it.
  */
-const findCredential = (providers: readonly IProvider[], providerId: RealtimeProviderId): IProvider | null => {
+const findCredential = (providers: readonly IProvider[], providerId: VoiceConversationProviderId): IProvider | null => {
   const spec = REALTIME_PROVIDER_SPECS[providerId];
   if (!spec.requiresCredential) return null;
   const platforms = new Set(spec.platforms);
@@ -60,7 +61,9 @@ const LANGUAGES = ['auto', 'en', 'tr', 'de', 'fr', 'es', 'pt', 'ru', 'uk', 'ja',
 const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, disabled, onChange }) => {
   const { t } = useTranslation();
   const realtime = settings.realtime;
-  const spec = REALTIME_PROVIDER_SPECS[realtime.providerId as RealtimeProviderId];
+  const providerId = realtime.providerId as VoiceConversationProviderId;
+  const spec = REALTIME_PROVIDER_SPECS[providerId];
+  const isLocal = providerId === 'local-pipeline';
 
   const voiceOptions = useMemo(() => spec.voices.map((voice) => ({ label: voice, value: voice })), [spec.voices]);
 
@@ -81,10 +84,27 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
     };
   }, []);
 
-  const credential = useMemo(
-    () => findCredential(providers, realtime.providerId as RealtimeProviderId),
-    [providers, realtime.providerId]
-  );
+  const credential = useMemo(() => findCredential(providers, providerId), [providers, providerId]);
+
+  /**
+   * What the local server currently has loaded.
+   *
+   * Offered as a list rather than a text field because the id has to match
+   * exactly — `google/gemma-4-e4b`, slash and all — and a typo is indis-
+   * tinguishable, from the user's side, from the model being unavailable.
+   * Re-read whenever the endpoint changes, since it is a different server.
+   */
+  const [localModels, setLocalModels] = useState<string[]>([]);
+  useEffect(() => {
+    if (!isLocal) return;
+    let live = true;
+    void listLocalModels(realtime.localEndpoint).then((ids) => {
+      if (live) setLocalModels(ids);
+    });
+    return () => {
+      live = false;
+    };
+  }, [isLocal, realtime.localEndpoint]);
   const ready = !spec.requiresCredential || credential !== null;
 
   const patch = (change: Partial<FoolVoiceSettings['realtime']>): void => {
@@ -100,7 +120,7 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
         <Select
           value={realtime.providerId}
           disabled={disabled}
-          onChange={(value: RealtimeProviderId) => {
+          onChange={(value: VoiceConversationProviderId) => {
             // The voice list is per provider, so carrying the old one over would
             // leave a Gemini session asking for `marin` and being refused at
             // connection time with a message from Google.
@@ -129,18 +149,23 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
         )}
       </label>
 
-      <div className='grid grid-cols-2 gap-10px'>
-        <label className='grid gap-5px'>
-          <Typography.Text className='text-12px font-600 text-t-secondary'>
-            {t('settings.voice.conversationVoice')}
-          </Typography.Text>
-          <Select
-            value={realtime.voice}
-            disabled={disabled || voiceOptions.length <= 1}
-            onChange={(value: string) => patch({ voice: value })}
-            options={voiceOptions}
-          />
-        </label>
+      <div className={isLocal ? 'grid gap-10px' : 'grid grid-cols-2 gap-10px'}>
+        {/* Hidden rather than disabled for the local pipeline: it has no voice
+            list of its own, and an empty picker beside a working conversation
+            reads as something failing to load. */}
+        {isLocal ? null : (
+          <label className='grid gap-5px'>
+            <Typography.Text className='text-12px font-600 text-t-secondary'>
+              {t('settings.voice.conversationVoice')}
+            </Typography.Text>
+            <Select
+              value={realtime.voice}
+              disabled={disabled || voiceOptions.length <= 1}
+              onChange={(value: string) => patch({ voice: value })}
+              options={voiceOptions}
+            />
+          </label>
+        )}
 
         <label className='grid gap-5px'>
           <Typography.Text className='text-12px font-600 text-t-secondary'>
@@ -195,15 +220,48 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
 
       <label className='grid gap-5px'>
         <Typography.Text className='text-12px font-600 text-t-secondary'>
-          {t('settings.voice.conversationModel')}
+          {isLocal ? t('settings.voice.conversationLocalModel') : t('settings.voice.conversationModel')}
         </Typography.Text>
-        <Input
-          value={realtime.model}
-          disabled={disabled}
-          onChange={(value: string) => patch({ model: value })}
-          placeholder={spec.defaultModel}
-        />
+        {isLocal ? (
+          <Select
+            value={realtime.model || undefined}
+            disabled={disabled}
+            allowCreate
+            showSearch
+            onChange={(value: string) => patch({ model: value })}
+            placeholder={
+              localModels.length > 0
+                ? t('settings.voice.conversationLocalModelPlaceholder')
+                : t('settings.voice.conversationLocalUnreachable')
+            }
+            options={localModels.map((id) => ({ label: id, value: id }))}
+          />
+        ) : (
+          <Input
+            value={realtime.model}
+            disabled={disabled}
+            onChange={(value: string) => patch({ model: value })}
+            placeholder={spec.defaultModel}
+          />
+        )}
       </label>
+
+      {isLocal ? (
+        <label className='grid gap-5px'>
+          <Typography.Text className='text-12px font-600 text-t-secondary'>
+            {t('settings.voice.conversationLocalEndpoint')}
+          </Typography.Text>
+          <Input
+            value={realtime.localEndpoint}
+            disabled={disabled}
+            onChange={(value: string) => patch({ localEndpoint: value })}
+            placeholder={LOCAL_LLM_DEFAULT_ENDPOINT}
+          />
+          <Typography.Text className='text-11px text-t-tertiary'>
+            {t('settings.voice.conversationLocalVoiceHint')}
+          </Typography.Text>
+        </label>
+      ) : null}
     </div>
   );
 };

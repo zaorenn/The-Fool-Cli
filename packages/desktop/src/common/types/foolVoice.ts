@@ -397,9 +397,18 @@ export type FoolVoiceSettings = {
    * it sounds like, and who it is being.
    */
   realtime: {
-    providerId: 'openai-realtime' | 'gemini-live' | 'local-s2s';
+    providerId: 'openai-realtime' | 'gemini-live' | 'local-s2s' | 'local-pipeline';
     /** Empty means the provider's own default, which is what most users want. */
     model: string;
+    /**
+     * Where the thinking half of `local-pipeline` answers.
+     *
+     * Only that provider reads it. Empty means LM Studio on its own port, which
+     * is what is running on the machines this option exists for; a user who
+     * moved it, or who runs Ollama's OpenAI-compatible endpoint instead, points
+     * this at their own.
+     */
+    localEndpoint: string;
     voice: string;
     personaPresetId: 'companion' | 'english-teacher' | 'language-partner' | 'interview-coach' | 'custom';
     /** Added to the preset, or the whole persona when the preset is `custom`. */
@@ -613,10 +622,12 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     screenshotSource: 'window',
   },
   realtime: {
-    // OpenAI by default: it is the provider most users of this app already have
-    // a key for, and the only one of the three that needs nothing installed.
-    providerId: 'openai-realtime',
+    // The local pipeline by default: it is the only one of the four that can
+    // hold a conversation with nothing bought and no key entered, and the
+    // models it needs are the ones the voice settings already install.
+    providerId: 'local-pipeline',
     model: '',
+    localEndpoint: '',
     voice: 'marin',
     personaPresetId: 'companion',
     customInstructions: '',
@@ -825,8 +836,11 @@ const settingsSchema = z
       .default({}),
     realtime: z
       .object({
-        providerId: z.enum(['openai-realtime', 'gemini-live', 'local-s2s']).default('openai-realtime'),
+        providerId: z.enum(['openai-realtime', 'gemini-live', 'local-s2s', 'local-pipeline']).default('local-pipeline'),
         model: z.string().max(256).default(''),
+        // Empty is the LM Studio default rather than an invalid URL, so the
+        // field can be cleared to get back to it.
+        localEndpoint: z.literal('').or(httpBaseUrlSchema).default(''),
         voice: z.string().max(64).default('marin'),
         personaPresetId: z
           .enum(['companion', 'english-teacher', 'language-partner', 'interview-coach', 'custom'])

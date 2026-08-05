@@ -1435,7 +1435,8 @@
     "conversationProviderName": {
       "openai-realtime": "ChatGPT (OpenAI Realtime)",
       "gemini-live": "Gemini Live",
-      "local-s2s": "Sur cet ordinateur"
+      "local-s2s": "Serveur temps réel local",
+      "local-pipeline": "Sur cet ordinateur"
     },
     "conversationVoice": "Voix",
     "conversationLanguage": "Langue",
@@ -1452,6 +1453,11 @@
     "conversationInstructionsExtra": "À ajouter",
     "conversationInstructionsPlaceholder": "Dites qui vous êtes et ce que vous attendez de cette conversation. Par exemple : je suis au niveau B1, corrigez mon passé, et parlons de cinéma.",
     "conversationModel": "Modèle",
+    "conversationLocalModel": "Modèle qui réfléchit",
+    "conversationLocalModelPlaceholder": "Choisir un modèle chargé",
+    "conversationLocalUnreachable": "Aucun serveur local ne répond",
+    "conversationLocalEndpoint": "Serveur local",
+    "conversationLocalVoiceHint": "La voix, son émotion et le clonage sont dans Paramètres → Voix.",
     "conversationToneUnknown": "Cette couleur ne fait pas partie des teintes de l'application.",
     "conversationActionUnsupported": "La voix ne peut pas faire cela.",
     "conversationError": {
@@ -1464,7 +1470,15 @@
       "SPEECH_RUNTIME_MISSING": "Le moteur vocal local n'est pas installé. Choisissez un autre fournisseur ou installez-le d'abord.",
       "provider-failed": "Le fournisseur n'a pas pu démarrer la conversation.",
       "unavailable": "Le chat vocal n'est pas disponible dans cette version.",
-      "invalid-request": "Requête refusée. Vérifiez les paramètres de conversation."
+      "invalid-request": "Requête refusée. Vérifiez les paramètres de conversation.",
+      "LOCAL_STT_MISSING": "Aucun modèle de transcription installé. Ajoutez-en un dans Paramètres → Voix.",
+      "LOCAL_TTS_MISSING": "Aucune voix installée pour parler. Ajoutez-en une dans Paramètres → Voix.",
+      "LOCAL_LLM_UNREACHABLE": "Aucun serveur de modèle local n’a répondu. Lancez LM Studio ou vérifiez l’adresse.",
+      "LOCAL_NO_LLM_MODEL": "Le serveur local fonctionne mais aucun modèle n’est chargé.",
+      "LOCAL_TRANSCRIBE_FAILED": "Impossible de transcrire ce que vous avez dit.",
+      "LOCAL_LLM_FAILED": "Le modèle local a refusé la requête.",
+      "LOCAL_SYNTHESIZE_FAILED": "Impossible de prononcer la réponse.",
+      "LOCAL_PIPELINE_FAILED": "La conversation locale a échoué."
     },
     "conversationLanguageName": {
       "en": "English",

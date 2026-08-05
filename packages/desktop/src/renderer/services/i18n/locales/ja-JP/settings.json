@@ -1437,7 +1437,8 @@
     "conversationProviderName": {
       "openai-realtime": "ChatGPT（OpenAI Realtime）",
       "gemini-live": "Gemini Live",
-      "local-s2s": "このパソコン上"
+      "local-s2s": "ローカルのリアルタイムサーバー",
+      "local-pipeline": "このコンピューター上"
     },
     "conversationVoice": "声",
     "conversationLanguage": "言語",
@@ -1454,6 +1455,11 @@
     "conversationInstructionsExtra": "追加したいこと",
     "conversationInstructionsPlaceholder": "あなたが誰で、この会話に何を望むかを書いてください。例：B1レベルです、過去形を直して、映画の話をしましょう。",
     "conversationModel": "モデル",
+    "conversationLocalModel": "考えるモデル",
+    "conversationLocalModelPlaceholder": "読み込み済みのモデルを選択",
+    "conversationLocalUnreachable": "応答するローカルサーバーがありません",
+    "conversationLocalEndpoint": "ローカルサーバー",
+    "conversationLocalVoiceHint": "声、その感情、声のクローンは「設定 → 音声」にあります。",
     "conversationToneUnknown": "その色はアプリの色調にありません。",
     "conversationActionUnsupported": "それは音声ではできません。",
     "conversationError": {
@@ -1466,7 +1472,15 @@
       "SPEECH_RUNTIME_MISSING": "端末内の音声ランタイムが未インストールです。他のプロバイダーを選ぶか、先にインストールしてください。",
       "provider-failed": "プロバイダーが会話を開始できませんでした。",
       "unavailable": "このビルドでは音声チャットを利用できません。",
-      "invalid-request": "リクエストが拒否されました。会話設定を確認してください。"
+      "invalid-request": "リクエストが拒否されました。会話設定を確認してください。",
+      "LOCAL_STT_MISSING": "文字起こしモデルが入っていません。「設定 → 音声」で追加してください。",
+      "LOCAL_TTS_MISSING": "話すための音声が入っていません。「設定 → 音声」で追加してください。",
+      "LOCAL_LLM_UNREACHABLE": "ローカルのモデルサーバーが応答しませんでした。LM Studio を起動するかアドレスを確認してください。",
+      "LOCAL_NO_LLM_MODEL": "ローカルサーバーは動いていますが、モデルが読み込まれていません。",
+      "LOCAL_TRANSCRIBE_FAILED": "話した内容を文字起こしできませんでした。",
+      "LOCAL_LLM_FAILED": "ローカルモデルがリクエストを拒否しました。",
+      "LOCAL_SYNTHESIZE_FAILED": "返答を読み上げられませんでした。",
+      "LOCAL_PIPELINE_FAILED": "ローカルの会話に失敗しました。"
     },
     "conversationLanguageName": {
       "en": "English",
