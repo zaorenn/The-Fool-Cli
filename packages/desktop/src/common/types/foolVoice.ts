@@ -13,6 +13,17 @@ export type VoiceProviderKind = 'local' | 'remote' | 'derived';
 /** Providers that install and run their models on this machine. */
 export type LocalVoiceProviderId = 'local-sherpa' | 'local-audiocpp';
 
+/**
+ * Which processor the local speech engine runs on.
+ *
+ * Not a performance preference so much as a different build: upstream ships a
+ * CPU-only package and a CUDA package, and the CUDA one is roughly eighty times
+ * the download because it carries the CUDA runtime beside it. Choosing `cuda`
+ * is therefore a decision to fetch that, which is why it is a setting rather
+ * than something detected and switched silently.
+ */
+export type VoiceEngineBackend = 'cpu' | 'cuda';
+
 /** Providers a synthesis request may name. */
 export type SynthesisProviderId = LocalVoiceProviderId | 'openai-compatible';
 export type VoiceCapability =
@@ -310,6 +321,15 @@ export type FoolVoiceSettings = {
    */
   transcript: TranscriptRules;
   tts: {
+    /**
+     * Where audio.cpp runs.
+     *
+     * Only the audio.cpp engines read it — sherpa has no GPU path at all. The
+     * two voices that take a direction are unusable on a processor and say so
+     * rather than taking a minute a sentence; see `requiresBackend` in
+     * `audioCppEngineSpecs.ts`.
+     */
+    backend: VoiceEngineBackend;
     providerId: SynthesisProviderId;
     modelId: string;
     profileId: string;
@@ -596,6 +616,9 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
   },
   transcript: DEFAULT_TRANSCRIPT_RULES,
   tts: {
+    // The engine everyone has. Switching to `cuda` is opt-in because it is an
+    // 800 MB download, and the default voice does not need it.
+    backend: 'cpu',
     providerId: 'local-sherpa',
     modelId: 'tts-piper-en-libritts-r',
     profileId: 'libritts-p0',
@@ -781,6 +804,7 @@ const settingsSchema = z
       .default({}),
     tts: z
       .object({
+        backend: z.enum(['cpu', 'cuda']).default('cpu'),
         providerId: z.enum(['local-sherpa', 'local-audiocpp', 'openai-compatible']).default('local-sherpa'),
         modelId: identifierSchema.default('tts-piper-en-libritts-r'),
         profileId: identifierSchema.default('libritts-p0'),
@@ -1153,13 +1177,27 @@ export type VoiceEventEnvelope<T> = {
   payload: T;
 };
 
-export type VoiceCatalogRequest = { includeProfiles: boolean };
+export type VoiceCatalogRequest = {
+  includeProfiles: boolean;
+  /**
+   * Which audio.cpp build to answer "is it installed?" about.
+   *
+   * A model is only ready if the engine that can run it is on disk, and the two
+   * builds are separate downloads — so switching a machine with the CPU build
+   * to `cuda` correctly reports every audio.cpp voice as needing an install
+   * again. Absent means the processor, which is what a caller that has not
+   * heard of this setting wants.
+   */
+  backend?: VoiceEngineBackend;
+};
 export type VoiceCatalogResponse = {
   providers: readonly VoiceProvider[];
   models: readonly VoiceModel[];
   profiles: readonly VoiceProfile[];
 };
 export type VoiceDownloadRequest = {
+  /** Which engine build to fetch alongside the weights. */
+  backend?: VoiceEngineBackend;
   operationId: string;
   providerId: LocalVoiceProviderId;
   modelId: string;
@@ -1176,6 +1214,8 @@ export type VoiceRemoveResponse = {
 };
 export type VoiceHealthRequest = {
   providerId: VoiceProviderId;
+  /** Which audio.cpp build the check is about. Ignored by the other providers. */
+  backend?: VoiceEngineBackend;
   capability?: VoiceCapability;
   modelId?: string;
 };
@@ -1248,6 +1288,8 @@ export type VoiceDeleteClonedResponse = {
 };
 export type VoiceSynthesizeRequest = {
   operationId: string;
+  /** Where audio.cpp should run this. Ignored by the other providers. */
+  backend?: VoiceEngineBackend;
   providerId: SynthesisProviderId;
   modelId: string;
   profileId: string;

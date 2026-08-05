@@ -5,13 +5,16 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { Message } from '@arco-design/web-react';
+import { Alert, Message, Radio, Typography } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
 import {
+  AUDIOCPP_CHATTERBOX_MODEL_ID,
+  AUDIOCPP_QWEN3_MODEL_ID,
   localProviderFor,
   synthesisProviderFor,
   type FoolVoiceSettings,
+  type VoiceEngineBackend,
   type VoiceParams,
   type VoiceProfile,
 } from '@/common/types/foolVoice';
@@ -47,6 +50,16 @@ const PREVIEW_TEXT: Record<string, string> = {
 
 const newRequestId = () => `voice-tts-${crypto.randomUUID()}`;
 
+/**
+ * The voices that will not run on a processor.
+ *
+ * Both render fine on a CPU in the sense that audio comes out — at forty
+ * seconds to two minutes a sentence, which is not a voice anyone will use. The
+ * engine refuses them rather than letting that be discovered a minute at a
+ * time, so the picker has to say why before the click.
+ */
+const GPU_ONLY_MODEL_IDS = new Set<string>([AUDIOCPP_CHATTERBOX_MODEL_ID, AUDIOCPP_QWEN3_MODEL_ID]);
+
 const unwrap = <T,>(envelope: { ok: true; data: T } | { ok: false; error: { code: string } }): T => {
   if (envelope.ok === false) throw new Error(envelope.error.code);
   return envelope.data;
@@ -54,7 +67,7 @@ const unwrap = <T,>(envelope: { ok: true; data: T } | { ok: false; error: { code
 
 const TextToSpeechSection: React.FC<TextToSpeechSectionProps> = ({ settings, onChange }) => {
   const { t } = useTranslation();
-  const catalog = useVoiceCatalog();
+  const catalog = useVoiceCatalog(settings.tts.backend);
   const [browsingModelId, setBrowsingModelId] = useState<string | null>(null);
   const [speakerCount, setSpeakerCount] = useState<number | null>(null);
 
@@ -70,6 +83,7 @@ const TextToSpeechSection: React.FC<TextToSpeechSectionProps> = ({ settings, onC
           requestId,
           payload: {
             operationId: requestId,
+            backend: settings.tts.backend,
             providerId: synthesisProviderFor(catalog.models, modelId),
             modelId,
             profileId,
@@ -85,7 +99,14 @@ const TextToSpeechSection: React.FC<TextToSpeechSectionProps> = ({ settings, onC
       );
       await playback.play(synthesis.audio);
     },
-    [catalog.models, playback, settings.devices.outputDeviceId, settings.tts.params, settings.tts.speed]
+    [
+      catalog.models,
+      playback,
+      settings.devices.outputDeviceId,
+      settings.tts.backend,
+      settings.tts.params,
+      settings.tts.speed,
+    ]
   );
 
   const handleSelectVoice = useCallback(
@@ -175,8 +196,36 @@ const TextToSpeechSection: React.FC<TextToSpeechSectionProps> = ({ settings, onC
   const browsingModel = catalog.models.find((model) => model.id === browsingModelId) ?? null;
   const selectedTtsModel = catalog.models.find((model) => model.id === settings.tts.modelId);
 
+  const backend = settings.tts.backend;
+  const selectedNeedsGpu = GPU_ONLY_MODEL_IDS.has(settings.tts.modelId);
+
   return (
     <>
+      <label className='mb-12px grid gap-6px'>
+        <Typography.Text className='text-12px font-600 text-t-secondary'>
+          {t('settings.voice.engineBackend')}
+        </Typography.Text>
+        <Radio.Group
+          type='button'
+          value={backend}
+          onChange={(value: VoiceEngineBackend) =>
+            onChange((previous) => ({ ...previous, tts: { ...previous.tts, backend: value } }))
+          }
+        >
+          <Radio value='cpu'>{t('settings.voice.engineBackendCpu')}</Radio>
+          <Radio value='cuda'>{t('settings.voice.engineBackendCuda')}</Radio>
+        </Radio.Group>
+        <Typography.Text className='text-11px text-t-tertiary'>
+          {backend === 'cuda' ? t('settings.voice.engineBackendCudaHint') : t('settings.voice.engineBackendCpuHint')}
+        </Typography.Text>
+      </label>
+
+      {/* Said here rather than at the moment of speaking: the alternative is a
+          conversation that starts and then has nothing to say with. */}
+      {selectedNeedsGpu && backend !== 'cuda' && (
+        <Alert className='mb-12px' type='warning' content={t('settings.voice.engineBackendGpuRequired')} />
+      )}
+
       <VoicePicker
         models={catalog.models}
         profiles={catalog.profiles}

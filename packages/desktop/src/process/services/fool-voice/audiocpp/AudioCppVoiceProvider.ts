@@ -5,7 +5,7 @@
  */
 
 import path from 'node:path';
-import type { VoiceParams, VoiceSynthesizedWav } from '../../../../common/types/foolVoice';
+import type { VoiceEngineBackend, VoiceParams, VoiceSynthesizedWav } from '../../../../common/types/foolVoice';
 import { ClonedVoiceStore, parseClonedProfileId } from '../ClonedVoiceStore';
 import { AudioCppClient, type AudioCppSpeechRequest, type AudioCppSpeechResult } from './AudioCppClient';
 import { AudioCppRuntime, type AudioCppRuntimeOptions, type AudioCppServerModel } from './AudioCppRuntime';
@@ -28,12 +28,12 @@ import { AUDIOCPP_MODEL_SPECS, getAudioCppModelSpec, presetSpeakerNameFor, wireP
 
 /** What the installer knows, as this provider needs it. */
 export type AudioCppInstallation = {
-  /** Absolute path to `audiocpp_server.exe`, or null when the engine is not installed. */
-  engineBinaryPath: () => Promise<string | null>;
+  /** Absolute path to `audiocpp_server.exe` for a build, or null when it is not installed. */
+  engineBinaryPath: (backend: VoiceEngineBackend) => Promise<string | null>;
   /** Absolute directory holding a model's GGUF weights. */
   modelDir: (modelId: string) => string;
-  /** Whether a model's weights and engine are both present. */
-  modelReady: (modelId: string) => Promise<boolean>;
+  /** Whether a model's weights and the build that runs them are both present. */
+  modelReady: (modelId: string, backend: VoiceEngineBackend) => Promise<boolean>;
 };
 
 /** The slice of {@link AudioCppRuntime} this provider uses. */
@@ -103,17 +103,29 @@ export class AudioCppVoiceProvider {
    * page is asking. What matters is whether the weights and the executable are
    * both on disk, which is also what makes the check instant.
    */
-  public async getHealth(modelId: string): Promise<'ready' | 'unavailable' | 'unsupported'> {
-    if (!getAudioCppModelSpec(modelId)) return 'unsupported';
-    if ((await this.deps.installation.engineBinaryPath()) === null) return 'unavailable';
-    return (await this.deps.installation.modelReady(modelId)) ? 'ready' : 'unavailable';
+  public async getHealth(
+    modelId: string,
+    backend: VoiceEngineBackend = 'cpu'
+  ): Promise<'ready' | 'unavailable' | 'unsupported'> {
+    const spec = getAudioCppModelSpec(modelId);
+    if (!spec) return 'unsupported';
+    // A model that insists on a processor it has not been given is not
+    // "unavailable pending a download" — nothing the installer does will help
+    // until the setting changes.
+    if (spec.requiresBackend && spec.requiresBackend !== backend) return 'unsupported';
+    if ((await this.deps.installation.engineBinaryPath(backend)) === null) return 'unavailable';
+    return (await this.deps.installation.modelReady(modelId, backend)) ? 'ready' : 'unavailable';
   }
 
   /** Every installed audio.cpp model, as the server config wants to see them. */
-  private async installedServerModels(): Promise<AudioCppServerModel[]> {
+  private async installedServerModels(backend: VoiceEngineBackend): Promise<AudioCppServerModel[]> {
     const models: AudioCppServerModel[] = [];
     for (const spec of AUDIOCPP_MODEL_SPECS) {
-      if (!(await this.deps.installation.modelReady(spec.modelId))) continue;
+      // A model that will not run on this processor is left out of the config
+      // rather than loaded and refused: the server loads every entry it is
+      // given, and a two-gigabyte one costs a minute to load and reject.
+      if (spec.requiresBackend && spec.requiresBackend !== backend) continue;
+      if (!(await this.deps.installation.modelReady(spec.modelId, backend))) continue;
       models.push({
         id: spec.serverModelId,
         family: spec.family,
@@ -126,14 +138,17 @@ export class AudioCppVoiceProvider {
   }
 
   /** Starts the server, replacing one that was configured for a different model set. */
-  private async ensureRuntime(): Promise<{ baseUrl: string }> {
-    const binaryPath = await this.deps.installation.engineBinaryPath();
-    if (binaryPath === null) throw new Error('the audio.cpp engine is not installed');
+  private async ensureRuntime(backend: VoiceEngineBackend): Promise<{ baseUrl: string }> {
+    const binaryPath = await this.deps.installation.engineBinaryPath(backend);
+    if (binaryPath === null) throw new Error(`the audio.cpp ${backend} engine is not installed`);
 
-    const models = await this.installedServerModels();
+    const models = await this.installedServerModels(backend);
     if (models.length === 0) throw new Error('no audio.cpp model is installed');
 
-    const signature = JSON.stringify([binaryPath, models]);
+    // The processor is part of the signature, so switching it replaces the
+    // child rather than leaving a CPU server answering CUDA requests: a server
+    // is spawned with one backend for its whole life.
+    const signature = JSON.stringify([binaryPath, models, backend]);
     if (this.runtime && this.runtimeSignature !== signature) {
       await this.runtime.shutdown();
       this.runtime = null;
@@ -143,7 +158,7 @@ export class AudioCppVoiceProvider {
       binaryPath,
       configPath: this.deps.configPath,
       models,
-      backend: 'cpu',
+      backend,
     });
 
     return this.runtime.ensureRunning();
@@ -164,10 +179,17 @@ export class AudioCppVoiceProvider {
     _speed: number,
     text: string,
     params: VoiceParams | undefined,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    backend: VoiceEngineBackend = 'cpu'
   ): Promise<{ audio: VoiceSynthesizedWav; durationMs: number }> {
     const spec = getAudioCppModelSpec(modelId);
     if (!spec) throw new Error(`Not an audio.cpp model: ${modelId}`);
+    // Refused here rather than after the model loads: on a processor these two
+    // take between forty seconds and two minutes a sentence, which is not a
+    // slow answer but a broken feature.
+    if (spec.requiresBackend && spec.requiresBackend !== backend) {
+      throw new Error(`${modelId} needs the ${spec.requiresBackend} engine; the current setting is ${backend}`);
+    }
 
     // Both models shipped here refuse a request with no speaker reference, so
     // the refusal is made here rather than paid for as a 500 after a cold model
@@ -182,7 +204,7 @@ export class AudioCppVoiceProvider {
       throw new Error(`${modelId} speaks by cloning and needs a reference recording; profile "${profileId}" has none`);
     }
 
-    const { baseUrl } = await this.ensureRuntime();
+    const { baseUrl } = await this.ensureRuntime(backend);
     if (signal?.aborted) throw new Error('cancelled');
 
     const request: AudioCppSpeechRequest = {

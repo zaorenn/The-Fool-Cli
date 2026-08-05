@@ -186,8 +186,23 @@ const registerHandler = <Request, Response>(
   });
 };
 
+/**
+ * Which audio.cpp build a request is about.
+ *
+ * Optional on every payload that carries it: a caller written before the two
+ * builds existed means the processor, and rejecting it would break the
+ * transcription path over a setting it has no opinion on.
+ */
+const ENGINE_BACKENDS = new Set(['cpu', 'cuda']);
+
+const isEngineBackend = (value: unknown): boolean =>
+  value === undefined || (typeof value === 'string' && ENGINE_BACKENDS.has(value));
+
 const validateCatalogRequest = (payload: unknown): BridgeErrorCode | null =>
-  isRecord(payload) && hasExactKeys(payload, ['includeProfiles']) && typeof payload.includeProfiles === 'boolean'
+  isRecord(payload) &&
+  hasExactKeys(payload, ['includeProfiles', 'backend']) &&
+  typeof payload.includeProfiles === 'boolean' &&
+  isEngineBackend(payload.backend)
     ? null
     : 'invalid-request';
 
@@ -222,11 +237,12 @@ const validateRealtimeSessionResponse = (response: VoiceRealtimeSessionResponse)
 
 const validateDownloadRequest = (payload: unknown): BridgeErrorCode | null =>
   isRecord(payload) &&
-  hasExactKeys(payload, ['operationId', 'providerId', 'modelId']) &&
+  hasExactKeys(payload, ['operationId', 'providerId', 'modelId', 'backend']) &&
   isIdentifier(payload.operationId) &&
   typeof payload.providerId === 'string' &&
   LOCAL_PROVIDER_IDS.has(payload.providerId) &&
-  isIdentifier(payload.modelId)
+  isIdentifier(payload.modelId) &&
+  isEngineBackend(payload.backend)
     ? null
     : 'invalid-request';
 
@@ -241,12 +257,13 @@ const validateRemoveRequest = (payload: unknown): BridgeErrorCode | null =>
 
 const validateHealthRequest = (payload: unknown): BridgeErrorCode | null =>
   isRecord(payload) &&
-  hasExactKeys(payload, ['providerId', 'capability', 'modelId']) &&
+  hasExactKeys(payload, ['providerId', 'capability', 'modelId', 'backend']) &&
   typeof payload.providerId === 'string' &&
   PROVIDER_IDS.has(payload.providerId) &&
   (payload.capability === undefined ||
     (typeof payload.capability === 'string' && CAPABILITIES.has(payload.capability))) &&
-  (payload.modelId === undefined || isIdentifier(payload.modelId))
+  (payload.modelId === undefined || isIdentifier(payload.modelId)) &&
+  isEngineBackend(payload.backend)
     ? null
     : 'invalid-request';
 
@@ -418,7 +435,9 @@ const validateSynthesizeRequest = (payload: unknown): BridgeErrorCode | null => 
       'speed',
       'text',
       'params',
+      'backend',
     ]) ||
+    !isEngineBackend(payload.backend) ||
     !isIdentifier(payload.operationId) ||
     typeof payload.providerId !== 'string' ||
     !SYNTHESIS_PROVIDER_IDS.has(payload.providerId) ||

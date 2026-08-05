@@ -73,6 +73,16 @@ export type AudioCppModelSpec = {
    * `--speaker Ryan` does at the same seed.
    */
   presetSpeakers?: readonly { id: string; speaker: string; displayName: string; languages: readonly string[] }[];
+  /**
+   * A processor this model will not run without.
+   *
+   * Not a hardware limit — both of these render perfectly well on a CPU, at
+   * around forty seconds and a minute forty a sentence. That is the limit. A
+   * user who selects one of them and waits is not discovering a preference,
+   * they are discovering that the app is broken, so the request is refused with
+   * something they can act on instead.
+   */
+  requiresBackend?: 'cuda';
   params: readonly VoiceParamSpec[];
 };
 
@@ -198,6 +208,7 @@ export const AUDIOCPP_MODEL_SPECS: readonly AudioCppModelSpec[] = [
     // Builds a speaker embedding from the clip alone; a transcript would land
     // under a key it never reads.
     usesReferenceText: false,
+    requiresBackend: 'cuda',
     params: CHATTERBOX_PARAMS,
   },
   {
@@ -216,6 +227,7 @@ export const AUDIOCPP_MODEL_SPECS: readonly AudioCppModelSpec[] = [
     requiresVoiceReference: false,
     usesReferenceText: false,
     presetSpeakers: QWEN3_SPEAKERS,
+    requiresBackend: 'cuda',
     params: QWEN3_PARAMS,
   },
 ];

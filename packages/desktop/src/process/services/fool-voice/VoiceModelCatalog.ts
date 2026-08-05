@@ -2,6 +2,7 @@ import {
   AUDIOCPP_CHATTERBOX_MODEL_ID,
   AUDIOCPP_QWEN3_MODEL_ID,
   AUDIOCPP_POCKET_MODEL_ID,
+  type VoiceEngineBackend,
   type VoiceModel,
   type VoiceProfile,
 } from '../../../common/types/foolVoice';
@@ -553,42 +554,109 @@ export type EngineCatalogEntry = {
   engineId: string;
   /** Release tag, used only as the on-disk directory name. */
   version: string;
-  url: string;
-  sha256: string | null;
-  archiveBytes: number;
-  /** Paths inside the zip, which stores its files at the archive root. */
+  /**
+   * The zips that together make one usable engine, unpacked into one directory.
+   *
+   * A list rather than a single archive because upstream splits the CUDA build
+   * in two: a 575 MB runtime package carrying the CUDA DLLs, and a much smaller
+   * profile package with the executables. They are published separately so the
+   * runtime can be reused across profiles and releases, and neither half runs
+   * without the other.
+   */
+  archives: readonly { url: string; sha256: string | null; bytes: number }[];
+  /** Paths inside the zips, which store their files at the archive root. */
   expectedFiles: string[];
   /** The executable to spawn, relative to the extracted directory. */
   binaryPath: string;
 };
 
+/** Total bytes to fetch for an engine, across every archive it is made of. */
+export const engineArchiveBytes = (engine: EngineCatalogEntry): number =>
+  engine.archives.reduce((total, archive) => total + archive.bytes, 0);
+
 /**
- * The Windows CPU package, `balance` profile.
+ * The two builds of audio.cpp this app can install, and why there are two.
  *
- * Upstream builds three CPU variants and its own packaging script documents what
- * separates them: `fast` compiles with `-CpuArch native` and may bake in AVX-512,
- * which upstream itself calls "not the safest choice for broad public
- * distribution"; `portable` drops to a baseline arch with llamafile SGEMM off,
- * the slowest but most compatible; `balance` targets AVX2 and is upstream's
- * "recommended default for most modern Windows PCs". This app ships to whatever
- * machine the user has, so `balance` it is.
+ * Upstream publishes a CPU-only package and a CUDA one. They are not the same
+ * program with a flag: the CPU package has no CUDA backend registered at all,
+ * and asking it for one is answered with
+ * `CUDA backend requested but it is not registered in this build`. So choosing
+ * a processor is choosing a download, and the sizes are three orders of
+ * magnitude apart.
  *
- * `sha256` is unset because no download has been made on this project to measure
- * it from — the same footing the Whisper tiny and Pocket entries are on. The
- * manifest check after extraction is what proves the archive was the right one.
+ * Both are the `balance` profile. Upstream builds three CPU variants and its own
+ * packaging script says what separates them: `fast` compiles with
+ * `-CpuArch native` and may bake in AVX-512, which upstream itself calls "not
+ * the safest choice for broad public distribution"; `portable` drops to a
+ * baseline arch with llamafile SGEMM off, the slowest but most compatible;
+ * `balance` targets AVX2 and is upstream's "recommended default for most modern
+ * Windows PCs". This app ships to whatever machine the user has, so `balance`
+ * it is — and the CUDA profile packages carry the same CPU kernels, so the same
+ * reasoning applies to the fallback path inside them.
+ *
+ * `sha256` is unset because no download has been made on this project to
+ * measure it from — the same footing the Whisper tiny entry is on. The manifest
+ * check after extraction is what proves the archives were the right ones.
  */
+const AUDIOCPP_RELEASE = 'release-0.5';
+const AUDIOCPP_DOWNLOADS = `https://github.com/0xShug0/audio.cpp/releases/download/${AUDIOCPP_RELEASE}`;
+
+/**
+ * Flat, not under `bin/`: upstream's packaging script stages the build's `bin`
+ * directory plus the MSVC and OpenMP redistributables, then archives the
+ * staging directory's *contents*.
+ */
+const AUDIOCPP_EXPECTED_FILES = ['audiocpp_server.exe', 'MSVCP140.dll', 'VCRUNTIME140.dll'];
+
 export const AUDIOCPP_ENGINE: EngineCatalogEntry = {
   engineId: 'audiocpp',
-  version: 'release-0.5',
-  url: 'https://github.com/0xShug0/audio.cpp/releases/download/release-0.5/audiocpp-windows-cpu-balance-3178daf4.zip',
-  sha256: null,
-  archiveBytes: 11399800,
-  // Flat, not under `bin/`: upstream's packaging script stages the build's `bin`
-  // directory plus the MSVC and OpenMP redistributables, then archives the
-  // staging directory's *contents*.
-  expectedFiles: ['audiocpp_server.exe', 'MSVCP140.dll', 'VCRUNTIME140.dll'],
+  version: AUDIOCPP_RELEASE,
+  archives: [
+    {
+      url: `${AUDIOCPP_DOWNLOADS}/audiocpp-windows-cpu-balance-3178daf4.zip`,
+      sha256: null,
+      bytes: 11399800,
+    },
+  ],
+  expectedFiles: AUDIOCPP_EXPECTED_FILES,
   binaryPath: 'audiocpp_server.exe',
 };
+
+/**
+ * The same release, built with CUDA — and it is 800 MB, so it is never fetched
+ * unless the user asks for it.
+ *
+ * The runtime archive is listed first so the DLLs are in place before the
+ * executables that link against them, and both land in one directory because
+ * that is where the loader looks: beside the `.exe`.
+ *
+ * Kept under its own engine id rather than as a variant of the one above, so
+ * the two never share an install directory. They contain files of the same
+ * names, and a half-overwritten engine is the kind of failure that presents as
+ * a model being broken.
+ */
+export const AUDIOCPP_CUDA_ENGINE: EngineCatalogEntry = {
+  engineId: 'audiocpp-cuda',
+  version: AUDIOCPP_RELEASE,
+  archives: [
+    {
+      url: `${AUDIOCPP_DOWNLOADS}/audiocpp-windows-cuda-runtime.zip`,
+      sha256: null,
+      bytes: 575505446,
+    },
+    {
+      url: `${AUDIOCPP_DOWNLOADS}/audiocpp-windows-cuda-balance-3178daf4.zip`,
+      sha256: null,
+      bytes: 248471641,
+    },
+  ],
+  expectedFiles: AUDIOCPP_EXPECTED_FILES,
+  binaryPath: 'audiocpp_server.exe',
+};
+
+/** The build that can run on a given processor. */
+export const audioCppEngineFor = (backend: VoiceEngineBackend): EngineCatalogEntry =>
+  backend === 'cuda' ? AUDIOCPP_CUDA_ENGINE : AUDIOCPP_ENGINE;
 
 /**
  * A model whose weights arrive as plain files rather than inside an archive.
@@ -697,8 +765,15 @@ export class VoiceModelCatalog {
     return AUDIOCPP_CATALOG_ENTRIES[modelId];
   }
 
-  public static getEngine(engineId: string): EngineCatalogEntry | undefined {
-    return engineId === AUDIOCPP_ENGINE.engineId ? AUDIOCPP_ENGINE : undefined;
+  /**
+   * The engine build a request should use.
+   *
+   * `backend` rather than an id because the catalog entries name a logical
+   * engine — the model rows say `audiocpp`, and which build of it runs is the
+   * user's setting, not a property of the model.
+   */
+  public static getEngine(engineId: string, backend: VoiceEngineBackend = 'cpu'): EngineCatalogEntry | undefined {
+    return engineId === AUDIOCPP_ENGINE.engineId ? audioCppEngineFor(backend) : undefined;
   }
 
   /** Every audio.cpp model, as the runtime's server config needs to see them. */

@@ -34,6 +34,7 @@ const wavOf = (sampleRateHz: number): Uint8Array => {
 
 let workspace = '';
 let sent: AudioCppSpeechRequest[] = [];
+let spawnedWith: { binaryPath: string; backend: string; modelIds: string[] }[] = [];
 
 const providerFor = (clonedVoices: readonly { id: string; text: string }[] = []) => {
   const clonedDir = path.join(workspace, 'cloned');
@@ -59,14 +60,22 @@ const providerFor = (clonedVoices: readonly { id: string; text: string }[] = [])
     clonedVoicesDir: clonedDir,
     configPath: path.join(workspace, 'server.json'),
     installation: {
-      engineBinaryPath: async () => path.join(workspace, 'audiocpp_server.exe'),
+      // One directory per build, as the installer lays them out.
+      engineBinaryPath: async (backend) => path.join(workspace, backend, 'audiocpp_server.exe'),
       modelDir: (modelId) => path.join(workspace, modelId),
       modelReady: async () => true,
     },
-    createRuntime: () => ({
-      ensureRunning: async () => ({ baseUrl: 'http://127.0.0.1:1' }),
-      shutdown: async () => undefined,
-    }),
+    createRuntime: (options) => {
+      spawnedWith.push({
+        binaryPath: options.binaryPath,
+        backend: options.backend,
+        modelIds: options.models.map((model) => model.id),
+      });
+      return {
+        ensureRunning: async () => ({ baseUrl: 'http://127.0.0.1:1' }),
+        shutdown: async () => undefined,
+      };
+    },
     createClient: () => ({
       synthesize: async (request) => {
         sent.push(request);
@@ -79,6 +88,7 @@ const providerFor = (clonedVoices: readonly { id: string; text: string }[] = [])
 beforeEach(() => {
   workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'audiocpp-provider-'));
   sent = [];
+  spawnedWith = [];
 });
 
 afterEach(() => {
@@ -89,7 +99,7 @@ afterEach(() => {
 describe('AudioCppVoiceProvider', () => {
   it('names one of Qwen3’s own voices instead of sending a recording', async () => {
     const provider = providerFor();
-    await provider.synthesize(AUDIOCPP_QWEN3_MODEL_ID, 'qwen3-ryan', 'en', 1, 'Hello.', undefined);
+    await provider.synthesize(AUDIOCPP_QWEN3_MODEL_ID, 'qwen3-ryan', 'en', 1, 'Hello.', undefined, undefined, 'cuda');
 
     expect(sent).toHaveLength(1);
     // `Ryan`, the model card's spelling — not the app's `qwen3-ryan` profile id,
@@ -101,18 +111,32 @@ describe('AudioCppVoiceProvider', () => {
 
   it('carries a spoken direction through as an option', async () => {
     const provider = providerFor();
-    await provider.synthesize(AUDIOCPP_QWEN3_MODEL_ID, 'qwen3-ryan', 'en', 1, 'Hello.', {
-      instruct: 'Speak in a slow, sad whisper.',
-    });
+    await provider.synthesize(
+      AUDIOCPP_QWEN3_MODEL_ID,
+      'qwen3-ryan',
+      'en',
+      1,
+      'Hello.',
+      { instruct: 'Speak in a slow, sad whisper.' },
+      undefined,
+      'cuda'
+    );
 
     expect(sent[0].options).toEqual({ instruct: 'Speak in a slow, sad whisper.' });
   });
 
   it('hands Chatterbox the recording it has to imitate', async () => {
     const provider = providerFor([{ id: 'jarvis', text: 'Reference clip.' }]);
-    await provider.synthesize(AUDIOCPP_CHATTERBOX_MODEL_ID, 'cloned:jarvis', 'en', 1, 'Hello.', {
-      exaggeration: 1.4,
-    });
+    await provider.synthesize(
+      AUDIOCPP_CHATTERBOX_MODEL_ID,
+      'cloned:jarvis',
+      'en',
+      1,
+      'Hello.',
+      { exaggeration: 1.4 },
+      undefined,
+      'cuda'
+    );
 
     expect(sent[0].voice).toBeUndefined();
     expect(sent[0].voiceRef).toContain('jarvis');
@@ -125,8 +149,63 @@ describe('AudioCppVoiceProvider', () => {
   it('refuses before the model loads when a cloning engine has nothing to imitate', async () => {
     const provider = providerFor();
     await expect(
-      provider.synthesize(AUDIOCPP_CHATTERBOX_MODEL_ID, 'cloned:missing', 'en', 1, 'Hello.', undefined)
+      provider.synthesize(
+        AUDIOCPP_CHATTERBOX_MODEL_ID,
+        'cloned:missing',
+        'en',
+        1,
+        'Hello.',
+        undefined,
+        undefined,
+        'cuda'
+      )
     ).rejects.toThrow(/reference recording/);
     expect(sent).toHaveLength(0);
+  });
+
+  /**
+   * Refused before anything is spawned, which is the whole value of it: these
+   * weights take a minute to load on a processor and then produce a voice at a
+   * minute a sentence.
+   */
+  it('will not run a graphics-card voice on the processor', async () => {
+    const provider = providerFor();
+    await expect(
+      provider.synthesize(AUDIOCPP_QWEN3_MODEL_ID, 'qwen3-ryan', 'en', 1, 'Hello.', undefined, undefined, 'cpu')
+    ).rejects.toThrow(/needs the cuda engine/);
+    expect(spawnedWith).toHaveLength(0);
+    expect(sent).toHaveLength(0);
+
+    await expect(provider.getHealth(AUDIOCPP_QWEN3_MODEL_ID, 'cpu')).resolves.toBe('unsupported');
+    await expect(provider.getHealth(AUDIOCPP_QWEN3_MODEL_ID, 'cuda')).resolves.toBe('ready');
+  });
+
+  it('spawns the build the setting asked for, carrying only what can run on it', async () => {
+    const provider = providerFor();
+    await provider.synthesize(AUDIOCPP_QWEN3_MODEL_ID, 'qwen3-ryan', 'en', 1, 'Hello.', undefined, undefined, 'cuda');
+
+    expect(spawnedWith).toHaveLength(1);
+    expect(spawnedWith[0].backend).toBe('cuda');
+    expect(spawnedWith[0].binaryPath).toContain(path.join('cuda', 'audiocpp_server.exe'));
+    // Every audio.cpp model, because on CUDA none of them is excluded.
+    expect(spawnedWith[0].modelIds).toContain('qwen3-tts');
+    expect(spawnedWith[0].modelIds).toContain('chatterbox');
+  });
+
+  /**
+   * A server is spawned with one backend for its whole life, so changing the
+   * setting has to replace the child rather than leave a processor-only server
+   * answering requests that were meant for the graphics card.
+   */
+  it('replaces the server when the processor changes under it', async () => {
+    const provider = providerFor([{ id: 'jarvis', text: 'Reference clip.' }]);
+    await provider.synthesize('tts-audiocpp-pocket', 'cloned:jarvis', 'en', 1, 'One.', undefined, undefined, 'cpu');
+    await provider.synthesize('tts-audiocpp-pocket', 'cloned:jarvis', 'en', 1, 'Two.', undefined, undefined, 'cpu');
+    expect(spawnedWith).toHaveLength(1);
+
+    await provider.synthesize('tts-audiocpp-pocket', 'cloned:jarvis', 'en', 1, 'Three.', undefined, undefined, 'cuda');
+    expect(spawnedWith.map((spawn) => spawn.backend)).toEqual(['cpu', 'cuda']);
+    // Pocket runs anywhere; the two that do not are left out of the CPU config.
+    expect(spawnedWith[0].modelIds).toEqual(['pocket']);
   });
 });

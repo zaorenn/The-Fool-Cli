@@ -138,7 +138,7 @@ export const checkLocalReadiness = async (settings: FoolVoiceSettings): Promise<
   const catalog = await ipcBridge.foolVoice.catalog.invoke({
     version: 1,
     requestId: newId(),
-    payload: { includeProfiles: false },
+    payload: { includeProfiles: false, backend: settings.tts.backend },
   });
   if (catalog.ok === false) return { ok: false, reason: 'stt-missing' };
 
@@ -474,6 +474,7 @@ export class LocalVoicePipeline {
       requestId: newId(),
       payload: {
         operationId: newId(),
+        backend: this.options.settings.tts.backend,
         providerId: voice.providerId,
         modelId: voice.modelId,
         profileId: voice.profileId,
