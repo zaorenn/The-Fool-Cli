@@ -101,7 +101,9 @@ const VoiceSettingsContent: React.FC = () => {
             />
           </label>
           <label className='flex flex-col gap-4px'>
-            <span className='text-13px text-t-secondary'>{t('settings.voice.vadSensitivity', 'Voice Sensitivity')}</span>
+            <span className='text-13px text-t-secondary'>
+              {t('settings.voice.vadSensitivity', 'Voice Sensitivity')}
+            </span>
             <Slider
               min={0}
               max={1}

@@ -9,6 +9,7 @@ import {
   AUDIOCPP_POCKET_MODEL_ID,
   CLONING_MODEL_ID,
   DEFAULT_FOOL_VOICE_SETTINGS,
+  WAKE_SENSITIVITY_DEFAULT,
   FOOL_VOICE_PROVIDERS,
   FOOL_VOICE_SCHEMA_VERSION,
   PUSH_TO_TALK_DEFAULT,
@@ -49,7 +50,12 @@ describe('Fool voice settings contract', () => {
         pushToTalkShortcut: PUSH_TO_TALK_DEFAULT,
         // The wake phrase ships enabled because the desktop pet is the switch:
         // the listener only opens the microphone while the pet is on screen.
-        wakePhrase: { enabled: true, modelId: 'stt-phrase-v1', phrase: 'wake up fool', sensitivity: 0.65 },
+        wakePhrase: {
+          enabled: true,
+          modelId: 'stt-phrase-v1',
+          phrase: 'wake up fool',
+          sensitivity: WAKE_SENSITIVITY_DEFAULT,
+        },
       },
       stt: { providerId: 'local-sherpa', modelId: 'stt-whisper-turbo', language: 'auto' },
       tts: {

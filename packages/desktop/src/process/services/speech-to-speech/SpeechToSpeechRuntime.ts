@@ -81,7 +81,7 @@ export class SpeechToSpeechRuntime {
       this.stop();
     }
 
-    if (!argsChanged && await this.deps.isPortOpen(PORT)) return { endpoint: ENDPOINT, reused: true };
+    if (!argsChanged && (await this.deps.isPortOpen(PORT))) return { endpoint: ENDPOINT, reused: true };
     if (this.starting) return this.starting;
 
     this.starting = this.start().finally(() => {
@@ -101,22 +101,37 @@ export class SpeechToSpeechRuntime {
 
     this.stderrTail = '';
     const args = [
-      '-m', 'speech_to_speech.s2s_pipeline',
-      '--mode', 'realtime',
-      '--ws_host', '127.0.0.1',
-      '--ws_port', String(PORT),
-      '--device', 'cuda',
-      '--stt', 'faster-whisper',
-      '--faster_whisper_stt_model_name', 'large-v3',
-      '--llm_backend', 'transformers',
-      '--model_name', this.currentModelId,
-      '--tts', 'qwen3',
-      '--qwen3_tts_model_name', this.currentVoiceId,
-      '--qwen3_tts_device', 'cuda',
-      '--qwen3_tts_backend', 'torch',
-      '--qwen3_tts_dtype', 'bfloat16',
+      '-m',
+      'speech_to_speech.s2s_pipeline',
+      '--mode',
+      'realtime',
+      '--ws_host',
+      '127.0.0.1',
+      '--ws_port',
+      String(PORT),
+      '--device',
+      'cuda',
+      '--stt',
+      'faster-whisper',
+      '--faster_whisper_stt_model_name',
+      'large-v3',
+      '--llm_backend',
+      'transformers',
+      '--model_name',
+      this.currentModelId,
+      '--tts',
+      'qwen3',
+      '--qwen3_tts_model_name',
+      this.currentVoiceId,
+      '--qwen3_tts_device',
+      'cuda',
+      '--qwen3_tts_backend',
+      'torch',
+      '--qwen3_tts_dtype',
+      'bfloat16',
       '--no_qwen3_tts_non_streaming_mode',
-      '--language', 'auto',
+      '--language',
+      'auto',
       '--enable_live_transcription',
     ] as const;
 

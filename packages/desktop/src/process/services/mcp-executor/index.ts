@@ -1,6 +1,6 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { IMcpServer } from '@/common/config/storage';
+import type { IMcpServer } from '@/common/config/storage';
 
 export async function executeMcpTool(
   server: IMcpServer,
@@ -14,19 +14,16 @@ export async function executeMcpTool(
   const transport = new StdioClientTransport({
     command: server.transport.command,
     args: server.transport.args,
-    env: { ...process.env, ...(server.transport.env || {}) } as Record<string, string>
+    env: { ...process.env, ...server.transport.env } as Record<string, string>,
   });
 
-  const client = new Client(
-    { name: 'fool-voice-executor', version: '1.0.0' },
-    { capabilities: {} }
-  );
+  const client = new Client({ name: 'fool-voice-executor', version: '1.0.0' }, { capabilities: {} });
 
   try {
     await client.connect(transport);
     const result = await client.callTool({
       name: toolName,
-      arguments: args
+      arguments: args,
     });
     return result;
   } finally {

@@ -55,7 +55,7 @@ const ReplacePreview: React.FC<{ message: IMessageToolCall }> = ({ message }) =>
 };
 
 const ComputerUsePreview: React.FC<{ imagePath: string; inputStr?: string }> = ({ imagePath, inputStr }) => {
-  const [size, setSize] = useState<{w: number, h: number} | null>(null);
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   let coordinate: [number, number] | null = null;
   if (inputStr) {
     try {
@@ -63,22 +63,32 @@ const ComputerUsePreview: React.FC<{ imagePath: string; inputStr?: string }> = (
       if (parsed.coordinate && Array.isArray(parsed.coordinate)) {
         coordinate = [parsed.coordinate[0], parsed.coordinate[1]];
       }
-    } catch(e) {}
+    } catch (e) {}
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: '400px', overflow: 'hidden', borderRadius: '6px', border: '1px solid var(--color-border)' }} className="m-t-8px">
-      <img 
-        src={imagePath} 
-        style={{ width: '100%', display: 'block' }} 
-        onLoad={(e) => setSize({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })} 
-        alt="Computer Use Screen"
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        maxWidth: '400px',
+        overflow: 'hidden',
+        borderRadius: '6px',
+        border: '1px solid var(--color-border)',
+      }}
+      className='m-t-8px'
+    >
+      <img
+        src={imagePath}
+        style={{ width: '100%', display: 'block' }}
+        onLoad={(e) => setSize({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
+        alt='Computer Use Screen'
       />
       {size && coordinate && (
-        <div 
-          style={{ 
-            position: 'absolute', 
-            left: `${(coordinate[0] / size.w) * 100}%`, 
+        <div
+          style={{
+            position: 'absolute',
+            left: `${(coordinate[0] / size.w) * 100}%`,
             top: `${(coordinate[1] / size.h) * 100}%`,
             width: 24,
             height: 24,
@@ -89,8 +99,8 @@ const ComputerUsePreview: React.FC<{ imagePath: string; inputStr?: string }> = (
             borderRadius: '50%',
             pointerEvents: 'none',
             boxShadow: '0 0 0 1.5px white',
-            zIndex: 10
-          }} 
+            zIndex: 10,
+          }}
         />
       )}
     </div>

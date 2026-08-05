@@ -565,6 +565,14 @@ export const localProviderFor = (models: readonly ProviderOwnedModel[], modelId:
 export const WAKE_PHRASE_LEGACY_DEFAULT = 'hey fool';
 
 /**
+ * How readily the wake phrase is accepted, on a fresh install.
+ *
+ * Lowered from 0.65: the phrase had to be said deliberately at the microphone
+ * to be heard, which is not what a wake word is for.
+ */
+export const WAKE_SENSITIVITY_DEFAULT = 0.3;
+
+/**
  * The detector sensitivity shipped before it was measured.
  *
  * Paired with the old noise floor it put the bar for speech around an RMS of
@@ -593,7 +601,7 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
       enabled: true,
       modelId: 'stt-phrase-v1',
       phrase: WAKE_PHRASE_DEFAULT,
-      sensitivity: 0.30,
+      sensitivity: WAKE_SENSITIVITY_DEFAULT,
     },
   },
   vad: {
@@ -754,7 +762,12 @@ const settingsSchema = z
             enabled: z.boolean().default(true),
             modelId: z.literal('stt-phrase-v1').default('stt-phrase-v1'),
             phrase: normalizedWakePhraseSchema.default(WAKE_PHRASE_DEFAULT),
-            sensitivity: z.number().min(0).max(1).default(0.65),
+            // Matches DEFAULT_FOOL_VOICE_SETTINGS. The two were allowed to
+            // drift when the shipped value was lowered, so a record with no
+            // stored sensitivity parsed to a bar twice as high as a fresh
+            // install's — the same phrase heard on one machine and not the
+            // other, with nothing in the settings to explain it.
+            sensitivity: z.number().min(0).max(1).default(WAKE_SENSITIVITY_DEFAULT),
           })
           .strict()
           .default({}),

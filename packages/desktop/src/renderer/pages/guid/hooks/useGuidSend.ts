@@ -134,12 +134,12 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
     const selectedUserMcpServerIdsToSend =
       selectedMcpServerIds !== undefined ? selectedUserMcpServerIds : defaultSelectedUserMcpServerIds;
     const selectedSessionMcpServersToSend = [
-      ...((selectedMcpServerIds !== undefined
+      ...(selectedMcpServerIds !== undefined
         ? selectedAllSessionMcpServers
         : availableMcpServers
             .filter((server) => (defaultSelectedMcpServerIds ?? []).includes(server.id))
-            .map((server) => toSessionMcpServer(server)))
-      .filter((s) => !availableMcpServers.find((a) => a.id === s.id)?.builtin)),
+            .map((server) => toSessionMcpServer(server))
+      ).filter((s) => !availableMcpServers.find((a) => a.id === s.id)?.builtin),
       ...availableMcpServers.filter((server) => server.builtin === true).map((server) => toSessionMcpServer(server)),
     ];
 

@@ -210,16 +210,16 @@ export function normalizeToolCall(message: IMessageToolCall): NormalizedToolCall
       : undefined;
   let displayOutput = output;
   let imagePath: string | undefined = undefined;
-  
+
   if (output) {
     try {
       const parsed = JSON.parse(output);
       if (Array.isArray(parsed)) {
-        const imageBlock = parsed.find(b => b.type === 'image' && b.data);
+        const imageBlock = parsed.find((b) => b.type === 'image' && b.data);
         if (imageBlock) {
           imagePath = `data:${imageBlock.mimeType || 'image/png'};base64,${imageBlock.data}`;
           // Filter out the image block from the display text to avoid huge base64 spam
-          const textBlocks = parsed.filter(b => b.type === 'text' && b.text).map(b => b.text);
+          const textBlocks = parsed.filter((b) => b.type === 'text' && b.text).map((b) => b.text);
           displayOutput = textBlocks.length > 0 ? textBlocks.join('\n') : undefined;
         }
       }
