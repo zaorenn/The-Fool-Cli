@@ -13,6 +13,24 @@ export type TtsTarget = {
 };
 
 /**
+ * An installed voice, as much of it as choosing between them needs.
+ *
+ * The ids alone were not enough: whether the configured voice is overridden
+ * depends on what it can say, and that is only on the model.
+ */
+export type InstalledVoice = {
+  id: string;
+  languages: readonly string[];
+};
+
+/**
+ * Marks a profile as a recording of somebody rather than a shipped preset.
+ *
+ * Matches `CLONED_PROFILE_PREFIX` in the main process's `ClonedVoiceStore`.
+ */
+export const CLONED_PROFILE_PREFIX = 'cloned:';
+
+/**
  * Turkish voices, in preference order, used when the reply is Turkish.
  *
  * Only voices the synthesiser can actually open belong here. Supertonic was
@@ -37,14 +55,15 @@ export const isLikelyTurkish = (text: string): boolean => TURKISH_CHARACTERS.tes
 /**
  * Chooses which voice speaks a given reply.
  *
- * Speech output defaults to natural English. A Turkish reply is spoken by an
- * installed Turkish voice instead; when none is installed the configured
- * default is used rather than failing, because a wrong accent beats silence.
+ * The voice the user picked speaks. The one exception is a reply in a language
+ * that voice cannot say at all, where a preset that can say it beats a preset
+ * reading it as nonsense — and even that stops short of replacing a cloned
+ * voice, because a recording of yourself is never improved by a stranger.
  */
 export const selectTtsTarget = (
   text: string,
   settings: FoolVoiceSettings,
-  installedModelIds: readonly string[]
+  installed: readonly InstalledVoice[]
 ): TtsTarget => {
   const configured: TtsTarget = {
     modelId: settings.tts.modelId,
@@ -55,5 +74,17 @@ export const selectTtsTarget = (
   if (text.trim().length === 0 || !isLikelyTurkish(text)) return configured;
   if (configured.language === 'tr') return configured;
 
-  return TURKISH_TARGETS.find((target) => installedModelIds.includes(target.modelId)) ?? configured;
+  // A cloned voice is the whole reason the user recorded one. Swapping it for
+  // Fettah the moment a sentence turns Turkish is exactly the case where they
+  // most wanted to hear themselves, and it arrived unannounced: same
+  // conversation, different person, no setting anywhere admitting to it.
+  if (configured.profileId.startsWith(CLONED_PROFILE_PREFIX)) return configured;
+
+  // Nor is a preset overridden when it can speak the language itself. Pocket
+  // declares Turkish because it was measured saying it; a voice that can say
+  // the sentence has no reason to hand it to someone else.
+  const chosen = installed.find((model) => model.id === configured.modelId);
+  if (chosen?.languages.includes('tr')) return configured;
+
+  return TURKISH_TARGETS.find((target) => installed.some((model) => model.id === target.modelId)) ?? configured;
 };

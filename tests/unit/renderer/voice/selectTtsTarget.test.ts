@@ -6,10 +6,14 @@
 
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_FOOL_VOICE_SETTINGS } from '@/common/types/foolVoice';
-import { isLikelyTurkish, selectTtsTarget } from '@renderer/services/voice/selectTtsTarget';
+import { isLikelyTurkish, selectTtsTarget, type InstalledVoice } from '@renderer/services/voice/selectTtsTarget';
 
 const settings = DEFAULT_FOOL_VOICE_SETTINGS;
-const withTurkishInstalled = ['tts-piper-en-libritts-r', 'tts-piper-tr-fettah'];
+
+/** An installed voice, named and with the languages it claims. */
+const voice = (id: string, languages: readonly string[] = ['en']): InstalledVoice => ({ id, languages });
+
+const withTurkishInstalled = [voice('tts-piper-en-libritts-r'), voice('tts-piper-tr-fettah', ['tr'])];
 
 describe('isLikelyTurkish', () => {
   it.each(['Değişiklikleri kaydettim', 'İki dosya güncellendi', 'bu bir test'])('detects Turkish: %s', (text) => {
@@ -39,7 +43,7 @@ describe('selectTtsTarget', () => {
   });
 
   it('keeps the configured voice when no Turkish model is installed', () => {
-    expect(selectTtsTarget('İki dosyayı güncelledim', settings, ['tts-piper-en-libritts-r'])).toEqual({
+    expect(selectTtsTarget('İki dosyayı güncelledim', settings, [voice('tts-piper-en-libritts-r')])).toEqual({
       modelId: 'tts-piper-en-libritts-r',
       profileId: 'libritts-p0',
       language: 'en',
@@ -50,7 +54,9 @@ describe('selectTtsTarget', () => {
   // for it: routing a reply there threw inside playback, where the failure is
   // swallowed, so the answer was never spoken at all.
   it('does not route Turkish to Supertonic, which cannot synthesise', () => {
-    const target = selectTtsTarget('Değişiklikleri kaydettim', settings, ['tts-supertonic-3-int8-2026-05-11']);
+    const target = selectTtsTarget('Değişiklikleri kaydettim', settings, [
+      voice('tts-supertonic-3-int8-2026-05-11', ['tr']),
+    ]);
 
     expect(target.modelId).toBe('tts-piper-en-libritts-r');
   });
@@ -73,5 +79,49 @@ describe('selectTtsTarget', () => {
     expect(selectTtsTarget('Değişiklikleri kaydettim', turkishSettings, withTurkishInstalled).profileId).toBe(
       'supertonic-speaker-3'
     );
+  });
+
+  /**
+   * Whose voice gets to finish a Turkish sentence.
+   *
+   * A cloned voice was replaced by Fettah the moment a reply turned Turkish —
+   * unannounced, mid-conversation, with no setting anywhere admitting to it. The
+   * reported symptom was a Turkish preset "butting in where I did not want it",
+   * and it was worst in the one case the user had gone to the most trouble for:
+   * hearing a recording of themselves.
+   */
+  it('never replaces a cloned voice with a stranger, whatever the language', () => {
+    const cloned = {
+      ...settings,
+      tts: { ...settings.tts, modelId: 'tts-pocket-audiocpp', profileId: 'cloned:jarvis', language: 'en' },
+    };
+
+    const target = selectTtsTarget('İki dosyayı güncelledim', cloned, [
+      voice('tts-pocket-audiocpp'),
+      voice('tts-piper-tr-fettah', ['tr']),
+    ]);
+
+    expect(target).toEqual({ modelId: 'tts-pocket-audiocpp', profileId: 'cloned:jarvis', language: 'en' });
+  });
+
+  it('leaves a preset alone when it speaks Turkish itself', () => {
+    const pocket = {
+      ...settings,
+      tts: { ...settings.tts, modelId: 'tts-pocket-audiocpp', profileId: 'speaker-0', language: 'en' },
+    };
+
+    // Pocket declares Turkish because it was measured saying it.
+    const target = selectTtsTarget('İki dosyayı güncelledim', pocket, [
+      voice('tts-pocket-audiocpp', ['en', 'tr']),
+      voice('tts-piper-tr-fettah', ['tr']),
+    ]);
+
+    expect(target.modelId).toBe('tts-pocket-audiocpp');
+  });
+
+  it('still rescues a preset that cannot say the sentence at all', () => {
+    const target = selectTtsTarget('İki dosyayı güncelledim', settings, withTurkishInstalled);
+
+    expect(target.modelId).toBe('tts-piper-tr-fettah');
   });
 });

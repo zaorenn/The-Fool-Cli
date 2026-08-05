@@ -708,7 +708,7 @@ export class LocalVoicePipeline {
    */
   private resolveVoice(readiness: Extract<LocalReadiness, { ok: true }>, sample: string): SpeakingVoice {
     const installed = readiness.ttsModels.map((model) => model.id);
-    const target = selectTtsTarget(sample, this.options.settings, installed);
+    const target = selectTtsTarget(sample, this.options.settings, readiness.ttsModels);
 
     // Falling back to a cloning engine would trade one silence for another:
     // Chatterbox and Qwen3 have no voice of their own, and asked to speak with
