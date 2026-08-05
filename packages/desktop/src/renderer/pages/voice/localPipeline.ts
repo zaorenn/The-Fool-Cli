@@ -7,7 +7,9 @@
 import { ipcBridge } from '@/common';
 import { buildPersonaInstructions, REALTIME_TOOLS, type NormalizedRealtimeEvent } from '@/common/realtime';
 import { synthesisProviderFor, type FoolVoiceSettings, type VoiceModel } from '@/common/types/foolVoice';
+import { isBackchannel } from '@/common/voice/backchannel';
 import { applyTranscriptRules } from '@/common/voice/transcriptRules';
+import { findWakePhrase } from '@renderer/services/voice/wakePhrase';
 import { createIncrementalSentenceDetector } from '@renderer/services/voice/narration/incrementalSentences';
 import { selectTtsTarget } from '@renderer/services/voice/selectTtsTarget';
 
@@ -246,12 +248,37 @@ export class LocalVoicePipeline {
   private readonly options: LocalPipelineOptions;
   private history: Turn[] = [];
   private ready: Extract<LocalReadiness, { ok: true }> | null = null;
-  /** Aborts a reply the user has talked over. */
+  /** Aborts a reply the user has genuinely taken the floor from. */
   private inFlight: AbortController | null = null;
   /** Raw capture for the utterance being spoken right now. */
   private utterance: Uint8Array[] = [];
   private speaking = false;
   private closed = false;
+
+  /**
+   * Sentences ready to be spoken but not yet handed to the speaker.
+   *
+   * Queued rather than spoken inline so that writing the reply and saying it are
+   * not the same loop: the model keeps writing while the speaker works through
+   * what it has, and abandoning a reply is emptying this rather than unwinding a
+   * stack of awaits.
+   */
+  private pending: string[] = [];
+  /** One drain loop at a time, however many sentences arrive. */
+  private draining = false;
+  /** Settles when the speaker runs out of sentences, so nothing has to poll it. */
+  private speakerIdle: Promise<void> = Promise.resolve();
+  /** The voice this reply is being read in, fixed at its first sentence. */
+  private voice: SpeakingVoice | null = null;
+  /**
+   * Something said while a reply was still going, to be answered after it.
+   *
+   * Only the interrupt word cuts a reply short. Anything else said in the
+   * meantime — including a whole new question — waits here, because guessing from
+   * the audio which of those it was is what threw answers away. One deep: the
+   * thing worth keeping is the last thing said.
+   */
+  private queued: string | null = null;
 
   constructor(options: LocalPipelineOptions) {
     this.options = options;
@@ -293,14 +320,7 @@ export class LocalVoicePipeline {
   pushAudio(pcm16Base64: string, event: 'speech-started' | 'speech' | 'utterance-ended' | 'idle'): void {
     if (this.closed) return;
 
-    if (event === 'speech-started') {
-      // Talking over the reply ends it: the rest of what it was going to say is
-      // an answer to a question that has now changed.
-      this.interrupt();
-      this.utterance = [];
-      this.options.onEvent({ kind: 'interrupted' });
-      this.options.onEvent({ kind: 'phase', phase: 'listening' });
-    }
+    if (event === 'speech-started') this.utterance = [];
 
     if (event === 'speech-started' || event === 'speech') {
       this.utterance.push(fromBase64(pcm16Base64));
@@ -310,7 +330,7 @@ export class LocalVoicePipeline {
     if (event === 'utterance-ended' && this.utterance.length > 0) {
       const captured = this.utterance;
       this.utterance = [];
-      void this.answer(captured);
+      void this.judge(captured);
     }
   }
 
@@ -318,29 +338,96 @@ export class LocalVoicePipeline {
     this.inFlight?.abort();
     this.inFlight = null;
     this.speaking = false;
+    this.pending = [];
+    this.voice = null;
   }
 
   close(): void {
     this.closed = true;
     this.interrupt();
     this.utterance = [];
+    this.queued = null;
     this.history = [];
   }
 
+  /**
+   * Works out what was said, and only then what it means for the reply.
+   *
+   * Deciding from the audio is what broke this: a loud frame is a cough, a chair,
+   * a keystroke and a sentence all at once, so every reply the room made a noise
+   * over was abandoned mid-thought — the user heard nothing and was shown
+   * nothing. Words are unambiguous where levels are not, so nothing happens to a
+   * reply until there is a transcript to act on.
+   *
+   * Exactly one thing cuts a reply short: the interrupt word. Anything else is
+   * either listening noise, which is dropped, or something to answer next.
+   */
+  private async judge(captured: readonly Uint8Array[]): Promise<void> {
+    const readiness = this.ready;
+    if (!readiness) return;
+
+    // Nothing being said: this is simply the user's turn.
+    if (this.inFlight === null) {
+      await this.answer(captured);
+      return;
+    }
+
+    let heard = '';
+    try {
+      heard = await this.transcribe(captured, readiness.sttModelId);
+    } catch {
+      // A failed transcription is not a reason to abandon an answer in progress.
+      return;
+    }
+    if (this.closed || heard.length === 0) return;
+
+    const playback = this.options.settings.playback;
+    const stop = playback.interruptible ? findWakePhrase(heard, playback.interruptPhrase) : null;
+    if (stop) {
+      // The word was said. Everything still owed is now unwanted.
+      this.options.onEvent({ kind: 'user-transcript', text: heard, final: true });
+      this.interrupt();
+      this.options.onEvent({ kind: 'interrupted' });
+      // "stop, what's the weather instead" is one breath: the word ends the reply
+      // and the rest of it is the next question.
+      const rest = stop.commandText.trim();
+      if (rest.length > 0) await this.answer(captured, rest);
+      else this.options.onEvent({ kind: 'phase', phase: 'listening' });
+      return;
+    }
+
+    if (isBackchannel(heard)) {
+      // "mhm", "evet", "tamam anladım" — someone showing they are still there,
+      // not asking for anything. Shown, so it is visible that it was heard, and
+      // then nothing else happens: the answer keeps going.
+      this.options.onEvent({ kind: 'user-transcript', text: heard, final: true });
+      return;
+    }
+
+    // A real question, but not the word that stops things. It waits, and the
+    // reply that is already being given gets to finish.
+    this.queued = heard;
+  }
+
   /** Transcribe, think, and speak — each stage feeding the next as it arrives. */
-  private async answer(captured: readonly Uint8Array[]): Promise<void> {
+  private async answer(captured: readonly Uint8Array[], alreadyHeard?: string): Promise<void> {
     const readiness = this.ready;
     if (!readiness) return;
 
     const controller = new AbortController();
     this.inFlight = controller;
+    this.pending = [];
+    this.voice = null;
 
     try {
       this.options.onEvent({ kind: 'phase', phase: 'thinking' });
 
-      const heard = await this.transcribe(captured, readiness.sttModelId);
+      // Transcribed once. `judge` already did it when it had to decide whether
+      // this was a turn at all, and doing it twice costs a second of silence.
+      const heard = alreadyHeard ?? (await this.transcribe(captured, readiness.sttModelId));
       if (controller.signal.aborted) return;
       if (heard.length === 0) {
+        this.options.onEvent({ kind: 'error', message: 'LOCAL_HEARD_NOTHING' });
         this.options.onEvent({ kind: 'phase', phase: 'listening' });
         return;
       }
@@ -359,6 +446,13 @@ export class LocalVoicePipeline {
       this.options.onEvent({ kind: 'phase', phase: 'listening' });
     } finally {
       if (this.inFlight === controller) this.inFlight = null;
+      // Something asked while this reply was still being said. Answered now
+      // rather than dropped — it was a real question, it just did not get to
+      // interrupt. `captured` is empty because the transcript is all that is
+      // needed; the audio was already read.
+      const waiting = this.queued;
+      this.queued = null;
+      if (waiting && !this.closed && !controller.signal.aborted) void this.answer([], waiting);
     }
   }
 
@@ -459,8 +553,6 @@ export class LocalVoicePipeline {
     const calls = new ToolCallAccumulator();
     let buffered = '';
     let written = '';
-    /** Fixed at the first sentence, so one reply is not read by two voices. */
-    let voice: SpeakingVoice | null = null;
 
     while (!controller.signal.aborted) {
       const { done, value } = await reader.read();
@@ -479,18 +571,28 @@ export class LocalVoicePipeline {
         written += frame.text;
         this.options.onEvent({ kind: 'assistant-transcript', text: frame.text, final: false });
 
+        // Queued rather than spoken here, and *not* awaited: generation must not
+        // wait for the speaker, or a held reply would stop being written the
+        // moment it stopped being said — and there would be nothing left to
+        // carry on with.
         for (const sentence of detector.push(frame.text)) {
-          voice ??= this.resolveVoice(readiness, sentence);
-          await this.say(sentence, voice, controller);
+          this.voice ??= this.resolveVoice(readiness, sentence);
+          this.pending.push(sentence);
         }
+        this.startDraining(controller);
       }
     }
 
     const tail = detector.flush().trim();
     if (tail.length > 0) {
-      voice ??= this.resolveVoice(readiness, tail);
-      await this.say(tail, voice, controller);
+      this.voice ??= this.resolveVoice(readiness, tail);
+      this.pending.push(tail);
+      this.startDraining(controller);
     }
+
+    // The reply is fully written; wait for it to be fully said before the turn is
+    // called finished. A held reply waits here, which is correct: it is not over.
+    await this.whileSpeaking(controller);
 
     if (controller.signal.aborted) return [];
 
@@ -544,6 +646,56 @@ export class LocalVoicePipeline {
         content: typeof result === 'string' ? result : JSON.stringify(result ?? { ok: true }),
       });
       this.trimHistory();
+    }
+  }
+
+  /** Starts the speaker on the queue, if it is not already working through it. */
+  private startDraining(controller: AbortController): void {
+    if (this.draining) return;
+    const voice = this.voice;
+    if (!voice) return;
+    this.speakerIdle = this.drain(voice, controller);
+  }
+
+  /** Speaks the queue, one sentence at a time, until it is empty or abandoned. */
+  private async drain(voice: SpeakingVoice, controller: AbortController): Promise<void> {
+    if (this.draining) return;
+    this.draining = true;
+    try {
+      while (this.pending.length > 0 && !controller.signal.aborted && !this.closed) {
+        const sentence = this.pending.shift();
+        if (sentence === undefined) break;
+        await this.say(sentence, voice, controller);
+      }
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        this.options.onEvent({
+          kind: 'error',
+          message: error instanceof Error ? error.message : 'LOCAL_SYNTHESIZE_FAILED',
+        });
+      }
+    } finally {
+      this.draining = false;
+    }
+  }
+
+  /**
+   * Waits until there is nothing left to say, or the turn is over.
+   *
+   * Waits on the speaker itself rather than asking every so often whether it has
+   * finished. Polling put a tick of silence between the last sentence and the
+   * microphone reopening, and made the end of a turn depend on a timer that only
+   * happens to be shorter than a sentence.
+   *
+   * Looping because the model can push another sentence while the speaker is
+   * draining the previous one, which starts a new drain the old promise knows
+   * nothing about.
+   */
+  private async whileSpeaking(controller: AbortController): Promise<void> {
+    while (!controller.signal.aborted && !this.closed) {
+      if (this.pending.length > 0) this.startDraining(controller);
+      if (!this.draining) return;
+      await this.speakerIdle;
     }
   }
 

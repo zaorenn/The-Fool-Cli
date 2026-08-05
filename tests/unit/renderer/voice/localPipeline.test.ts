@@ -412,7 +412,7 @@ describe('LocalVoicePipeline', () => {
     expect(messages.map((turn: { content: string }) => turn.content)).toContain('Serhan.');
   });
 
-  it('drops the rest of a reply the user talked over', async () => {
+  it('keeps the reply when the sound was too short to be someone talking', async () => {
     readyCatalog();
     transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'Anlat.' } });
 
@@ -438,17 +438,16 @@ describe('LocalVoicePipeline', () => {
     pipeline.pushAudio('', 'utterance-ended');
     await settle();
 
-    // Waiting on the first sentence; the user starts talking instead.
+    // Waiting on the first sentence when the room makes a noise — one sample,
+    // far under the half-second bar. This used to abandon the answer outright:
+    // the detector would not have opened a *turn* on it, and it still killed the
+    // reply, so the user heard nothing and never learned why.
     pipeline.pushAudio(toBase64(pcmOf([2])), 'speech-started');
     speak?.();
     await settle();
 
-    expect(events).toContainEqual({ kind: 'interrupted' });
-    // The sentences behind the interrupted one are never rendered, and the
-    // abandoned reply is not added to the history as though it were said.
-    expect(synthesizeInvoke).toHaveBeenCalledTimes(1);
-    expect(events.some((event) => event.kind === 'audio')).toBe(false);
-    expect(events.some((event) => event.kind === 'assistant-transcript' && event.final)).toBe(false);
+    expect(events.some((event) => event.kind === 'interrupted')).toBe(false);
+    expect(events.some((event) => event.kind === 'audio')).toBe(true);
   });
 
   it('says nothing and goes back to listening when the room was not speech', async () => {
@@ -713,5 +712,196 @@ describe('LocalVoicePipeline acting on the computer', () => {
 
     expect(runTool.mock.calls.length).toBeLessThanOrEqual(4);
     expect(events.at(-1)).toEqual({ kind: 'phase', phase: 'listening' });
+  });
+});
+
+/**
+ * Being interrupted, and surviving it.
+ *
+ * The reported symptom was "even when it hears me it doesn't reply, and I can't
+ * see what I said". The cause was an asymmetry: the detector refuses to *open* a
+ * turn on less than `minimumSpeechMs` because "anything shorter was a cough, a
+ * door, or a keystroke" — but cancelling a reply took a single frame. So the same
+ * cough that could not ask a question destroyed the answer, before a word of it
+ * was spoken and before the transcript existed to show.
+ */
+/**
+ * What may and may not cut a reply short.
+ *
+ * The reported symptom was "even when it hears me it doesn't reply, and I can't
+ * see what I said". The cause was that cancelling a reply took one loud frame,
+ * while the detector refuses to *open* a turn on less than `minimumSpeechMs`
+ * because "anything shorter was a cough, a door, or a keystroke". So the same
+ * cough that could not ask a question destroyed the answer — before a word of it
+ * was spoken, and before there was a transcript to show.
+ *
+ * Guessing from the audio was the mistake. A level cannot tell a chair from a
+ * sentence, so now exactly one thing stops a reply: a word the user chooses.
+ */
+describe('LocalVoicePipeline while it is talking', () => {
+  const readyCatalog = () => catalogInvoke.mockResolvedValue(okCatalog([STT_MODEL, TTS_MODEL]));
+
+  const settleLong = async (): Promise<void> => {
+    for (let turn = 0; turn < 80; turn += 1) {
+      await Promise.resolve();
+      await new Promise((resolve) => setTimeout(resolve, 1));
+    }
+  };
+
+  /**
+   * A conversation whose sentences are only spoken when the test says so.
+   *
+   * Every state worth testing exists *while* a reply is being said, and a
+   * synthesiser that resolves immediately skips straight through them.
+   */
+  const start = async (
+    events: NormalizedRealtimeEvent[],
+    reply: readonly string[],
+    playback: Record<string, unknown> = {}
+  ) => {
+    const waiting: ((value: unknown) => void)[] = [];
+    synthesizeInvoke.mockImplementation(() => new Promise((resolve) => waiting.push(resolve)));
+    /** Lets the sentence at the speaker finish rendering. */
+    const speakNext = () =>
+      waiting.shift()?.({
+        ok: true,
+        data: { audio: { dataBase64: pcm16ToWavBase64(pcmOf([1]), 24000), sampleRateHz: 24000 } },
+      });
+
+    const fetchMock = vi.fn(async (url: string) =>
+      String(url).endsWith('/models')
+        ? ({ ok: true, json: async () => ({ data: [{ id: 'm' }] }) } as unknown as Response)
+        : ({ ok: true, body: sseBody(reply) } as unknown as Response)
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const settings = settingsWith({ model: 'm' });
+    settings.playback = { ...settings.playback, interruptPhrase: 'dur', ...playback };
+    const pipeline = new LocalVoicePipeline({
+      settings,
+      interfaceLanguage: 'tr',
+      onEvent: (event) => events.push(event),
+    });
+    await pipeline.connect();
+    return { pipeline, fetchMock, speakNext };
+  };
+
+  /** Asks something and gets as far as the first sentence being at the speaker. */
+  const ask = async (pipeline: InstanceType<typeof LocalVoicePipeline>, text = 'Anlat bana.') => {
+    transcribeInvoke.mockResolvedValueOnce({ ok: true, data: { text } });
+    pipeline.pushAudio(toBase64(pcmOf([1, 2, 3])), 'speech-started');
+    pipeline.pushAudio('', 'utterance-ended');
+    await settleLong();
+  };
+
+  /** Something said while it is still talking. */
+  const interject = async (pipeline: InstanceType<typeof LocalVoicePipeline>, text: string) => {
+    transcribeInvoke.mockResolvedValueOnce({ ok: true, data: { text } });
+    pipeline.pushAudio(toBase64(pcmOf([4, 5, 6])), 'speech-started');
+    pipeline.pushAudio('', 'utterance-ended');
+    await settleLong();
+  };
+
+  it('stops when it hears the word, and says nothing more', async () => {
+    readyCatalog();
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline } = await start(events, ['Bir. ', 'Iki. ', 'Uc.']);
+    await ask(pipeline);
+
+    const renderedBefore = synthesizeInvoke.mock.calls.length;
+    await interject(pipeline, 'dur');
+
+    expect(events).toContainEqual({ kind: 'interrupted' });
+    expect(events).toContainEqual({ kind: 'user-transcript', text: 'dur', final: true });
+    expect(events.at(-1)).toEqual({ kind: 'phase', phase: 'listening' });
+    // Nothing behind the sentence it was cut off in is rendered.
+    expect(synthesizeInvoke.mock.calls.length).toBe(renderedBefore);
+  });
+
+  it('answers what came after the word in the same breath', async () => {
+    readyCatalog();
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline, fetchMock } = await start(events, ['Bir. ', 'Iki. ']);
+    await ask(pipeline);
+
+    await interject(pipeline, 'dur bunun yerine hava nasil');
+
+    const chats = fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/chat/completions'));
+    expect(chats.length).toBeGreaterThanOrEqual(2);
+    const messages = JSON.parse(String((chats.at(-1)?.[1] as RequestInit).body)).messages as { content: string }[];
+    expect(messages.map((turn) => turn.content)).toContain('bunun yerine hava nasil');
+  });
+
+  it('is not stopped by a word that merely starts the same way', async () => {
+    readyCatalog();
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline } = await start(events, ['Bir. ', 'Iki. ']);
+    await ask(pipeline);
+
+    // A single-word phrase has to be heard exactly — `durum` is not `dur`.
+    await interject(pipeline, 'durum ne');
+
+    expect(events.some((event) => event.kind === 'interrupted')).toBe(false);
+  });
+
+  it('is not stopped by someone showing they are still listening', async () => {
+    readyCatalog();
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline } = await start(events, ['Bir. ', 'Iki. ']);
+    await ask(pipeline);
+
+    await interject(pipeline, 'hihi');
+    await interject(pipeline, 'evet anladim');
+
+    expect(events.some((event) => event.kind === 'interrupted')).toBe(false);
+    // Shown, though, so it is visible that it was heard.
+    expect(events).toContainEqual({ kind: 'user-transcript', text: 'evet anladim', final: true });
+  });
+
+  it('lets another question wait rather than throwing the answer away', async () => {
+    readyCatalog();
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline, fetchMock, speakNext } = await start(events, ['Bir.']);
+    await ask(pipeline);
+
+    await interject(pipeline, 'hava nasil');
+    // Still talking: the question did not cut in.
+    expect(events.some((event) => event.kind === 'interrupted')).toBe(false);
+
+    // Once the reply is finished, the question it heard is answered.
+    speakNext();
+    await settleLong();
+    speakNext();
+    await settleLong();
+
+    const chats = fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/chat/completions'));
+    const messages = JSON.parse(String((chats.at(-1)?.[1] as RequestInit).body)).messages as { content: string }[];
+    expect(messages.map((turn) => turn.content)).toContain('hava nasil');
+  });
+
+  it('cannot be stopped at all when the word is switched off', async () => {
+    readyCatalog();
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline } = await start(events, ['Bir. ', 'Iki. '], { interruptible: false });
+    await ask(pipeline);
+
+    await interject(pipeline, 'dur');
+
+    expect(events.some((event) => event.kind === 'interrupted')).toBe(false);
+  });
+
+  it('says so when it heard a sound but no words', async () => {
+    readyCatalog();
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline } = await start(events, ['Bir.']);
+
+    transcribeInvoke.mockResolvedValueOnce({ ok: true, data: { text: '   ' } });
+    pipeline.pushAudio(toBase64(pcmOf([1, 2])), 'speech-started');
+    pipeline.pushAudio('', 'utterance-ended');
+    await settleLong();
+
+    // Silence here is indistinguishable from the app being broken, which is
+    // precisely how this was reported.
+    expect(events).toContainEqual({ kind: 'error', message: 'LOCAL_HEARD_NOTHING' });
   });
 });

@@ -1484,7 +1484,8 @@
       "LOCAL_TRANSCRIBE_FAILED": "Не удалось распознать сказанное.",
       "LOCAL_LLM_FAILED": "Локальная модель отклонила запрос.",
       "LOCAL_SYNTHESIZE_FAILED": "Не удалось озвучить ответ.",
-      "LOCAL_PIPELINE_FAILED": "Локальный разговор не удался."
+      "LOCAL_PIPELINE_FAILED": "Локальный разговор не удался.",
+      "LOCAL_HEARD_NOTHING": "Я услышал звук, но не разобрал слов."
     },
     "conversationLanguageName": {
       "en": "English",
@@ -1534,7 +1535,12 @@
       "cancelled": "Задача отменена."
     },
     "modelNoEngine": "Для этого голоса нет движка",
-    "checkUsableIn": "Работает · {{seconds}} с"
+    "checkUsableIn": "Работает · {{seconds}} с",
+    "conversationYouSaid": "Вы: {{text}}",
+    "conversationInterruptible": "Одно слово может его прервать",
+    "conversationInterruptibleHint": "Только это слово останавливает его на полуслове. Шум, «мхм» и «да, понятно» — нет, а другой вопрос дождётся конца.",
+    "conversationInterruptibleOffHint": "Его ничто не прерывает. Он договаривает, а затем отвечает на сказанное вами.",
+    "conversationInterruptPhrase": "Слово, которое останавливает"
   },
   "themeCustomizer": {
     "title": "Настроить тему",

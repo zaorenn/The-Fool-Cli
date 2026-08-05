@@ -1484,7 +1484,8 @@
       "LOCAL_TRANSCRIBE_FAILED": "گفته‌ی شما رونویسی نشد.",
       "LOCAL_LLM_FAILED": "مدل محلی درخواست را رد کرد.",
       "LOCAL_SYNTHESIZE_FAILED": "پاسخ خوانده نشد.",
-      "LOCAL_PIPELINE_FAILED": "گفت‌وگوی محلی ناموفق بود."
+      "LOCAL_PIPELINE_FAILED": "گفت‌وگوی محلی ناموفق بود.",
+      "LOCAL_HEARD_NOTHING": "صدایی شنیدم اما کلمه‌ای تشخیص ندادم."
     },
     "conversationLanguageName": {
       "en": "English",
@@ -1534,7 +1535,12 @@
       "cancelled": "کار لغو شد."
     },
     "modelNoEngine": "موتوری برای این صدا وجود ندارد",
-    "checkUsableIn": "کار می‌کند · {{seconds}} ثانیه"
+    "checkUsableIn": "کار می‌کند · {{seconds}} ثانیه",
+    "conversationYouSaid": "تو: {{text}}",
+    "conversationInterruptible": "یک کلمه بتواند حرفش را قطع کند",
+    "conversationInterruptibleHint": "فقط همان کلمه وسط جمله متوقفش می‌کند. سر و صدا، «همم» و «بله، فهمیدم» نه؛ سؤال دیگر هم تا پایان حرفش صبر می‌کند.",
+    "conversationInterruptibleOffHint": "هیچ‌چیز قطعش نمی‌کند. حرفش را تمام می‌کند و بعد به گفته‌های تو پاسخ می‌دهد.",
+    "conversationInterruptPhrase": "کلمهٔ متوقف‌کننده"
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",

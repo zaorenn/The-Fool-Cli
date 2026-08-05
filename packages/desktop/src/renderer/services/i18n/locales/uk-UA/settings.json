@@ -1485,7 +1485,8 @@
       "LOCAL_TRANSCRIBE_FAILED": "Не вдалося розпізнати сказане.",
       "LOCAL_LLM_FAILED": "Локальна модель відхилила запит.",
       "LOCAL_SYNTHESIZE_FAILED": "Не вдалося озвучити відповідь.",
-      "LOCAL_PIPELINE_FAILED": "Локальна розмова не вдалася."
+      "LOCAL_PIPELINE_FAILED": "Локальна розмова не вдалася.",
+      "LOCAL_HEARD_NOTHING": "Я почув звук, але не розібрав слів."
     },
     "conversationLanguageName": {
       "en": "English",
@@ -1535,7 +1536,12 @@
       "cancelled": "Завдання скасовано."
     },
     "modelNoEngine": "Для цього голосу немає рушія",
-    "checkUsableIn": "Працює · {{seconds}} с"
+    "checkUsableIn": "Працює · {{seconds}} с",
+    "conversationYouSaid": "Ви: {{text}}",
+    "conversationInterruptible": "Одне слово може його перервати",
+    "conversationInterruptibleHint": "Лише це слово спиняє його посеред речення. Шум, «мгм» і «так, зрозуміло» — ні, а інше питання дочекається кінця.",
+    "conversationInterruptibleOffHint": "Його ніщо не перериває. Він договорює, а потім відповідає на сказане вами.",
+    "conversationInterruptPhrase": "Слово, що спиняє"
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",

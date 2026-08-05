@@ -458,7 +458,33 @@ export type FoolVoiceSettings = {
   };
   playback: {
     volume: number;
-    interruptible: true;
+    /**
+     * Whether the interrupt word can cut a reply short at all.
+     *
+     * A real setting rather than a constant, because it was a constant `true`
+     * and cancelling a reply took a single loud frame — so any sound in the room
+     * destroyed the answer while it was still being written, before a word of it
+     * was spoken and with nothing on screen to say why. Switched off, nothing
+     * cuts in: a reply always finishes, and whatever was said during it is
+     * answered afterwards.
+     */
+    interruptible: boolean;
+    /**
+     * The one thing that stops it mid-sentence.
+     *
+     * Nothing else does. Not a cough, not a keystroke, not "mhm" or "evet", and
+     * not another question — those wait their turn. This is deliberately a word
+     * rather than a sound level: a level cannot tell a chair from a sentence, and
+     * every attempt to guess from the audio alone threw away answers the user
+     * wanted. One word, chosen by the user, is unambiguous in a way no threshold
+     * is.
+     *
+     * Matched with the same whole-word, accent-folding comparison the wake phrase
+     * uses, so a single word has to be heard exactly — `durum` does not stop
+     * anything — and whatever follows it in the same breath becomes the next
+     * question.
+     */
+    interruptPhrase: string;
     fallbackToDefaultDevice: boolean;
     /**
      * Read the reply itself aloud, rather than a briefing about it.
@@ -691,6 +717,10 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
   playback: {
     volume: 0.85,
     interruptible: true,
+    // One syllable, and the same word in most of the languages this app speaks —
+    // and one word has to be heard exactly, so a short unambiguous one is what
+    // works. Changed in the same panel that starts the conversation.
+    interruptPhrase: 'stop',
     fallbackToDefaultDevice: true,
     autoReadAloud: false,
   },
@@ -920,7 +950,10 @@ const settingsSchema = z
     playback: z
       .object({
         volume: z.number().min(0).max(1).default(0.85),
-        interruptible: z.literal(true).default(true),
+        interruptible: z.boolean().default(true),
+        // Short, because a phrase this is compared against word by word wants to
+        // be one or two words. Empty is not allowed: it would match everything.
+        interruptPhrase: z.string().trim().min(1).max(64).default('stop'),
         fallbackToDefaultDevice: z.boolean().default(true),
         autoReadAloud: z.boolean().default(false),
       })

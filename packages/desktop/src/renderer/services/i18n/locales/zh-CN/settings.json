@@ -1485,7 +1485,8 @@
       "LOCAL_TRANSCRIBE_FAILED": "无法转写你说的话。",
       "LOCAL_LLM_FAILED": "本地模型拒绝了该请求。",
       "LOCAL_SYNTHESIZE_FAILED": "无法朗读回复。",
-      "LOCAL_PIPELINE_FAILED": "本地对话失败。"
+      "LOCAL_PIPELINE_FAILED": "本地对话失败。",
+      "LOCAL_HEARD_NOTHING": "我听到了声音，但没听清词句。"
     },
     "conversationLanguageName": {
       "en": "English",
@@ -1535,7 +1536,12 @@
       "cancelled": "任务已取消。"
     },
     "modelNoEngine": "该语音没有可用引擎",
-    "checkUsableIn": "可用 · {{seconds}} 秒"
+    "checkUsableIn": "可用 · {{seconds}} 秒",
+    "conversationYouSaid": "你说：{{text}}",
+    "conversationInterruptible": "用一个词打断它",
+    "conversationInterruptibleHint": "只有那个词能让它中途停下。噪音、\"嗯\"和\"对，我明白了\"都不会；其他问题会等它说完。",
+    "conversationInterruptibleOffHint": "没有任何东西能打断它。它会说完，然后回答你期间说的话。",
+    "conversationInterruptPhrase": "用来打断的词"
   },
   "themeCustomizer": {
     "title": "自定义主题",

@@ -1486,7 +1486,8 @@
       "LOCAL_TRANSCRIBE_FAILED": "話した内容を文字起こしできませんでした。",
       "LOCAL_LLM_FAILED": "ローカルモデルがリクエストを拒否しました。",
       "LOCAL_SYNTHESIZE_FAILED": "返答を読み上げられませんでした。",
-      "LOCAL_PIPELINE_FAILED": "ローカルの会話に失敗しました。"
+      "LOCAL_PIPELINE_FAILED": "ローカルの会話に失敗しました。",
+      "LOCAL_HEARD_NOTHING": "音は聞こえましたが、言葉が聞き取れませんでした。"
     },
     "conversationLanguageName": {
       "en": "English",
@@ -1536,7 +1537,12 @@
       "cancelled": "タスクを中止しました。"
     },
     "modelNoEngine": "この音声に対応するエンジンがありません",
-    "checkUsableIn": "動作 · {{seconds}} 秒"
+    "checkUsableIn": "動作 · {{seconds}} 秒",
+    "conversationYouSaid": "あなた: {{text}}",
+    "conversationInterruptible": "ひと言で止められる",
+    "conversationInterruptibleHint": "その言葉だけが話の途中で止めます。雑音や「うん」「はい、わかりました」では止まりません。別の質問は話し終わるまで待ちます。",
+    "conversationInterruptibleOffHint": "何も割り込みません。話し終えてから、その間に言ったことに答えます。",
+    "conversationInterruptPhrase": "止める言葉"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",

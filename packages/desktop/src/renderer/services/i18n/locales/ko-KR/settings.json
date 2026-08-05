@@ -1486,7 +1486,8 @@
       "LOCAL_TRANSCRIBE_FAILED": "말한 내용을 받아쓰지 못했습니다.",
       "LOCAL_LLM_FAILED": "로컬 모델이 요청을 거부했습니다.",
       "LOCAL_SYNTHESIZE_FAILED": "답변을 말할 수 없었습니다.",
-      "LOCAL_PIPELINE_FAILED": "로컬 대화에 실패했습니다."
+      "LOCAL_PIPELINE_FAILED": "로컬 대화에 실패했습니다.",
+      "LOCAL_HEARD_NOTHING": "소리는 들렸지만 말을 알아듣지 못했어요."
     },
     "conversationLanguageName": {
       "en": "English",
@@ -1536,7 +1537,12 @@
       "cancelled": "작업을 취소했어요."
     },
     "modelNoEngine": "이 음성을 재생할 엔진이 없어요",
-    "checkUsableIn": "작동 · {{seconds}}초"
+    "checkUsableIn": "작동 · {{seconds}}초",
+    "conversationYouSaid": "나: {{text}}",
+    "conversationInterruptible": "한 단어로 멈추게 하기",
+    "conversationInterruptibleHint": "그 단어만 말 도중에 멈춥니다. 소음이나 \"음\", \"네, 알겠어요\"로는 멈추지 않고, 다른 질문은 말이 끝날 때까지 기다립니다.",
+    "conversationInterruptibleOffHint": "아무것도 끊지 않습니다. 다 말한 뒤에 그동안 한 말에 답합니다.",
+    "conversationInterruptPhrase": "멈추게 할 단어"
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",

@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Input, Link, Select, Tag, Typography } from '@arco-design/web-react';
+import { Input, Link, Select, Switch, Tag, Typography } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
 import type { IProvider } from '@/common/config/storage';
@@ -245,6 +245,45 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
           />
         )}
       </label>
+
+      {/* Interruption, which is a conversation setting rather than an audio one:
+          it decides what happens to an answer when the room makes a noise. */}
+      <div className='grid gap-5px rounded-10px bg-fill-1 px-10px py-9px'>
+        <label className='flex items-center justify-between gap-10px'>
+          <Typography.Text className='text-12px font-600 text-t-secondary'>
+            {t('settings.voice.conversationInterruptible')}
+          </Typography.Text>
+          <Switch
+            size='small'
+            checked={settings.playback.interruptible}
+            disabled={disabled}
+            onChange={(value: boolean) =>
+              onChange((previous) => ({ ...previous, playback: { ...previous.playback, interruptible: value } }))
+            }
+          />
+        </label>
+        <Typography.Text className='text-11px leading-16px text-t-tertiary'>
+          {settings.playback.interruptible
+            ? t('settings.voice.conversationInterruptibleHint')
+            : t('settings.voice.conversationInterruptibleOffHint')}
+        </Typography.Text>
+        {settings.playback.interruptible ? (
+          <label className='mt-4px grid gap-4px'>
+            <Typography.Text className='text-11px text-t-tertiary'>
+              {t('settings.voice.conversationInterruptPhrase')}
+            </Typography.Text>
+            <Input
+              value={settings.playback.interruptPhrase}
+              disabled={disabled}
+              maxLength={64}
+              placeholder='stop'
+              onChange={(value: string) =>
+                onChange((previous) => ({ ...previous, playback: { ...previous.playback, interruptPhrase: value } }))
+              }
+            />
+          </label>
+        ) : null}
+      </div>
 
       {isLocal ? (
         <label className='grid gap-5px'>

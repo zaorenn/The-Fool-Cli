@@ -1484,7 +1484,8 @@
       "LOCAL_TRANSCRIBE_FAILED": "Söylediğin yazıya dökülemedi.",
       "LOCAL_LLM_FAILED": "Yerel model isteği geri çevirdi.",
       "LOCAL_SYNTHESIZE_FAILED": "Yanıt seslendirilemedi.",
-      "LOCAL_PIPELINE_FAILED": "Yerel sohbet başarısız oldu."
+      "LOCAL_PIPELINE_FAILED": "Yerel sohbet başarısız oldu.",
+      "LOCAL_HEARD_NOTHING": "Bir şey duydum ama kelimeleri seçemedim."
     },
     "conversationLanguageName": {
       "en": "English",
@@ -1534,7 +1535,12 @@
       "cancelled": "Görev iptal edildi."
     },
     "modelNoEngine": "Bu ses için motor yok",
-    "checkUsableIn": "Çalışıyor · {{seconds}} s"
+    "checkUsableIn": "Çalışıyor · {{seconds}} s",
+    "conversationYouSaid": "Sen: {{text}}",
+    "conversationInterruptible": "Bir kelime sözünü kesebilsin",
+    "conversationInterruptibleHint": "Sadece o kelime cümlesinin ortasında durdurur. Gürültü, \"hıhı\" ve \"evet anladım\" durdurmaz; başka bir soru da sözü bitene kadar bekler.",
+    "conversationInterruptibleOffHint": "Hiçbir şey sözünü kesmez. Bitirir, sonra bu arada söylediklerini yanıtlar.",
+    "conversationInterruptPhrase": "Durduran kelime"
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

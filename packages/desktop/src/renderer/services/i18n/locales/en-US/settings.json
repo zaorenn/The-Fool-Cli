@@ -1484,7 +1484,8 @@
       "LOCAL_TRANSCRIBE_FAILED": "What you said could not be transcribed.",
       "LOCAL_LLM_FAILED": "The local model refused the request.",
       "LOCAL_SYNTHESIZE_FAILED": "The reply could not be spoken.",
-      "LOCAL_PIPELINE_FAILED": "The local conversation failed."
+      "LOCAL_PIPELINE_FAILED": "The local conversation failed.",
+      "LOCAL_HEARD_NOTHING": "I heard something but could not make out any words."
     },
     "conversationLanguageName": {
       "en": "English",
@@ -1534,7 +1535,12 @@
       "cancelled": "Task cancelled."
     },
     "modelNoEngine": "No engine for this voice",
-    "checkUsableIn": "Works · {{seconds}} s"
+    "checkUsableIn": "Works · {{seconds}} s",
+    "conversationYouSaid": "You said: {{text}}",
+    "conversationInterruptible": "A word can cut it off",
+    "conversationInterruptibleHint": "Only that word stops it mid-sentence. Noise, \"mhm\" and \"yes, I see\" never do, and another question waits until it has finished.",
+    "conversationInterruptibleOffHint": "Nothing cuts it off. It finishes, then answers whatever you said meanwhile.",
+    "conversationInterruptPhrase": "Word that stops it"
   },
   "themeCustomizer": {
     "title": "Customize theme",

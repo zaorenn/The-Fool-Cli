@@ -1484,7 +1484,8 @@
       "LOCAL_TRANSCRIBE_FAILED": "Impossible de transcrire ce que vous avez dit.",
       "LOCAL_LLM_FAILED": "Le modèle local a refusé la requête.",
       "LOCAL_SYNTHESIZE_FAILED": "Impossible de prononcer la réponse.",
-      "LOCAL_PIPELINE_FAILED": "La conversation locale a échoué."
+      "LOCAL_PIPELINE_FAILED": "La conversation locale a échoué.",
+      "LOCAL_HEARD_NOTHING": "J’ai entendu quelque chose, mais aucun mot distinct."
     },
     "conversationLanguageName": {
       "en": "English",
@@ -1534,7 +1535,12 @@
       "cancelled": "Tâche annulée."
     },
     "modelNoEngine": "Aucun moteur pour cette voix",
-    "checkUsableIn": "Fonctionne · {{seconds}} s"
+    "checkUsableIn": "Fonctionne · {{seconds}} s",
+    "conversationYouSaid": "Toi : {{text}}",
+    "conversationInterruptible": "Un mot peut l’arrêter",
+    "conversationInterruptibleHint": "Seul ce mot l’arrête au milieu d’une phrase. Un bruit, « mhm » ou « oui, je vois » ne l’arrêtent pas, et une autre question attend la fin.",
+    "conversationInterruptibleOffHint": "Rien ne l’interrompt. Il finit, puis répond à ce que tu as dit entre-temps.",
+    "conversationInterruptPhrase": "Mot qui l’arrête"
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

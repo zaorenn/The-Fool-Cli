@@ -33,7 +33,6 @@ const VoiceConversationPage: React.FC = () => {
 
   const active = phase !== 'idle';
   const phaseLabel = useMemo(() => t(`settings.voice.conversationPhase.${phase}`), [phase, t]);
-  const spoken = conversation.assistantTranscript || conversation.userTranscript;
 
   return (
     <main className={classNames(styles.page, active && styles.active, styles[phase])} data-testid='voice-conversation'>
@@ -77,9 +76,19 @@ const VoiceConversationPage: React.FC = () => {
               </div>
             </div>
 
-            <div className='min-h-72px max-w-620px text-center'>
+            {/* Both sides, not whichever spoke last. Showing only the reply left
+                the user unable to check what was actually heard — which is the
+                first thing you want when an answer looks wrong, and the only way
+                to tell a mis-transcription from a bad answer. */}
+            <div className='flex min-h-72px max-w-620px flex-col items-center gap-6px text-center'>
+              {conversation.userTranscript ? (
+                <Typography.Text className='block text-13px leading-20px text-t-tertiary' data-testid='voice-heard'>
+                  {t('settings.voice.conversationYouSaid', { text: conversation.userTranscript })}
+                </Typography.Text>
+              ) : null}
               <Typography.Text className='block text-15px leading-24px text-t-secondary'>
-                {spoken || t('settings.voice.conversationReadyHint')}
+                {conversation.assistantTranscript ||
+                  (conversation.userTranscript ? '' : t('settings.voice.conversationReadyHint'))}
               </Typography.Text>
             </div>
 

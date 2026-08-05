@@ -1487,7 +1487,8 @@
       "LOCAL_TRANSCRIBE_FAILED": "Não foi possível transcrever o que você disse.",
       "LOCAL_LLM_FAILED": "O modelo local recusou a solicitação.",
       "LOCAL_SYNTHESIZE_FAILED": "Não foi possível falar a resposta.",
-      "LOCAL_PIPELINE_FAILED": "A conversa local falhou."
+      "LOCAL_PIPELINE_FAILED": "A conversa local falhou.",
+      "LOCAL_HEARD_NOTHING": "Ouvi algo, mas não entendi as palavras."
     },
     "conversationLanguageName": {
       "en": "English",
@@ -1537,7 +1538,12 @@
       "cancelled": "Tarefa cancelada."
     },
     "modelNoEngine": "Sem mecanismo para esta voz",
-    "checkUsableIn": "Funciona · {{seconds}} s"
+    "checkUsableIn": "Funciona · {{seconds}} s",
+    "conversationYouSaid": "Você: {{text}}",
+    "conversationInterruptible": "Uma palavra pode cortá-lo",
+    "conversationInterruptibleHint": "Só essa palavra o para no meio da frase. Ruído, \"mhm\" e \"sim, entendi\" não param, e outra pergunta espera ele terminar.",
+    "conversationInterruptibleOffHint": "Nada o corta. Ele termina e depois responde o que você disse nesse meio-tempo.",
+    "conversationInterruptPhrase": "Palavra que o para"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

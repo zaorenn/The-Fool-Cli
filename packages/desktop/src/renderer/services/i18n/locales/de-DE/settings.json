@@ -1484,7 +1484,8 @@
       "LOCAL_TRANSCRIBE_FAILED": "Das Gesagte konnte nicht transkribiert werden.",
       "LOCAL_LLM_FAILED": "Das lokale Modell hat die Anfrage abgelehnt.",
       "LOCAL_SYNTHESIZE_FAILED": "Die Antwort konnte nicht gesprochen werden.",
-      "LOCAL_PIPELINE_FAILED": "Das lokale Gespräch ist fehlgeschlagen."
+      "LOCAL_PIPELINE_FAILED": "Das lokale Gespräch ist fehlgeschlagen.",
+      "LOCAL_HEARD_NOTHING": "Ich habe etwas gehört, aber keine Worte verstanden."
     },
     "conversationLanguageName": {
       "en": "English",
@@ -1534,7 +1535,12 @@
       "cancelled": "Aufgabe abgebrochen."
     },
     "modelNoEngine": "Keine Engine für diese Stimme",
-    "checkUsableIn": "Funktioniert · {{seconds}} s"
+    "checkUsableIn": "Funktioniert · {{seconds}} s",
+    "conversationYouSaid": "Du: {{text}}",
+    "conversationInterruptible": "Ein Wort kann es abbrechen",
+    "conversationInterruptibleHint": "Nur dieses Wort stoppt es mitten im Satz. Geräusche, \"mhm\" und \"ja, verstanden\" nicht — und eine andere Frage wartet, bis es fertig ist.",
+    "conversationInterruptibleOffHint": "Nichts unterbricht es. Es spricht zu Ende und antwortet dann auf das, was du gesagt hast.",
+    "conversationInterruptPhrase": "Wort, das es stoppt"
   },
   "themeCustomizer": {
     "title": "Design anpassen",

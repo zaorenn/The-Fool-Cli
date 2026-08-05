@@ -1484,7 +1484,8 @@
       "LOCAL_TRANSCRIBE_FAILED": "No se pudo transcribir lo que dijiste.",
       "LOCAL_LLM_FAILED": "El modelo local rechazó la petición.",
       "LOCAL_SYNTHESIZE_FAILED": "No se pudo pronunciar la respuesta.",
-      "LOCAL_PIPELINE_FAILED": "La conversación local falló."
+      "LOCAL_PIPELINE_FAILED": "La conversación local falló.",
+      "LOCAL_HEARD_NOTHING": "Oí algo, pero no distinguí ninguna palabra."
     },
     "conversationLanguageName": {
       "en": "English",
@@ -1534,7 +1535,12 @@
       "cancelled": "Tarea cancelada."
     },
     "modelNoEngine": "No hay motor para esta voz",
-    "checkUsableIn": "Funciona · {{seconds}} s"
+    "checkUsableIn": "Funciona · {{seconds}} s",
+    "conversationYouSaid": "Tú: {{text}}",
+    "conversationInterruptible": "Una palabra puede cortarlo",
+    "conversationInterruptibleHint": "Solo esa palabra lo detiene a media frase. El ruido, \"mhm\" y \"sí, entiendo\" no, y otra pregunta espera a que termine.",
+    "conversationInterruptibleOffHint": "Nada lo corta. Termina y luego responde a lo que dijiste mientras hablaba.",
+    "conversationInterruptPhrase": "Palabra que lo detiene"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

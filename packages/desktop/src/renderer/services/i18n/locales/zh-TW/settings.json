@@ -1486,7 +1486,8 @@
       "LOCAL_TRANSCRIBE_FAILED": "無法轉錄你說的話。",
       "LOCAL_LLM_FAILED": "本機模型拒絕了這個請求。",
       "LOCAL_SYNTHESIZE_FAILED": "無法朗讀回覆。",
-      "LOCAL_PIPELINE_FAILED": "本機對話失敗。"
+      "LOCAL_PIPELINE_FAILED": "本機對話失敗。",
+      "LOCAL_HEARD_NOTHING": "我聽到了聲音，但沒聽清詞句。"
     },
     "conversationLanguageName": {
       "en": "English",
@@ -1536,7 +1537,12 @@
       "cancelled": "任務已取消。"
     },
     "modelNoEngine": "此語音沒有可用引擎",
-    "checkUsableIn": "可用 · {{seconds}} 秒"
+    "checkUsableIn": "可用 · {{seconds}} 秒",
+    "conversationYouSaid": "你說：{{text}}",
+    "conversationInterruptible": "用一個詞打斷它",
+    "conversationInterruptibleHint": "只有那個詞能讓它中途停下。雜音、「嗯」和「對，我懂了」都不會；其他問題會等它說完。",
+    "conversationInterruptibleOffHint": "沒有任何東西能打斷它。它會說完，然後回答你期間說的話。",
+    "conversationInterruptPhrase": "用來打斷的詞"
   },
   "themeCustomizer": {
     "title": "自訂主題",
