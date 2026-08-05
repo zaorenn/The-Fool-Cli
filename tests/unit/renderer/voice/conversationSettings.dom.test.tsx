@@ -22,9 +22,19 @@ import { DEFAULT_FOOL_VOICE_SETTINGS, type FoolVoiceSettings } from '@/common/ty
  */
 
 const listProviders = vi.fn();
+const listAssistants = vi.fn();
 
 vi.mock('@/common', () => ({
-  ipcBridge: { mode: { listProviders: { invoke: () => listProviders() } } },
+  ipcBridge: {
+    mode: { listProviders: { invoke: () => listProviders() } },
+    // The agent picker moved onto this panel: choosing who does the work is a
+    // decision made between conversations, next to the button that starts one.
+    assistants: { list: { invoke: () => listAssistants() } },
+  },
+}));
+
+vi.mock('@renderer/hooks/agent/useManagedAgents', () => ({
+  useManagedAgentRuntimeCatalog: () => [],
 }));
 
 vi.mock('react-i18next', () => ({
@@ -40,6 +50,7 @@ const settings = (change: Partial<FoolVoiceSettings['realtime']> = {}): FoolVoic
 
 beforeEach(() => {
   listProviders.mockReset().mockResolvedValue([]);
+  listAssistants.mockReset().mockResolvedValue([]);
   // The picker reads the loaded models off the local server.
   vi.stubGlobal(
     'fetch',
@@ -87,5 +98,27 @@ describe('the panel beside the microphone', () => {
     render(<ConversationSettings settings={settings()} disabled={false} onChange={vi.fn()} />);
 
     await waitFor(() => expect(screen.getByText('settings.voice.conversationVisionModelSame')).toBeTruthy());
+  });
+
+  /**
+   * Who does the work, chosen where the conversation is started.
+   *
+   * The model that talks and the agent that acts are two different choices, and
+   * only the first was on this panel — the second was three levels into the
+   * settings modal, which is where "can you open YouTube for me" quietly went
+   * wrong. Both belong beside the button that starts a conversation.
+   */
+  it('offers the agent and its model, not only the model that talks', async () => {
+    render(<ConversationSettings settings={settings()} disabled={false} onChange={vi.fn()} />);
+
+    await waitFor(() => expect(screen.getByTestId('voice-agent')).toBeTruthy());
+    expect(screen.getByTestId('voice-agent-model')).toBeTruthy();
+  });
+
+  it('locks the agent picker while a conversation is running', async () => {
+    render(<ConversationSettings settings={settings()} disabled onChange={vi.fn()} />);
+
+    await waitFor(() => expect(screen.getByTestId('voice-agent')).toBeTruthy());
+    expect(screen.getByTestId('voice-agent').getAttribute('class')).toContain('disabled');
   });
 });

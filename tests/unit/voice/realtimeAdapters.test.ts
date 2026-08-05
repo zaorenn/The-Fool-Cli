@@ -178,4 +178,22 @@ describe('realtime tool schemas', () => {
   it('names tools without a dot, which Gemini rejects in a function name', () => {
     for (const tool of REALTIME_TOOLS) expect(tool.name).toMatch(/^[a-zA-Z0-9_-]+$/);
   });
+
+  /**
+   * Opening a page is its own tool, not a task for the desktop agent.
+   *
+   * "Open YouTube for me" used to go to `app_ask_jester`, which drives the
+   * machine by hand: minutes of clicking to do what handing a URL to the
+   * user's own browser does at once, and it failed outright whenever the agent
+   * was unavailable.
+   */
+  it('offers opening a page as a tool of its own, taking a URL', () => {
+    const open = REALTIME_TOOLS.find((tool) => tool.name === 'app_open_url');
+
+    expect(open?.parameters.required).toEqual(['url']);
+    expect(open?.parameters.properties).toHaveProperty('url');
+    // The description is what decides whether the model reaches for this or for
+    // the agent, so the distinction has to be stated in it.
+    expect(open?.description).toMatch(/browser/i);
+  });
 });

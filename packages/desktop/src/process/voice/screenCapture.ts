@@ -5,6 +5,7 @@
  */
 
 import { desktopCapturer, screen, type Display, type NativeImage } from 'electron';
+import { flashScreenEdges } from './screenFlash';
 import { cropForSelection, type Rect } from './selectionGeometry';
 
 /**
@@ -80,6 +81,11 @@ const toCapture = (image: NativeImage, label: string): ScreenCapture | null => {
 /** The whole of the display the pointer is on. */
 export const captureScreen = async (): Promise<ScreenCapture | null> => {
   try {
+    // Shown, not awaited: the picture is taken while the light is still on, so
+    // what the user saw and what the assistant read are the same moment. An
+    // assistant that reads the screen without saying when is asking to be
+    // trusted about the one thing that cannot be checked from the answer.
+    flashScreenEdges();
     const image = await captureDisplayImage(activeDisplay());
     return image ? toCapture(image, 'screen') : null;
   } catch (error) {

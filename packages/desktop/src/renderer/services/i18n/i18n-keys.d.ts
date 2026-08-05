@@ -2413,6 +2413,7 @@ export type I18nKey =
   | 'settings.voice.conversationModeTitle'
   | 'settings.voice.conversationModel'
   | 'settings.voice.conversationOauthNotice'
+  | 'settings.voice.conversationOpened'
   | 'settings.voice.conversationPersona'
   | 'settings.voice.conversationPersonaName.companion'
   | 'settings.voice.conversationPersonaName.custom'

@@ -136,6 +136,22 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_open_url',
+    description:
+      "Open a web page in the user's own default browser, in a new tab of the browser they already have open. Use this for anything of the form 'open X' where X is a site, and for playing something: a song, a video or an artist goes to a YouTube search or watch URL. This is instant and needs no agent, so prefer it over app_ask_jester whenever a URL is all that is needed. Say what you are opening in a few words; do not read the address out.",
+    parameters: {
+      type: 'object',
+      properties: {
+        url: {
+          type: 'string',
+          description:
+            'The full address, including https://. For a song or video, a YouTube search URL such as https://www.youtube.com/results?search_query=… with the query percent-encoded.',
+        },
+      },
+      required: ['url'],
+    },
+  },
+  {
     name: 'app_ask_jester',
     description:
       "Carry out a real task on this computer through the built-in agent. It works the user's applications for them — opens something, clicks, types, fills in a form, sends a message in Discord or an email — and handles files, code and research. Use it for anything that changes something outside this conversation. It runs while you keep talking, so say briefly that you are on it, and report the outcome in a sentence when it comes back. Do not use it merely to look at the screen; that is app_look_at_screen.",

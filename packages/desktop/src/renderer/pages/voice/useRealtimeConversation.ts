@@ -294,6 +294,21 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
           return { ok: true, screen: description };
         }
 
+        if (event.name === 'app_open_url') {
+          const url = typeof args.url === 'string' ? args.url.trim() : '';
+          // Only the two web schemes reach the shell. `openExternal` will hand
+          // anything to whatever the system has registered for it, and a model
+          // is allowed to put any string in this argument.
+          if (!/^https?:\/\//i.test(url)) throw new Error(t('settings.voice.conversationActionUnsupported'));
+          await ipcBridge.shell.openExternal.invoke(url);
+          updateActivity(event.callId, {
+            detail: t('settings.voice.conversationOpened', { url }),
+            state: 'completed',
+          });
+          backToListening();
+          return { ok: true };
+        }
+
         if (event.name === 'app_ask_jester') {
           const request = typeof args.request === 'string' ? args.request.trim() : '';
           if (request.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));

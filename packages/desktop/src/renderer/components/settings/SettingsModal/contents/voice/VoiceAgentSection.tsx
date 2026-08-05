@@ -18,6 +18,8 @@ import { buildAgentRuntimeModelInfo } from '@renderer/utils/model/agentRuntimeCa
 export type VoiceAgentSectionProps = {
   settings: FoolVoiceSettings;
   onChange: (change: (previous: FoolVoiceSettings) => FoolVoiceSettings) => void;
+  /** Locked while a conversation is running, where changing it would do nothing. */
+  disabled?: boolean;
 };
 
 /**
@@ -45,7 +47,7 @@ const parseModelValue = (value: string): { providerId: string; modelId: string }
  * talking to a pet across the room. Pinned here, the same agent and the same
  * model answer every time.
  */
-const VoiceAgentSection: React.FC<VoiceAgentSectionProps> = ({ settings, onChange }) => {
+const VoiceAgentSection: React.FC<VoiceAgentSectionProps> = ({ settings, onChange, disabled = false }) => {
   const { t } = useTranslation();
   const [assistants, setAssistants] = useState<Assistant[]>([]);
   const [providers, setProviders] = useState<IProvider[]>([]);
@@ -131,6 +133,7 @@ const VoiceAgentSection: React.FC<VoiceAgentSectionProps> = ({ settings, onChang
         <span className='text-13px text-t-secondary'>{t('settings.voice.agent')}</span>
         <Select
           data-testid='voice-agent'
+          disabled={disabled}
           value={settings.session.assistantId}
           options={assistantOptions}
           onChange={(value: string) =>
@@ -146,6 +149,7 @@ const VoiceAgentSection: React.FC<VoiceAgentSectionProps> = ({ settings, onChang
         <span className='text-13px text-t-secondary'>{t('settings.voice.agentModel')}</span>
         <Select
           data-testid='voice-agent-model'
+          disabled={disabled}
           value={modelValue(settings.session.providerId, settings.session.modelId)}
           options={modelOptions}
           showSearch
@@ -164,6 +168,7 @@ const VoiceAgentSection: React.FC<VoiceAgentSectionProps> = ({ settings, onChang
         <span className='text-13px text-t-secondary'>{t('settings.voice.attachScreenshot')}</span>
         <Switch
           data-testid='voice-attach-screenshot'
+          disabled={disabled}
           checked={settings.session.attachScreenshot}
           onChange={(checked: boolean) =>
             onChange((previous) => ({

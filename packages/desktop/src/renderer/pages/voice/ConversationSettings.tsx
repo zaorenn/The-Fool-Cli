@@ -17,6 +17,9 @@ import {
   type VoiceConversationProviderId,
 } from '@/common/realtime';
 import type { FoolVoiceSettings } from '@/common/types/foolVoice';
+// The same picker the Settings modal shows, rather than a second one beside it:
+// two controls over one stored value is how they come to disagree.
+import VoiceAgentSection from '@renderer/components/settings/SettingsModal/contents/voice/VoiceAgentSection';
 import { LOCAL_LLM_DEFAULT_ENDPOINT, listLocalModels } from './localPipeline';
 
 /**
@@ -245,6 +248,17 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
           />
         )}
       </label>
+
+      {/* Who does the work when the conversation asks for something real.
+          Beside the start button rather than only in Settings because it is the
+          difference between "open YouTube" happening and not, and the failure it
+          causes reads as the voice being broken rather than as a setting. */}
+      <div className='grid gap-6px rounded-10px bg-fill-1 px-10px py-9px'>
+        <Typography.Text className='text-12px font-600 text-t-secondary'>
+          {t('settings.voice.agentSection')}
+        </Typography.Text>
+        <VoiceAgentSection settings={settings} onChange={onChange} disabled={disabled} />
+      </div>
 
       {/* Interruption, which is a conversation setting rather than an audio one:
           it decides what happens to an answer when the room makes a noise. */}

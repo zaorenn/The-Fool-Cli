@@ -1407,6 +1407,7 @@
     "conversationActionRunning": "Üzerinde çalışıyor…",
     "conversationThemeChanged": "Tema tonu {{tone}} olarak değiştirildi.",
     "conversationDelegated": "Bilgisayarında yapıyor…",
+    "conversationOpened": "{{url}} açılıyor",
     "conversationSetupFailed": "Kurulum sohbeti başlatılamadı.",
     "conversationProviderSetupPrompt": "{{provider}} sağlayıcısını resmi CLI tarafından yönetilen OAuth akışıyla The Fool’a bağla. Benden OAuth tokenı yapıştırmamı isteme. Kurulumu ve kimlik doğrulamayı denetle, tarayıcı veya cihaz akışında bana rehberlik et, agent sağlığını doğrula ve kalan uygulama kurulumunu tamamlamama yardım et.",
     "conversationContinueWithJester": "Jester ile devam et",
