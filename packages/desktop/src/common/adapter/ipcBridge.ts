@@ -34,6 +34,8 @@ import type {
   VoiceRemoveResponse,
   VoiceRealtimeEnsureRequest,
   VoiceRealtimeEnsureResponse,
+  VoiceRealtimeSessionRequest,
+  VoiceRealtimeSessionResponse,
   VoiceRequestEnvelope,
   VoiceResponseEnvelope,
   VoiceSpeakersRequest,
@@ -178,6 +180,17 @@ export const foolVoice = {
     VoiceResponseEnvelope<VoiceRealtimeEnsureResponse>,
     VoiceRequestEnvelope<VoiceRealtimeEnsureRequest>
   >('fool.voice.realtime.ensure'),
+  /**
+   * Where to open a spoken conversation, and as whom.
+   *
+   * The socket is opened by the window; only the credential comes from here, so
+   * that the account key stays in the process that already holds it and a
+   * short-lived token is handed over instead wherever the provider mints one.
+   */
+  realtimeSession: bridge.buildProvider<
+    VoiceResponseEnvelope<VoiceRealtimeSessionResponse>,
+    VoiceRequestEnvelope<VoiceRealtimeSessionRequest>
+  >('fool.voice.realtime.session'),
   catalog: bridge.buildProvider<VoiceResponseEnvelope<VoiceCatalogResponse>, VoiceRequestEnvelope<VoiceCatalogRequest>>(
     'fool.voice.catalog'
   ),

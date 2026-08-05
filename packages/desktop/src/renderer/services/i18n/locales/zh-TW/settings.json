@@ -1417,7 +1417,8 @@
       "thinking": "Thinking",
       "speaking": "Speaking",
       "acting": "Taking action",
-      "error": "Needs attention"
+      "error": "Needs attention",
+      "hearing": "正在聽"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1430,7 +1431,56 @@
       "codex": "Use your Codex account and its agentic coding runtime across The Fool.",
       "claude": "Use your Claude account and its agentic runtime across The Fool."
     },
-    "desktopOnly": "Voice runs on the computer that hosts The Fool — its engines are installed and played there. Open Voice settings on that machine."
+    "desktopOnly": "Voice runs on the computer that hosts The Fool — its engines are installed and played there. Open Voice settings on that machine.",
+    "conversationProvider": "提供者",
+    "conversationProviderName": {
+      "openai-realtime": "ChatGPT（OpenAI Realtime）",
+      "gemini-live": "Gemini Live",
+      "local-s2s": "本機執行"
+    },
+    "conversationVoice": "音色",
+    "conversationLanguage": "語言",
+    "conversationLanguageAuto": "跟隨我的語言",
+    "conversationPersona": "人設",
+    "conversationPersonaName": {
+      "companion": "The Fool",
+      "english-teacher": "英語老師",
+      "language-partner": "語言夥伴",
+      "interview-coach": "模擬面試",
+      "custom": "自訂"
+    },
+    "conversationInstructions": "指示",
+    "conversationInstructionsExtra": "补充說明",
+    "conversationInstructionsPlaceholder": "說明你是誰，以及希望從這次對話中得到什麼。例如：我是B1程度，請糾正我的過去式，我們聊聊電影。",
+    "conversationModel": "模型",
+    "conversationToneUnknown": "該顏色不屬於應用程式的色調。",
+    "conversationActionUnsupported": "語音無法完成這個動作。",
+    "conversationError": {
+      "REALTIME_NO_PROVIDER": "尚未為該提供者設定 API 金鑰。請在設定 → 模型服務中新增後重試。",
+      "REALTIME_UNSAFE_ENDPOINT": "該位址未加密，連線已遭拒絕。",
+      "REALTIME_SESSION_TIMEOUT": "提供者未能及時建立對話階段，請重試。",
+      "REALTIME_CONNECTION_FAILED": "無法連線。請檢查 API 金鑰與網路。",
+      "REALTIME_CONNECTION_CLOSED": "提供者已關閉連線。",
+      "GEMINI_CONNECTION_CLOSING": "Gemini 正在結束本次對話。請重新開始以繼續。",
+      "SPEECH_RUNTIME_MISSING": "本機語音執行環境尚未安裝。請選擇其他提供者，或先完成安裝。",
+      "provider-failed": "提供者無法啟動對話。",
+      "unavailable": "此版本不支援語音對話。",
+      "invalid-request": "請求遭拒絕。請檢查對話設定。"
+    },
+    "conversationLanguageName": {
+      "en": "English",
+      "tr": "Türkçe",
+      "de": "Deutsch",
+      "fr": "Français",
+      "es": "Español",
+      "pt": "Português",
+      "ru": "Русский",
+      "uk": "Українська",
+      "ja": "日本語",
+      "ko": "한국어",
+      "zh": "中文",
+      "fa": "فارسی"
+    }
   },
   "themeCustomizer": {
     "title": "自訂主題",

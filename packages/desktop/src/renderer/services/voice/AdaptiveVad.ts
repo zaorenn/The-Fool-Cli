@@ -67,7 +67,7 @@ const CALIBRATION_QUANTILE = 0.25;
 /** The value at `fraction` through the sorted samples. */
 const quantile = (samples: readonly number[], fraction: number): number => {
   if (samples.length === 0) return 0;
-  const sorted = [...samples].sort((a, b) => a - b);
+  const sorted = [...samples].toSorted((a, b) => a - b);
   const index = Math.min(sorted.length - 1, Math.floor(sorted.length * fraction));
   return sorted[index];
 };

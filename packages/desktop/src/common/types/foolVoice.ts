@@ -378,6 +378,26 @@ export type FoolVoiceSettings = {
      */
     screenshotSource: 'window' | 'screen';
   };
+  /**
+   * The spoken conversation mode: who answers, in whose voice, as whom.
+   *
+   * Separate from `stt`/`tts` because nothing is shared with them. Those two
+   * describe a pipeline this app assembles — transcribe, think, synthesise — and
+   * every stage is separately chosen. A speech-to-speech provider is one model
+   * that hears and speaks, so the only things left to choose are which one, what
+   * it sounds like, and who it is being.
+   */
+  realtime: {
+    providerId: 'openai-realtime' | 'gemini-live' | 'local-s2s';
+    /** Empty means the provider's own default, which is what most users want. */
+    model: string;
+    voice: string;
+    personaPresetId: 'companion' | 'english-teacher' | 'language-partner' | 'interview-coach' | 'custom';
+    /** Added to the preset, or the whole persona when the preset is `custom`. */
+    customInstructions: string;
+    /** A language to hold to, or `auto` to follow whoever is speaking. */
+    language: string;
+  };
   playback: {
     volume: number;
     interruptible: true;
@@ -582,6 +602,16 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     attachScreenshot: true,
     screenshotSource: 'window',
   },
+  realtime: {
+    // OpenAI by default: it is the provider most users of this app already have
+    // a key for, and the only one of the three that needs nothing installed.
+    providerId: 'openai-realtime',
+    model: '',
+    voice: 'marin',
+    personaPresetId: 'companion',
+    customInstructions: '',
+    language: 'auto',
+  },
   playback: {
     volume: 0.85,
     interruptible: true,
@@ -769,6 +799,23 @@ const settingsSchema = z
         modelId: z.string().max(256).default(''),
         attachScreenshot: z.boolean().default(true),
         screenshotSource: z.enum(['window', 'screen']).default('window'),
+      })
+      .strict()
+      .default({}),
+    realtime: z
+      .object({
+        providerId: z.enum(['openai-realtime', 'gemini-live', 'local-s2s']).default('openai-realtime'),
+        model: z.string().max(256).default(''),
+        voice: z.string().max(64).default('marin'),
+        personaPresetId: z
+          .enum(['companion', 'english-teacher', 'language-partner', 'interview-coach', 'custom'])
+          .default('companion'),
+        // Room for a real brief — a teaching persona with the learner's level,
+        // their weak spots and the subjects they want to talk about runs to a
+        // few paragraphs — and short of anything that could be a pasted
+        // transcript.
+        customInstructions: z.string().max(4000).default(''),
+        language: languageSchema.default('auto'),
       })
       .strict()
       .default({}),
@@ -1286,4 +1333,29 @@ export type VoiceRealtimeEnsureRequest = Record<string, never>;
 export type VoiceRealtimeEnsureResponse = {
   endpoint: string;
   reused: boolean;
+};
+
+/**
+ * Asking the main process where — and as whom — to open a spoken conversation.
+ *
+ * The model is part of the request because the credential can depend on it: a
+ * minted client secret is issued against the session it will be used for, so the
+ * process cannot mint one without knowing which model the window is about to
+ * ask for.
+ */
+export type VoiceRealtimeSessionRequest = {
+  providerId: string;
+  model: string;
+};
+
+export type VoiceRealtimeSessionResponse = {
+  providerId: string;
+  /** Empty for the local pipeline, which is not authenticated. */
+  token: string;
+  /** Empty where the adapter already knows the provider's fixed address. */
+  endpoint: string;
+  /** True when the token is short-lived and a later session must ask again. */
+  ephemeral: boolean;
+  /** The provider record's own name, so the page can say which account is paying. */
+  providerName: string;
 };

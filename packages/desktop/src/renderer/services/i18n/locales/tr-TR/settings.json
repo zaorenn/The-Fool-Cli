@@ -1415,7 +1415,8 @@
       "thinking": "Düşünüyor",
       "speaking": "Konuşuyor",
       "acting": "Eylem gerçekleştiriyor",
-      "error": "İlgilenmen gerekiyor"
+      "error": "İlgilenmen gerekiyor",
+      "hearing": "Sizi duyuyor"
     },
     "conversationProviderStatus": {
       "unavailable": "Kullanılamıyor",
@@ -1428,7 +1429,56 @@
       "codex": "Codex hesabını ve agentic kodlama çalışma zamanını The Fool genelinde kullan.",
       "claude": "Claude hesabını ve agentic çalışma zamanını The Fool genelinde kullan."
     },
-    "desktopOnly": "Ses, The Fool'u çalıştıran bilgisayarda çalışır — motorları orada kurulur ve orada seslendirilir. Ses ayarlarını o makinede açın."
+    "desktopOnly": "Ses, The Fool'u çalıştıran bilgisayarda çalışır — motorları orada kurulur ve orada seslendirilir. Ses ayarlarını o makinede açın.",
+    "conversationProvider": "Sağlayıcı",
+    "conversationProviderName": {
+      "openai-realtime": "ChatGPT (OpenAI Realtime)",
+      "gemini-live": "Gemini Live",
+      "local-s2s": "Bu bilgisayarda"
+    },
+    "conversationVoice": "Ses",
+    "conversationLanguage": "Dil",
+    "conversationLanguageAuto": "Benim dilimi kullan",
+    "conversationPersona": "Karakter",
+    "conversationPersonaName": {
+      "companion": "The Fool",
+      "english-teacher": "İngilizce öğretmeni",
+      "language-partner": "Dil partneri",
+      "interview-coach": "Mülakat provası",
+      "custom": "Kendi tanımım"
+    },
+    "conversationInstructions": "Talimatlar",
+    "conversationInstructionsExtra": "Eklemek istedikleriniz",
+    "conversationInstructionsPlaceholder": "Kim olduğunuzu ve bu konuşmadan ne beklediğinizi yazın. Örneğin: B1 seviyesindeyim, geçmiş zaman hatalarımı düzelt ve filmlerden konuşalim.",
+    "conversationModel": "Model",
+    "conversationToneUnknown": "Bu renk uygulamanın tonlarından biri değil.",
+    "conversationActionUnsupported": "Bu, sesin yapabileceği bir şey değil.",
+    "conversationError": {
+      "REALTIME_NO_PROVIDER": "Bu sağlayıcı için henüz API anahtarı yok. Ayarlar → Model Servisleri altından ekleyip yeniden başlatın.",
+      "REALTIME_UNSAFE_ENDPOINT": "Bu adres şifreli değil, bağlantı reddedildi.",
+      "REALTIME_SESSION_TIMEOUT": "Sağlayıcı oturumu zamanında açmadı. Tekrar deneyin.",
+      "REALTIME_CONNECTION_FAILED": "Bağlanılamadı. API anahtarını ve ağınızı kontrol edin.",
+      "REALTIME_CONNECTION_CLOSED": "Sağlayıcı bağlantıyı kapattı.",
+      "GEMINI_CONNECTION_CLOSING": "Gemini bu oturumu sonlandırıyor. Devam etmek için yeniden başlatın.",
+      "SPEECH_RUNTIME_MISSING": "Cihaz üzerindeki konuşma çalışma zamanı kurulu değil. Başka bir sağlayıcı seçin ya da önce kurun.",
+      "provider-failed": "Sağlayıcı konuşmayı başlatamadı.",
+      "unavailable": "Sesli sohbet bu sürümde kullanılamıyor.",
+      "invalid-request": "İstek reddedildi. Konuşma ayarlarını kontrol edin."
+    },
+    "conversationLanguageName": {
+      "en": "English",
+      "tr": "Türkçe",
+      "de": "Deutsch",
+      "fr": "Français",
+      "es": "Español",
+      "pt": "Português",
+      "ru": "Русский",
+      "uk": "Українська",
+      "ja": "日本語",
+      "ko": "한국어",
+      "zh": "中文",
+      "fa": "فارسی"
+    }
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

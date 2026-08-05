@@ -1415,7 +1415,8 @@
       "thinking": "Thinking",
       "speaking": "Speaking",
       "acting": "Taking action",
-      "error": "Needs attention"
+      "error": "Needs attention",
+      "hearing": "Слышу вас"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1428,7 +1429,56 @@
       "codex": "Use your Codex account and its agentic coding runtime across The Fool.",
       "claude": "Use your Claude account and its agentic runtime across The Fool."
     },
-    "desktopOnly": "Voice runs on the computer that hosts The Fool — its engines are installed and played there. Open Voice settings on that machine."
+    "desktopOnly": "Voice runs on the computer that hosts The Fool — its engines are installed and played there. Open Voice settings on that machine.",
+    "conversationProvider": "Провайдер",
+    "conversationProviderName": {
+      "openai-realtime": "ChatGPT (OpenAI Realtime)",
+      "gemini-live": "Gemini Live",
+      "local-s2s": "На этом компьютере"
+    },
+    "conversationVoice": "Голос",
+    "conversationLanguage": "Язык",
+    "conversationLanguageAuto": "Как говорю я",
+    "conversationPersona": "Роль",
+    "conversationPersonaName": {
+      "companion": "The Fool",
+      "english-teacher": "Учитель английского",
+      "language-partner": "Языковой партнёр",
+      "interview-coach": "Тренировка собеседования",
+      "custom": "Своя"
+    },
+    "conversationInstructions": "Инструкции",
+    "conversationInstructionsExtra": "Что добавить",
+    "conversationInstructionsPlaceholder": "Скажите, кто вы и чего ждёте от разговора. Например: у меня B1, исправляйте прошедшее время, давайте о кино.",
+    "conversationModel": "Модель",
+    "conversationToneUnknown": "Этот цвет не входит в палитру приложения.",
+    "conversationActionUnsupported": "Голос этого не умеет.",
+    "conversationError": {
+      "REALTIME_NO_PROVIDER": "Для этого провайдера ещё нет API-ключа. Добавьте его в Настройки → Сервисы моделей и начните заново.",
+      "REALTIME_UNSAFE_ENDPOINT": "Этот адрес не шифруется, соединение отклонено.",
+      "REALTIME_SESSION_TIMEOUT": "Провайдер не открыл сессию вовремя. Попробуйте ещё раз.",
+      "REALTIME_CONNECTION_FAILED": "Не удалось подключиться. Проверьте API-ключ и сеть.",
+      "REALTIME_CONNECTION_CLOSED": "Провайдер закрыл соединение.",
+      "GEMINI_CONNECTION_CLOSING": "Gemini завершает эту сессию. Запустите её снова, чтобы продолжить.",
+      "SPEECH_RUNTIME_MISSING": "Локальная речевая среда не установлена. Выберите другого провайдера или сначала установите её.",
+      "provider-failed": "Провайдер не смог начать разговор.",
+      "unavailable": "Голосовой чат недоступен в этой сборке.",
+      "invalid-request": "Запрос отклонён. Проверьте настройки разговора."
+    },
+    "conversationLanguageName": {
+      "en": "English",
+      "tr": "Türkçe",
+      "de": "Deutsch",
+      "fr": "Français",
+      "es": "Español",
+      "pt": "Português",
+      "ru": "Русский",
+      "uk": "Українська",
+      "ja": "日本語",
+      "ko": "한국어",
+      "zh": "中文",
+      "fa": "فارسی"
+    }
   },
   "themeCustomizer": {
     "title": "Настроить тему",

@@ -1416,7 +1416,8 @@
       "thinking": "Thinking",
       "speaking": "Speaking",
       "acting": "Taking action",
-      "error": "Needs attention"
+      "error": "Needs attention",
+      "hearing": "正在听"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1429,7 +1430,56 @@
       "codex": "Use your Codex account and its agentic coding runtime across The Fool.",
       "claude": "Use your Claude account and its agentic runtime across The Fool."
     },
-    "desktopOnly": "Voice runs on the computer that hosts The Fool — its engines are installed and played there. Open Voice settings on that machine."
+    "desktopOnly": "Voice runs on the computer that hosts The Fool — its engines are installed and played there. Open Voice settings on that machine.",
+    "conversationProvider": "提供商",
+    "conversationProviderName": {
+      "openai-realtime": "ChatGPT（OpenAI Realtime）",
+      "gemini-live": "Gemini Live",
+      "local-s2s": "本机运行"
+    },
+    "conversationVoice": "音色",
+    "conversationLanguage": "语言",
+    "conversationLanguageAuto": "跟随我的语言",
+    "conversationPersona": "人设",
+    "conversationPersonaName": {
+      "companion": "The Fool",
+      "english-teacher": "英语老师",
+      "language-partner": "语言搭子",
+      "interview-coach": "模拟面试",
+      "custom": "自定义"
+    },
+    "conversationInstructions": "指令",
+    "conversationInstructionsExtra": "补充说明",
+    "conversationInstructionsPlaceholder": "说明你是谁，以及希望从这次对话中得到什么。例如：我是B1水平，请纠正我的过去时，我们聊聊电影。",
+    "conversationModel": "模型",
+    "conversationToneUnknown": "该颜色不属于应用的色调。",
+    "conversationActionUnsupported": "语音无法完成这个操作。",
+    "conversationError": {
+      "REALTIME_NO_PROVIDER": "尚未为该提供商配置 API 密钥。请在设置 → 模型服务中添加后重试。",
+      "REALTIME_UNSAFE_ENDPOINT": "该地址未加密，连接已被拒绝。",
+      "REALTIME_SESSION_TIMEOUT": "提供商未能及时建立会话，请重试。",
+      "REALTIME_CONNECTION_FAILED": "无法连接。请检查 API 密钥和网络。",
+      "REALTIME_CONNECTION_CLOSED": "提供商已关闭连接。",
+      "GEMINI_CONNECTION_CLOSING": "Gemini 正在结束本次会话。请重新开始以继续。",
+      "SPEECH_RUNTIME_MISSING": "本机语音运行时尚未安装。请选择其他提供商，或先完成安装。",
+      "provider-failed": "提供商无法启动对话。",
+      "unavailable": "此版本不支持语音对话。",
+      "invalid-request": "请求被拒绝。请检查对话设置。"
+    },
+    "conversationLanguageName": {
+      "en": "English",
+      "tr": "Türkçe",
+      "de": "Deutsch",
+      "fr": "Français",
+      "es": "Español",
+      "pt": "Português",
+      "ru": "Русский",
+      "uk": "Українська",
+      "ja": "日本語",
+      "ko": "한국어",
+      "zh": "中文",
+      "fa": "فارسی"
+    }
   },
   "themeCustomizer": {
     "title": "自定义主题",

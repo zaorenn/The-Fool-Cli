@@ -1415,7 +1415,8 @@
       "thinking": "Thinking",
       "speaking": "Speaking",
       "acting": "Taking action",
-      "error": "Needs attention"
+      "error": "Needs attention",
+      "hearing": "Hearing you"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1428,7 +1429,56 @@
       "codex": "Use your Codex account and its agentic coding runtime across The Fool.",
       "claude": "Use your Claude account and its agentic runtime across The Fool."
     },
-    "desktopOnly": "Voice runs on the computer that hosts The Fool — its engines are installed and played there. Open Voice settings on that machine."
+    "desktopOnly": "Voice runs on the computer that hosts The Fool — its engines are installed and played there. Open Voice settings on that machine.",
+    "conversationProvider": "Provider",
+    "conversationProviderName": {
+      "openai-realtime": "ChatGPT (OpenAI Realtime)",
+      "gemini-live": "Gemini Live",
+      "local-s2s": "On this computer"
+    },
+    "conversationVoice": "Voice",
+    "conversationLanguage": "Language",
+    "conversationLanguageAuto": "Match my language",
+    "conversationPersona": "Persona",
+    "conversationPersonaName": {
+      "companion": "The Fool",
+      "english-teacher": "English teacher",
+      "language-partner": "Language partner",
+      "interview-coach": "Interview practice",
+      "custom": "My own"
+    },
+    "conversationInstructions": "Instructions",
+    "conversationInstructionsExtra": "Anything to add",
+    "conversationInstructionsPlaceholder": "Tell it who you are and what you want from this conversation. For example: I am at B1, correct my past tense, and let's talk about films.",
+    "conversationModel": "Model",
+    "conversationToneUnknown": "That colour is not one of the app's tones.",
+    "conversationActionUnsupported": "That is not something the voice can do.",
+    "conversationError": {
+      "REALTIME_NO_PROVIDER": "No API key for this provider yet. Add one under Settings → Model Services, then start again.",
+      "REALTIME_UNSAFE_ENDPOINT": "That endpoint is not encrypted, so the connection was refused.",
+      "REALTIME_SESSION_TIMEOUT": "The provider did not open the session in time. Try again.",
+      "REALTIME_CONNECTION_FAILED": "Could not connect. Check the API key and your network.",
+      "REALTIME_CONNECTION_CLOSED": "The provider closed the connection.",
+      "GEMINI_CONNECTION_CLOSING": "Gemini is ending this session. Start it again to carry on.",
+      "SPEECH_RUNTIME_MISSING": "The on-device speech runtime is not installed. Choose another provider, or install it first.",
+      "provider-failed": "The provider could not start the conversation.",
+      "unavailable": "Voice chat is not available in this build.",
+      "invalid-request": "That request was rejected. Check the conversation settings."
+    },
+    "conversationLanguageName": {
+      "en": "English",
+      "tr": "Türkçe",
+      "de": "Deutsch",
+      "fr": "Français",
+      "es": "Español",
+      "pt": "Português",
+      "ru": "Русский",
+      "uk": "Українська",
+      "ja": "日本語",
+      "ko": "한국어",
+      "zh": "中文",
+      "fa": "فارسی"
+    }
   },
   "themeCustomizer": {
     "title": "Customize theme",

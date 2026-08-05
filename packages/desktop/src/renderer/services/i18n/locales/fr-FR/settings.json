@@ -1415,7 +1415,8 @@
       "thinking": "Thinking",
       "speaking": "Speaking",
       "acting": "Taking action",
-      "error": "Needs attention"
+      "error": "Needs attention",
+      "hearing": "Je vous entends"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1428,7 +1429,56 @@
       "codex": "Use your Codex account and its agentic coding runtime across The Fool.",
       "claude": "Use your Claude account and its agentic runtime across The Fool."
     },
-    "desktopOnly": "Voice runs on the computer that hosts The Fool — its engines are installed and played there. Open Voice settings on that machine."
+    "desktopOnly": "Voice runs on the computer that hosts The Fool — its engines are installed and played there. Open Voice settings on that machine.",
+    "conversationProvider": "Fournisseur",
+    "conversationProviderName": {
+      "openai-realtime": "ChatGPT (OpenAI Realtime)",
+      "gemini-live": "Gemini Live",
+      "local-s2s": "Sur cet ordinateur"
+    },
+    "conversationVoice": "Voix",
+    "conversationLanguage": "Langue",
+    "conversationLanguageAuto": "Suivre ma langue",
+    "conversationPersona": "Personnage",
+    "conversationPersonaName": {
+      "companion": "The Fool",
+      "english-teacher": "Professeur d'anglais",
+      "language-partner": "Partenaire linguistique",
+      "interview-coach": "Simulation d'entretien",
+      "custom": "Personnalisé"
+    },
+    "conversationInstructions": "Instructions",
+    "conversationInstructionsExtra": "À ajouter",
+    "conversationInstructionsPlaceholder": "Dites qui vous êtes et ce que vous attendez de cette conversation. Par exemple : je suis au niveau B1, corrigez mon passé, et parlons de cinéma.",
+    "conversationModel": "Modèle",
+    "conversationToneUnknown": "Cette couleur ne fait pas partie des teintes de l'application.",
+    "conversationActionUnsupported": "La voix ne peut pas faire cela.",
+    "conversationError": {
+      "REALTIME_NO_PROVIDER": "Aucune clé API pour ce fournisseur. Ajoutez-la dans Paramètres → Services de modèles, puis recommencez.",
+      "REALTIME_UNSAFE_ENDPOINT": "Cette adresse n'est pas chiffrée, la connexion a été refusée.",
+      "REALTIME_SESSION_TIMEOUT": "Le fournisseur n'a pas ouvert la session à temps. Réessayez.",
+      "REALTIME_CONNECTION_FAILED": "Connexion impossible. Vérifiez la clé API et votre réseau.",
+      "REALTIME_CONNECTION_CLOSED": "Le fournisseur a fermé la connexion.",
+      "GEMINI_CONNECTION_CLOSING": "Gemini met fin à cette session. Relancez-la pour continuer.",
+      "SPEECH_RUNTIME_MISSING": "Le moteur vocal local n'est pas installé. Choisissez un autre fournisseur ou installez-le d'abord.",
+      "provider-failed": "Le fournisseur n'a pas pu démarrer la conversation.",
+      "unavailable": "Le chat vocal n'est pas disponible dans cette version.",
+      "invalid-request": "Requête refusée. Vérifiez les paramètres de conversation."
+    },
+    "conversationLanguageName": {
+      "en": "English",
+      "tr": "Türkçe",
+      "de": "Deutsch",
+      "fr": "Français",
+      "es": "Español",
+      "pt": "Português",
+      "ru": "Русский",
+      "uk": "Українська",
+      "ja": "日本語",
+      "ko": "한국어",
+      "zh": "中文",
+      "fa": "فارسی"
+    }
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

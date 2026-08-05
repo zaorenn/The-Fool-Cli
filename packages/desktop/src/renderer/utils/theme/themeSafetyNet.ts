@@ -29,7 +29,7 @@
  */
 
 /** The elements that, if hidden, take the entire interface with them. */
-const APP_LEVEL_SELECTORS = ['html', 'body', '*', ':root', '#root', '#app'];
+const APP_LEVEL_SELECTORS = new Set(['html', 'body', '*', ':root', '#root', '#app']);
 
 /**
  * Declarations that make an element invisible rather than merely restyled.
@@ -68,7 +68,7 @@ export function findFatalThemeCss(css: string): string[] {
       .filter(Boolean);
     // Only a selector that reaches the document itself can blank it. A theme
     // hiding one of its own components is none of this function's business.
-    const appLevel = selectors.filter((selector) => APP_LEVEL_SELECTORS.includes(selector));
+    const appLevel = selectors.filter((selector) => APP_LEVEL_SELECTORS.has(selector));
     if (appLevel.length === 0) continue;
 
     for (const declaration of body.split(';')) {
@@ -137,7 +137,7 @@ export function stripFatalThemeCss(css: string): string {
       .split(',')
       .map((selector) => selector.trim().toLowerCase())
       .filter(Boolean);
-    if (!selectors.some((selector) => APP_LEVEL_SELECTORS.includes(selector))) return whole;
+    if (!selectors.some((selector) => APP_LEVEL_SELECTORS.has(selector))) return whole;
 
     const kept = body
       .split(';')

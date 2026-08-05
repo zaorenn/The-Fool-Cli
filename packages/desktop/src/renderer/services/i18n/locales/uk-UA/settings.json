@@ -1416,7 +1416,8 @@
       "thinking": "Thinking",
       "speaking": "Speaking",
       "acting": "Taking action",
-      "error": "Needs attention"
+      "error": "Needs attention",
+      "hearing": "Чую вас"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1429,7 +1430,56 @@
       "codex": "Use your Codex account and its agentic coding runtime across The Fool.",
       "claude": "Use your Claude account and its agentic runtime across The Fool."
     },
-    "desktopOnly": "Voice runs on the computer that hosts The Fool — its engines are installed and played there. Open Voice settings on that machine."
+    "desktopOnly": "Voice runs on the computer that hosts The Fool — its engines are installed and played there. Open Voice settings on that machine.",
+    "conversationProvider": "Провайдер",
+    "conversationProviderName": {
+      "openai-realtime": "ChatGPT (OpenAI Realtime)",
+      "gemini-live": "Gemini Live",
+      "local-s2s": "На цьому комп'ютері"
+    },
+    "conversationVoice": "Голос",
+    "conversationLanguage": "Мова",
+    "conversationLanguageAuto": "Як говорю я",
+    "conversationPersona": "Роль",
+    "conversationPersonaName": {
+      "companion": "The Fool",
+      "english-teacher": "Вчитель англійської",
+      "language-partner": "Мовний партнер",
+      "interview-coach": "Тренування співбесіди",
+      "custom": "Власна"
+    },
+    "conversationInstructions": "Інструкції",
+    "conversationInstructionsExtra": "Що додати",
+    "conversationInstructionsPlaceholder": "Скажіть, хто ви і чого чекаєте від розмови. Наприклад: у мене B1, виправляйте минулий час, поговорімо про кіно.",
+    "conversationModel": "Модель",
+    "conversationToneUnknown": "Цей колір не належить до палітри застосунку.",
+    "conversationActionUnsupported": "Голос цього не вміє.",
+    "conversationError": {
+      "REALTIME_NO_PROVIDER": "Для цього провайдера ще немає API-ключа. Додайте його в Налаштуваннях → Сервіси моделей і почніть знову.",
+      "REALTIME_UNSAFE_ENDPOINT": "Ця адреса не шифрується, з'єднання відхилено.",
+      "REALTIME_SESSION_TIMEOUT": "Провайдер не відкрив сесію вчасно. Спробуйте ще раз.",
+      "REALTIME_CONNECTION_FAILED": "Не вдалося підключитися. Перевірте API-ключ і мережу.",
+      "REALTIME_CONNECTION_CLOSED": "Провайдер закрив з'єднання.",
+      "GEMINI_CONNECTION_CLOSING": "Gemini завершує цю сесію. Запустіть її знову, щоб продовжити.",
+      "SPEECH_RUNTIME_MISSING": "Локальне мовне середовище не встановлено. Оберіть іншого провайдера або спочатку встановіть його.",
+      "provider-failed": "Провайдер не зміг розпочати розмову.",
+      "unavailable": "Голосовий чат недоступний у цій збірці.",
+      "invalid-request": "Запит відхилено. Перевірте налаштування розмови."
+    },
+    "conversationLanguageName": {
+      "en": "English",
+      "tr": "Türkçe",
+      "de": "Deutsch",
+      "fr": "Français",
+      "es": "Español",
+      "pt": "Português",
+      "ru": "Русский",
+      "uk": "Українська",
+      "ja": "日本語",
+      "ko": "한국어",
+      "zh": "中文",
+      "fa": "فارسی"
+    }
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",

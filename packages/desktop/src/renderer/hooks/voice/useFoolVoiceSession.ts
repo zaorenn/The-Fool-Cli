@@ -130,6 +130,22 @@ export const subscribeManualVoiceSession = (listener: (active: boolean) => void)
 
 export const isManualVoiceSessionActive = (): boolean => manualSessionActive;
 
+/**
+ * Takes the microphone for something that is not this session's turn loop.
+ *
+ * The speech-to-speech conversation holds its own capture for as long as it
+ * runs. Without this the wake-word listener keeps its microphone open alongside
+ * it: two recorders on one device, and — far worse — a pet that hears the
+ * assistant's reply come out of the speakers, matches the wake phrase in it, and
+ * starts a second conversation about the first one.
+ *
+ * Returns the release, so the caller cannot forget which flag it set.
+ */
+export const claimManualVoiceSession = (): (() => void) => {
+  setManualSessionActive(true);
+  return () => setManualSessionActive(false);
+};
+
 const idleState = (): VoiceTurnState => ({
   phase: 'idle',
   condition: { status: 'normal' },

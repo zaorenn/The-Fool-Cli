@@ -104,6 +104,23 @@
   animation-duration: 1.8s;
 }
 
+/* Speech arriving right now. Faster and shallower than the speaking pulse, so
+   the two states are told apart across the room rather than read. */
+.hearing .orbCore {
+  animation: listen 0.42s ease-in-out infinite alternate;
+}
+
+.hearing .orbGlow {
+  opacity: 0.5;
+}
+
+/* Nothing to react to yet: the ring turns on its own so the wait reads as work
+   rather than as a page that failed to load. */
+.connecting .orbRing {
+  animation-duration: 1.2s;
+  border-style: dotted;
+}
+
 .timeline {
   scrollbar-width: thin;
   mask-image: linear-gradient(to bottom, black 88%, transparent);
@@ -139,6 +156,13 @@
   to {
     transform: scale(1.09);
     filter: saturate(1.16) brightness(1.08);
+  }
+}
+
+@keyframes listen {
+  to {
+    transform: scale(1.035);
+    filter: brightness(1.05);
   }
 }
 
