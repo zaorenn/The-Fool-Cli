@@ -54,6 +54,49 @@ const ReplacePreview: React.FC<{ message: IMessageToolCall }> = ({ message }) =>
   );
 };
 
+const ComputerUsePreview: React.FC<{ imagePath: string; inputStr?: string }> = ({ imagePath, inputStr }) => {
+  const [size, setSize] = useState<{w: number, h: number} | null>(null);
+  let coordinate: [number, number] | null = null;
+  if (inputStr) {
+    try {
+      const parsed = JSON.parse(inputStr);
+      if (parsed.coordinate && Array.isArray(parsed.coordinate)) {
+        coordinate = [parsed.coordinate[0], parsed.coordinate[1]];
+      }
+    } catch(e) {}
+  }
+
+  return (
+    <div style={{ position: 'relative', width: '100%', maxWidth: '400px', overflow: 'hidden', borderRadius: '6px', border: '1px solid var(--color-border)' }} className="m-t-8px">
+      <img 
+        src={imagePath} 
+        style={{ width: '100%', display: 'block' }} 
+        onLoad={(e) => setSize({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })} 
+        alt="Computer Use Screen"
+      />
+      {size && coordinate && (
+        <div 
+          style={{ 
+            position: 'absolute', 
+            left: `${(coordinate[0] / size.w) * 100}%`, 
+            top: `${(coordinate[1] / size.h) * 100}%`,
+            width: 24,
+            height: 24,
+            marginLeft: -12,
+            marginTop: -12,
+            backgroundColor: 'rgba(255, 50, 50, 0.4)',
+            border: '2px solid #ff3232',
+            borderRadius: '50%',
+            pointerEvents: 'none',
+            boxShadow: '0 0 0 1.5px white',
+            zIndex: 10
+          }} 
+        />
+      )}
+    </div>
+  );
+};
+
 const MessageToolCall: React.FC<{ message: IMessageToolCall }> = ({ message }) => {
   const { name } = message.content;
   const [expanded, setExpanded] = useState(false);
@@ -67,7 +110,14 @@ const MessageToolCall: React.FC<{ message: IMessageToolCall }> = ({ message }) =
     return <div className='text-t-primary'>{name}</div>;
   }
 
-  const hasDetail = normalized.input || normalized.output;
+  const hasDetail = normalized.input || normalized.output || normalized.imagePath;
+
+  // Auto-expand if there's an image
+  React.useEffect(() => {
+    if (normalized.imagePath && !expanded) {
+      setExpanded(true);
+    }
+  }, [normalized.imagePath]);
 
   return (
     <div className='flex flex-col'>
@@ -98,18 +148,21 @@ const MessageToolCall: React.FC<{ message: IMessageToolCall }> = ({ message }) =
       </div>
       {expanded && hasDetail && (
         <div className='tool-detail-panel m-l-20px m-t-4px'>
-          {normalized.input && (
-            <div className='tool-detail-section'>
-              <div className='tool-detail-label'>Input</div>
-              <pre className='tool-detail-content'>{normalized.input}</pre>
-            </div>
-          )}
-          {normalized.output && (
-            <div className='tool-detail-section'>
-              <div className='tool-detail-label'>Output</div>
-              <pre className='tool-detail-content'>{normalized.output}</pre>
-            </div>
-          )}
+          {normalized.imagePath && <ComputerUsePreview imagePath={normalized.imagePath} inputStr={normalized.input} />}
+          <div className='text-13px color-#4E5969 break-all whitespace-pre-wrap bg-2 p-8px rounded-4px m-t-8px'>
+            {normalized.input && (
+              <div className='tool-detail-section'>
+                <div className='tool-detail-label'>Input</div>
+                <pre className='tool-detail-content'>{normalized.input}</pre>
+              </div>
+            )}
+            {normalized.output && (
+              <div className='tool-detail-section'>
+                <div className='tool-detail-label'>Output</div>
+                <pre className='tool-detail-content'>{normalized.output}</pre>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

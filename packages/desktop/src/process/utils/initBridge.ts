@@ -71,7 +71,7 @@ const voiceService = new FoolVoiceService(modelManager, sherpaProvider, openaiPr
 
 initAllBridges({
   foolVoice: {
-    ensureRealtime: () => speechToSpeechRuntime.ensureReady(),
+    ensureRealtime: (req) => speechToSpeechRuntime.ensureReady(req),
     catalog: async (req) => {
       const baseModels = VoiceModelCatalog.getModels();
       const models = await Promise.all(
@@ -189,6 +189,17 @@ initAllBridges({
     summaryPlan: handleSummaryPlan,
     summarize: handleSummarize,
     shortcut: handleVoiceShortcut,
+    executeMcpTool: async (req) => {
+      // Lazy load to avoid pulling MCP dependencies on app boot if unused
+      const { executeMcpTool } = await import('../services/mcp-executor');
+      const result = await executeMcpTool(
+        // @ts-expect-error - Fake an IMcpServer object because executeMcpTool expects one
+        { transport: { type: 'stdio', command: 'npx', args: ['-y', '@github/computer-use-mcp@latest'], env: {} } },
+        req.toolName,
+        req.args
+      );
+      return { result };
+    },
   },
 });
 

@@ -210,6 +210,10 @@ export const foolVoice = {
   cancel: bridge.buildProvider<VoiceResponseEnvelope<VoiceCancelResponse>, VoiceRequestEnvelope<VoiceCancelRequest>>(
     'fool.voice.cancel'
   ),
+  executeMcpTool: bridge.buildProvider<
+    VoiceResponseEnvelope<import('@/common/types/voiceMcp').VoiceExecuteMcpToolResponse>,
+    VoiceRequestEnvelope<import('@/common/types/voiceMcp').VoiceExecuteMcpToolRequest>
+  >('fool.voice.executeMcpTool'),
   speakers: bridge.buildProvider<
     VoiceResponseEnvelope<VoiceSpeakersResponse>,
     VoiceRequestEnvelope<VoiceSpeakersRequest>

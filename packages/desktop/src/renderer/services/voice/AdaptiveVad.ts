@@ -18,7 +18,7 @@ type VadConfig = FoolVoiceSettings['vad'];
  * multiplied up it put the bar for speech near an RMS of 0.12, so the
  * microphone sat open and heard nothing short of a shout.
  */
-const MINIMUM_FLOOR = 0.004;
+const MINIMUM_FLOOR = 0.001;
 
 /**
  * The lowest bar for speech, whatever the room.
@@ -26,7 +26,7 @@ const MINIMUM_FLOOR = 0.004;
  * A dead-silent room calibrates to almost nothing, and a threshold proportional
  * to almost nothing would trip on a fan or a passing car.
  */
-const MINIMUM_THRESHOLD = 0.01;
+const MINIMUM_THRESHOLD = 0.003;
 
 /**
  * How far above the calibrated floor a frame must sit, across the sensitivity

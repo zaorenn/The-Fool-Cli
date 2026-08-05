@@ -237,6 +237,21 @@ const VoiceSettingsContent: React.FC = () => {
               }
             />
           </label>
+          <label className='flex flex-col gap-4px'>
+            <span className='text-13px text-t-secondary'>{t('settings.voice.vadSensitivity', 'Voice Sensitivity')}</span>
+            <Slider
+              min={0}
+              max={1}
+              step={0.05}
+              value={settings.vad.sensitivity}
+              onChange={(value) =>
+                update((previous) => ({
+                  ...previous,
+                  vad: { ...previous.vad, sensitivity: Array.isArray(value) ? value[0] : value },
+                }))
+              }
+            />
+          </label>
         </div>
       ),
     },

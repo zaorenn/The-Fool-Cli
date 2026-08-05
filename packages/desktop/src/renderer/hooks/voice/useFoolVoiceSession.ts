@@ -297,7 +297,9 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
   }, [listen, listenForWake]);
 
   const submit = useCallback((text: string) => {
-    window.dispatchEvent(new CustomEvent<VoiceSubmitDetail>(VOICE_TURN_EVENT, { detail: { text } }));
+    const filteredText = text.replace(/\b(eee|umm|hımm|wake up fool)\b/gi, '').trim();
+    if (filteredText.length === 0) return;
+    window.dispatchEvent(new CustomEvent<VoiceSubmitDetail>(VOICE_TURN_EVENT, { detail: { text: filteredText } }));
   }, []);
 
   const transcribe = useCallback(

@@ -64,11 +64,24 @@ export class SpeechToSpeechRuntime {
   private child: SpeechRuntimeChild | null = null;
   private starting: Promise<SpeechRuntimeReady> | null = null;
   private stderrTail = '';
+  private currentModelId = 'Qwen/Qwen3-4B-Instruct-2507';
+  private currentVoiceId = 'Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice';
 
   constructor(private readonly deps: SpeechToSpeechRuntimeDeps) {}
 
-  async ensureReady(): Promise<SpeechRuntimeReady> {
-    if (await this.deps.isPortOpen(PORT)) return { endpoint: ENDPOINT, reused: true };
+  async ensureReady(options?: { modelId?: string; voiceId?: string }): Promise<SpeechRuntimeReady> {
+    const requestedModelId = options?.modelId || 'Qwen/Qwen3-4B-Instruct-2507';
+    const requestedVoiceId = options?.voiceId || 'Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice';
+
+    const argsChanged = this.currentModelId !== requestedModelId || this.currentVoiceId !== requestedVoiceId;
+
+    if (argsChanged) {
+      this.currentModelId = requestedModelId;
+      this.currentVoiceId = requestedVoiceId;
+      this.stop();
+    }
+
+    if (!argsChanged && await this.deps.isPortOpen(PORT)) return { endpoint: ENDPOINT, reused: true };
     if (this.starting) return this.starting;
 
     this.starting = this.start().finally(() => {
@@ -87,7 +100,27 @@ export class SpeechToSpeechRuntime {
     if (!pythonPath) throw new Error('SPEECH_RUNTIME_MISSING');
 
     this.stderrTail = '';
-    const child = this.deps.spawn(pythonPath, PIPELINE_ARGS, {
+    const args = [
+      '-m', 'speech_to_speech.s2s_pipeline',
+      '--mode', 'realtime',
+      '--ws_host', '127.0.0.1',
+      '--ws_port', String(PORT),
+      '--device', 'cuda',
+      '--stt', 'faster-whisper',
+      '--faster_whisper_stt_model_name', 'large-v3',
+      '--llm_backend', 'transformers',
+      '--model_name', this.currentModelId,
+      '--tts', 'qwen3',
+      '--qwen3_tts_model_name', this.currentVoiceId,
+      '--qwen3_tts_device', 'cuda',
+      '--qwen3_tts_backend', 'torch',
+      '--qwen3_tts_dtype', 'bfloat16',
+      '--no_qwen3_tts_non_streaming_mode',
+      '--language', 'auto',
+      '--enable_live_transcription',
+    ] as const;
+
+    const child = this.deps.spawn(pythonPath, args, {
       env: { ...process.env, HF_HUB_DISABLE_XET: '1', PYTHONUTF8: '1' },
       windowsHide: true,
     });

@@ -57,6 +57,9 @@ export type FoolVoiceBridgeHandlers = {
   summaryPlan: (request: VoiceSummaryPlanRequest) => MaybePromise<VoiceSummaryPlanResponse>;
   summarize: (request: VoiceSummarizeRequest) => MaybePromise<VoiceSummarizeResponse>;
   shortcut: (request: VoiceShortcutRequest) => MaybePromise<VoiceShortcutResponse>;
+  executeMcpTool: (
+    request: import('@/common/types/voiceMcp').VoiceExecuteMcpToolRequest
+  ) => MaybePromise<import('@/common/types/voiceMcp').VoiceExecuteMcpToolResponse>;
 };
 
 type BridgeErrorCode = Extract<VoiceResponseEnvelope<never>, { ok: false }>['error']['code'];
@@ -188,8 +191,14 @@ const validateCatalogRequest = (payload: unknown): BridgeErrorCode | null =>
     ? null
     : 'invalid-request';
 
-const validateRealtimeEnsureRequest = (payload: unknown): BridgeErrorCode | null =>
-  isRecord(payload) && hasExactKeys(payload, []) ? null : 'invalid-request';
+const validateRealtimeEnsureRequest = (payload: unknown): BridgeErrorCode | null => {
+  if (!isRecord(payload)) return 'invalid-request';
+  const keys = Object.keys(payload);
+  if (!keys.every((k) => k === 'modelId' || k === 'voiceId')) return 'invalid-request';
+  if (payload.modelId !== undefined && typeof payload.modelId !== 'string') return 'invalid-request';
+  if (payload.voiceId !== undefined && typeof payload.voiceId !== 'string') return 'invalid-request';
+  return null;
+};
 
 const validateDownloadRequest = (payload: unknown): BridgeErrorCode | null =>
   isRecord(payload) &&
@@ -593,6 +602,23 @@ export function initFoolVoiceBridge(handlers: Partial<FoolVoiceBridgeHandlers> =
     handlers.summarize,
     validateSummarizeResponse,
     'summarize'
+  );
+  registerHandler(
+    ipcBridge.foolVoice.executeMcpTool,
+    (payload: unknown) => {
+      if (
+        isRecord(payload) &&
+        typeof payload.serverId === 'string' &&
+        typeof payload.toolName === 'string' &&
+        isRecord(payload.args)
+      ) {
+        return null;
+      }
+      return 'invalid-request';
+    },
+    handlers.executeMcpTool,
+    undefined,
+    'executeMcpTool'
   );
   registerHandler(ipcBridge.foolVoice.shortcut, validateShortcutRequest, handlers.shortcut, undefined, 'shortcut');
 }

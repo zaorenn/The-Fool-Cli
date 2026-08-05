@@ -26,6 +26,7 @@ type MigrationStepResult = boolean;
 type McpImportServer = Partial<IMcpServer> & Pick<IMcpServer, 'name' | 'transport'>;
 type BackendClientPreferences = Record<string, unknown>;
 const BUILTIN_CHROME_DEVTOOLS_NAME = 'chrome-devtools';
+const BUILTIN_COMPUTER_USE_NAME = 'computer-use';
 
 const LEGACY_BACKEND_CLIENT_PREFERENCE_KEYS = [
   'assistants',
@@ -194,6 +195,11 @@ function buildDefaultMcpServers(): McpImportServer[] {
       ]
     : [];
 
+  const computerUseConfig = {
+    command: 'npx',
+    args: ['-y', '@betrayzl/windows-computer-use-mcp@latest'],
+  };
+
   return [
     ...browserServers,
     {
@@ -207,6 +213,18 @@ function buildDefaultMcpServers(): McpImportServer[] {
         args: chromeConfig.args,
       },
       original_json: JSON.stringify({ mcpServers: { [BUILTIN_CHROME_DEVTOOLS_NAME]: chromeConfig } }, null, 2),
+    },
+    {
+      name: BUILTIN_COMPUTER_USE_NAME,
+      description: 'Default MCP server: computer-use (Allows AI to control screen, mouse and keyboard)',
+      enabled: true,
+      builtin: true,
+      transport: {
+        type: 'stdio',
+        command: computerUseConfig.command,
+        args: computerUseConfig.args,
+      },
+      original_json: JSON.stringify({ mcpServers: { [BUILTIN_COMPUTER_USE_NAME]: computerUseConfig } }, null, 2),
     },
   ];
 }

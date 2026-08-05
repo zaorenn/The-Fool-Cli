@@ -532,7 +532,7 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
       enabled: true,
       modelId: 'stt-phrase-v1',
       phrase: WAKE_PHRASE_DEFAULT,
-      sensitivity: 0.65,
+      sensitivity: 0.30,
     },
   },
   vad: {
@@ -1282,7 +1282,10 @@ export type VoiceCancelResponse = {
   state: 'cancelling' | 'cancelled' | 'not-found' | 'already-terminal';
 };
 
-export type VoiceRealtimeEnsureRequest = Record<string, never>;
+export type VoiceRealtimeEnsureRequest = {
+  modelId?: string;
+  voiceId?: string;
+};
 export type VoiceRealtimeEnsureResponse = {
   endpoint: string;
   reused: boolean;

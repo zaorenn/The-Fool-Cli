@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Button, Input, Tag, Typography } from '@arco-design/web-react';
+import { Alert, Button, Input, Select, Tag, Typography } from '@arco-design/web-react';
 import { Check, CloseOne, Link, Magic, Microphone, PauseOne, SettingTwo, Voice } from '@icon-park/react';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
@@ -42,12 +42,26 @@ const rgbToHex = (value: string): string | null => {
 const readSemanticColor = (variable: string): string | null =>
   rgbToHex(getComputedStyle(document.documentElement).getPropertyValue(variable));
 
+const MODEL_OPTIONS = [
+  { label: 'Qwen 3 (4B)', value: 'Qwen/Qwen3-4B-Instruct-2507' },
+  { label: 'Qwen 3 (7B)', value: 'Qwen/Qwen3-7B-Instruct' },
+  { label: 'Qwen 2.5 (3B)', value: 'Qwen/Qwen2.5-3B-Instruct' },
+];
+
+const VOICE_OPTIONS = [
+  { label: 'Ultron (Custom Cloned)', value: 'Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice' },
+  { label: 'Female Voice 1', value: 'Qwen/Qwen3-TTS-12Hz-0.6B-Female1' },
+  { label: 'Male Voice 1', value: 'Qwen/Qwen3-TTS-12Hz-0.6B-Male1' },
+];
+
 const VoiceConversationPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { settings } = useFoolVoiceSettings();
   const talkToJester = useTalkToJester();
   const [phase, setPhase] = useState<PagePhase>('idle');
   const [endpoint, setEndpoint] = useState(DEFAULT_ENDPOINT);
+  const [modelId, setModelId] = useState(MODEL_OPTIONS[0].value);
+  const [voiceId, setVoiceId] = useState(VOICE_OPTIONS[0].value);
   const [userTranscript, setUserTranscript] = useState('');
   const [assistantTranscript, setAssistantTranscript] = useState('');
   const [error, setError] = useState('');
@@ -100,6 +114,18 @@ const VoiceConversationPage: React.FC = () => {
             detail: t('settings.voice.conversationThemeChanged', { tone }),
             state: 'completed',
           });
+        } else if (event.name === 'app.change_model' && typeof args.modelId === 'string') {
+          setModelId(args.modelId);
+          updateActivity(event.callId, {
+            detail: t('settings.voice.conversationModelChanged', { model: args.modelId }),
+            state: 'completed',
+          });
+        } else if (event.name === 'app.change_voice' && typeof args.voiceId === 'string') {
+          setVoiceId(args.voiceId);
+          updateActivity(event.callId, {
+            detail: t('settings.voice.conversationVoiceChanged', { voice: args.voiceId }),
+            state: 'completed',
+          });
         } else if (event.name === 'app.ask_jester' && typeof args.request === 'string') {
           updateActivity(event.callId, {
             detail: t('settings.voice.conversationDelegated'),
@@ -107,7 +133,30 @@ const VoiceConversationPage: React.FC = () => {
           });
           await talkToJester({ prompt: args.request });
         } else {
-          throw new Error('Unsupported voice action');
+          // Assume any other tool call is an MCP tool
+          const result = await ipcBridge.foolVoice.executeMcpTool.invoke({
+            version: 1,
+            requestId: crypto.randomUUID(),
+            payload: {
+              serverId: 'builtin-mcp-computer-use', // Hardcoded for now, or match from name if we had mapping
+              toolName: event.name,
+              args,
+            }
+          });
+          
+          if (!result.ok) {
+            const err = (result as any).error;
+            throw new Error(`MCP Tool error: ${err?.code || 'unknown'}`);
+          }
+          
+          updateActivity(event.callId, {
+            detail: t('settings.voice.mcpToolCompleted', { tool: event.name }),
+            state: 'completed',
+          });
+          
+          clientRef.current?.sendToolResult(event.callId, { ok: true, result: JSON.stringify(result.data.result) });
+          setPhase('listening');
+          return; // Early return since we sent result above
         }
         clientRef.current?.sendToolResult(event.callId, { ok: true });
         setPhase('listening');
@@ -133,10 +182,13 @@ const VoiceConversationPage: React.FC = () => {
         case 'phase':
           setPhase(event.phase);
           break;
-        case 'user-transcript':
-          setUserTranscript((current) => (event.final ? event.text : `${current}${event.text}`));
+        case 'user-transcript': {
+          // Filter out filler words and wake words
+          const filteredText = event.text.replace(/\b(eee|umm|hımm)\b/gi, '').replace(/wake up[,. ]*fool[,. ]*/gi, '').trim();
+          setUserTranscript((current) => (event.final ? filteredText : `${current}${filteredText}`));
           if (event.final) setAssistantTranscript('');
           break;
+        }
         case 'assistant-transcript':
           setAssistantTranscript((current) => (event.final ? event.text : `${current}${event.text}`));
           setPhase('speaking');
@@ -178,7 +230,7 @@ const VoiceConversationPage: React.FC = () => {
         const runtime = await ipcBridge.foolVoice.ensureRealtime.invoke({
           version: 1,
           requestId: crypto.randomUUID(),
-          payload: {},
+          payload: { modelId, voiceId },
         });
         if (runtime.ok === false) throw new Error(runtime.error.code);
         connectionEndpoint = runtime.data.endpoint;
@@ -195,7 +247,7 @@ const VoiceConversationPage: React.FC = () => {
       setError(startError instanceof Error ? startError.message : String(startError));
       setPhase('error');
     }
-  }, [endpoint, handleRealtimeEvent, i18n.language, settings.devices.inputDeviceId, stop]);
+  }, [endpoint, handleRealtimeEvent, i18n.language, settings.devices.inputDeviceId, stop, modelId, voiceId]);
 
   const interrupt = useCallback(() => {
     outputRef.current.interrupt();
@@ -275,14 +327,31 @@ const VoiceConversationPage: React.FC = () => {
             </div>
 
             {!active ? (
-              <Input
-                className='mt-18px max-w-520px'
-                prefix={<SettingTwo size={14} />}
-                value={endpoint}
-                onChange={setEndpoint}
-                placeholder={DEFAULT_ENDPOINT}
-                aria-label={t('settings.voice.conversationEndpoint')}
-              />
+              <div className='mt-18px flex w-full max-w-520px flex-col gap-12px'>
+                <div className='flex gap-12px'>
+                  <Select
+                    className='flex-1'
+                    value={modelId}
+                    onChange={setModelId}
+                    options={MODEL_OPTIONS}
+                    placeholder={t('settings.voice.conversationModel')}
+                  />
+                  <Select
+                    className='flex-1'
+                    value={voiceId}
+                    onChange={setVoiceId}
+                    options={VOICE_OPTIONS}
+                    placeholder={t('settings.voice.conversationVoice')}
+                  />
+                </div>
+                <Input
+                  prefix={<SettingTwo size={14} />}
+                  value={endpoint}
+                  onChange={setEndpoint}
+                  placeholder={DEFAULT_ENDPOINT}
+                  aria-label={t('settings.voice.conversationEndpoint')}
+                />
+              </div>
             ) : null}
           </section>
 

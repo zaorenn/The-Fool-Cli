@@ -1039,7 +1039,7 @@
       },
       "avatar": "avatars/fool-assistant.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": ["fool-config", "fool-troubleshooting", "fool-webui-public"],
+      "enabled_skills": ["fool-config", "fool-troubleshooting", "fool-webui-public", "computer_use"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/fool-assistant.{locale}.md",
