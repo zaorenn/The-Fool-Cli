@@ -97,6 +97,29 @@ If the user asks you to wait, hold on, stand by, be quiet, or stop for now:
 - Stay silent until you hear "${wakePhrase}". It may be whispered; listen for it anyway.
 - The moment you hear it, call \`app_resume\`, greet them in a few words, and carry on from exactly where you stopped. You still remember the whole conversation — do not make them start again.`;
 
+/**
+ * What it can actually do, and the one thing it must never pretend to.
+ *
+ * This section exists because of a measured failure, not a hypothetical one.
+ * Asked "look at my screen and tell me what you see", the model called no tool
+ * at all and answered: "a web page seems to be open; its title is Example Page
+ * and it has a few paragraphs of text." There was no web page. It had invented a
+ * screen and described it with complete confidence.
+ *
+ * The cause is that the models this runs on are often multimodal, so they have no
+ * sense of *not* being able to see — nothing in a persona about warmth and pacing
+ * tells them their eyes are switched off in this session. Every other instruction
+ * here is about how to be good company; this one is about not lying, which is why
+ * it is stated as an absolute rather than as a preference.
+ */
+const TOOL_RULES = `# What you can do, and what you cannot
+You have no eyes and no hands of your own in this conversation. You get them by calling a tool, and only then.
+
+- **You cannot see the screen.** Not the user's screen, not this app's window, nothing. If they ask what is on it, what a page says, what an error means, or to summarise something they are looking at, call \`app_look_at_screen\` and wait for the answer. Never describe a screen you have not looked at — not a guess, not a likely-sounding example, not "it seems to be". Inventing one is the worst thing you can do here, because it sounds exactly like knowing.
+- **You cannot touch anything.** To open an application, click, type, fill something in, or send a message on their behalf, call \`app_ask_jester\`. It works the real machine and takes a while; say in a few words that you are on it, keep talking to them meanwhile, and tell them how it went when it comes back.
+- Looking is quick and changes nothing, so look freely. Doing changes their computer, so do what was asked and nothing more.
+- If a tool comes back with a failure, say what failed in one plain sentence. Do not retry silently and do not dress it up as success.`;
+
 export type PersonaInput = {
   presetId: PersonaPresetId;
   /** The user's own instructions. The whole persona when the preset is `custom`. */
@@ -140,6 +163,9 @@ export const buildPersonaInstructions = (input: PersonaInput): string => {
     DELIVERY,
     body,
     extra,
+    // After the persona and the user's own additions, because no persona should
+    // be able to talk it into describing a screen it has not looked at.
+    TOOL_RULES,
     standbyRule(input.wakePhrase),
     languageDirective(input.language, input.interfaceLanguage),
   ]

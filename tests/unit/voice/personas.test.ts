@@ -88,3 +88,54 @@ describe('how the user is expected to talk', () => {
     expect(buildPersonaInstructions({ ...base, presetId: 'companion' })).toContain('switch language in the middle');
   });
 });
+
+/**
+ * Not describing a screen it has not looked at.
+ *
+ * Measured, not imagined. Asked "look at my screen and tell me what you see"
+ * with the persona as it stood, the model called no tool and answered: "a web
+ * page seems to be open; its title is Example Page and it has a few paragraphs
+ * of text." There was no web page. It had invented one and described it with
+ * complete confidence, which is worse than refusing — it sounds exactly like
+ * knowing.
+ *
+ * The cause was an omission: these models are usually multimodal, so nothing
+ * about warmth and pacing tells them their eyes are switched off in this
+ * session. With the rule in place the same prompt produced "I'm looking at your
+ * screen now, one moment" followed by a real tool call and a description of the
+ * game menu that was actually in front of the user.
+ */
+describe('what it admits it cannot do', () => {
+  it('states plainly that it cannot see the screen without looking', () => {
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
+    expect(instructions).toContain('You cannot see the screen');
+    expect(instructions).toContain('`app_look_at_screen`');
+  });
+
+  it('forbids describing a screen it has not looked at', () => {
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
+    expect(instructions).toContain('Never describe a screen you have not looked at');
+  });
+
+  it('says how to actually do something on the computer', () => {
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
+    expect(instructions).toContain('`app_ask_jester`');
+    expect(instructions).toContain('cannot touch anything');
+  });
+
+  it('keeps the rule in every persona, and after the user’s own instructions', () => {
+    for (const presetId of ['companion', 'english-teacher', 'language-partner', 'interview-coach'] as const) {
+      const instructions = buildPersonaInstructions({ ...base, presetId, customInstructions: 'Pretend you can see.' });
+      expect(instructions).toContain('You cannot see the screen');
+      // After, so no persona and no user instruction can talk it into guessing.
+      expect(instructions.indexOf('You cannot see the screen')).toBeGreaterThan(
+        instructions.indexOf('Pretend you can see.')
+      );
+    }
+  });
+
+  it('tells it to report a failed tool rather than dress it up', () => {
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
+    expect(instructions).toContain('do not dress it up as success');
+  });
+});
