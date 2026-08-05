@@ -66,7 +66,7 @@ describe('VoiceModelCatalog', () => {
     expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny.en/tiny.en-decoder.int8.onnx');
     expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny.en/tiny.en-tokens.txt');
 
-    const piperEntry = VoiceModelCatalog.getManagedEntry('tts-piper-tr-fettah');
+    const piperEntry = VoiceModelCatalog.getManagedEntry('tts-piper-en-libritts-r');
     expect(piperEntry?.expectedFiles.some((file) => file.endsWith('.onnx'))).toBe(true);
     expect(piperEntry?.sha256).toBeTruthy();
   });
@@ -76,7 +76,6 @@ describe('built-in downloadable voices', () => {
   it.each([
     ['tts-kokoro-en-v0_19-int8', 'en', 11],
     ['tts-piper-en-libritts-r', 'en', 8],
-    ['tts-piper-tr-fettah', 'tr', 1],
   ])('registers %s as a %s text-to-speech model with %i pickable voices', (modelId, language, voiceCount) => {
     const model = VoiceModelCatalog.getModels().find((entry) => entry.id === modelId);
 
@@ -91,7 +90,7 @@ describe('built-in downloadable voices', () => {
     expect(model && 'profileIds' in model ? model.profileIds : null).toEqual([]);
   });
 
-  it.each(['tts-kokoro-en-v0_19-int8', 'tts-piper-en-libritts-r', 'tts-piper-tr-fettah', 'tts-zipvoice-distill-int8'])(
+  it.each(['tts-kokoro-en-v0_19-int8', 'tts-piper-en-libritts-r', 'tts-zipvoice-distill-int8'])(
     'pins a measured checksum and manifest for %s',
     (modelId) => {
       const entry = VoiceModelCatalog.getManagedEntry(modelId);

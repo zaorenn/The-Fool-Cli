@@ -80,19 +80,6 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
     profileIds: PIPER_LIBRITTS_VOICES.map((voice) => voice.id),
   },
   {
-    id: 'tts-piper-tr-fettah',
-    providerId: 'local-sherpa',
-    displayName: 'Piper Fettah (Türkçe)',
-    languages: ['tr'],
-    role: 'text-to-speech',
-    distribution: 'managed',
-    state: { status: 'not-installed' },
-    downloadBytes: null,
-    installedBytes: null,
-    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
-    profileIds: ['piper-tr-fettah-v2'],
-  },
-  {
     id: 'tts-kitten-nano-en-v0_8',
     providerId: 'local-sherpa',
     displayName: 'Kitten Nano (English)',
@@ -281,17 +268,6 @@ export const FOOL_VOICE_PRESET_PROFILES: readonly VoiceProfile[] = [
       deletable: false,
     })
   ),
-  {
-    id: 'piper-tr-fettah-v2',
-    providerId: 'local-sherpa',
-    modelId: 'tts-piper-tr-fettah',
-    kind: 'preset',
-    state: 'unavailable',
-    displayName: 'Fettah (Türkçe)',
-    languages: ['tr'],
-    speakerId: 0,
-    deletable: false,
-  },
   ...Array.from(
     { length: 4 },
     (_, index): VoiceProfile => ({
@@ -399,17 +375,6 @@ export const MANAGED_CATALOG_ENTRIES: Record<string, ManagedCatalogEntry> = {
     expectedFiles: [
       'vits-piper-en_US-libritts_r-medium/en_US-libritts_r-medium.onnx',
       'vits-piper-en_US-libritts_r-medium/tokens.txt',
-    ],
-  },
-  // Turkish voice: 214 ms for 5 s of speech (23.2x realtime).
-  'tts-piper-tr-fettah': {
-    modelId: 'tts-piper-tr-fettah',
-    url: `${RELEASE_BASE}/tts-models/vits-piper-tr_TR-fettah-medium.tar.bz2`,
-    sha256: '314a9910616fb17be882c77f0bcf76796a1914d4d606f3c984f9094cb9abf1e5',
-    archiveBytes: 67174342,
-    expectedFiles: [
-      'vits-piper-tr_TR-fettah-medium/tr_TR-fettah-medium.onnx',
-      'vits-piper-tr_TR-fettah-medium/tokens.txt',
     ],
   },
   // Alternative English voice: 241 ms (12.3x realtime).

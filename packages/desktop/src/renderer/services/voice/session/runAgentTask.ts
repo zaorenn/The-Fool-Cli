@@ -98,15 +98,19 @@ const openTaskConversation = async (
   request: AgentTaskRequest
 ): Promise<{ ok: true; conversationId: string; foolrs: boolean } | Extract<AgentTaskResult, { ok: false }>> => {
   const { assistantId, providerId, modelId } = request.settings.session;
-  if (assistantId.length === 0) return { ok: false, reason: 'no-agent' };
 
   const [assistants, providers] = await Promise.all([
     ipcBridge.assistants.list.invoke().catch((): Assistant[] => []),
     ipcBridge.mode.listProviders.invoke().catch((): IProvider[] => []),
   ]);
 
+  // Nothing pinned falls back to the first enabled agent — see
+  // `findPinnedAssistant`. Refusing outright is what answered "open YouTube for
+  // me" with an instruction to go and configure a setting that was already at
+  // its default.
   const assistant = findPinnedAssistant(assistants ?? [], assistantId);
-  if (!assistant) return { ok: false, reason: 'agent-unavailable', detail: assistantId };
+  if (!assistant)
+    return { ok: false, reason: assistantId.length === 0 ? 'no-agent' : 'agent-unavailable', detail: assistantId };
 
   const model = findPinnedModel(providers ?? [], providerId, modelId);
   const foolrs = isFoolrsAssistant(assistant);

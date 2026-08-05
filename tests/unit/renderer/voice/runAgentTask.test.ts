@@ -217,7 +217,10 @@ describe('runAgentTask', () => {
   });
 
   it('says which piece is missing rather than failing anonymously', async () => {
-    await expect(runAgentTask({ request: 'x', settings: settingsWith({ assistantId: '' }) })).resolves.toEqual({
+    // Nothing pinned is the picker's default and now means the first enabled
+    // agent — "no-agent" is kept for there being no agent at all.
+    assistantsList.mockResolvedValue([]);
+    await expect(runAgentTask({ request: 'x', settings: settingsWith({ assistantId: '' }) })).resolves.toMatchObject({
       ok: false,
       reason: 'no-agent',
     });

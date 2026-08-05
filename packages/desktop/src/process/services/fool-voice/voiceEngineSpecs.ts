@@ -168,14 +168,6 @@ export const VOICE_ENGINE_SPECS: Record<string, VoiceEngineSpec> = {
       model: 'en_US-libritts_r-medium.onnx',
     },
   },
-  'tts-piper-tr-fettah': {
-    role: 'text-to-speech',
-    engine: {
-      kind: 'vits',
-      dir: 'vits-piper-tr_TR-fettah-medium',
-      model: 'tr_TR-fettah-medium.onnx',
-    },
-  },
   'tts-kitten-nano-en-v0_8': {
     role: 'text-to-speech',
     engine: {

@@ -277,7 +277,7 @@ describe('the language a request carries', () => {
   });
 
   it('leaves the language of a model it does not know untouched', () => {
-    expect(wireLanguageFor('tts-piper-tr-fettah', 'tr')).toBe('tr');
+    expect(wireLanguageFor('tts-piper-en-libritts-r', 'tr')).toBe('tr');
   });
 
   /**

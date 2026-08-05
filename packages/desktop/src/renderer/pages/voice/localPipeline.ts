@@ -8,10 +8,11 @@ import { ipcBridge } from '@/common';
 import { buildPersonaInstructions, REALTIME_TOOLS, type NormalizedRealtimeEvent } from '@/common/realtime';
 import { synthesisProviderFor, type FoolVoiceSettings, type VoiceModel } from '@/common/types/foolVoice';
 import { isBackchannel } from '@/common/voice/backchannel';
+import { isHallucinatedTranscript } from '@/common/voice/hallucinations';
 import { applyTranscriptRules } from '@/common/voice/transcriptRules';
 import { findWakePhrase } from '@renderer/services/voice/wakePhrase';
 import { createIncrementalSentenceDetector } from '@renderer/services/voice/narration/incrementalSentences';
-import { selectTtsTarget } from '@renderer/services/voice/selectTtsTarget';
+import { sanitizeForSpeech } from '@renderer/services/voice/narration/narrationSanitizer';
 
 /**
  * A conversation that never leaves the machine.
@@ -488,9 +489,17 @@ export class LocalVoicePipeline {
     });
 
     if (response.ok === false) throw new Error('LOCAL_TRANSCRIBE_FAILED');
+
+    const heard = response.data.text.trim();
+    // Handed a keystroke or a fan, Whisper does not answer with nothing — it
+    // answers with whatever usually follows silence in captioned video. Treated
+    // as empty, because that is what was actually said, and because everything
+    // downstream would otherwise take a subtitling credit for a question.
+    if (isHallucinatedTranscript(heard)) return '';
+
     // The same tidying a typed instruction never needs: hesitations out,
     // spoken corrections applied, before the model is asked to act on it.
-    return applyTranscriptRules(response.data.text.trim(), this.options.settings.transcript);
+    return applyTranscriptRules(heard, this.options.settings.transcript);
   }
 
   /**
@@ -576,8 +585,8 @@ export class LocalVoicePipeline {
         // moment it stopped being said — and there would be nothing left to
         // carry on with.
         for (const sentence of detector.push(frame.text)) {
-          this.voice ??= this.resolveVoice(readiness, sentence);
-          this.pending.push(sentence);
+          this.voice ??= this.resolveVoice(readiness);
+          this.queueForSpeech(sentence);
         }
         this.startDraining(controller);
       }
@@ -585,8 +594,8 @@ export class LocalVoicePipeline {
 
     const tail = detector.flush().trim();
     if (tail.length > 0) {
-      this.voice ??= this.resolveVoice(readiness, tail);
-      this.pending.push(tail);
+      this.voice ??= this.resolveVoice(readiness);
+      this.queueForSpeech(tail);
       this.startDraining(controller);
     }
 
@@ -649,6 +658,23 @@ export class LocalVoicePipeline {
     }
   }
 
+  /**
+   * Hands a sentence to the speaker, in the shape a voice should read it.
+   *
+   * The written reply and the spoken one are not the same text. A model narrates
+   * itself — "*calls app_ask_jester*", "(pauses to think)" — and read out
+   * verbatim that is the assistant announcing the name of a function and reading
+   * its own asides aloud. On screen the sentence stays as written; only what is
+   * spoken is cleaned.
+   *
+   * A sentence that is nothing but a stage direction is dropped rather than
+   * spoken as the silence it reduces to.
+   */
+  private queueForSpeech(sentence: string): void {
+    const spoken = sanitizeForSpeech(sentence).trim();
+    if (spoken.length > 0) this.pending.push(spoken);
+  }
+
   /** Starts the speaker on the queue, if it is not already working through it. */
   private startDraining(controller: AbortController): void {
     if (this.draining) return;
@@ -702,13 +728,17 @@ export class LocalVoicePipeline {
   /**
    * Which installed voice reads this reply.
    *
-   * The same resolution the rest of the app uses — a Turkish reply finds a
-   * Turkish voice, and the provider follows the model rather than the stored
-   * setting, so a Chatterbox voice is not addressed to sherpa.
+   * The configured one, unless it is not installed — the text has no say in it.
+   * The provider follows the model rather than the stored setting, so a
+   * Chatterbox voice is not addressed to sherpa.
    */
-  private resolveVoice(readiness: Extract<LocalReadiness, { ok: true }>, sample: string): SpeakingVoice {
+  private resolveVoice(readiness: Extract<LocalReadiness, { ok: true }>): SpeakingVoice {
     const installed = readiness.ttsModels.map((model) => model.id);
-    const target = selectTtsTarget(sample, this.options.settings, readiness.ttsModels);
+    const target = {
+      modelId: this.options.settings.tts.modelId,
+      profileId: this.options.settings.tts.profileId,
+      language: this.options.settings.tts.language,
+    };
 
     // Falling back to a cloning engine would trade one silence for another:
     // Chatterbox and Qwen3 have no voice of their own, and asked to speak with

@@ -308,6 +308,43 @@ describe('LocalVoicePipeline', () => {
     expect(events.at(-1)).toEqual({ kind: 'phase', phase: 'listening' });
   });
 
+  /**
+   * The written reply and the spoken one are not the same text.
+   *
+   * The model narrates itself — "*calls app_ask_jester*", asides in brackets —
+   * and this page read every word of it out loud, so the assistant announced the
+   * name of the function it was about to call. On screen the sentence stays as
+   * written; only what reaches the speaker is cleaned.
+   */
+  it('does not read the model narrating its own tool calls', async () => {
+    readyCatalog();
+    transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'Aç sunu.' } });
+    synthesizeInvoke.mockImplementation(async () => ({
+      ok: true,
+      data: { audio: { dataBase64: pcm16ToWavBase64(pcmOf([1]), 22050), sampleRateHz: 22050 } },
+    }));
+
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline } = await connect(
+      events,
+      () =>
+        ({
+          ok: true,
+          body: sseBody(['*calls app_ask_jester* ', 'Opening it now (one moment).']),
+        }) as unknown as Response
+    );
+
+    pipeline.pushAudio(toBase64(pcmOf([1, 2])), 'speech-started');
+    pipeline.pushAudio('', 'utterance-ended');
+    await settle();
+
+    const spoken = synthesizeInvoke.mock.calls.map((call) => call[0].payload.text);
+    expect(spoken).toEqual(['Opening it now.']);
+    // Written out in full, though: the transcript is what was said, not what
+    // was read aloud, and hiding it would make a wrong answer unexplainable.
+    expect(events).toContainEqual({ kind: 'assistant-transcript', text: '*calls app_ask_jester* ', final: false });
+  });
+
   it('falls back to a voice that can speak, not to a mute cloning engine', async () => {
     // Chatterbox and Qwen3 have no voice of their own: asked to speak with
     // nothing to imitate they refuse, so falling back to one is silence.

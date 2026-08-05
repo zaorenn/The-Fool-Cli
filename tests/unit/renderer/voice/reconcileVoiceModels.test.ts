@@ -128,13 +128,13 @@ describe('reconcileVoiceModels with cloning engines installed', () => {
       listenModel(DEFAULT_FOOL_VOICE_SETTINGS.stt.modelId, true),
       speechModel(DEFAULT_FOOL_VOICE_SETTINGS.tts.modelId, false),
       cloningModel('tts-audiocpp-pocket', 'local-audiocpp'),
-      speechModel('tts-piper-tr-fettah', true, ['fettah-p0']),
+      speechModel('tts-kitten-nano-en-v0_8', true, ['kitten-nano-0']),
     ];
 
     const next = reconcileVoiceModels(DEFAULT_FOOL_VOICE_SETTINGS, models);
 
-    expect(next?.tts.modelId).toBe('tts-piper-tr-fettah');
-    expect(next?.tts.profileId).toBe('fettah-p0');
+    expect(next?.tts.modelId).toBe('tts-kitten-nano-en-v0_8');
+    expect(next?.tts.profileId).toBe('kitten-nano-0');
   });
 
   it('carries the provider across with the model', () => {

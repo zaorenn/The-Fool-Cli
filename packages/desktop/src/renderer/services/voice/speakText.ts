@@ -9,7 +9,7 @@ import { synthesisProviderFor, type FoolVoiceSettings, type VoiceSynthesizedWav 
 import type { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybackService';
 import { summarizeForSpeech } from '@renderer/services/voice/narration/englishSummary';
 import { splitForSpeech } from '@renderer/services/voice/narration/speechChunks';
-import { CLONED_PROFILE_PREFIX, selectTtsTarget } from '@renderer/services/voice/selectTtsTarget';
+import { CLONED_PROFILE_PREFIX } from '@/common/voice/clonedProfile';
 import { createSpeechClipQueue } from '@renderer/services/voice/speechClipQueue';
 import { publishVoiceReply } from '@renderer/services/voice/publishVoiceStage';
 
@@ -80,7 +80,14 @@ export const prepareSynthesis = async (
   const installed = speakable.map((model) => model.id);
   if (installed.length === 0) return { unavailable: true };
 
-  const target = selectTtsTarget(sampleText, settings, speakable);
+  // The voice the user chose, with no second-guessing from the text. A reply
+  // that looked Turkish used to be handed to a Turkish preset instead, which
+  // changed who was speaking mid-conversation and had no setting to turn off.
+  const target = {
+    modelId: settings.tts.modelId,
+    profileId: settings.tts.profileId,
+    language: settings.tts.language,
+  };
 
   // A cloned voice is a recording, not a trained model: its id names a real,
   // installed engine (Pocket) whichever machine runs it, so "the model is

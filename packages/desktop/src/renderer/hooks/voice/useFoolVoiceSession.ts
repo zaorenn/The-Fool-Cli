@@ -18,6 +18,7 @@ import { MicrophoneCapture } from '@renderer/services/voice/MicrophoneCapture';
 import { EMPTY_EVIDENCE, describeEvidence, type RunEvidence } from '@renderer/services/voice/narration/FoolNarrator';
 import { truncateToSpokenLength } from '@renderer/services/voice/narration/narrationSanitizer';
 import { createRunEvidenceCollector } from '@renderer/services/voice/RunEvidenceCollector';
+import { isHallucinatedTranscript } from '@/common/voice/hallucinations';
 import { applyTranscriptRules } from '@/common/voice/transcriptRules';
 import { createIncrementalSpeechCollector } from '@renderer/services/voice/IncrementalSpeechCollector';
 import { createSpeechClipQueue, type SpeechClipQueue } from '@renderer/services/voice/speechClipQueue';
@@ -350,6 +351,12 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
       );
 
       const text = transcription.text.trim();
+      // Whisper answers silence with the likeliest thing to follow silence in
+      // captioned video, not with nothing — so a keystroke arrives here as "you"
+      // or a Spanish subtitling credit, and used to be sent on as a message the
+      // user never spoke. Dropped before either path sees it.
+      if (isHallucinatedTranscript(text)) return '';
+
       // The wake check sees the raw transcript: it is matching a fixed phrase
       // against what was actually said, and a rule that removed a hesitation
       // inside the phrase would stop the app answering to its own name.
