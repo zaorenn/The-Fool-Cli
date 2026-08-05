@@ -279,4 +279,22 @@ describe('the language a request carries', () => {
   it('leaves the language of a model it does not know untouched', () => {
     expect(wireLanguageFor('tts-piper-tr-fettah', 'tr')).toBe('tr');
   });
+
+  /**
+   * One engine here both clones a voice and speaks Turkish, which is the only
+   * way to hear your own voice say something in Turkish. It does it with an
+   * English accent: transcribed back through Whisper, "Merhaba, bugün hava çok
+   * güzel ve seninle konuşmak istiyorum" returns as "merhaba bugun hava sok
+   * guzel ve senin lakonumak istiorum" — every word recognisable, none quite
+   * right. Offered on that basis, and the automatic routing still prefers a
+   * native Turkish voice.
+   */
+  it('offers Turkish on the one cloning engine that can read it', () => {
+    expect(getAudioCppModelSpec(POCKET)?.languages).toContain('tr');
+    expect(getAudioCppModelSpec(POCKET)?.requiresVoiceReference).toBe(true);
+    // Not on the engines that cannot: Chatterbox is English-only and Qwen3's
+    // talker refuses the language outright.
+    expect(getAudioCppModelSpec(CHATTERBOX)?.languages).not.toContain('tr');
+    expect(getAudioCppModelSpec(QWEN3)?.languages).not.toContain('tr');
+  });
 });

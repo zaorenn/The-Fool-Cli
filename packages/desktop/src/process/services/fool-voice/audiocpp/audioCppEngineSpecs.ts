@@ -90,6 +90,10 @@ export type AudioCppModelSpec = {
   /**
    * How this engine wants a language named, when a code is not what it reads.
    *
+   * Note that "reads" is doing work here: Pocket accepts the field and ignores
+   * it. Asked for the same Turkish sentence as `tr` and as `en` it returned
+   * byte-identical audio, so its pronunciation comes from the text alone.
+   *
    * Most families take the request's `language` verbatim and are happy with a
    * BCP code. Qwen3 is not: its talker matches the string against a table of
    * English language *names* and answers anything else with
@@ -238,7 +242,25 @@ export const AUDIOCPP_MODEL_SPECS: readonly AudioCppModelSpec[] = [
     task: 'tts',
     mode: 'offline',
     weightsFile: 'pocket-tts-english-q8_0.gguf',
-    languages: ['en', 'de', 'it', 'pt', 'es'],
+    /**
+     * Turkish is on this list because it was measured, not because the weights
+     * claim it.
+     *
+     * This is the only engine here that both clones a voice and speaks Turkish
+     * at all, which makes it the only way to hear your own cloned voice say
+     * something in Turkish. It reads it with an English accent — synthesised and
+     * transcribed back through Whisper, "Merhaba, bugün hava çok güzel ve
+     * seninle konuşmak istiyorum" comes back as "merhaba bugun hava sok guzel ve
+     * senin lakonumak istiorum": every word recognisable, none of them quite
+     * right. Worth offering with that caveat, and the opposite of MOSS-Nano,
+     * which is fast and fluent-sounding and returns "I have a... You better have
+     * a cook" for the same sentence.
+     *
+     * Automatic routing still prefers a native Turkish voice — see
+     * `TURKISH_TARGETS` — so this applies when the user has deliberately chosen
+     * a cloned voice and set its language.
+     */
+    languages: ['en', 'de', 'it', 'pt', 'es', 'tr'],
     requiresVoiceReference: true,
     // Pocket does read a clone transcript, but through the `voice_clone_text`
     // option rather than the request's `reference_text` field — which is what
