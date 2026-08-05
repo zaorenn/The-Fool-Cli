@@ -154,30 +154,6 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
   // slower than the float builds above (300 ms vs 82 ms) because quantisation
   // overhead dominates at this model size.
   {
-    id: 'tts-supertonic-3-int8-2026-05-11',
-    providerId: 'local-sherpa',
-    displayName: 'Supertonic 3 (int8, Turkish)',
-    languages: ['tr'],
-    role: 'text-to-speech',
-    distribution: 'managed',
-    state: { status: 'not-installed' },
-    downloadBytes: null,
-    installedBytes: null,
-    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
-    profileIds: [
-      'supertonic-speaker-0',
-      'supertonic-speaker-1',
-      'supertonic-speaker-2',
-      'supertonic-speaker-3',
-      'supertonic-speaker-4',
-      'supertonic-speaker-5',
-      'supertonic-speaker-6',
-      'supertonic-speaker-7',
-      'supertonic-speaker-8',
-      'supertonic-speaker-9',
-    ],
-  },
-  {
     id: 'tts-pocket-int8-2026-01-26',
     providerId: 'local-sherpa',
     displayName: 'Pocket (Voice cloning, fastest)',
@@ -343,20 +319,14 @@ export const FOOL_VOICE_PRESET_PROFILES: readonly VoiceProfile[] = [
       deletable: false,
     })
   ),
-  ...Array.from(
-    { length: 10 },
-    (_, index): VoiceProfile => ({
-      id: `supertonic-speaker-${index}`,
-      providerId: 'local-sherpa',
-      modelId: 'tts-supertonic-3-int8-2026-05-11',
-      kind: 'preset',
-      state: 'unavailable',
-      displayName: `Supertonic ${index + 1} (Türkçe)`,
-      languages: ['tr'],
-      speakerId: index,
-      deletable: false,
-    })
-  ),
+  // Supertonic's ten Turkish speakers were here, and they were the worst kind of
+  // entry: the only Turkish voice besides Piper, offered as a 129 MB download,
+  // installable, selectable — and mute. `sherpa-onnx-node` carries no Supertonic
+  // loader at all, so a reply routed to it threw `Not a text-to-speech model`
+  // inside playback, where the failure is swallowed. An English voice reading
+  // Turkish is a bad accent; this was silence, and it looked like the whole
+  // feature being broken. Removed rather than fixed because there is nothing
+  // here to fix until upstream ships the loader.
 ];
 
 /**
@@ -478,21 +448,6 @@ export const MANAGED_CATALOG_ENTRIES: Record<string, ManagedCatalogEntry> = {
       'kokoro-int8-en-v0_19/model.int8.onnx',
       'kokoro-int8-en-v0_19/voices.bin',
       'kokoro-int8-en-v0_19/tokens.txt',
-    ],
-  },
-  'tts-supertonic-3-int8-2026-05-11': {
-    modelId: 'tts-supertonic-3-int8-2026-05-11',
-    url: `${RELEASE_BASE}/tts-models/sherpa-onnx-supertonic-3-tts-int8-2026-05-11.tar.bz2`,
-    sha256: '82fa96f91c4ef8abaae3a14a3f4153facf88bed821d1f7331cec2700f432c427',
-    archiveBytes: 128774318,
-    expectedFiles: [
-      'sherpa-onnx-supertonic-3-tts-int8-2026-05-11/duration_predictor.int8.onnx',
-      'sherpa-onnx-supertonic-3-tts-int8-2026-05-11/text_encoder.int8.onnx',
-      'sherpa-onnx-supertonic-3-tts-int8-2026-05-11/vector_estimator.int8.onnx',
-      'sherpa-onnx-supertonic-3-tts-int8-2026-05-11/vocoder.int8.onnx',
-      'sherpa-onnx-supertonic-3-tts-int8-2026-05-11/tts.json',
-      'sherpa-onnx-supertonic-3-tts-int8-2026-05-11/unicode_indexer.bin',
-      'sherpa-onnx-supertonic-3-tts-int8-2026-05-11/voice.bin',
     ],
   },
   // Cloning without a transcript, and with the speaker embedding cached between

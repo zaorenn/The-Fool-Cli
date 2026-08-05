@@ -100,9 +100,15 @@ export const REALTIME_PROVIDER_IDS: readonly VoiceConversationProviderId[] = [
  *
  * Deliberately short. A speech-to-speech model calling a tool has to stop
  * speaking to do it, so every entry here is a pause in the conversation and has
- * to be worth one — which rules out the long tail of app settings and leaves
- * the two that come up out loud: change how it looks, and hand real work to the
- * agent that can do it.
+ * to be worth one — which rules out the long tail of app settings and leaves the
+ * ones that come up out loud: look at the screen, do a real thing on the
+ * computer, change how the app looks, and wait when told to.
+ *
+ * Seeing and doing are separate entries on purpose. They cost different amounts
+ * — a look is a few seconds and changes nothing, a task is minutes and changes
+ * the user's desktop — and a model given only the second one reaches for it to
+ * answer "what's on my screen", which is a heavyweight way to do something it
+ * could have done itself.
  */
 export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
@@ -115,9 +121,24 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_look_at_screen',
+    description:
+      "Look at what is on the user's screen right now and get it back described in words. Call this whenever the user says to look at their screen, or asks about a page, a window, an error or anything they can see and you cannot — including 'summarise this page'. Looking takes a few seconds, so say you are looking before you call it, then tell the user what is there in your own words.",
+    parameters: {
+      type: 'object',
+      properties: {
+        question: {
+          type: 'string',
+          description: 'What to look for, in a sentence. Leave out for a plain summary of the screen.',
+        },
+      },
+      required: [],
+    },
+  },
+  {
     name: 'app_ask_jester',
     description:
-      "Hand a real task on this computer to the built-in agent. It can read the user's screen and work their applications for them — click, fill in a form or a document, open something and use it — as well as handle files, code and research. Use it whenever the answer needs looking at the screen or doing something outside this conversation. Say briefly that you are on it; do not read the result out in full.",
+      "Carry out a real task on this computer through the built-in agent. It works the user's applications for them — opens something, clicks, types, fills in a form, sends a message in Discord or an email — and handles files, code and research. Use it for anything that changes something outside this conversation. It runs while you keep talking, so say briefly that you are on it, and report the outcome in a sentence when it comes back. Do not use it merely to look at the screen; that is app_look_at_screen.",
     parameters: {
       type: 'object',
       properties: { request: { type: 'string', description: "The task, in the user's own words." } },

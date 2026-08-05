@@ -1406,7 +1406,7 @@
     "conversationActivityEmpty": "Gerçek araç çağrıları ve devredilen işler gerçekleştikçe burada görünecek.",
     "conversationActionRunning": "Üzerinde çalışıyor…",
     "conversationThemeChanged": "Tema tonu {{tone}} olarak değiştirildi.",
-    "conversationDelegated": "Jester’a devredildi.",
+    "conversationDelegated": "Bilgisayarında yapıyor…",
     "conversationSetupFailed": "Kurulum sohbeti başlatılamadı.",
     "conversationProviderSetupPrompt": "{{provider}} sağlayıcısını resmi CLI tarafından yönetilen OAuth akışıyla The Fool’a bağla. Benden OAuth tokenı yapıştırmamı isteme. Kurulumu ve kimlik doğrulamayı denetle, tarayıcı veya cihaz akışında bana rehberlik et, agent sağlığını doğrula ve kalan uygulama kurulumunu tamamlamama yardım et.",
     "conversationContinueWithJester": "Jester ile devam et",
@@ -1519,7 +1519,21 @@
     "conversationProviderReady": "Hazır · {{provider}}",
     "conversationProviderLocal": "Bu bilgisayarda çalışır",
     "conversationProviderMissing": "Bu sağlayıcı için API anahtarı yok",
-    "conversationProviderAddKey": "Model Servisleri'nden ekle"
+    "conversationProviderAddKey": "Model Servisleri'nden ekle",
+    "conversationLooking": "Ekrana bakıyor…",
+    "conversationTaskDone": "Bitti.",
+    "conversationVisionModel": "Gören model",
+    "conversationVisionModelSame": "Düşünen modelin aynısı",
+    "conversationVisionModelHint": "Ekranına bakmasını istediğinde bu kullanılır. Görme yeteneği olan bir model seç; boş bırakırsan düşünen model kullanılır.",
+    "conversationTaskError": {
+      "no-agent": "Ses için bir ajan seçilmemiş. Ayarlar → Ses altından seç.",
+      "agent-unavailable": "Ses için seçilen ajan kullanılamıyor.",
+      "create-failed": "İşin yapılacağı sohbet açılamadı.",
+      "send-failed": "Görev devredilemedi.",
+      "run-failed": "Görev bitmeden durdu.",
+      "cancelled": "Görev iptal edildi."
+    },
+    "modelNoEngine": "Bu ses için motor yok"
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

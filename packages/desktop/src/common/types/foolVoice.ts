@@ -85,7 +85,15 @@ export type VoiceModelState =
   | { status: 'ready' }
   | {
       status: 'invalid';
-      reason: 'archive-invalid' | 'manifest-mismatch' | 'missing-files';
+      /**
+       * `no-engine` — the weights are here and nothing installed can load them.
+       *
+       * Its own reason because it is the only one a download cannot fix, and
+       * because it used to report `ready`: a row whose engine the synthesiser
+       * has no loader for was offered, installed, selected, and then produced
+       * silence, with the failure swallowed inside playback.
+       */
+      reason: 'archive-invalid' | 'manifest-mismatch' | 'missing-files' | 'no-engine';
     };
 
 type VoiceModelBase = {
@@ -429,6 +437,18 @@ export type FoolVoiceSettings = {
      * this at their own.
      */
     localEndpoint: string;
+    /**
+     * The model that looks at the screen when the conversation asks it to.
+     *
+     * Separate from {@link model} because seeing and talking are not the same
+     * job and are rarely the same weights: the fast model that holds a
+     * conversation may be text-only, and the one that reads a screen well is
+     * usually too slow to converse with. Empty means "use the thinking model",
+     * which is right when it happens to have vision — and if it does not, the
+     * request fails with something the user can act on rather than silently
+     * dropping the picture.
+     */
+    visionModel: string;
     voice: string;
     personaPresetId: 'companion' | 'english-teacher' | 'language-partner' | 'interview-coach' | 'custom';
     /** Added to the preset, or the whole persona when the preset is `custom`. */
@@ -662,6 +682,7 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     providerId: 'local-pipeline',
     model: '',
     localEndpoint: '',
+    visionModel: '',
     voice: 'marin',
     personaPresetId: 'companion',
     customInstructions: '',
@@ -881,6 +902,8 @@ const settingsSchema = z
         // Empty is the LM Studio default rather than an invalid URL, so the
         // field can be cleared to get back to it.
         localEndpoint: z.literal('').or(httpBaseUrlSchema).default(''),
+        // Empty means the thinking model does the looking too.
+        visionModel: z.string().max(256).default(''),
         voice: z.string().max(64).default('marin'),
         personaPresetId: z
           .enum(['companion', 'english-teacher', 'language-partner', 'interview-coach', 'custom'])

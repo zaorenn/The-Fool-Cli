@@ -344,7 +344,10 @@ describe('LocalVoicePipeline', () => {
     expect(synthesizeInvoke.mock.calls[0][0].payload).toMatchObject({
       modelId: 'tts-piper-en-libritts-r',
       providerId: 'local-audiocpp',
-      profileId: 'speaker-0',
+      // One of the fallback model's own voices, not a placeholder id. `speaker-0`
+      // was tolerated by Piper and refused by Qwen3 with `500 requires speaker`,
+      // which is the reply never being heard rather than a wrong accent.
+      profileId: 'libritts-p0',
     });
   });
 
@@ -493,5 +496,222 @@ describe('LocalVoicePipeline', () => {
     await settle();
 
     expect(transcribeInvoke).not.toHaveBeenCalled();
+  });
+});
+
+describe('LocalVoicePipeline acting on the computer', () => {
+  const readyCatalog = () => catalogInvoke.mockResolvedValue(okCatalog([STT_MODEL, TTS_MODEL]));
+
+  /**
+   * Settles a turn that goes through the model more than once.
+   *
+   * A tool round is a whole extra request, stream and synthesis, so the shallow
+   * {@link settle} used elsewhere returns while the turn is still mid-round.
+   */
+  const settleRounds = async (): Promise<void> => {
+    for (let turn = 0; turn < 200; turn += 1) await Promise.resolve();
+  };
+
+  /**
+   * A conversation wired to a tool runner, with the model's replies scripted.
+   *
+   * `chats` is consumed one per pass through the model, which is what a tool
+   * round is: the first pass asks for the tool, the second says the answer.
+   */
+  const connectWithTools = async (
+    events: NormalizedRealtimeEvent[],
+    chats: readonly (() => Response)[],
+    runTool: (call: { callId: string; name: string; argumentsJson: string }) => Promise<unknown>
+  ) => {
+    let pass = 0;
+    const fetchMock = vi.fn(async (url: string) => {
+      if (String(url).endsWith('/models')) {
+        return { ok: true, json: async () => ({ data: [{ id: 'google/gemma-4-e4b' }] }) } as unknown as Response;
+      }
+      const next = chats[Math.min(pass, chats.length - 1)];
+      pass += 1;
+      return next();
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pipeline = new LocalVoicePipeline({
+      settings: settingsWith({ model: 'google/gemma-4-e4b' }),
+      interfaceLanguage: 'tr',
+      onEvent: (event) => events.push(event),
+      runTool,
+    });
+    await pipeline.connect();
+    return { pipeline, fetchMock };
+  };
+
+  const speakOnce = () =>
+    synthesizeInvoke.mockResolvedValue({
+      ok: true,
+      data: { audio: { dataBase64: pcm16ToWavBase64(pcmOf([1]), 24000), sampleRateHz: 24000 } },
+    });
+
+  /**
+   * A stream that asks for a tool, split the way a real one splits it.
+   *
+   * The id, the name and the arguments arrive in separate deltas, and the
+   * arguments are a JSON document cut at an arbitrary character — verified
+   * against LM Studio, which is why the pieces below do not line up with any
+   * token boundary.
+   */
+  const toolSseBody = (name: string, argumentPieces: readonly string[]): ReadableStream<Uint8Array> => {
+    const encoder = new TextEncoder();
+    const frame = (delta: unknown) => `data: ${JSON.stringify({ choices: [{ delta }] })}\n`;
+    const lines = [
+      frame({ tool_calls: [{ index: 0, id: 'call_abc', function: { name } }] }),
+      ...argumentPieces.map((piece) => frame({ tool_calls: [{ index: 0, function: { arguments: piece } }] })),
+      'data: [DONE]\n',
+    ];
+    return new ReadableStream({
+      start(controller) {
+        for (const line of lines) controller.enqueue(encoder.encode(line));
+        controller.close();
+      },
+    });
+  };
+
+  it('offers the model no tools when nothing can run them', async () => {
+    readyCatalog();
+    speakOnce();
+    transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'Merhaba.' } });
+
+    const events: NormalizedRealtimeEvent[] = [];
+    const fetchMock = vi.fn(async (url: string) =>
+      String(url).endsWith('/models')
+        ? ({ ok: true, json: async () => ({ data: [{ id: 'm' }] }) } as unknown as Response)
+        : ({ ok: true, body: sseBody(['Selam.']) } as unknown as Response)
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pipeline = new LocalVoicePipeline({
+      settings: settingsWith({ model: 'm' }),
+      interfaceLanguage: 'tr',
+      onEvent: (event) => events.push(event),
+    });
+    await pipeline.connect();
+    pipeline.pushAudio(toBase64(pcmOf([1])), 'speech-started');
+    pipeline.pushAudio('', 'utterance-ended');
+    await settleRounds();
+
+    // A server handed tools it will never be allowed to use spends the turn
+    // describing what it would have done instead of answering.
+    const chat = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/chat/completions'));
+    expect(chat).toBeDefined();
+    const body = JSON.parse(String((chat as unknown as [string, RequestInit])[1].body));
+    expect(body.tools).toBeUndefined();
+  });
+
+  it('runs the tool the model asked for and answers with what it learned', async () => {
+    readyCatalog();
+    speakOnce();
+    transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'Ekranima bak.' } });
+
+    const runTool = vi.fn(async () => ({ ok: true, screen: 'A code editor is open.' }));
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline, fetchMock } = await connectWithTools(
+      events,
+      [
+        () =>
+          ({
+            ok: true,
+            body: toolSseBody('app_look_at_screen', ['{"question":', '"Ne var?"}']),
+          }) as unknown as Response,
+        () => ({ ok: true, body: sseBody(['Kod editoru acik.']) }) as unknown as Response,
+      ],
+      runTool
+    );
+
+    pipeline.pushAudio(toBase64(pcmOf([1])), 'speech-started');
+    pipeline.pushAudio('', 'utterance-ended');
+    await settleRounds();
+
+    // The arguments are reassembled across deltas before anything is run: acting
+    // on half a JSON document is how a tool call silently does the wrong thing.
+    expect(runTool).toHaveBeenCalledWith({
+      callId: 'call_abc',
+      name: 'app_look_at_screen',
+      argumentsJson: '{"question":"Ne var?"}',
+    });
+
+    // The result goes back as a `tool` message addressed to the call, behind the
+    // assistant turn that made it — a tool answer whose question is missing from
+    // the history is rejected outright.
+    const second = fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/chat/completions'))[1];
+    const messages = JSON.parse(String((second[1] as RequestInit).body)).messages as {
+      role: string;
+      content: string;
+      tool_calls?: { id: string }[];
+      tool_call_id?: string;
+    }[];
+    const asked = messages.find((turn) => turn.role === 'assistant' && turn.tool_calls);
+    expect(asked?.tool_calls?.[0].id).toBe('call_abc');
+    const answered = messages.find((turn) => turn.role === 'tool');
+    expect(answered?.tool_call_id).toBe('call_abc');
+    expect(answered?.content).toContain('A code editor is open.');
+
+    // And the user hears the model's own sentence about it, not the raw result.
+    expect(synthesizeInvoke.mock.calls.map((call) => call[0].payload.text)).toEqual(['Kod editoru acik.']);
+    expect(events.at(-1)).toEqual({ kind: 'phase', phase: 'listening' });
+  });
+
+  it('says what went wrong when a tool fails, instead of going quiet', async () => {
+    readyCatalog();
+    speakOnce();
+    transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'Discord ac.' } });
+
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline, fetchMock } = await connectWithTools(
+      events,
+      [
+        () => ({ ok: true, body: toolSseBody('app_ask_jester', ['{"request":"Discord"}']) }) as unknown as Response,
+        () => ({ ok: true, body: sseBody(['Yapamadim.']) }) as unknown as Response,
+      ],
+      async () => {
+        throw new Error('no agent is pinned');
+      }
+    );
+
+    pipeline.pushAudio(toBase64(pcmOf([1])), 'speech-started');
+    pipeline.pushAudio('', 'utterance-ended');
+    await settleRounds();
+
+    // The failure becomes a result the model can talk about. Letting it throw
+    // would end the turn with nothing said, which from the user's side is the
+    // assistant having ignored them.
+    const second = fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/chat/completions'))[1];
+    const messages = JSON.parse(String((second[1] as RequestInit).body)).messages as {
+      role: string;
+      content: string;
+    }[];
+    expect(messages.find((turn) => turn.role === 'tool')?.content).toContain('no agent is pinned');
+    expect(synthesizeInvoke.mock.calls.map((call) => call[0].payload.text)).toEqual(['Yapamadim.']);
+  });
+
+  it('stops asking for tools rather than looping without ever speaking', async () => {
+    readyCatalog();
+    speakOnce();
+    transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'Bak.' } });
+
+    const runTool = vi.fn(async () => ({ ok: true }));
+    const events: NormalizedRealtimeEvent[] = [];
+    // A model that answers every round with another tool call. The user cannot
+    // interrupt a conversation that never makes a sound, so the round count is
+    // what ends it.
+    const { pipeline } = await connectWithTools(
+      events,
+      [() => ({ ok: true, body: toolSseBody('app_look_at_screen', ['{}']) }) as unknown as Response],
+      runTool
+    );
+
+    pipeline.pushAudio(toBase64(pcmOf([1])), 'speech-started');
+    pipeline.pushAudio('', 'utterance-ended');
+    await settleRounds();
+
+    expect(runTool.mock.calls.length).toBeLessThanOrEqual(4);
+    expect(events.at(-1)).toEqual({ kind: 'phase', phase: 'listening' });
   });
 });

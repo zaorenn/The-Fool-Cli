@@ -5,7 +5,7 @@
  */
 
 import { ipcBridge } from '@/common';
-import { buildPersonaInstructions, type NormalizedRealtimeEvent } from '@/common/realtime';
+import { buildPersonaInstructions, REALTIME_TOOLS, type NormalizedRealtimeEvent } from '@/common/realtime';
 import { synthesisProviderFor, type FoolVoiceSettings, type VoiceModel } from '@/common/types/foolVoice';
 import { applyTranscriptRules } from '@/common/voice/transcriptRules';
 import { createIncrementalSentenceDetector } from '@renderer/services/voice/narration/incrementalSentences';
@@ -25,10 +25,22 @@ import { selectTtsTarget } from '@renderer/services/voice/selectTtsTarget';
  * conversation does not know which of the two it is talking to.
  */
 
+/** One tool the model asked for, as the pipeline hands it over to be run. */
+export type LocalToolCall = { callId: string; name: string; argumentsJson: string };
+
 export type LocalPipelineOptions = {
   settings: FoolVoiceSettings;
   interfaceLanguage: string;
   onEvent: (event: NormalizedRealtimeEvent) => void;
+  /**
+   * Runs a tool the model called, and answers with the result.
+   *
+   * Injected rather than implemented here because the tools act on the app —
+   * capture its screen, hand work to the agent, change the theme — and this file
+   * is the conversation, not the app. Absent means the model is offered no tools
+   * at all, which is how the pipeline behaves in tests.
+   */
+  runTool?: (call: LocalToolCall) => Promise<unknown>;
 };
 
 /** What the local stack needs before a conversation can start. */
@@ -197,7 +209,30 @@ export const listLocalModels = async (configuredEndpoint: string): Promise<strin
   }
 };
 
-type Turn = { role: 'system' | 'user' | 'assistant'; content: string };
+/** A tool call in the shape the OpenAI dialect carries it, both ways. */
+type WireToolCall = { id: string; type: 'function'; function: { name: string; arguments: string } };
+
+type Turn =
+  | { role: 'system' | 'user'; content: string }
+  | { role: 'assistant'; content: string; tool_calls?: WireToolCall[] }
+  /** The answer to one call, addressed back to it by id. */
+  | { role: 'tool'; content: string; tool_call_id: string };
+
+/**
+ * How many times the model may act and then think again within one turn.
+ *
+ * A look at the screen followed by a spoken answer is two rounds; looking, then
+ * doing something about what it saw, then reporting, is three. Bounded because a
+ * model that keeps calling tools without ever speaking is a loop the user cannot
+ * interrupt by talking — they would hear nothing to interrupt.
+ */
+const MAX_TOOL_ROUNDS = 4;
+
+/** The tool list in the dialect the local server speaks. */
+const WIRE_TOOLS = REALTIME_TOOLS.map((tool) => ({
+  type: 'function' as const,
+  function: { name: tool.name, description: tool.description, parameters: tool.parameters },
+}));
 
 /** Which installed voice speaks a reply, resolved once and reused for it. */
 type SpeakingVoice = {
@@ -365,17 +400,43 @@ export class LocalVoicePipeline {
   }
 
   /**
-   * Streams the reply and speaks it a sentence at a time.
+   * Answers the user, acting on the computer when the answer needs it.
    *
-   * Waiting for the whole answer before speaking is what makes a local
-   * assistant feel slow — the first sentence is usually ready in well under a
-   * second, and starting there hides the rest of the generation behind speech
-   * that is already playing.
+   * One pass through the model is not enough for "look at my screen": the model
+   * asks to look, the app looks, and the model has to be asked again with what
+   * was seen before it has anything to say. So this runs rounds — speak what
+   * there is, run what was asked for, go back — until a round produces no tool
+   * calls, which is the round that ends the turn.
    */
   private async speakReply(
     readiness: Extract<LocalReadiness, { ok: true }>,
     controller: AbortController
   ): Promise<void> {
+    for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
+      const calls = await this.streamReply(readiness, controller);
+      if (controller.signal.aborted) return;
+      if (calls.length === 0) break;
+      await this.runTools(calls, controller);
+      if (controller.signal.aborted) return;
+    }
+
+    this.options.onEvent({ kind: 'phase', phase: 'listening' });
+  }
+
+  /**
+   * Streams one pass of the model, speaking it a sentence at a time.
+   *
+   * Waiting for the whole answer before speaking is what makes a local
+   * assistant feel slow — the first sentence is usually ready in well under a
+   * second, and starting there hides the rest of the generation behind speech
+   * that is already playing.
+   *
+   * @returns the tool calls this pass asked for, empty when it just talked.
+   */
+  private async streamReply(
+    readiness: Extract<LocalReadiness, { ok: true }>,
+    controller: AbortController
+  ): Promise<WireToolCall[]> {
     const response = await fetch(`${readiness.endpoint}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -385,6 +446,9 @@ export class LocalVoicePipeline {
         messages: this.history,
         stream: true,
         temperature: 0.8,
+        // Only when there is something to run them: a server handed tools it is
+        // then never allowed to use spends its turn describing what it would do.
+        ...(this.options.runTool ? { tools: WIRE_TOOLS } : {}),
       }),
     });
     if (!response.ok || !response.body) throw new Error('LOCAL_LLM_FAILED');
@@ -392,6 +456,7 @@ export class LocalVoicePipeline {
     const detector = createIncrementalSentenceDetector();
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
+    const calls = new ToolCallAccumulator();
     let buffered = '';
     let written = '';
     /** Fixed at the first sentence, so one reply is not read by two voices. */
@@ -406,13 +471,15 @@ export class LocalVoicePipeline {
       buffered = lines.pop() ?? '';
 
       for (const line of lines) {
-        const delta = parseSseDelta(line);
-        if (delta.length === 0) continue;
+        const frame = parseSseFrame(line);
+        if (!frame) continue;
+        calls.push(frame.toolCalls);
+        if (frame.text.length === 0) continue;
 
-        written += delta;
-        this.options.onEvent({ kind: 'assistant-transcript', text: delta, final: false });
+        written += frame.text;
+        this.options.onEvent({ kind: 'assistant-transcript', text: frame.text, final: false });
 
-        for (const sentence of detector.push(delta)) {
+        for (const sentence of detector.push(frame.text)) {
           voice ??= this.resolveVoice(readiness, sentence);
           await this.say(sentence, voice, controller);
         }
@@ -425,13 +492,59 @@ export class LocalVoicePipeline {
       await this.say(tail, voice, controller);
     }
 
-    if (controller.signal.aborted) return;
-    if (written.trim().length > 0) {
-      this.history.push({ role: 'assistant', content: written.trim() });
+    if (controller.signal.aborted) return [];
+
+    const spoken = written.trim();
+    const toolCalls = calls.settle();
+    // The assistant turn is recorded even when it said nothing, because the tool
+    // calls hang off it: a `tool` message whose call is not in the history is
+    // rejected by the server as answering nothing.
+    if (spoken.length > 0 || toolCalls.length > 0) {
+      this.history.push({
+        role: 'assistant',
+        content: spoken,
+        ...(toolCalls.length > 0 ? { tool_calls: toolCalls } : {}),
+      });
       this.trimHistory();
-      this.options.onEvent({ kind: 'assistant-transcript', text: written.trim(), final: true });
     }
-    this.options.onEvent({ kind: 'phase', phase: 'listening' });
+    if (spoken.length > 0) {
+      this.options.onEvent({ kind: 'assistant-transcript', text: spoken, final: true });
+    }
+    return toolCalls;
+  }
+
+  /**
+   * Runs what the model asked for and puts the answers back in the history.
+   *
+   * Sequentially, and never allowed to throw: a tool that fails has to come back
+   * as a result the model can talk about — "I could not open Discord" — because
+   * an exception here would end the turn silently, which from the user's side is
+   * the assistant ignoring them.
+   */
+  private async runTools(calls: readonly WireToolCall[], controller: AbortController): Promise<void> {
+    const run = this.options.runTool;
+    for (const call of calls) {
+      if (controller.signal.aborted) return;
+      this.options.onEvent({ kind: 'phase', phase: 'acting' });
+
+      let result: unknown;
+      if (!run) {
+        result = { ok: false, error: 'no tool runner is attached' };
+      } else {
+        try {
+          result = await run({ callId: call.id, name: call.function.name, argumentsJson: call.function.arguments });
+        } catch (error) {
+          result = { ok: false, error: error instanceof Error ? error.message : String(error) };
+        }
+      }
+
+      this.history.push({
+        role: 'tool',
+        tool_call_id: call.id,
+        content: typeof result === 'string' ? result : JSON.stringify(result ?? { ok: true }),
+      });
+      this.trimHistory();
+    }
   }
 
   /**
@@ -449,12 +562,24 @@ export class LocalVoicePipeline {
     // Chatterbox and Qwen3 have no voice of their own, and asked to speak with
     // nothing to imitate they refuse the request. Prefer an engine that ships
     // presets, and only settle for a cloning one when there is nothing else.
-    const fallbackId =
-      readiness.ttsModels.find((model) => model.role === 'text-to-speech' && (model.profileIds?.length ?? 0) > 0)?.id ??
-      installed[0];
+    /** The profiles a model ships, or none — the field lives on one variant. */
+    const presetsOf = (model: VoiceModel | undefined): readonly string[] =>
+      model?.role === 'text-to-speech' ? (model.profileIds ?? []) : [];
 
-    const modelId = installed.includes(target.modelId) ? target.modelId : fallbackId;
-    const profileId = modelId === target.modelId ? target.profileId : 'speaker-0';
+    const withPresets = readiness.ttsModels.find((model) => presetsOf(model).length > 0);
+    const chosen =
+      readiness.ttsModels.find((model) => model.id === target.modelId) ?? withPresets ?? readiness.ttsModels[0];
+    const modelId = chosen?.id ?? installed[0];
+
+    // The profile has to belong to the model that is about to speak. A stored
+    // preference outlives the model it was made for, and a name from the wrong
+    // cast is not a near miss — Qwen3 answers an unknown speaker with
+    // `500 requires speaker`, and the reply is simply never heard. So a profile
+    // the model does not own is replaced by one it does.
+    const presets = presetsOf(chosen);
+    const wanted = modelId === target.modelId ? target.profileId : '';
+    const profileId = presets.length === 0 || presets.includes(wanted) ? wanted || 'speaker-0' : presets[0];
+
     return {
       providerId: synthesisProviderFor(readiness.ttsModels, modelId),
       modelId,
@@ -500,25 +625,97 @@ export class LocalVoicePipeline {
     });
   }
 
-  /** Keeps the persona and the recent turns, drops the middle of a long chat. */
+  /**
+   * Keeps the persona and the recent turns, drops the middle of a long chat.
+   *
+   * The window is then walked forward to the first message that can legally open
+   * one. A `tool` message answers a call made by the assistant turn before it,
+   * and a window that begins with the answer and not the question is rejected
+   * outright by the server — so a conversation would start failing after exactly
+   * as many turns as it took for the cut to land in the wrong place.
+   */
   private trimHistory(): void {
     if (this.history.length <= MAX_HISTORY_TURNS + 1) return;
     const [system, ...rest] = this.history;
-    this.history = [system, ...rest.slice(-MAX_HISTORY_TURNS)];
+    let kept = rest.slice(-MAX_HISTORY_TURNS);
+    while (kept.length > 0 && (kept[0].role === 'tool' || (kept[0].role === 'assistant' && kept[0].tool_calls))) {
+      kept = kept.slice(1);
+    }
+    this.history = [system, ...kept];
   }
 }
 
-/** The text of one `data:` line of an OpenAI-dialect stream, or `''`. */
-const parseSseDelta = (line: string): string => {
+/**
+ * Assembles streamed tool calls, which arrive a few characters at a time.
+ *
+ * The id, the name and the arguments each come in their own deltas, addressed by
+ * an index rather than by id, and the arguments are a JSON document split across
+ * frames at arbitrary points. So nothing can be acted on until the stream ends;
+ * this holds the pieces until then.
+ */
+class ToolCallAccumulator {
+  private readonly byIndex = new Map<number, { id: string; name: string; args: string }>();
+
+  public push(deltas: readonly SseToolCallDelta[]): void {
+    for (const delta of deltas) {
+      const index = delta.index ?? 0;
+      const entry = this.byIndex.get(index) ?? { id: '', name: '', args: '' };
+      if (delta.id) entry.id = delta.id;
+      if (delta.function?.name) entry.name += delta.function.name;
+      if (delta.function?.arguments) entry.args += delta.function.arguments;
+      this.byIndex.set(index, entry);
+    }
+  }
+
+  /** The finished calls, in the order the model asked for them. */
+  public settle(): WireToolCall[] {
+    return [...this.byIndex.entries()]
+      .toSorted(([left], [right]) => left - right)
+      .filter(([, entry]) => entry.name.length > 0)
+      .map(([index, entry]) => ({
+        // A server that streamed no id still needs one, because the result is
+        // addressed back to it. The index is unique within the turn, which is
+        // the only scope an id has to be unique in.
+        id: entry.id || `call_${index}`,
+        type: 'function' as const,
+        // An empty argument string is not valid JSON, and a model calling a
+        // no-argument tool sends nothing at all rather than `{}`.
+        function: { name: entry.name, arguments: entry.args || '{}' },
+      }));
+  }
+}
+
+/** One streamed tool-call fragment, as the dialect sends it. */
+type SseToolCallDelta = {
+  index?: number;
+  id?: string;
+  function?: { name?: string; arguments?: string };
+};
+
+/**
+ * One `data:` line of an OpenAI-dialect stream, split into what it carries.
+ *
+ * `reasoning_content` is deliberately not read. Several local models — the
+ * default one here among them — write their whole deliberation into it before
+ * they say a word, and reading it back would have the assistant speak its own
+ * thinking aloud. It is where the first few seconds of a local reply go, and
+ * ignoring it is what makes the silence make sense.
+ */
+const parseSseFrame = (line: string): { text: string; toolCalls: SseToolCallDelta[] } | null => {
   const trimmed = line.trim();
-  if (!trimmed.startsWith('data:')) return '';
+  if (!trimmed.startsWith('data:')) return null;
   const payload = trimmed.slice(5).trim();
-  if (payload.length === 0 || payload === '[DONE]') return '';
+  if (payload.length === 0 || payload === '[DONE]') return null;
   try {
-    const frame = JSON.parse(payload) as { choices?: { delta?: { content?: unknown } }[] };
-    const content = frame.choices?.[0]?.delta?.content;
-    return typeof content === 'string' ? content : '';
+    const frame = JSON.parse(payload) as {
+      choices?: { delta?: { content?: unknown; tool_calls?: SseToolCallDelta[] } }[];
+    };
+    const delta = frame.choices?.[0]?.delta;
+    return {
+      text: typeof delta?.content === 'string' ? delta.content : '',
+      toolCalls: Array.isArray(delta?.tool_calls) ? delta.tool_calls : [],
+    };
   } catch {
-    return '';
+    return null;
   }
 };

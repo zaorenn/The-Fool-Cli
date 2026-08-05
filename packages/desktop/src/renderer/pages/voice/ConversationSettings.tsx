@@ -249,6 +249,28 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
       {isLocal ? (
         <label className='grid gap-5px'>
           <Typography.Text className='text-12px font-600 text-t-secondary'>
+            {t('settings.voice.conversationVisionModel')}
+          </Typography.Text>
+          <Select
+            value={realtime.visionModel || ''}
+            disabled={disabled}
+            allowCreate
+            showSearch
+            onChange={(value: string) => patch({ visionModel: value })}
+            options={[
+              { label: t('settings.voice.conversationVisionModelSame'), value: '' },
+              ...localModels.map((id) => ({ label: id, value: id })),
+            ]}
+          />
+          <Typography.Text className='text-11px text-t-tertiary'>
+            {t('settings.voice.conversationVisionModelHint')}
+          </Typography.Text>
+        </label>
+      ) : null}
+
+      {isLocal ? (
+        <label className='grid gap-5px'>
+          <Typography.Text className='text-12px font-600 text-t-secondary'>
             {t('settings.voice.conversationLocalEndpoint')}
           </Typography.Text>
           <Input

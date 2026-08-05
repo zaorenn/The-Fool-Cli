@@ -19,8 +19,9 @@ import {
   type VoiceConversationProviderId,
 } from '@/common/realtime';
 import type { FoolVoiceSettings } from '@/common/types/foolVoice';
-import { useTalkToJester } from '@renderer/hooks/assistant/useTalkToJester';
 import { claimManualVoiceSession } from '@renderer/hooks/voice/useFoolVoiceSession';
+import { runAgentTask } from '@renderer/services/voice/session/runAgentTask';
+import { describeScreen } from '@renderer/services/voice/screenSight';
 import {
   publishVoiceActivity,
   publishVoiceReply,
@@ -30,7 +31,7 @@ import {
 import { applyThemeOverrides } from '@renderer/utils/theme/applyThemeOverrides';
 import { AdaptiveVad, type VadEvent } from '@renderer/services/voice/AdaptiveVad';
 import { RealtimeVoiceClient } from './RealtimeVoiceClient';
-import { LocalVoicePipeline } from './localPipeline';
+import { LocalVoicePipeline, normalizeEndpoint } from './localPipeline';
 import { PcmAudioOutput, PcmMicrophone } from './pcmAudio';
 
 /**
@@ -129,7 +130,6 @@ const VAD_TO_PIPELINE: Record<VadEvent, 'speech-started' | 'speech' | 'utterance
 
 export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
   const { t, i18n } = useTranslation();
-  const talkToJester = useTalkToJester();
 
   const [phase, setPhase] = useState<ConversationPhase>('idle');
   const [userTranscript, setUserTranscript] = useState('');
@@ -198,8 +198,59 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
     });
   }, []);
 
+  /**
+   * Changes the app's accent colour, as the theme tool asks.
+   *
+   * @throws when the tone is not one the app has a colour for.
+   */
+  const applyTone = useCallback(
+    async (tone: string): Promise<void> => {
+      const variable = TONE_VARIABLES[tone];
+      if (variable === undefined) throw new Error(t('settings.voice.conversationToneUnknown'));
+      const current = sanitizeThemeOverrides(configService.get(THEME_OVERRIDES_CONFIG_KEY));
+      const colors = { ...current.colors };
+      if (variable === null) {
+        delete colors.primary;
+      } else {
+        const color = readSemanticColor(variable);
+        if (!color) throw new Error(t('settings.voice.conversationToneUnknown'));
+        colors.primary = color;
+      }
+      const next = { ...current, colors };
+      applyThemeOverrides(next);
+      await configService.set(THEME_OVERRIDES_CONFIG_KEY, next);
+    },
+    [t]
+  );
+
+  /**
+   * Looks at the screen and hands back what is there, in words.
+   *
+   * The model doing the looking is a separate setting from the one holding the
+   * conversation, defaulting to it: the fast conversational model is often
+   * text-only, and a picture sent to one is refused rather than ignored.
+   */
+  const lookAtScreen = useCallback(async (question: string): Promise<string> => {
+    const realtime = settingsRef.current.realtime;
+    return describeScreen({
+      question,
+      endpoint: normalizeEndpoint(realtime.localEndpoint),
+      model: realtime.visionModel.trim() || realtime.model.trim(),
+      language: realtime.language,
+      source: settingsRef.current.session.screenshotSource,
+    });
+  }, []);
+
+  /**
+   * Runs one tool the model called, and answers with the result.
+   *
+   * Returns the result rather than sending it, because the two providers deliver
+   * it differently — a socket session posts it back over the socket, the local
+   * pipeline puts it in the next request's messages — and the work of actually
+   * doing the thing is identical either way.
+   */
   const runToolCall = useCallback(
-    async (event: Extract<NormalizedRealtimeEvent, { kind: 'tool-call' }>) => {
+    async (event: Extract<NormalizedRealtimeEvent, { kind: 'tool-call' }>): Promise<Record<string, unknown>> => {
       applyPhase('acting');
       publish('acting');
       updateActivity(event.callId, {
@@ -207,61 +258,103 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
         detail: t('settings.voice.conversationActionRunning'),
         state: 'running',
       });
+
+      const backToListening = (): void => {
+        applyPhase('listening');
+        publish('listening');
+      };
+
       try {
-        const args = JSON.parse(event.argumentsJson) as Record<string, unknown>;
+        const args = JSON.parse(event.argumentsJson || '{}') as Record<string, unknown>;
+
         if (event.name === 'app_change_theme') {
           const tone = typeof args.tone === 'string' ? args.tone : '';
-          const variable = TONE_VARIABLES[tone];
-          if (variable === undefined) throw new Error(t('settings.voice.conversationToneUnknown'));
-          const current = sanitizeThemeOverrides(configService.get(THEME_OVERRIDES_CONFIG_KEY));
-          const colors = { ...current.colors };
-          if (variable === null) {
-            delete colors.primary;
-          } else {
-            const color = readSemanticColor(variable);
-            if (!color) throw new Error(t('settings.voice.conversationToneUnknown'));
-            colors.primary = color;
-          }
-          const next = { ...current, colors };
-          applyThemeOverrides(next);
-          await configService.set(THEME_OVERRIDES_CONFIG_KEY, next);
+          await applyTone(tone);
           updateActivity(event.callId, {
             detail: t('settings.voice.conversationThemeChanged', { tone }),
             state: 'completed',
           });
-        } else if (event.name === 'app_ask_jester' && typeof args.request === 'string') {
-          updateActivity(event.callId, { detail: t('settings.voice.conversationDelegated'), state: 'completed' });
-          await talkToJester({ prompt: args.request });
-        } else if (event.name === 'app_standby') {
+          backToListening();
+          return { ok: true };
+        }
+
+        if (event.name === 'app_look_at_screen') {
+          updateActivity(event.callId, { detail: t('settings.voice.conversationLooking'), state: 'running' });
+          const description = await lookAtScreen(typeof args.question === 'string' ? args.question : '');
+          updateActivity(event.callId, { detail: description.slice(0, 160), state: 'completed' });
+          backToListening();
+          // Handed back as the screen's own words rather than a summary of them:
+          // the model is about to say this out loud in its own voice, and
+          // summarising it here would be a second, worse rewrite.
+          return { ok: true, screen: description };
+        }
+
+        if (event.name === 'app_ask_jester') {
+          const request = typeof args.request === 'string' ? args.request.trim() : '';
+          if (request.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));
+          updateActivity(event.callId, { detail: t('settings.voice.conversationDelegated'), state: 'running' });
+          // Back to listening *before* awaiting: the task runs for minutes and
+          // the user has to be able to keep talking while it does. This is the
+          // whole reason it is not the old navigate-and-prefill.
+          backToListening();
+          const outcome = await runAgentTask({
+            request,
+            settings: settingsRef.current,
+            onProgress: (detail) => {
+              if (detail.length > 0) updateActivity(event.callId, { detail, state: 'running' });
+            },
+          });
+          if (outcome.ok === false) {
+            const detail = t(`settings.voice.conversationTaskError.${outcome.reason}`, {
+              defaultValue: outcome.detail ?? outcome.reason,
+            });
+            updateActivity(event.callId, { detail, state: 'failed' });
+            return { ok: false, error: detail };
+          }
+          updateActivity(event.callId, {
+            detail: outcome.summary.slice(0, 160) || t('settings.voice.conversationTaskDone'),
+            state: 'completed',
+          });
+          return { ok: true, result: outcome.summary };
+        }
+
+        if (event.name === 'app_standby') {
           // Whatever it was part-way through saying is abandoned: being asked to
           // wait means stop now, not stop at the end of this sentence.
           outputRef.current?.flush();
           standbyRef.current = true;
           updateActivity(event.callId, { detail: t('settings.voice.conversationStandbyOn'), state: 'completed' });
-          clientRef.current?.sendToolResult(event.callId, event.name, { ok: true });
           applyPhase('standby');
           publish('standby');
-          return;
-        } else if (event.name === 'app_resume') {
+          return { ok: true };
+        }
+
+        if (event.name === 'app_resume') {
           standbyRef.current = false;
           updateActivity(event.callId, { detail: t('settings.voice.conversationStandbyOff'), state: 'completed' });
-          clientRef.current?.sendToolResult(event.callId, event.name, { ok: true });
-          applyPhase('listening');
-          publish('listening');
-          return;
-        } else {
-          throw new Error(t('settings.voice.conversationActionUnsupported'));
+          backToListening();
+          return { ok: true };
         }
-        clientRef.current?.sendToolResult(event.callId, event.name, { ok: true });
+
+        throw new Error(t('settings.voice.conversationActionUnsupported'));
       } catch (toolError) {
         const message = toolError instanceof Error ? toolError.message : String(toolError);
-        clientRef.current?.sendToolResult(event.callId, event.name, { ok: false, error: message });
-        updateActivity(event.callId, { detail: message, state: 'failed' });
+        const detail = t(`settings.voice.conversationError.${message}`, { defaultValue: message });
+        updateActivity(event.callId, { detail, state: 'failed' });
+        backToListening();
+        return { ok: false, error: detail };
       }
-      applyPhase('listening');
-      publish('listening');
     },
-    [applyPhase, publish, t, talkToJester, updateActivity]
+    [applyPhase, applyTone, lookAtScreen, publish, t, updateActivity]
+  );
+
+  /** The socket path: run it, then post the result back over the socket. */
+  const runSocketToolCall = useCallback(
+    async (event: Extract<NormalizedRealtimeEvent, { kind: 'tool-call' }>): Promise<void> => {
+      const result = await runToolCall(event);
+      clientRef.current?.sendToolResult(event.callId, event.name, result);
+    },
+    [runToolCall]
   );
 
   const handleEvent = useCallback(
@@ -309,14 +402,14 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
           publish(event.phase === 'acting' ? 'acting' : event.phase);
           break;
         case 'tool-call':
-          void runToolCall(event);
+          void runSocketToolCall(event);
           break;
         case 'error':
           setError(t(`settings.voice.conversationError.${event.message}`, { defaultValue: event.message }));
           break;
       }
     },
-    [applyPhase, publish, runToolCall, t]
+    [applyPhase, publish, runSocketToolCall, t]
   );
 
   const stop = useCallback(() => {
@@ -391,6 +484,11 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
       settings: settingsRef.current,
       interfaceLanguage: i18n.language,
       onEvent: handleEvent,
+      // The same tools the socket providers are given, run by the same code. A
+      // local conversation that could not look at the screen or do anything on
+      // the computer was the difference the user could feel between the two.
+      runTool: (call) =>
+        runToolCall({ kind: 'tool-call', callId: call.callId, name: call.name, argumentsJson: call.argumentsJson }),
     });
     await pipeline.connect();
     localRef.current = pipeline;
@@ -417,7 +515,7 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
       onAudio: (audio) => pipeline.pushAudio(audio, VAD_TO_PIPELINE[verdict]),
     });
     microphoneRef.current = microphone;
-  }, [handleEvent, i18n.language, openOutput, showLevel, t]);
+  }, [handleEvent, i18n.language, openOutput, runToolCall, showLevel, t]);
 
   /** A conversation held with a speech-to-speech server over a socket. */
   const startRemote = useCallback(

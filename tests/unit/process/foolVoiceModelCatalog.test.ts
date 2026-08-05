@@ -4,6 +4,7 @@ import {
   MANAGED_CATALOG_ENTRIES,
   engineArchiveBytes,
 } from '../../../packages/desktop/src/process/services/fool-voice/VoiceModelCatalog';
+import { getEngineSpec } from '../../../packages/desktop/src/process/services/fool-voice/voiceEngineSpecs';
 
 describe('VoiceModelCatalog', () => {
   it('exposes one entry per catalog id with no duplicates', () => {
@@ -24,17 +25,36 @@ describe('VoiceModelCatalog', () => {
     expect(whisper?.languages).toContain('tr');
   });
 
-  it('contains Supertonic 3 int8 TTS with Turkish and ten speakers', () => {
+  /**
+   * Supertonic is gone, and this is the test that says so on purpose.
+   *
+   * It was the only Turkish voice besides Piper, and `sherpa-onnx-node` has no
+   * Supertonic loader — so it downloaded, reported ready, could be selected, and
+   * then said nothing, because the throw happens inside playback where the
+   * failure is swallowed. An offered voice that cannot speak is worse than one
+   * that is absent: it reads as the whole feature being broken.
+   */
+  it('offers no voice it has no engine to speak with', () => {
     const models = VoiceModelCatalog.getModels();
-    const supertonic = models.find((m) => m.id === 'tts-supertonic-3-int8-2026-05-11');
-    expect(supertonic).toBeDefined();
-    expect(supertonic?.role).toBe('text-to-speech');
-    expect(supertonic?.languages).toContain('tr');
-    if (supertonic && 'profileIds' in supertonic) {
-      expect(supertonic.profileIds.length).toBe(10);
-    } else {
-      expect.fail('missing profileIds');
-    }
+    expect(models.find((model) => model.id === 'tts-supertonic-3-int8-2026-05-11')).toBeUndefined();
+    expect(VoiceModelCatalog.getManagedEntry('tts-supertonic-3-int8-2026-05-11')).toBeUndefined();
+    expect(
+      VoiceModelCatalog.getPresetProfiles().filter((profile) => profile.id.startsWith('supertonic-'))
+    ).toHaveLength(0);
+  });
+
+  it('has an engine behind every voice it offers', () => {
+    // The rule the removal above is an instance of: a sherpa row is loaded
+    // in-process from its engine spec, so one without a spec has nothing behind
+    // it. audio.cpp rows are excluded because they are not loaded in-process at
+    // all — their engine is a child server, declared in AUDIOCPP_MODEL_SPECS,
+    // and their readiness already accounts for the binary being absent.
+    const inProcess = VoiceModelCatalog.getModels().filter(
+      (model) => model.distribution === 'managed' && VoiceModelCatalog.getAudioCppEntry(model.id) === undefined
+    );
+    expect(inProcess.length).toBeGreaterThan(0);
+    const orphans = inProcess.filter((model) => getEngineSpec(model.id) === undefined).map((model) => model.id);
+    expect(orphans).toEqual([]);
   });
 
   it('has required file manifests for managed entries', () => {
@@ -46,9 +66,9 @@ describe('VoiceModelCatalog', () => {
     expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny.en/tiny.en-decoder.int8.onnx');
     expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny.en/tiny.en-tokens.txt');
 
-    const supertonicEntry = VoiceModelCatalog.getManagedEntry('tts-supertonic-3-int8-2026-05-11');
-    expect(supertonicEntry?.expectedFiles).toContain('sherpa-onnx-supertonic-3-tts-int8-2026-05-11/tts.json');
-    expect(supertonicEntry?.sha256).toBe('82fa96f91c4ef8abaae3a14a3f4153facf88bed821d1f7331cec2700f432c427');
+    const piperEntry = VoiceModelCatalog.getManagedEntry('tts-piper-tr-fettah');
+    expect(piperEntry?.expectedFiles.some((file) => file.endsWith('.onnx'))).toBe(true);
+    expect(piperEntry?.sha256).toBeTruthy();
   });
 });
 

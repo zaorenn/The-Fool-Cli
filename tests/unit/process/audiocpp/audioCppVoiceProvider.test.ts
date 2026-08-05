@@ -109,6 +109,33 @@ describe('AudioCppVoiceProvider', () => {
     expect(sent[0].referenceText).toBeUndefined();
   });
 
+  it('spells the language the way Qwen3 reads it', async () => {
+    const provider = providerFor();
+    await provider.synthesize(AUDIOCPP_QWEN3_MODEL_ID, 'qwen3-ryan', 'en', 1, 'Hello.', undefined, undefined, 'cuda');
+    // `English`, not `en`. The engine matches this against a table of English
+    // language names and answers a code with `500 unsupported language: en`, so
+    // before this every Qwen3 request in the app had failed.
+    expect(sent[0].language).toBe('English');
+
+    await provider.synthesize(AUDIOCPP_QWEN3_MODEL_ID, 'qwen3-serena', 'zh', 1, '你好。', undefined, undefined, 'cuda');
+    expect(sent[1].language).toBe('Chinese');
+  });
+
+  it('leaves the language alone for an engine that reads a code', async () => {
+    const provider = providerFor([{ id: 'jarvis', text: 'Reference clip.' }]);
+    await provider.synthesize(
+      AUDIOCPP_CHATTERBOX_MODEL_ID,
+      'cloned:jarvis',
+      'en',
+      1,
+      'Hello.',
+      undefined,
+      undefined,
+      'cuda'
+    );
+    expect(sent[0].language).toBe('en');
+  });
+
   it('carries a spoken direction through as an option', async () => {
     const provider = providerFor();
     await provider.synthesize(

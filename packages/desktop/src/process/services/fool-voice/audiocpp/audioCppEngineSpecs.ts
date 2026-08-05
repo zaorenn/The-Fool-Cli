@@ -87,6 +87,28 @@ export type AudioCppModelSpec = {
    * the request is refused with something they can act on instead.
    */
   requiresBackend?: 'cuda';
+  /**
+   * How this engine wants a language named, when a code is not what it reads.
+   *
+   * Most families take the request's `language` verbatim and are happy with a
+   * BCP code. Qwen3 is not: its talker matches the string against a table of
+   * English language *names* and answers anything else with
+   * `500 unsupported language: en`, which is every request this app ever sent
+   * it. Measured against a running server rather than read: `English` and
+   * `Chinese` render, `en`, `zh` and `en-US` are all refused.
+   *
+   * Absent means "send the code through untouched", which is what Pocket and
+   * Chatterbox want.
+   */
+  wireLanguages?: Readonly<Record<string, string>>;
+  /**
+   * What to send when the wanted language is not in {@link wireLanguages}.
+   *
+   * Only meaningful alongside it. For Qwen3 this is `Auto`, an accepted value
+   * that lets the model judge from the text: a Turkish reply reaching a cast
+   * that has no Turkish in it should be read with an accent, not refused.
+   */
+  wireLanguageFallback?: string;
   params: readonly VoiceParamSpec[];
 };
 
@@ -165,6 +187,33 @@ const QWEN3_PARAMS: readonly VoiceParamSpec[] = [
  * reports them and answers an unknown name with `500 unsupported speaker` after
  * a cold model load — which on a CPU is a minute spent to be told no.
  */
+/**
+ * The language names the talker accepts, keyed by the code this app speaks in.
+ *
+ * Read off a running server, one request per spelling, because getting this
+ * wrong is not a degraded voice but a dead one: the talker compares the request's
+ * `language` against a table of English names and throws
+ * `Qwen3 talker unsupported language: <what you sent>` on a miss. Every request
+ * this app had ever sent it carried `en`, so the engine had never once spoken.
+ *
+ * Ten languages answered — four more than the model card lists, which is why
+ * they are enumerated here rather than derived from it. Refused: `en`, `zh`,
+ * `ja`, `ko`, `tr`, `en-US`, `Mandarin`, `Arabic`. Matching is
+ * case-insensitive server-side; the canonical capitalisation is used anyway.
+ */
+const QWEN3_WIRE_LANGUAGES: Readonly<Record<string, string>> = {
+  en: 'English',
+  zh: 'Chinese',
+  ja: 'Japanese',
+  ko: 'Korean',
+  de: 'German',
+  fr: 'French',
+  es: 'Spanish',
+  it: 'Italian',
+  pt: 'Portuguese',
+  ru: 'Russian',
+};
+
 const QWEN3_SPEAKERS = [
   { id: 'qwen3-ryan', speaker: 'Ryan', displayName: 'Ryan — dynamic, strong rhythm', languages: ['en'] },
   { id: 'qwen3-aiden', speaker: 'Aiden', displayName: 'Aiden — sunny American, clear midrange', languages: ['en'] },
@@ -226,12 +275,15 @@ export const AUDIOCPP_MODEL_SPECS: readonly AudioCppModelSpec[] = [
     task: 'tts',
     mode: 'offline',
     weightsFile: 'qwen3-tts-12hz-1.7b-customvoice-q8_0.gguf',
-    languages: ['en', 'zh', 'ja', 'ko'],
+    // The ten the talker actually answered, not the four the model card claims.
+    languages: Object.keys(QWEN3_WIRE_LANGUAGES),
     // It has its own cast; there is nothing to imitate and nothing to transcribe.
     requiresVoiceReference: false,
     usesReferenceText: false,
     presetSpeakers: QWEN3_SPEAKERS,
     requiresBackend: 'cuda',
+    wireLanguages: QWEN3_WIRE_LANGUAGES,
+    wireLanguageFallback: 'Auto',
     params: QWEN3_PARAMS,
   },
 ];
@@ -251,6 +303,23 @@ export const isAudioCppModel = (modelId: string): boolean => SPECS_BY_MODEL_ID.h
  */
 export const presetSpeakerNameFor = (modelId: string, profileId: string): string | undefined =>
   getAudioCppModelSpec(modelId)?.presetSpeakers?.find((speaker) => speaker.id === profileId)?.speaker;
+
+/**
+ * The language string a request must carry, for the language that was asked for.
+ *
+ * A family with no naming table gets the code back untouched — Pocket and
+ * Chatterbox both read it that way. A family that has one gets its own name for
+ * the language, or its fallback when it has no name for it, because the
+ * alternative for the caller is a 500 and silence.
+ */
+export const wireLanguageFor = (modelId: string, language: string): string => {
+  const spec = getAudioCppModelSpec(modelId);
+  if (!spec?.wireLanguages) return language;
+  // Case-folded and stripped of any region: `en-GB` is still English, and the
+  // app's own settings are free to carry a regional code.
+  const code = language.trim().toLowerCase().split(/[-_]/)[0];
+  return spec.wireLanguages[code] ?? spec.wireLanguageFallback ?? language;
+};
 
 /** Every parameter at its shipped default, for "reset" and for a fresh record. */
 export const defaultAudioCppParams = (modelId: string): VoiceParams => {

@@ -12,6 +12,7 @@ import {
   isAudioCppModel,
   presetSpeakerNameFor,
   validateAudioCppParams,
+  wireLanguageFor,
   wireParamsFor,
 } from '@process/services/fool-voice/audiocpp/audioCppEngineSpecs';
 import {
@@ -39,8 +40,17 @@ const QWEN3 = AUDIOCPP_QWEN3_MODEL_ID;
  * `exaggeration` number or an `instruct` sentence, which is what they are here
  * for.
  *
- * IndexTTS2 stays out: 1 m 47 s a sentence on the CPU here, and it takes no
- * direction, so it would be one more thing to measure for strictly less.
+ * Two more engines are installed on the machines this was built on and stay out
+ * of the catalog, each for a measured reason rather than a guess:
+ *
+ * - **IndexTTS2** clones and does speak Turkish — read back through Whisper it
+ *   returns the sentence it was given — but it costs 82 s a sentence *on the
+ *   graphics card*, of which 48 s is the flow-matching loop rather than model
+ *   loading. There is no warm number that rescues that.
+ * - **MOSS-Nano** is the opposite: 1.0 s a sentence warm, 193 MB, and it clones.
+ *   Handed Turkish it produces fluent-sounding audio that is not Turkish —
+ *   read back through Whisper, "Merhaba, bugün hava çok güzel" returns as
+ *   "I have a... You better have a cook." Fast and wrong is worse than absent.
  */
 describe('audio.cpp model specs', () => {
   it('describes every shipped model and nothing else', () => {
@@ -213,5 +223,60 @@ describe('audio.cpp model specs', () => {
 
   it('sends nothing for a model it has no schema for', () => {
     expect(wireParamsFor('tts-piper-en-libritts-r', { temperature: 0.5 })).toEqual({});
+  });
+});
+
+/**
+ * The language field, which one engine here reads differently from the others.
+ *
+ * Qwen3's talker matches the request's `language` against a table of English
+ * language *names*. Handed a BCP code it answers
+ * `500 Qwen3 talker unsupported language: en` — and `en` is what this app sends
+ * everywhere else, so every Qwen3 request ever made had failed before this
+ * mapping existed. Measured one spelling at a time against a running server:
+ * `English` and `Chinese` render, `en`, `zh`, `en-US`, `Mandarin` and `Arabic`
+ * are refused.
+ */
+describe('the language a request carries', () => {
+  it('leaves the code alone for engines that read codes', () => {
+    expect(wireLanguageFor(POCKET, 'en')).toBe('en');
+    expect(wireLanguageFor(POCKET, 'tr')).toBe('tr');
+    expect(wireLanguageFor(CHATTERBOX, 'en')).toBe('en');
+  });
+
+  it('names the language for the engine that will not take a code', () => {
+    expect(wireLanguageFor(QWEN3, 'en')).toBe('English');
+    expect(wireLanguageFor(QWEN3, 'zh')).toBe('Chinese');
+    expect(wireLanguageFor(QWEN3, 'ja')).toBe('Japanese');
+    expect(wireLanguageFor(QWEN3, 'ko')).toBe('Korean');
+  });
+
+  it('covers the six languages beyond the four its model card claims', () => {
+    // Answered on a real server, so they are offered rather than withheld.
+    expect(wireLanguageFor(QWEN3, 'de')).toBe('German');
+    expect(wireLanguageFor(QWEN3, 'fr')).toBe('French');
+    expect(wireLanguageFor(QWEN3, 'es')).toBe('Spanish');
+    expect(wireLanguageFor(QWEN3, 'it')).toBe('Italian');
+    expect(wireLanguageFor(QWEN3, 'pt')).toBe('Portuguese');
+    expect(wireLanguageFor(QWEN3, 'ru')).toBe('Russian');
+  });
+
+  it('reads a regional code as its language', () => {
+    expect(wireLanguageFor(QWEN3, 'en-GB')).toBe('English');
+    expect(wireLanguageFor(QWEN3, 'pt_BR')).toBe('Portuguese');
+    expect(wireLanguageFor(QWEN3, 'EN')).toBe('English');
+  });
+
+  it('falls back to a value the engine accepts rather than one it refuses', () => {
+    // Turkish is not in the cast. `Auto` is measurably a compromise — read back
+    // through Whisper it is not recognisable Turkish — but it renders, and a
+    // refused request is silence. What stops a Turkish reply reaching this
+    // engine at all is the language list this model declares.
+    expect(wireLanguageFor(QWEN3, 'tr')).toBe('Auto');
+    expect(getAudioCppModelSpec(QWEN3)?.languages).not.toContain('tr');
+  });
+
+  it('leaves the language of a model it does not know untouched', () => {
+    expect(wireLanguageFor('tts-piper-tr-fettah', 'tr')).toBe('tr');
   });
 });

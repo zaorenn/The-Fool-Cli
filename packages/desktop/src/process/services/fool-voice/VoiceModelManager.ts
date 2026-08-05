@@ -17,6 +17,7 @@ import {
   type ManagedCatalogEntry,
 } from './VoiceModelCatalog';
 import { extractBzip2Tar, extractZip, ArchiveExtractionError } from './archive';
+import { getEngineSpec } from './voiceEngineSpecs';
 
 type DownloadOperation = {
   operationId: string;
@@ -149,6 +150,13 @@ export class VoiceModelManager {
     if (!(await this.filesExist(modelDir, entry.expectedFiles))) {
       return { status: 'invalid', reason: 'missing-files' };
     }
+
+    // Weights alone are not an installation. Every managed entry here is loaded
+    // in-process by sherpa, so one with no engine spec has no loader behind it —
+    // and reporting it ready is how a voice comes to be offered, downloaded,
+    // chosen, and then silent, because the throw happens inside playback where
+    // nothing surfaces it.
+    if (!getEngineSpec(modelId)) return { status: 'invalid', reason: 'no-engine' };
 
     return { status: 'ready' };
   }

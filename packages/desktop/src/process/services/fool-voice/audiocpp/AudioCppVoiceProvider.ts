@@ -9,7 +9,13 @@ import type { VoiceEngineBackend, VoiceParams, VoiceSynthesizedWav } from '../..
 import { ClonedVoiceStore, parseClonedProfileId } from '../ClonedVoiceStore';
 import { AudioCppClient, type AudioCppSpeechRequest, type AudioCppSpeechResult } from './AudioCppClient';
 import { AudioCppRuntime, type AudioCppRuntimeOptions, type AudioCppServerModel } from './AudioCppRuntime';
-import { AUDIOCPP_MODEL_SPECS, getAudioCppModelSpec, presetSpeakerNameFor, wireParamsFor } from './audioCppEngineSpecs';
+import {
+  AUDIOCPP_MODEL_SPECS,
+  getAudioCppModelSpec,
+  presetSpeakerNameFor,
+  wireLanguageFor,
+  wireParamsFor,
+} from './audioCppEngineSpecs';
 
 /**
  * The `local-audiocpp` provider.
@@ -212,7 +218,9 @@ export class AudioCppVoiceProvider {
       input: text,
       // Top-level, not an option: the server folds it into the transcript, and a
       // model that reads its language from there never sees an `options.language`.
-      language,
+      // Spelled the way this family wants it — Qwen3 refuses a BCP code outright,
+      // which is every request it had ever been sent.
+      language: wireLanguageFor(modelId, language),
       ...(presetSpeaker ? { voice: presetSpeaker } : {}),
       ...(voice
         ? {
