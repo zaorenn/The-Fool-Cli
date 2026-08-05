@@ -27,17 +27,20 @@ const QWEN3 = AUDIOCPP_QWEN3_MODEL_ID;
 /**
  * Three engines, and which one is here for which reason is the whole point.
  *
- * Pocket is the one a conversation is held in: 0.43 s a sentence warm, 1.20 s
- * cold. The other two are here to *make* a voice rather than to speak in one,
- * and they were measured on this hardware before being let back in —
- * Chatterbox at 39.5 s a sentence, Qwen3 in the same class. Both were withdrawn
- * once for exactly that, and nothing about the measurement has changed; what
- * changed is that they are the only engines that take a direction — an
- * `exaggeration` number, or an `instruct` sentence — and that is what they are
- * offered for.
+ * Pocket runs anywhere and is what a conversation falls back to: 0.43 s a
+ * sentence warm, 1.20 s cold, on a processor.
  *
- * IndexTTS2 stays out. It was measured at 1 m 47 s a sentence here and it takes
- * no direction, so it is slower than Chatterbox for strictly less.
+ * The other two were withdrawn once for being slow, and are back because that
+ * was measured on the wrong processor. Warm, same sentence and seed, on this
+ * hardware: Chatterbox 80 s on the CPU against 0.87 s on the graphics card;
+ * Qwen3 between 0.5 s and 0.9 s on the card. They declare `requiresBackend`
+ * rather than being offered with a warning, because the CPU number is not slow,
+ * it is broken — and they are the only engines that take a direction, an
+ * `exaggeration` number or an `instruct` sentence, which is what they are here
+ * for.
+ *
+ * IndexTTS2 stays out: 1 m 47 s a sentence on the CPU here, and it takes no
+ * direction, so it would be one more thing to measure for strictly less.
  */
 describe('audio.cpp model specs', () => {
   it('describes every shipped model and nothing else', () => {

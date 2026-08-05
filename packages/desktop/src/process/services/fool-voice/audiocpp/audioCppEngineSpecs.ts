@@ -76,11 +76,15 @@ export type AudioCppModelSpec = {
   /**
    * A processor this model will not run without.
    *
-   * Not a hardware limit — both of these render perfectly well on a CPU, at
-   * around forty seconds and a minute forty a sentence. That is the limit. A
-   * user who selects one of them and waits is not discovering a preference,
-   * they are discovering that the app is broken, so the request is refused with
-   * something they can act on instead.
+   * Measured on this project's own hardware, warm servers, same sentence and
+   * seed: Chatterbox takes about 80 s on the processor and 0.87 s on a graphics
+   * card — near enough ninety times. Qwen3 lands between 0.5 s and 0.9 s on the
+   * card once its CUDA graphs are built.
+   *
+   * So this is not a hardware limit; the processor renders these perfectly well,
+   * a minute and a half at a time. A user who selects one and waits is not
+   * discovering a preference, they are discovering that the app is broken — so
+   * the request is refused with something they can act on instead.
    */
   requiresBackend?: 'cuda';
   params: readonly VoiceParamSpec[];

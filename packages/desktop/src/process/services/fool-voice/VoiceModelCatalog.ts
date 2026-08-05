@@ -224,11 +224,11 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
   {
     id: AUDIOCPP_CHATTERBOX_MODEL_ID,
     providerId: 'local-audiocpp',
-    // The measurement belongs in the name. On the CPU build this app ships it
-    // renders one sentence in about forty seconds — roughly a hundred times
-    // Pocket — so it is a voice to *make* something with, not one to hold a
-    // conversation in, and the picker should say so before the download starts.
-    displayName: 'Chatterbox (Voice cloning + emotion, slow)',
+    // Measured here on both, warm, same sentence and seed: about 80 s on the
+    // processor and 0.87 s on a graphics card. That is not a preference, it is
+    // the line between a voice and a progress bar, which is why the spec
+    // refuses the processor outright and the name says what is needed.
+    displayName: 'Chatterbox (Voice cloning + emotion, needs GPU)',
     languages: getAudioCppModelSpec(AUDIOCPP_CHATTERBOX_MODEL_ID)?.languages ?? ['en'],
     role: 'text-to-speech',
     distribution: 'managed',
@@ -243,10 +243,11 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
   {
     id: AUDIOCPP_QWEN3_MODEL_ID,
     providerId: 'local-audiocpp',
-    // The only voice in this app that takes a direction in words rather than a
-    // number, and the only one with a cast in four languages. Slow, like the
-    // one above it, and named so that is known before the download starts.
-    displayName: 'Qwen3 TTS (Directable voices, slow)',
+    // The only voice here that takes a direction in words rather than a number,
+    // and the only one with a cast in four languages. Between 0.5 s and 0.9 s a
+    // sentence on a graphics card once its CUDA graphs are built — the first
+    // couple of requests pay about twenty seconds for that.
+    displayName: 'Qwen3 TTS (Directable voices, needs GPU)',
     languages: getAudioCppModelSpec(AUDIOCPP_QWEN3_MODEL_ID)?.languages ?? ['en'],
     role: 'text-to-speech',
     distribution: 'managed',
