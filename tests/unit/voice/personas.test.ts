@@ -134,6 +134,29 @@ describe('what it admits it cannot do', () => {
     }
   });
 
+  it('closes the gap between saying it is looking and having looked', () => {
+    // The exact pattern the failing answers took: "I'm looking at your screen
+    // now…" followed by an invented description, with no tool call between them.
+    // Saying it is what the user needs to hear; it is also not looking.
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
+    expect(instructions).toContain('Saying you are looking is not looking');
+  });
+
+  it('forbids claiming a job is done before a tool says it is', () => {
+    // Measured on the same model: asked to open Discord and message a friend, it
+    // called nothing and answered "I opened Discord and sent your friend the
+    // message." The user would have believed a message was sent that was not.
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
+    expect(instructions).toContain('Never say you have done something unless a tool told you it was done');
+  });
+
+  it('does not forbid the one thing it must say before a tool runs', () => {
+    // The delivery rules ban narrating yourself, which read as banning "one
+    // moment, I'm looking" — and without that line a tool call is silence.
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
+    expect(instructions).toContain('is not narration');
+  });
+
   it('tells it to report a failed tool rather than dress it up', () => {
     const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
     expect(instructions).toContain('do not dress it up as success');
