@@ -100,6 +100,18 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
       required: ['request'],
     },
   },
+  {
+    name: 'app_standby',
+    description:
+      'Go quiet and wait. Call this the moment the user asks you to hold on, wait, stand by, or stop for now. After calling it, say nothing at all until you hear the wake phrase.',
+    parameters: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'app_resume',
+    description:
+      'Come back from waiting. Call this when you hear the wake phrase after standing by, then greet the user in a few words and pick the conversation up where it stopped.',
+    parameters: { type: 'object', properties: {}, required: [] },
+  },
 ];
 
 export { buildPersonaInstructions, PERSONA_PRESET_IDS, type PersonaPresetId } from './personas';

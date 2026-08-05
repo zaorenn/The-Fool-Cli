@@ -1418,7 +1418,8 @@
       "speaking": "Speaking",
       "acting": "Taking action",
       "error": "Needs attention",
-      "hearing": "듣는 중"
+      "hearing": "듣는 중",
+      "standby": "대기 중"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1480,7 +1481,23 @@
       "ko": "한국어",
       "zh": "中文",
       "fa": "فارسی"
-    }
+    },
+    "transcriptRules": "듣기 및 전사 규칙",
+    "speechThreshold": "음성 임계값",
+    "speechThresholdHint": "얼마나 커야 말로 간주할지. 시끄러운 곳에서는 올리고, 작은 목소리가 놓치면 낮추세요.",
+    "minimumSpeech": "가장 짧은 발화",
+    "minimumSpeechHint": "이보다 짧은 소리는 대화를 시작하지 않아 기침으로 열리지 않습니다.",
+    "removeFillers": "생각하는 소리 제거",
+    "removeFillersHint": "“음” 같은 머뭇거림을 실행 전에 지웁니다.",
+    "selfCorrection": "말로 한 정정 반영",
+    "selfCorrectionHint": "“화요일, 아니 수요일”이라면 “수요일”만 남습니다.",
+    "collapseRepeats": "더듬거림 정리",
+    "collapseRepeatsHint": "더듬거리며 반복한 말은 한 번만 씁니다. 의도한 강조는 유지됩니다.",
+    "customFillers": "나만의 입버릇",
+    "customFillersHint": "나만의 습관이 있다면 제거할 단어를 추가하세요. 각각 Enter를 누르세요.",
+    "customFillersPlaceholder": "단어를 입력하고 Enter",
+    "conversationStandbyOn": "대기 중. 깨우기 말을 하면 이어갑니다.",
+    "conversationStandbyOff": "돌아왔어요. 멈춘 곳부터 이어갑니다."
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",

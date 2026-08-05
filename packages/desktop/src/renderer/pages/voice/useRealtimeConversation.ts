@@ -20,7 +20,12 @@ import {
 import type { FoolVoiceSettings } from '@/common/types/foolVoice';
 import { useTalkToJester } from '@renderer/hooks/assistant/useTalkToJester';
 import { claimManualVoiceSession } from '@renderer/hooks/voice/useFoolVoiceSession';
-import { publishVoiceStage, publishVoiceStageOff, publishVoiceReply } from '@renderer/services/voice/publishVoiceStage';
+import {
+  publishVoiceActivity,
+  publishVoiceReply,
+  publishVoiceStage,
+  publishVoiceStageOff,
+} from '@renderer/services/voice/publishVoiceStage';
 import { applyThemeOverrides } from '@renderer/utils/theme/applyThemeOverrides';
 import { RealtimeVoiceClient } from './RealtimeVoiceClient';
 import { PcmAudioOutput, PcmMicrophone } from './pcmAudio';
@@ -34,7 +39,16 @@ import { PcmAudioOutput, PcmMicrophone } from './pcmAudio';
  * that reaches the notch on the other side of an IPC boundary.
  */
 
-export type ConversationPhase = 'idle' | 'connecting' | 'listening' | 'hearing' | 'thinking' | 'speaking' | 'acting';
+export type ConversationPhase =
+  | 'idle'
+  | 'connecting'
+  | 'listening'
+  | 'hearing'
+  | 'thinking'
+  | 'speaking'
+  | 'acting'
+  /** Told to wait: still connected and still listening, saying nothing. */
+  | 'standby';
 
 export type ConversationActivity = {
   id: string;
@@ -78,6 +92,9 @@ const NOTCH_STAGE = {
   thinking: 'generating',
   speaking: 'speaking',
   acting: 'generating',
+  // Still listening, because it is: the microphone never closed, and the notch
+  // saying otherwise would be telling the user they are not being heard.
+  standby: 'listening',
 } as const;
 
 /** Level below which the microphone is treated as quiet, for the `hearing` state. */
@@ -101,6 +118,8 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
   const releaseMicrophoneClaim = useRef<(() => void) | null>(null);
   /** Read inside audio callbacks, which must not re-subscribe on every render. */
   const phaseRef = useRef<ConversationPhase>('idle');
+  /** True while waiting: audio still flows, nothing it says is let through. */
+  const standbyRef = useRef(false);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
 
@@ -133,13 +152,20 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
   const updateActivity = useCallback((id: string, patch: Partial<ConversationActivity>) => {
     setActivities((current) => {
       const existing = current.find((item) => item.id === id);
-      if (!existing) {
-        return [
-          { id, label: patch.label ?? id, detail: patch.detail ?? '', state: patch.state ?? 'running' },
-          ...current,
-        ].slice(0, 8);
-      }
-      return current.map((item) => (item.id === id ? { ...item, ...patch } : item));
+      const next = !existing
+        ? [
+            { id, label: patch.label ?? id, detail: patch.detail ?? '', state: patch.state ?? 'running' },
+            ...current,
+          ].slice(0, 8)
+        : current.map((item) => (item.id === id ? { ...item, ...patch } : item));
+
+      // Onto the notch as well, oldest first — it is read top to bottom, and it
+      // shows this beside the reply so the user can watch the work and hear the
+      // answer at once instead of choosing between them.
+      publishVoiceActivity(
+        [...next].toReversed().map((item) => ({ text: item.detail || item.label, done: item.state !== 'running' }))
+      );
+      return next;
     });
   }, []);
 
@@ -177,6 +203,23 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
         } else if (event.name === 'app_ask_jester' && typeof args.request === 'string') {
           updateActivity(event.callId, { detail: t('settings.voice.conversationDelegated'), state: 'completed' });
           await talkToJester({ prompt: args.request });
+        } else if (event.name === 'app_standby') {
+          // Whatever it was part-way through saying is abandoned: being asked to
+          // wait means stop now, not stop at the end of this sentence.
+          outputRef.current?.flush();
+          standbyRef.current = true;
+          updateActivity(event.callId, { detail: t('settings.voice.conversationStandbyOn'), state: 'completed' });
+          clientRef.current?.sendToolResult(event.callId, event.name, { ok: true });
+          applyPhase('standby');
+          publish('standby');
+          return;
+        } else if (event.name === 'app_resume') {
+          standbyRef.current = false;
+          updateActivity(event.callId, { detail: t('settings.voice.conversationStandbyOff'), state: 'completed' });
+          clientRef.current?.sendToolResult(event.callId, event.name, { ok: true });
+          applyPhase('listening');
+          publish('listening');
+          return;
         } else {
           throw new Error(t('settings.voice.conversationActionUnsupported'));
         }
@@ -206,7 +249,7 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
           publish(phaseRef.current === 'idle' ? 'listening' : phaseRef.current, { transcript: event.text });
           break;
         case 'assistant-transcript': {
-          if (event.final && event.text.length === 0) break;
+          if (standbyRef.current || (event.final && event.text.length === 0)) break;
           setAssistantTranscript((current) => {
             const next = event.final ? event.text : `${current}${event.text}`;
             publishVoiceReply(next);
@@ -215,6 +258,11 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
           break;
         }
         case 'audio':
+          // Nothing reaches the speaker while waiting. The instruction to stay
+          // silent is the model's to follow, and this is what makes it true even
+          // when it does not: a stray reply is dropped rather than played into a
+          // room where the user asked for quiet.
+          if (standbyRef.current) break;
           if (phaseRef.current !== 'acting') {
             applyPhase('speaking');
             publish('speaking');
@@ -227,7 +275,7 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
           outputRef.current?.flush();
           break;
         case 'phase':
-          if (phaseRef.current === 'acting') break;
+          if (phaseRef.current === 'acting' || standbyRef.current) break;
           applyPhase(event.phase === 'acting' ? 'acting' : event.phase);
           publish(event.phase === 'acting' ? 'acting' : event.phase);
           break;
@@ -251,6 +299,7 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
     outputRef.current = null;
     releaseMicrophoneClaim.current?.();
     releaseMicrophoneClaim.current = null;
+    standbyRef.current = false;
     applyPhase('idle');
     publishVoiceStageOff();
   }, [applyPhase]);
@@ -264,6 +313,7 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
     setUserTranscript('');
     setAssistantTranscript('');
     setActivities([]);
+    standbyRef.current = false;
     applyPhase('connecting');
     publish('connecting');
     // Claimed before the socket rather than after the microphone: the wake-word
@@ -302,6 +352,9 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
             customInstructions: realtime.customInstructions,
             language: realtime.language,
             interfaceLanguage: i18n.language,
+            // The same phrase the pet answers to, so there is one thing to say
+            // to this app rather than one per feature.
+            wakePhrase: settingsRef.current.activation.wakePhrase.phrase,
           }),
           language: realtime.language,
           tools: REALTIME_TOOLS,

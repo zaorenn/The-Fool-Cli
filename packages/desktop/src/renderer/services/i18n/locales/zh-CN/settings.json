@@ -1417,7 +1417,8 @@
       "speaking": "Speaking",
       "acting": "Taking action",
       "error": "Needs attention",
-      "hearing": "正在听"
+      "hearing": "正在听",
+      "standby": "待命"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1479,7 +1480,23 @@
       "ko": "한국어",
       "zh": "中文",
       "fa": "فارسی"
-    }
+    },
+    "transcriptRules": "听取与转写规则",
+    "speechThreshold": "语音阈值",
+    "speechThresholdHint": "多大的声音才算说话。嘈杂环境下调高；轻声说话被漏听时调低。",
+    "minimumSpeech": "最短语句",
+    "minimumSpeechHint": "短于此长度的声音不会开启一轮对话，咳嗽不会触发。",
+    "removeFillers": "去除思考声",
+    "removeFillersHint": "在执行前移除“嗯”“呃”等犹豫词。",
+    "selfCorrection": "采纳口头更正",
+    "selfCorrectionHint": "说“周二，不对，周三”时只保留“周三”。",
+    "collapseRepeats": "整理口吃",
+    "collapseRepeatsHint": "口吃时重复的词只写一次，刻意强调则保留。",
+    "customFillers": "你自己的口头禅",
+    "customFillersHint": "若你有特定习惯，可添加需要去除的词。每个后按回车。",
+    "customFillersPlaceholder": "输入词语后按回车",
+    "conversationStandbyOn": "待命中。说出唤醒词继续。",
+    "conversationStandbyOff": "已回来，接着刚才继续。"
   },
   "themeCustomizer": {
     "title": "自定义主题",

@@ -1416,7 +1416,8 @@
       "speaking": "Speaking",
       "acting": "Taking action",
       "error": "Needs attention",
-      "hearing": "در حال شنیدن"
+      "hearing": "در حال شنیدن",
+      "standby": "در انتظار"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1478,7 +1479,23 @@
       "ko": "한국어",
       "zh": "中文",
       "fa": "فارسی"
-    }
+    },
+    "transcriptRules": "قواعد شنیدن و پیاده‌سازی",
+    "speechThreshold": "آستانهٔ گفتار",
+    "speechThresholdHint": "صدا چقدر بلند باشد تا گفتار شمرده شود. در اتاق پرسروصدا بالا ببرید؛ اگر جمله‌های آرام از دست می‌روند پایین بیاورید.",
+    "minimumSpeech": "کوتاه‌ترین گفته",
+    "minimumSpeechHint": "صداهای کوتاه‌تر نوبت را آغاز نمی‌کنند تا یک سرفه آن را باز نکند.",
+    "removeFillers": "حذف صداهای تردید",
+    "removeFillersHint": "مکث‌هایی مانند «ام» را پیش از اجرای کلمات برمی‌دارد.",
+    "selfCorrection": "اعمال تصحیح شفاهی",
+    "selfCorrectionHint": "گفتن «سه‌شنبه، ببخشید، چهارشنبه» فقط «چهارشنبه» را نگه می‌دارد.",
+    "collapseRepeats": "مرتب کردن لکنت",
+    "collapseRepeatsHint": "کلمه‌ای که هنگام لکنت تکرار شده یک بار نوشته می‌شود. تأکید عمدی حفظ می‌شود.",
+    "customFillers": "تکیه‌کلام‌های خودتان",
+    "customFillersHint": "اگر عادت خاصی دارید، کلمات بیشتری برای حذف اضافه کنید. پس از هر کدام Enter بزنید.",
+    "customFillersPlaceholder": "کلمه‌ای بنویسید و Enter بزنید",
+    "conversationStandbyOn": "در انتظار. برای ادامه، عبارت بیدارباش را بگویید.",
+    "conversationStandbyOff": "برگشتم. از همانجا ادامه می‌دهیم."
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",

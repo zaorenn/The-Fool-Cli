@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { buildPersonaInstructions } from '@/common/realtime';
 
-const base = { customInstructions: '', language: 'auto', interfaceLanguage: 'en-US' } as const;
+const base = {
+  customInstructions: '',
+  language: 'auto',
+  interfaceLanguage: 'en-US',
+  wakePhrase: 'hey fool',
+} as const;
 
 describe('persona instructions', () => {
   it('always leads with delivery guidance, whatever the persona', () => {
@@ -51,5 +56,35 @@ describe('persona instructions', () => {
   it('holds a chosen language against being talked to in another one', () => {
     const instructions = buildPersonaInstructions({ ...base, presetId: 'companion', language: 'en' });
     expect(instructions).toContain('Speak en, and keep speaking it');
+  });
+});
+
+describe('waiting and coming back', () => {
+  it('names the phrase that ends the wait, so there is one to listen for', () => {
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion', wakePhrase: 'merhaba fool' });
+    expect(instructions).toContain('Stay silent until you hear "merhaba fool"');
+  });
+
+  it('carries the wait rule into every persona, preset or hand-written', () => {
+    for (const presetId of ['companion', 'english-teacher', 'custom'] as const) {
+      const instructions = buildPersonaInstructions({ ...base, presetId, customInstructions: 'Be terse.' });
+      expect(instructions).toContain('`app_standby`');
+      expect(instructions).toContain('`app_resume`');
+    }
+  });
+
+  it('expects it to be listening for a whisper, not only a spoken phrase', () => {
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
+    expect(instructions).toContain('It may be whispered');
+  });
+});
+
+describe('how the user is expected to talk', () => {
+  it('tells it to stop the instant it is interrupted', () => {
+    expect(buildPersonaInstructions({ ...base, presetId: 'companion' })).toContain('stop immediately');
+  });
+
+  it('tells it to follow a sentence that switches language halfway', () => {
+    expect(buildPersonaInstructions({ ...base, presetId: 'companion' })).toContain('switch language in the middle');
   });
 });

@@ -1416,7 +1416,8 @@
       "speaking": "Speaking",
       "acting": "Taking action",
       "error": "Needs attention",
-      "hearing": "Слышу вас"
+      "hearing": "Слышу вас",
+      "standby": "Ожидание"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1478,7 +1479,23 @@
       "ko": "한국어",
       "zh": "中文",
       "fa": "فارسی"
-    }
+    },
+    "transcriptRules": "Правила слушания и расшифровки",
+    "speechThreshold": "Порог речи",
+    "speechThresholdHint": "Насколько громким должен быть звук, чтобы считаться речью. Повысьте в шумной комнате, понизьте, если теряются тихие фразы.",
+    "minimumSpeech": "Самая короткая реплика",
+    "minimumSpeechHint": "Более короткие звуки не начинают реплику, чтобы кашель её не открывал.",
+    "removeFillers": "Убирать звуки раздумья",
+    "removeFillersHint": "Удаляет «э-э» и подобное до того, как слова будут выполнены.",
+    "selfCorrection": "Учитывать устные поправки",
+    "selfCorrectionHint": "«вторник, простите, среда» оставляет только «среда».",
+    "collapseRepeats": "Сглаживать запинания",
+    "collapseRepeatsHint": "Слово, повторённое при запинании, пишется один раз. Намеренный повтор сохраняется.",
+    "customFillers": "Ваши собственные слова-паразиты",
+    "customFillersHint": "Дополнительные слова для удаления, если есть своя привычка. Нажимайте Enter после каждого.",
+    "customFillersPlaceholder": "Введите слово и нажмите Enter",
+    "conversationStandbyOn": "Ожидание. Скажите ключевую фразу, чтобы продолжить.",
+    "conversationStandbyOff": "Вернулся. Продолжаем с того же места."
   },
   "themeCustomizer": {
     "title": "Настроить тему",

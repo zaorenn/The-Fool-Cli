@@ -5,6 +5,7 @@
  */
 
 import { z } from 'zod';
+import { DEFAULT_TRANSCRIPT_RULES, type TranscriptRules } from '@/common/voice/transcriptRules';
 
 export type VoiceProviderId = 'local-sherpa' | 'local-audiocpp' | 'openai-compatible' | 'transcript-wake-word';
 export type VoiceProviderKind = 'local' | 'remote' | 'derived';
@@ -300,6 +301,14 @@ export type FoolVoiceSettings = {
     modelId: string;
     language: string;
   };
+  /**
+   * What to do with a transcript before anyone acts on it.
+   *
+   * Held beside `stt` rather than inside it because these rules apply to text
+   * however it was produced — the local Whisper, a remote endpoint, or a
+   * speech-to-speech provider that was never configured here at all.
+   */
+  transcript: TranscriptRules;
   tts: {
     providerId: SynthesisProviderId;
     modelId: string;
@@ -573,6 +582,7 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     modelId: 'stt-whisper-turbo',
     language: 'auto',
   },
+  transcript: DEFAULT_TRANSCRIPT_RULES,
   tts: {
     providerId: 'local-sherpa',
     modelId: 'tts-piper-en-libritts-r',
@@ -741,6 +751,17 @@ const settingsSchema = z
         providerId: z.enum(['local-sherpa', 'openai-compatible']).default('local-sherpa'),
         modelId: identifierSchema.default('stt-whisper-turbo'),
         language: languageSchema.default('auto'),
+      })
+      .strict()
+      .default({}),
+    transcript: z
+      .object({
+        removeFillers: z.boolean().default(true),
+        selfCorrection: z.boolean().default(true),
+        collapseRepeats: z.boolean().default(true),
+        // A speaker's own hesitations, not a word list: short entries, and few
+        // enough that the rule stays something a person can reason about.
+        customFillers: z.array(z.string().min(1).max(32)).max(64).default([]),
       })
       .strict()
       .default({}),

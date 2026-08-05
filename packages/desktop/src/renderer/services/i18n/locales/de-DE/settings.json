@@ -1416,7 +1416,8 @@
       "speaking": "Speaking",
       "acting": "Taking action",
       "error": "Needs attention",
-      "hearing": "Hört zu"
+      "hearing": "Hört zu",
+      "standby": "Wartet"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1478,7 +1479,23 @@
       "ko": "한국어",
       "zh": "中文",
       "fa": "فارسی"
-    }
+    },
+    "transcriptRules": "Hör- und Transkriptregeln",
+    "speechThreshold": "Sprachschwelle",
+    "speechThresholdHint": "Wie laut etwas sein muss, um als Sprache zu gelten. In lauten Räumen anheben, bei überhörten leisen Sätzen senken.",
+    "minimumSpeech": "Kürzeste Äußerung",
+    "minimumSpeechHint": "Kürzere Geräusche gelten nicht als Redebeitrag, damit ein Husten keinen auslöst.",
+    "removeFillers": "Denkgeräusche entfernen",
+    "removeFillersHint": "Entfernt Zögern wie „ähm“, bevor die Worte ausgeführt werden.",
+    "selfCorrection": "Gesprochene Korrekturen übernehmen",
+    "selfCorrectionHint": "„Dienstag, äh, Mittwoch“ lässt nur „Mittwoch“ stehen.",
+    "collapseRepeats": "Versprecher glätten",
+    "collapseRepeatsHint": "Ein beim Stolpern wiederholtes Wort wird einmal geschrieben. Bewusste Betonung bleibt.",
+    "customFillers": "Eigene Füllwörter",
+    "customFillersHint": "Weitere Wörter zum Entfernen, falls du eine eigene Angewohnheit hast. Nach jedem Enter drücken.",
+    "customFillersPlaceholder": "Wort eingeben und Enter drücken",
+    "conversationStandbyOn": "Wartet. Sag das Weckwort, um fortzufahren.",
+    "conversationStandbyOff": "Zurück. Weiter, wo wir aufgehört haben."
   },
   "themeCustomizer": {
     "title": "Design anpassen",

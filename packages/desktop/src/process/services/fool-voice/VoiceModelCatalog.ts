@@ -36,6 +36,16 @@ const PIPER_LIBRITTS_VOICES: readonly { id: string; displayName: string; speaker
   { id: 'libritts-p800', displayName: 'Reader 8 (US)', speakerId: 800 },
 ];
 
+/**
+ * The languages a multilingual Whisper actually transcribes.
+ *
+ * Listed so the model picker can stop implying that local transcription is only
+ * for Turkish and English. It is the set the app has translations for rather
+ * than all ninety-nine: a picker filtered by a language the interface cannot
+ * speak is offering a choice it cannot then describe.
+ */
+const WHISPER_LANGUAGES: readonly string[] = ['tr', 'en', 'de', 'fr', 'es', 'pt', 'ru', 'uk', 'ja', 'ko', 'zh', 'fa'];
+
 export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
   {
     id: 'stt-whisper-turbo',
@@ -87,6 +97,21 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
     installedBytes: null,
     audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
     profileIds: ['kitten-nano-0', 'kitten-nano-1', 'kitten-nano-2', 'kitten-nano-3'],
+  },
+  {
+    id: 'stt-whisper-large-v3',
+    providerId: 'local-sherpa',
+    // Every language Whisper knows, not the two this app was first tuned for:
+    // the list below is what the picker filters on, and a short one made the
+    // most capable model look like a Turkish-and-English one.
+    displayName: 'Whisper Large v3 (99 languages, most accurate)',
+    languages: WHISPER_LANGUAGES,
+    role: 'speech-to-text',
+    distribution: 'managed',
+    state: { status: 'not-installed' },
+    downloadBytes: null,
+    installedBytes: null,
+    audioInput: { container: 'wav', encoding: 'pcm16le', sampleRateHz: 16000, channels: 1 },
   },
   {
     id: 'stt-whisper-tiny-int8-v1',
@@ -316,6 +341,22 @@ export const MANAGED_CATALOG_ENTRIES: Record<string, ManagedCatalogEntry> = {
       'sherpa-onnx-whisper-turbo/turbo-encoder.int8.onnx',
       'sherpa-onnx-whisper-turbo/turbo-decoder.int8.onnx',
       'sherpa-onnx-whisper-turbo/turbo-tokens.txt',
+    ],
+  },
+  // The most accurate transcription available locally, and the slowest by a
+  // wide margin — a gigabyte of int8 weights against turbo's half. Worth the
+  // wait for dictation and for an accent turbo keeps mishearing; wrong for the
+  // wake word, which has to answer before the user gives up on it.
+  // URL, checksum and size measured from the downloaded archive.
+  'stt-whisper-large-v3': {
+    modelId: 'stt-whisper-large-v3',
+    url: `${RELEASE_BASE}/asr-models/sherpa-onnx-whisper-large-v3.tar.bz2`,
+    sha256: '2d0e134b3b5fc4a0533baf24a0c9d473b629aa47f030af0a165a05f461df7a03',
+    archiveBytes: 1068482488,
+    expectedFiles: [
+      'sherpa-onnx-whisper-large-v3/large-v3-encoder.int8.onnx',
+      'sherpa-onnx-whisper-large-v3/large-v3-decoder.int8.onnx',
+      'sherpa-onnx-whisper-large-v3/large-v3-tokens.txt',
     ],
   },
   // Fastest measured voice: 82 ms for a short sentence (29.6x realtime).

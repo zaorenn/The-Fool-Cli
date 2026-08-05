@@ -1418,7 +1418,8 @@
       "speaking": "Speaking",
       "acting": "Taking action",
       "error": "Needs attention",
-      "hearing": "正在聽"
+      "hearing": "正在聽",
+      "standby": "待命"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1480,7 +1481,23 @@
       "ko": "한국어",
       "zh": "中文",
       "fa": "فارسی"
-    }
+    },
+    "transcriptRules": "聽取與轉寫規則",
+    "speechThreshold": "語音閥值",
+    "speechThresholdHint": "多大的聲音才算說話。噷雜環境下調高；輕聲說話被漏聽時調低。",
+    "minimumSpeech": "最短語句",
+    "minimumSpeechHint": "短於此長度的聲音不會開啟一輪對話，咳嘆不會觸發。",
+    "removeFillers": "去除思考聲",
+    "removeFillersHint": "在執行前移除「嗯」「呃」等猶豫詞。",
+    "selfCorrection": "採納口頭更正",
+    "selfCorrectionHint": "說「週二，不對，週三」時只保留「週三」。",
+    "collapseRepeats": "整理口吃",
+    "collapseRepeatsHint": "口吃時重複的詞只寫一次，刻意強調則保留。",
+    "customFillers": "你自己的口頭禅",
+    "customFillersHint": "若你有特定習慣，可新增需要去除的詞。每個後按 Enter。",
+    "customFillersPlaceholder": "輸入詞語後按 Enter",
+    "conversationStandbyOn": "待命中。說出喚醒詞繼續。",
+    "conversationStandbyOff": "已回來，接著剛才繼續。"
   },
   "themeCustomizer": {
     "title": "自訂主題",

@@ -1416,7 +1416,8 @@
       "speaking": "Speaking",
       "acting": "Taking action",
       "error": "Needs attention",
-      "hearing": "Je vous entends"
+      "hearing": "Je vous entends",
+      "standby": "En attente"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1478,7 +1479,23 @@
       "ko": "한국어",
       "zh": "中文",
       "fa": "فارسی"
-    }
+    },
+    "transcriptRules": "Règles d'écoute et de transcription",
+    "speechThreshold": "Seuil de parole",
+    "speechThresholdHint": "À quel volume un son compte comme de la parole. Augmentez dans une pièce bruyante, baissez si les phrases douces sont manquées.",
+    "minimumSpeech": "Énoncé le plus court",
+    "minimumSpeechHint": "Les sons plus courts ne déclenchent pas un tour de parole, pour qu'une toux n'en ouvre pas un.",
+    "removeFillers": "Retirer les hésitations",
+    "removeFillersHint": "Supprime les « euh » avant que les mots ne soient exécutés.",
+    "selfCorrection": "Appliquer les corrections orales",
+    "selfCorrectionHint": "« mardi, pardon, mercredi » ne laisse que « mercredi ».",
+    "collapseRepeats": "Lisser les bégaiements",
+    "collapseRepeatsHint": "Un mot répété par hésitation n'est écrit qu'une fois. L'emphase voulue est conservée.",
+    "customFillers": "Vos propres hésitations",
+    "customFillersHint": "Mots supplémentaires à retirer, si vous avez une habitude. Appuyez sur Entrée après chacun.",
+    "customFillersPlaceholder": "Saisissez un mot et appuyez sur Entrée",
+    "conversationStandbyOn": "En attente. Dites le mot de réveil pour continuer.",
+    "conversationStandbyOff": "De retour. On reprend où on s'est arrêté."
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

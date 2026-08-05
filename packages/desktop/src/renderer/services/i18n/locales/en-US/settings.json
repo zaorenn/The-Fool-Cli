@@ -1416,7 +1416,8 @@
       "speaking": "Speaking",
       "acting": "Taking action",
       "error": "Needs attention",
-      "hearing": "Hearing you"
+      "hearing": "Hearing you",
+      "standby": "Waiting"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1478,7 +1479,23 @@
       "ko": "한국어",
       "zh": "中文",
       "fa": "فارسی"
-    }
+    },
+    "transcriptRules": "Hearing and transcript rules",
+    "speechThreshold": "Speech threshold",
+    "speechThresholdHint": "How loud something must be to count as speech. Raise it in a noisy room; lower it if quiet sentences are missed.",
+    "minimumSpeech": "Shortest utterance",
+    "minimumSpeechHint": "Sounds shorter than this are not treated as a turn, so a cough does not start one.",
+    "removeFillers": "Drop thinking sounds",
+    "removeFillersHint": "Removes hesitations like “ııı” and “um” before the words are acted on.",
+    "selfCorrection": "Honour spoken corrections",
+    "selfCorrectionHint": "Saying “Tuesday, sorry, Wednesday” leaves only “Wednesday”.",
+    "collapseRepeats": "Tidy stumbles",
+    "collapseRepeatsHint": "A word repeated while stumbling is written once. Deliberate emphasis is kept.",
+    "customFillers": "Your own hesitations",
+    "customFillersHint": "Extra words to drop, if you have a habit of your own. Press Enter after each.",
+    "customFillersPlaceholder": "Add a word and press Enter",
+    "conversationStandbyOn": "Waiting. Say the wake phrase to carry on.",
+    "conversationStandbyOff": "Back. Carrying on where we stopped."
   },
   "themeCustomizer": {
     "title": "Customize theme",

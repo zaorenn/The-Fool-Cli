@@ -18,6 +18,7 @@ import { MicrophoneCapture } from '@renderer/services/voice/MicrophoneCapture';
 import { EMPTY_EVIDENCE, describeEvidence, type RunEvidence } from '@renderer/services/voice/narration/FoolNarrator';
 import { truncateToSpokenLength } from '@renderer/services/voice/narration/narrationSanitizer';
 import { createRunEvidenceCollector } from '@renderer/services/voice/RunEvidenceCollector';
+import { applyTranscriptRules } from '@/common/voice/transcriptRules';
 import { createIncrementalSpeechCollector } from '@renderer/services/voice/IncrementalSpeechCollector';
 import { createSpeechClipQueue, type SpeechClipQueue } from '@renderer/services/voice/speechClipQueue';
 import { prepareSynthesis, speakText } from '@renderer/services/voice/speakText';
@@ -346,9 +347,13 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
         })
       );
 
-      return transcription.text.trim();
+      const text = transcription.text.trim();
+      // The wake check sees the raw transcript: it is matching a fixed phrase
+      // against what was actually said, and a rule that removed a hesitation
+      // inside the phrase would stop the app answering to its own name.
+      return purpose === 'wake' ? text : applyTranscriptRules(text, settings.transcript);
     },
-    [enter, sessionId, settings.stt]
+    [enter, sessionId, settings.stt, settings.transcript]
   );
 
   const handleUtterance = useCallback(

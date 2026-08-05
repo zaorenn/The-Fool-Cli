@@ -14,6 +14,7 @@ import { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybackServ
 import { reconcileVoiceModels } from '@renderer/services/voice/reconcileVoiceModels';
 import AudioDeviceSection from './AudioDeviceSection';
 import SummarySection from './SummarySection';
+import TranscriptRulesSection from './TranscriptRulesSection';
 import VoiceAgentSection from './VoiceAgentSection';
 import WakeWordSection from './WakeWordSection';
 import CloneVoiceUpload from './tts/CloneVoiceUpload';
@@ -299,6 +300,11 @@ const VoiceSettingsContent: React.FC = () => {
           )}
         </div>
       ),
+    },
+    {
+      key: 'transcriptRules',
+      title: t('settings.voice.transcriptRules'),
+      body: <TranscriptRulesSection settings={settings} onChange={update} />,
     },
     {
       key: 'textToSpeech',

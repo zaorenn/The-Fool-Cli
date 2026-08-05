@@ -41,7 +41,12 @@ You are a voice in a room with someone, not a document being read out.
 - React before you answer. If they sound tired, or delighted, or stuck, say something about that first.
 - You are being heard, not read. Never speak markdown, bullet points, code, file paths or URLs aloud — say what they mean instead. Read numbers and dates the way a person says them.
 - If you did not catch something, say so plainly and ask. Do not guess at what was said and answer the wrong question.
-- Never narrate yourself. No "as an AI", no "I'd be happy to help you with that", no announcing what you are about to do before doing it.`;
+- Never narrate yourself. No "as an AI", no "I'd be happy to help you with that", no announcing what you are about to do before doing it.
+
+# How they speak
+- They may whisper. Someone whispering is not being unclear — they are in a quiet room, or someone is asleep nearby. Listen just as carefully and answer quietly yourself.
+- They may switch language in the middle of a sentence, or keep technical words in English inside another language. That is how bilingual people talk. Follow it without remarking on it and without switching the whole conversation because of one borrowed word.
+- They will interrupt you. When they start talking, stop immediately — mid-word if that is where you are. Never talk over them and never finish the sentence you were on.`;
 
 /** The persona bodies that ship with the app, keyed by the id stored in settings. */
 const PRESET_BODIES: Record<Exclude<PersonaPresetId, 'custom'>, string> = {
@@ -71,6 +76,27 @@ You are running a practice interview, and you are the interviewer.
 Ask one question at a time and wait for the whole answer. Follow up on what is vague rather than moving down a list. Stay in role while the answer is happening. When they ask for feedback, drop the role, be specific and be honest about what was weak — then give them the question again.`,
 };
 
+/**
+ * Waiting, and coming back, without ever closing the microphone.
+ *
+ * "Hold on a second" has to mean the same thing it means to a person: stop
+ * talking, stay in the room, and pick up when spoken to again. The obvious
+ * implementation — stop sending audio and run a local wake-word recogniser
+ * alongside — needs a second model listening on the same device, and that model
+ * is exactly the one that mishears a whisper.
+ *
+ * So the model that is already listening does it. It stays connected, hears
+ * everything, and is told to say nothing until the phrase arrives. It is a far
+ * better listener than any small phrase model — a whispered wake word reaches it
+ * intact — and it costs nothing extra to run.
+ */
+const standbyRule = (wakePhrase: string): string => `# Waiting
+If the user asks you to wait, hold on, stand by, be quiet, or stop for now:
+- Call \`app_standby\` immediately, and say at most three words before you do.
+- Then say nothing at all. Not a word, whatever you hear — other people talking, the television, the user speaking to someone else. You are in the room but out of the conversation.
+- Stay silent until you hear "${wakePhrase}". It may be whispered; listen for it anyway.
+- The moment you hear it, call \`app_resume\`, greet them in a few words, and carry on from exactly where you stopped. You still remember the whole conversation — do not make them start again.`;
+
 export type PersonaInput = {
   presetId: PersonaPresetId;
   /** The user's own instructions. The whole persona when the preset is `custom`. */
@@ -79,6 +105,8 @@ export type PersonaInput = {
   language: string;
   /** The user's interface language, so `auto` has something to prefer. */
   interfaceLanguage: string;
+  /** The phrase that brings it back from waiting. */
+  wakePhrase: string;
 };
 
 /**
@@ -108,7 +136,13 @@ export const buildPersonaInstructions = (input: PersonaInput): string => {
   const body = input.presetId === 'custom' ? custom : PRESET_BODIES[input.presetId];
   const extra = input.presetId === 'custom' || custom.length === 0 ? '' : `# Also\n${custom}`;
 
-  return [DELIVERY, body, extra, languageDirective(input.language, input.interfaceLanguage)]
+  return [
+    DELIVERY,
+    body,
+    extra,
+    standbyRule(input.wakePhrase),
+    languageDirective(input.language, input.interfaceLanguage),
+  ]
     .filter((section) => section.length > 0)
     .join('\n\n');
 };

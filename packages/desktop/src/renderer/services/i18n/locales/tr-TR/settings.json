@@ -1416,7 +1416,8 @@
       "speaking": "Konuşuyor",
       "acting": "Eylem gerçekleştiriyor",
       "error": "İlgilenmen gerekiyor",
-      "hearing": "Sizi duyuyor"
+      "hearing": "Sizi duyuyor",
+      "standby": "Beklemede"
     },
     "conversationProviderStatus": {
       "unavailable": "Kullanılamıyor",
@@ -1478,7 +1479,23 @@
       "ko": "한국어",
       "zh": "中文",
       "fa": "فارسی"
-    }
+    },
+    "transcriptRules": "Duyma ve metin kuralları",
+    "speechThreshold": "Ses eşiği",
+    "speechThresholdHint": "Bir sesin konuşma sayılması için ne kadar yüksek olması gerektiği. Gürültülü ortamda yükseltin; alcak sesli cümleler kaçıyorsa düşürün.",
+    "minimumSpeech": "En kısa konuşma",
+    "minimumSpeechHint": "Bundan kısa sesler bir tur başlatmaz; böylece bir öksürük söz sırası açmaz.",
+    "removeFillers": "Düşünme seslerini at",
+    "removeFillersHint": "“ııı”, “eee” gibi duraksamaları sözler işleme alınmadan önce siler.",
+    "selfCorrection": "Sözlü düzeltmeleri uygula",
+    "selfCorrectionHint": "“salı, pardon, çarşamba” dediğinizde geriye yalnızca “çarşamba” kalır.",
+    "collapseRepeats": "Takılmaları düzelt",
+    "collapseRepeatsHint": "Takılırken iki kez söylediğiniz kelime bir kez yazılır. Bilerek yapılan vurgu korunur.",
+    "customFillers": "Kendi duraksamalarınız",
+    "customFillersHint": "Size özgü bir alışkanlık varsa atılacak ekstra kelimeler. Her birinden sonra Enter'a basın.",
+    "customFillersPlaceholder": "Kelime yazıp Enter'a basın",
+    "conversationStandbyOn": "Beklemede. Devam etmek için uyandırma sözcüğünü söyleyin.",
+    "conversationStandbyOff": "Döndü. Kaldığımız yerden devam."
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

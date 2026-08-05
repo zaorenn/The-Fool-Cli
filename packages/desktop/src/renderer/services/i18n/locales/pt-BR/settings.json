@@ -1419,7 +1419,8 @@
       "speaking": "Speaking",
       "acting": "Taking action",
       "error": "Needs attention",
-      "hearing": "Ouvindo você"
+      "hearing": "Ouvindo você",
+      "standby": "Aguardando"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1481,7 +1482,23 @@
       "ko": "한국어",
       "zh": "中文",
       "fa": "فارسی"
-    }
+    },
+    "transcriptRules": "Regras de escuta e transcrição",
+    "speechThreshold": "Limiar de fala",
+    "speechThresholdHint": "Quão alto algo precisa ser para contar como fala. Aumente em sala barulhenta; diminua se frases baixas se perdem.",
+    "minimumSpeech": "Fala mais curta",
+    "minimumSpeechHint": "Sons mais curtos não abrem um turno, para que uma tosse não inicie um.",
+    "removeFillers": "Remover sons de hesitação",
+    "removeFillersHint": "Remove hesitações como “ééé” antes de as palavras serem executadas.",
+    "selfCorrection": "Aplicar correções faladas",
+    "selfCorrectionHint": "Dizer “terça, desculpa, quarta” deixa apenas “quarta”.",
+    "collapseRepeats": "Limpar tropеços",
+    "collapseRepeatsHint": "Uma palavra repetida ao tropeçar é escrita uma vez. Ênfase deliberada é mantida.",
+    "customFillers": "Seus próprios vícios de linguagem",
+    "customFillersHint": "Palavras extras a remover, se você tiver um hábito próprio. Pressione Enter após cada uma.",
+    "customFillersPlaceholder": "Digite uma palavra e pressione Enter",
+    "conversationStandbyOn": "Aguardando. Diga a palavra de ativação para continuar.",
+    "conversationStandbyOff": "De volta. Continuando de onde paramos."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

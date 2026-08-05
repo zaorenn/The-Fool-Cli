@@ -1416,7 +1416,8 @@
       "speaking": "Speaking",
       "acting": "Taking action",
       "error": "Needs attention",
-      "hearing": "Te escucha"
+      "hearing": "Te escucha",
+      "standby": "En espera"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1478,7 +1479,23 @@
       "ko": "한국어",
       "zh": "中文",
       "fa": "فارسی"
-    }
+    },
+    "transcriptRules": "Reglas de escucha y transcripción",
+    "speechThreshold": "Umbral de voz",
+    "speechThresholdHint": "Cuán alto debe sonar algo para contar como habla. Súbelo en una sala ruidosa; bájalo si se pierden frases suaves.",
+    "minimumSpeech": "Enunciado más corto",
+    "minimumSpeechHint": "Los sonidos más breves no abren un turno, para que una tos no lo haga.",
+    "removeFillers": "Quitar sonidos de duda",
+    "removeFillersHint": "Elimina vacilaciones como “ehh” antes de actuar sobre las palabras.",
+    "selfCorrection": "Aplicar correcciones habladas",
+    "selfCorrectionHint": "Decir “martes, perdón, miércoles” deja solo “miércoles”.",
+    "collapseRepeats": "Limpiar tropiezos",
+    "collapseRepeatsHint": "Una palabra repetida al trabarse se escribe una vez. El énfasis deliberado se conserva.",
+    "customFillers": "Tus propias muletillas",
+    "customFillersHint": "Palabras adicionales que quitar, si tienes una costumbre propia. Pulsa Intro tras cada una.",
+    "customFillersPlaceholder": "Escribe una palabra y pulsa Intro",
+    "conversationStandbyOn": "En espera. Di la palabra de activación para continuar.",
+    "conversationStandbyOff": "De vuelta. Seguimos donde lo dejamos."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

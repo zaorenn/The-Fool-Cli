@@ -1417,7 +1417,8 @@
       "speaking": "Speaking",
       "acting": "Taking action",
       "error": "Needs attention",
-      "hearing": "Чую вас"
+      "hearing": "Чую вас",
+      "standby": "Очікування"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1479,7 +1480,23 @@
       "ko": "한국어",
       "zh": "中文",
       "fa": "فارسی"
-    }
+    },
+    "transcriptRules": "Правила слухання та розшифрування",
+    "speechThreshold": "Поріг мовлення",
+    "speechThresholdHint": "Наскільки гучним має бути звук, щоб вважатися мовленням. Підвищте в шумній кімнаті, знизьте, якщо втрачаються тихі фрази.",
+    "minimumSpeech": "Найкоротша репліка",
+    "minimumSpeechHint": "Коротші звуки не розпочинають репліку, щоб кашель її не відкривав.",
+    "removeFillers": "Прибирати звуки роздумів",
+    "removeFillersHint": "Видаляє «е-е» та подібне до того, як слова виконаються.",
+    "selfCorrection": "Враховувати усні виправлення",
+    "selfCorrectionHint": "«вівторок, вибачте, середа» залишає лише «середа».",
+    "collapseRepeats": "Згладжувати запинання",
+    "collapseRepeatsHint": "Слово, повторене під час запинання, пишеться один раз. Навмисний повтор зберігається.",
+    "customFillers": "Ваші власні слова-паразити",
+    "customFillersHint": "Додаткові слова для видалення, якщо є власна звичка. Натискайте Enter після кожного.",
+    "customFillersPlaceholder": "Введіть слово та натисніть Enter",
+    "conversationStandbyOn": "Очікування. Скажіть ключову фразу, щоб продовжити.",
+    "conversationStandbyOff": "Повернувся. Продовжуємо з того самого місця."
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",

@@ -1418,7 +1418,8 @@
       "speaking": "Speaking",
       "acting": "Taking action",
       "error": "Needs attention",
-      "hearing": "聞いています"
+      "hearing": "聞いています",
+      "standby": "待機中"
     },
     "conversationProviderStatus": {
       "unavailable": "Unavailable",
@@ -1480,7 +1481,23 @@
       "ko": "한국어",
       "zh": "中文",
       "fa": "فارسی"
-    }
+    },
+    "transcriptRules": "聞き取りと文字起こしの規則",
+    "speechThreshold": "発話のしきい値",
+    "speechThresholdHint": "どの程度の大きさで発話とみなすか。騒がしい場所では上げ、小さな声が途切れるなら下げてください。",
+    "minimumSpeech": "最短の発話",
+    "minimumSpeechHint": "これより短い音は会話を開始しません。せきで始まらないように。",
+    "removeFillers": "考えている声を除く",
+    "removeFillersHint": "「えーと」などのよどみを、実行前に取り除きます。",
+    "selfCorrection": "言い直しを反映する",
+    "selfCorrectionHint": "「火曜、あ、水曜」と言えば「水曜」だけが残ります。",
+    "collapseRepeats": "言いよどみを整える",
+    "collapseRepeatsHint": "つっかえて繰り返した語は一度だけ書きます。意図的な強調は残ります。",
+    "customFillers": "あなたの口癖",
+    "customFillersHint": "特有のくせがあれば、除きたい語を追加できます。それぞれ Enter を押してください。",
+    "customFillersPlaceholder": "語を入力して Enter",
+    "conversationStandbyOn": "待機中。ウェイクワードで再開します。",
+    "conversationStandbyOff": "戻りました。続きからどうぞ。"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",
