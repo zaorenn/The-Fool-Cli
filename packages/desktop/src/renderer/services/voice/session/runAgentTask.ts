@@ -67,25 +67,28 @@ export type AgentTaskResult =
  */
 const TASK_TIMEOUT_MS = 15 * 60_000;
 
-/** Text out of whatever shape the finished turn's last message carried. */
+/**
+ * Text out of whatever shape a streamed message carried.
+ *
+ * Deliberately shape-tolerant rather than typed to one form, because the backend
+ * broadcasts the stored row's content parsed as JSON — so `data` arrives as a
+ * bare string on one message type and as `{ content: … }` or a list of parts on
+ * another, and which one depends on the agent. Reading only one of them is how
+ * a task that worked would come back with an empty answer.
+ */
 const summarise = (content: unknown): string => {
   if (typeof content === 'string') return content.trim();
   if (Array.isArray(content)) {
     return content
-      .map((part) => {
-        if (typeof part === 'string') return part;
-        if (part !== null && typeof part === 'object') {
-          const text = (part as { text?: unknown }).text;
-          if (typeof text === 'string') return text;
-        }
-        return '';
-      })
+      .map((part) => summarise(part))
+      .filter((part) => part.length > 0)
       .join(' ')
       .trim();
   }
   if (content !== null && typeof content === 'object') {
-    const text = (content as { text?: unknown }).text;
-    if (typeof text === 'string') return text.trim();
+    const record = content as { text?: unknown; content?: unknown };
+    if (typeof record.text === 'string') return record.text.trim();
+    if (record.content !== undefined) return summarise(record.content);
   }
   return '';
 };
@@ -186,9 +189,17 @@ const awaitTurn = (
   unsubscribers.push(
     ipcBridge.conversation.responseStream.on((message) => {
       if (message.conversation_id !== conversationId) return;
-      if (message.type === 'content' && typeof message.data === 'string') {
-        written += message.data;
-        onProgress?.(progressLine(message.data));
+      // The request comes back on the same channel as the answer, on the right of
+      // the conversation. Accumulating it would make the task's own instruction
+      // part of what gets read out as its result.
+      if (message.position === 'right') return;
+
+      if (message.type === 'content' || message.type === 'text') {
+        const text = summarise(message.data);
+        if (text.length > 0) {
+          written += written.length > 0 ? ` ${text}` : text;
+          onProgress?.(progressLine(message.data));
+        }
         return;
       }
       if (message.type === 'finish') {

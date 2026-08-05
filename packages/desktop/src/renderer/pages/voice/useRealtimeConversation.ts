@@ -237,7 +237,12 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
       endpoint: normalizeEndpoint(realtime.localEndpoint),
       model: realtime.visionModel.trim() || realtime.model.trim(),
       language: realtime.language,
-      source: settingsRef.current.session.screenshotSource,
+      // The whole display, not `session.screenshotSource`. That setting governs
+      // the screenshot quietly attached to *every* spoken turn, and defaults to
+      // this window for the obvious reason. This is the other case: the user has
+      // just said "look at my screen", and answering with a photograph of the
+      // app they are talking to is answering a question nobody asked.
+      source: 'screen',
     });
   }, []);
 

@@ -152,6 +152,39 @@ describe('runAgentTask', () => {
     );
   });
 
+  /**
+   * The backend broadcasts the stored row's content parsed as JSON, so the text
+   * arrives wrapped rather than bare — `{ content: … }` on a `text` row, a list
+   * of parts on others. Reading only the bare form is how a task that really ran
+   * comes back with an empty answer to read out.
+   */
+  it('reads the answer out of the shape the backend actually sends', async () => {
+    const running = runAgentTask({ request: 'Bir şey yap.', settings: settingsWith() });
+    await settle();
+
+    stream(
+      { conversation_id: 'conv-1', type: 'text', data: { content: 'Discord açıldı.' }, position: 'left' },
+      { conversation_id: 'conv-1', type: 'text', data: [{ text: 'Mesaj gönderildi.' }], position: 'left' },
+      { conversation_id: 'conv-1', type: 'finish', data: '' }
+    );
+
+    await expect(running).resolves.toMatchObject({ ok: true, summary: 'Discord açıldı. Mesaj gönderildi.' });
+  });
+
+  it('does not read the request back as if it were the answer', async () => {
+    const running = runAgentTask({ request: 'Discord’u aç.', settings: settingsWith() });
+    await settle();
+
+    stream(
+      // The user's own message comes down the same channel, on the right.
+      { conversation_id: 'conv-1', type: 'text', data: { content: 'Discord’u aç.' }, position: 'right' },
+      { conversation_id: 'conv-1', type: 'text', data: { content: 'Açtım.' }, position: 'left' },
+      { conversation_id: 'conv-1', type: 'finish', data: '' }
+    );
+
+    await expect(running).resolves.toMatchObject({ ok: true, summary: 'Açtım.' });
+  });
+
   it('ignores another conversation’s events', async () => {
     const running = runAgentTask({ request: 'Bir şey yap.', settings: settingsWith() });
     await settle();
