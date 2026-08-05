@@ -1535,7 +1535,8 @@
       "run-failed": "작업이 끝나기 전에 멈췄어요.",
       "cancelled": "작업을 취소했어요."
     },
-    "modelNoEngine": "이 음성을 재생할 엔진이 없어요"
+    "modelNoEngine": "이 음성을 재생할 엔진이 없어요",
+    "checkUsableIn": "작동 · {{seconds}}초"
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",

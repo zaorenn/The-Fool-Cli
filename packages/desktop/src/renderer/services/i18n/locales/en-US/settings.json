@@ -1533,7 +1533,8 @@
       "run-failed": "The task stopped before it finished.",
       "cancelled": "Task cancelled."
     },
-    "modelNoEngine": "No engine for this voice"
+    "modelNoEngine": "No engine for this voice",
+    "checkUsableIn": "Works · {{seconds}} s"
   },
   "themeCustomizer": {
     "title": "Customize theme",

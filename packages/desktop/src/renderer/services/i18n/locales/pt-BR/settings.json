@@ -1536,7 +1536,8 @@
       "run-failed": "A tarefa parou antes de terminar.",
       "cancelled": "Tarefa cancelada."
     },
-    "modelNoEngine": "Sem mecanismo para esta voz"
+    "modelNoEngine": "Sem mecanismo para esta voz",
+    "checkUsableIn": "Funciona · {{seconds}} s"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

@@ -1534,7 +1534,8 @@
       "run-failed": "Завдання зупинилося, не завершившись.",
       "cancelled": "Завдання скасовано."
     },
-    "modelNoEngine": "Для цього голосу немає рушія"
+    "modelNoEngine": "Для цього голосу немає рушія",
+    "checkUsableIn": "Працює · {{seconds}} с"
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",

@@ -1533,7 +1533,8 @@
       "run-failed": "Görev bitmeden durdu.",
       "cancelled": "Görev iptal edildi."
     },
-    "modelNoEngine": "Bu ses için motor yok"
+    "modelNoEngine": "Bu ses için motor yok",
+    "checkUsableIn": "Çalışıyor · {{seconds}} s"
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

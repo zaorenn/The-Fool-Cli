@@ -1535,7 +1535,8 @@
       "run-failed": "タスクは完了せずに停止しました。",
       "cancelled": "タスクを中止しました。"
     },
-    "modelNoEngine": "この音声に対応するエンジンがありません"
+    "modelNoEngine": "この音声に対応するエンジンがありません",
+    "checkUsableIn": "動作 · {{seconds}} 秒"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",

@@ -1533,7 +1533,8 @@
       "run-failed": "La tarea se detuvo antes de terminar.",
       "cancelled": "Tarea cancelada."
     },
-    "modelNoEngine": "No hay motor para esta voz"
+    "modelNoEngine": "No hay motor para esta voz",
+    "checkUsableIn": "Funciona · {{seconds}} s"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

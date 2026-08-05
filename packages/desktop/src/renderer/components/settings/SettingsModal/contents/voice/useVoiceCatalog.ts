@@ -25,7 +25,15 @@ export type InstallState = {
   errorCode?: InstallErrorCode;
 };
 
-export type VerificationState = 'checking' | VerifyResult['status'];
+/**
+ * A check in progress, or what it found.
+ *
+ * A successful one carries how long the engine took, because that is what
+ * answers "is the graphics card actually doing this?". The processor setting
+ * says what was asked for; the number says what happened, and the two engines
+ * that need a card are roughly ninety times apart between them.
+ */
+export type VerificationState = 'checking' | Exclude<VerifyResult['status'], 'usable'> | { usableInMs: number };
 
 export type VoiceCatalogHandle = {
   models: readonly VoiceModel[];
@@ -213,7 +221,12 @@ export const useVoiceCatalog = (backend: VoiceEngineBackend = 'cpu'): VoiceCatal
             backendRef.current
           )
         )
-        .then((result) => setVerifications((previous) => ({ ...previous, [modelId]: result.status })))
+        .then((result) =>
+          setVerifications((previous) => ({
+            ...previous,
+            [modelId]: result.status === 'usable' ? { usableInMs: result.detail.durationMs } : result.status,
+          }))
+        )
         .catch(() => setVerifications((previous) => ({ ...previous, [modelId]: 'unusable' })));
     },
     [refresh]

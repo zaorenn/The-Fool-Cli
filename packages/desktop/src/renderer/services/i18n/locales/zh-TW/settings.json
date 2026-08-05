@@ -1535,7 +1535,8 @@
       "run-failed": "任務未完成就停止了。",
       "cancelled": "任務已取消。"
     },
-    "modelNoEngine": "此語音沒有可用引擎"
+    "modelNoEngine": "此語音沒有可用引擎",
+    "checkUsableIn": "可用 · {{seconds}} 秒"
   },
   "themeCustomizer": {
     "title": "自訂主題",

@@ -169,8 +169,10 @@ const VoiceSettingsContent: React.FC = () => {
           {sttInstall?.phase === 'failed' && (
             <span className='text-12px text-danger'>{t('settings.voice.installFailed')}</span>
           )}
-          {sttVerification === 'usable' && (
-            <span className='text-12px text-success'>{t('settings.voice.checkUsable')}</span>
+          {typeof sttVerification === 'object' && (
+            <span className='text-12px text-success'>
+              {t('settings.voice.checkUsableIn', { seconds: (sttVerification.usableInMs / 1000).toFixed(2) })}
+            </span>
           )}
           {(sttVerification === 'unusable' || sttVerification === 'not-installed') && (
             <span className='text-12px text-danger'>

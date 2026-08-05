@@ -1534,7 +1534,8 @@
       "run-failed": "任务未完成即停止。",
       "cancelled": "任务已取消。"
     },
-    "modelNoEngine": "该语音没有可用引擎"
+    "modelNoEngine": "该语音没有可用引擎",
+    "checkUsableIn": "可用 · {{seconds}} 秒"
   },
   "themeCustomizer": {
     "title": "自定义主题",

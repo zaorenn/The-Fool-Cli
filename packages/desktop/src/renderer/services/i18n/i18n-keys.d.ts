@@ -2336,6 +2336,7 @@ export type I18nKey =
   | 'settings.voice.check'
   | 'settings.voice.checkBroken'
   | 'settings.voice.checkUsable'
+  | 'settings.voice.checkUsableIn'
   | 'settings.voice.cloneAnother'
   | 'settings.voice.cloneCancel'
   | 'settings.voice.cloneDecodeFailed'

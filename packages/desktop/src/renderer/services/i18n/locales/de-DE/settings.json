@@ -1533,7 +1533,8 @@
       "run-failed": "Die Aufgabe hat abgebrochen, bevor sie fertig war.",
       "cancelled": "Aufgabe abgebrochen."
     },
-    "modelNoEngine": "Keine Engine für diese Stimme"
+    "modelNoEngine": "Keine Engine für diese Stimme",
+    "checkUsableIn": "Funktioniert · {{seconds}} s"
   },
   "themeCustomizer": {
     "title": "Design anpassen",

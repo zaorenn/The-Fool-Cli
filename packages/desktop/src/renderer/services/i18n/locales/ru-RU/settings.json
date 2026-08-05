@@ -1533,7 +1533,8 @@
       "run-failed": "Задача остановилась, не завершившись.",
       "cancelled": "Задача отменена."
     },
-    "modelNoEngine": "Для этого голоса нет движка"
+    "modelNoEngine": "Для этого голоса нет движка",
+    "checkUsableIn": "Работает · {{seconds}} с"
   },
   "themeCustomizer": {
     "title": "Настроить тему",

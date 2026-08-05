@@ -1533,7 +1533,8 @@
       "run-failed": "La tâche s’est arrêtée avant la fin.",
       "cancelled": "Tâche annulée."
     },
-    "modelNoEngine": "Aucun moteur pour cette voix"
+    "modelNoEngine": "Aucun moteur pour cette voix",
+    "checkUsableIn": "Fonctionne · {{seconds}} s"
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

@@ -170,10 +170,15 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
                 {t('settings.voice.check')}
               </Button>
 
-              {verification === 'usable' && (
+              {/* The time is shown, not just the verdict. It is the only thing
+                  on this page that answers "is the graphics card really doing
+                  this?" — a voice that needs one takes about a second on it and
+                  the better part of a minute without, so the number says which
+                  happened where the setting can only say what was asked for. */}
+              {typeof verification === 'object' && (
                 <span className='flex items-center gap-4px text-12px text-success' data-testid={`voice-ok-${model.id}`}>
                   <Check theme='outline' size='14' />
-                  {t('settings.voice.checkUsable')}
+                  {t('settings.voice.checkUsableIn', { seconds: (verification.usableInMs / 1000).toFixed(2) })}
                 </span>
               )}
               {(verification === 'unusable' || verification === 'not-installed') && (
