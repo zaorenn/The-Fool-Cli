@@ -93,7 +93,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_ask_jester',
     description:
-      'Hand a real task on this computer — files, code, research, running something — to the built-in agent. Say briefly that you are doing it; do not read the result out in full.',
+      "Hand a real task on this computer to the built-in agent. It can read the user's screen and work their applications for them — click, fill in a form or a document, open something and use it — as well as handle files, code and research. Use it whenever the answer needs looking at the screen or doing something outside this conversation. Say briefly that you are on it; do not read the result out in full.",
     parameters: {
       type: 'object',
       properties: { request: { type: 'string', description: "The task, in the user's own words." } },
