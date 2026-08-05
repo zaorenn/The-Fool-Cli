@@ -5,7 +5,12 @@
  */
 
 import { ipcBridge } from '@/common';
-import { synthesisProviderFor, type VoiceModel, type VoicePcm16Wav } from '@/common/types/foolVoice';
+import {
+  synthesisProviderFor,
+  type VoiceEngineBackend,
+  type VoiceModel,
+  type VoicePcm16Wav,
+} from '@/common/types/foolVoice';
 
 /**
  * Proving that a model is usable, rather than merely present.
@@ -75,7 +80,11 @@ export const silentProbeWav = (): VoicePcm16Wav => {
 };
 
 /** Runs the model and reports whether it produced anything. */
-export const verifyVoiceModel = async (model: VoiceModel, profileId?: string): Promise<VerifyResult> => {
+export const verifyVoiceModel = async (
+  model: VoiceModel,
+  profileId?: string,
+  backend: VoiceEngineBackend = 'cpu'
+): Promise<VerifyResult> => {
   if (model.distribution === 'managed' && model.state.status !== 'ready') {
     return { status: 'not-installed' };
   }
@@ -93,6 +102,10 @@ export const verifyVoiceModel = async (model: VoiceModel, profileId?: string): P
             // every audio.cpp check to a provider that has never heard of the
             // model, and reported a perfectly good install as "Not usable".
             operationId: requestId,
+            // The check has to run where the voice will: a graphics-card voice
+            // probed on the processor is refused, and "Not usable" would be the
+            // wrong answer to give about a perfectly good install.
+            backend,
             providerId: synthesisProviderFor([model], model.id),
             modelId: model.id,
             profileId: profileId ?? model.profileIds[0] ?? 'verify',

@@ -5,12 +5,24 @@
  */
 
 import { z } from 'zod';
+import { DEFAULT_TRANSCRIPT_RULES, type TranscriptRules } from '@/common/voice/transcriptRules';
 
 export type VoiceProviderId = 'local-sherpa' | 'local-audiocpp' | 'openai-compatible' | 'transcript-wake-word';
 export type VoiceProviderKind = 'local' | 'remote' | 'derived';
 
 /** Providers that install and run their models on this machine. */
 export type LocalVoiceProviderId = 'local-sherpa' | 'local-audiocpp';
+
+/**
+ * Which processor the local speech engine runs on.
+ *
+ * Not a performance preference so much as a different build: upstream ships a
+ * CPU-only package and a CUDA package, and the CUDA one is roughly eighty times
+ * the download because it carries the CUDA runtime beside it. Choosing `cuda`
+ * is therefore a decision to fetch that, which is why it is a setting rather
+ * than something detected and switched silently.
+ */
+export type VoiceEngineBackend = 'cpu' | 'cuda';
 
 /** Providers a synthesis request may name. */
 export type SynthesisProviderId = LocalVoiceProviderId | 'openai-compatible';
@@ -300,7 +312,24 @@ export type FoolVoiceSettings = {
     modelId: string;
     language: string;
   };
+  /**
+   * What to do with a transcript before anyone acts on it.
+   *
+   * Held beside `stt` rather than inside it because these rules apply to text
+   * however it was produced — the local Whisper, a remote endpoint, or a
+   * speech-to-speech provider that was never configured here at all.
+   */
+  transcript: TranscriptRules;
   tts: {
+    /**
+     * Where audio.cpp runs.
+     *
+     * Only the audio.cpp engines read it — sherpa has no GPU path at all. The
+     * two voices that take a direction are unusable on a processor and say so
+     * rather than taking a minute a sentence; see `requiresBackend` in
+     * `audioCppEngineSpecs.ts`.
+     */
+    backend: VoiceEngineBackend;
     providerId: SynthesisProviderId;
     modelId: string;
     profileId: string;
@@ -378,6 +407,35 @@ export type FoolVoiceSettings = {
      */
     screenshotSource: 'window' | 'screen';
   };
+  /**
+   * The spoken conversation mode: who answers, in whose voice, as whom.
+   *
+   * Separate from `stt`/`tts` because nothing is shared with them. Those two
+   * describe a pipeline this app assembles — transcribe, think, synthesise — and
+   * every stage is separately chosen. A speech-to-speech provider is one model
+   * that hears and speaks, so the only things left to choose are which one, what
+   * it sounds like, and who it is being.
+   */
+  realtime: {
+    providerId: 'openai-realtime' | 'gemini-live' | 'local-s2s' | 'local-pipeline';
+    /** Empty means the provider's own default, which is what most users want. */
+    model: string;
+    /**
+     * Where the thinking half of `local-pipeline` answers.
+     *
+     * Only that provider reads it. Empty means LM Studio on its own port, which
+     * is what is running on the machines this option exists for; a user who
+     * moved it, or who runs Ollama's OpenAI-compatible endpoint instead, points
+     * this at their own.
+     */
+    localEndpoint: string;
+    voice: string;
+    personaPresetId: 'companion' | 'english-teacher' | 'language-partner' | 'interview-coach' | 'custom';
+    /** Added to the preset, or the whole persona when the preset is `custom`. */
+    customInstructions: string;
+    /** A language to hold to, or `auto` to follow whoever is speaking. */
+    language: string;
+  };
   playback: {
     volume: number;
     interruptible: true;
@@ -435,6 +493,8 @@ export const CLONING_MODEL_ID = 'tts-pocket-int8-2026-01-26';
  * was unreachable from inside the app.
  */
 export const AUDIOCPP_POCKET_MODEL_ID = 'tts-audiocpp-pocket';
+export const AUDIOCPP_CHATTERBOX_MODEL_ID = 'tts-audiocpp-chatterbox';
+export const AUDIOCPP_QWEN3_MODEL_ID = 'tts-audiocpp-qwen3-customvoice';
 
 /**
  * Every engine that can speak in a voice it was not trained on.
@@ -446,6 +506,7 @@ export const AUDIOCPP_POCKET_MODEL_ID = 'tts-audiocpp-pocket';
 export const CLONING_ENGINES: readonly { modelId: string; providerId: LocalVoiceProviderId }[] = [
   { modelId: CLONING_MODEL_ID, providerId: 'local-sherpa' },
   { modelId: AUDIOCPP_POCKET_MODEL_ID, providerId: 'local-audiocpp' },
+  { modelId: AUDIOCPP_CHATTERBOX_MODEL_ID, providerId: 'local-audiocpp' },
 ];
 
 export const CLONING_MODEL_IDS: readonly string[] = CLONING_ENGINES.map((engine) => engine.modelId);
@@ -553,7 +614,11 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     modelId: 'stt-whisper-turbo',
     language: 'auto',
   },
+  transcript: DEFAULT_TRANSCRIPT_RULES,
   tts: {
+    // The engine everyone has. Switching to `cuda` is opt-in because it is an
+    // 800 MB download, and the default voice does not need it.
+    backend: 'cpu',
     providerId: 'local-sherpa',
     modelId: 'tts-piper-en-libritts-r',
     profileId: 'libritts-p0',
@@ -581,6 +646,18 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     modelId: '',
     attachScreenshot: true,
     screenshotSource: 'window',
+  },
+  realtime: {
+    // The local pipeline by default: it is the only one of the four that can
+    // hold a conversation with nothing bought and no key entered, and the
+    // models it needs are the ones the voice settings already install.
+    providerId: 'local-pipeline',
+    model: '',
+    localEndpoint: '',
+    voice: 'marin',
+    personaPresetId: 'companion',
+    customInstructions: '',
+    language: 'auto',
   },
   playback: {
     volume: 0.85,
@@ -714,8 +791,20 @@ const settingsSchema = z
       })
       .strict()
       .default({}),
+    transcript: z
+      .object({
+        removeFillers: z.boolean().default(true),
+        selfCorrection: z.boolean().default(true),
+        collapseRepeats: z.boolean().default(true),
+        // A speaker's own hesitations, not a word list: short entries, and few
+        // enough that the rule stays something a person can reason about.
+        customFillers: z.array(z.string().min(1).max(32)).max(64).default([]),
+      })
+      .strict()
+      .default({}),
     tts: z
       .object({
+        backend: z.enum(['cpu', 'cuda']).default('cpu'),
         providerId: z.enum(['local-sherpa', 'local-audiocpp', 'openai-compatible']).default('local-sherpa'),
         modelId: identifierSchema.default('tts-piper-en-libritts-r'),
         profileId: identifierSchema.default('libritts-p0'),
@@ -769,6 +858,26 @@ const settingsSchema = z
         modelId: z.string().max(256).default(''),
         attachScreenshot: z.boolean().default(true),
         screenshotSource: z.enum(['window', 'screen']).default('window'),
+      })
+      .strict()
+      .default({}),
+    realtime: z
+      .object({
+        providerId: z.enum(['openai-realtime', 'gemini-live', 'local-s2s', 'local-pipeline']).default('local-pipeline'),
+        model: z.string().max(256).default(''),
+        // Empty is the LM Studio default rather than an invalid URL, so the
+        // field can be cleared to get back to it.
+        localEndpoint: z.literal('').or(httpBaseUrlSchema).default(''),
+        voice: z.string().max(64).default('marin'),
+        personaPresetId: z
+          .enum(['companion', 'english-teacher', 'language-partner', 'interview-coach', 'custom'])
+          .default('companion'),
+        // Room for a real brief — a teaching persona with the learner's level,
+        // their weak spots and the subjects they want to talk about runs to a
+        // few paragraphs — and short of anything that could be a pasted
+        // transcript.
+        customInstructions: z.string().max(4000).default(''),
+        language: languageSchema.default('auto'),
       })
       .strict()
       .default({}),
@@ -1068,13 +1177,27 @@ export type VoiceEventEnvelope<T> = {
   payload: T;
 };
 
-export type VoiceCatalogRequest = { includeProfiles: boolean };
+export type VoiceCatalogRequest = {
+  includeProfiles: boolean;
+  /**
+   * Which audio.cpp build to answer "is it installed?" about.
+   *
+   * A model is only ready if the engine that can run it is on disk, and the two
+   * builds are separate downloads — so switching a machine with the CPU build
+   * to `cuda` correctly reports every audio.cpp voice as needing an install
+   * again. Absent means the processor, which is what a caller that has not
+   * heard of this setting wants.
+   */
+  backend?: VoiceEngineBackend;
+};
 export type VoiceCatalogResponse = {
   providers: readonly VoiceProvider[];
   models: readonly VoiceModel[];
   profiles: readonly VoiceProfile[];
 };
 export type VoiceDownloadRequest = {
+  /** Which engine build to fetch alongside the weights. */
+  backend?: VoiceEngineBackend;
   operationId: string;
   providerId: LocalVoiceProviderId;
   modelId: string;
@@ -1091,6 +1214,8 @@ export type VoiceRemoveResponse = {
 };
 export type VoiceHealthRequest = {
   providerId: VoiceProviderId;
+  /** Which audio.cpp build the check is about. Ignored by the other providers. */
+  backend?: VoiceEngineBackend;
   capability?: VoiceCapability;
   modelId?: string;
 };
@@ -1163,6 +1288,8 @@ export type VoiceDeleteClonedResponse = {
 };
 export type VoiceSynthesizeRequest = {
   operationId: string;
+  /** Where audio.cpp should run this. Ignored by the other providers. */
+  backend?: VoiceEngineBackend;
   providerId: SynthesisProviderId;
   modelId: string;
   profileId: string;
@@ -1289,4 +1416,29 @@ export type VoiceRealtimeEnsureRequest = {
 export type VoiceRealtimeEnsureResponse = {
   endpoint: string;
   reused: boolean;
+};
+
+/**
+ * Asking the main process where — and as whom — to open a spoken conversation.
+ *
+ * The model is part of the request because the credential can depend on it: a
+ * minted client secret is issued against the session it will be used for, so the
+ * process cannot mint one without knowing which model the window is about to
+ * ask for.
+ */
+export type VoiceRealtimeSessionRequest = {
+  providerId: string;
+  model: string;
+};
+
+export type VoiceRealtimeSessionResponse = {
+  providerId: string;
+  /** Empty for the local pipeline, which is not authenticated. */
+  token: string;
+  /** Empty where the adapter already knows the provider's fixed address. */
+  endpoint: string;
+  /** True when the token is short-lived and a later session must ask again. */
+  ephemeral: boolean;
+  /** The provider record's own name, so the page can say which account is paying. */
+  providerName: string;
 };

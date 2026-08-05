@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   VoiceModelCatalog,
   MANAGED_CATALOG_ENTRIES,
+  engineArchiveBytes,
 } from '../../../packages/desktop/src/process/services/fool-voice/VoiceModelCatalog';
 
 describe('VoiceModelCatalog', () => {
@@ -103,5 +104,47 @@ describe('built-in downloadable voices', () => {
     const ids = VoiceModelCatalog.getPresetProfiles().map((profile) => profile.id);
 
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+/**
+ * Two builds of one engine, and they must not be confused for each other.
+ *
+ * The CPU package has no CUDA backend compiled in at all — asked for one it
+ * answers `CUDA backend requested but it is not registered in this build` — so
+ * "which processor" is really "which download", and the wrong answer is a model
+ * that installs and then cannot run.
+ */
+describe('audio.cpp engine builds', () => {
+  it('offers a different build per processor, under different ids', () => {
+    const cpu = VoiceModelCatalog.getEngine('audiocpp', 'cpu');
+    const cuda = VoiceModelCatalog.getEngine('audiocpp', 'cuda');
+
+    expect(cpu?.engineId).toBe('audiocpp');
+    expect(cuda?.engineId).toBe('audiocpp-cuda');
+    // Separate ids mean separate directories. They contain files of the same
+    // names, and a half-overwritten engine presents as a broken model.
+    expect(cpu?.engineId).not.toBe(cuda?.engineId);
+    // Absent means the processor, for a caller that predates the setting.
+    expect(VoiceModelCatalog.getEngine('audiocpp')?.engineId).toBe('audiocpp');
+    expect(VoiceModelCatalog.getEngine('something-else', 'cuda')).toBeUndefined();
+  });
+
+  it('fetches the CUDA runtime before the executables that link against it', () => {
+    const cuda = VoiceModelCatalog.getEngine('audiocpp', 'cuda');
+
+    expect(cuda?.archives).toHaveLength(2);
+    expect(cuda?.archives[0].url).toContain('cuda-runtime');
+    expect(cuda?.archives[1].url).toContain('cuda-balance');
+    // Both halves are spoken for in the progress total, or the bar finishes
+    // three quarters of the way through an 800 MB download.
+    expect(engineArchiveBytes(cuda!)).toBe(cuda!.archives[0].bytes + cuda!.archives[1].bytes);
+    expect(engineArchiveBytes(cuda!)).toBeGreaterThan(engineArchiveBytes(VoiceModelCatalog.getEngine('audiocpp')!));
+  });
+
+  it('spawns the same executable whichever build is installed', () => {
+    expect(VoiceModelCatalog.getEngine('audiocpp', 'cpu')?.binaryPath).toBe(
+      VoiceModelCatalog.getEngine('audiocpp', 'cuda')?.binaryPath
+    );
   });
 });

@@ -9,6 +9,7 @@ import { ipcBridge } from '@/common';
 import {
   localProviderFor,
   type VoiceDownloadProgress,
+  type VoiceEngineBackend,
   type VoiceModel,
   type VoiceProfile,
 } from '@/common/types/foolVoice';
@@ -54,7 +55,12 @@ const unwrap = <T>(envelope: { ok: true; data: T } | { ok: false; error: { code:
  * started twice, and the button goes busy on click rather than when the first
  * progress event arrives — a gap that was wide enough to press twice.
  */
-export const useVoiceCatalog = (): VoiceCatalogHandle => {
+/**
+ * @param backend Which audio.cpp build the catalog is read for. A model is only
+ * "installed" if the engine that can run it is on disk, and the CPU and CUDA
+ * builds are separate downloads — so this changes what the picker reports.
+ */
+export const useVoiceCatalog = (backend: VoiceEngineBackend = 'cpu'): VoiceCatalogHandle => {
   const [models, setModels] = useState<readonly VoiceModel[]>([]);
   const [profiles, setProfiles] = useState<readonly VoiceProfile[]>([]);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -63,6 +69,8 @@ export const useVoiceCatalog = (): VoiceCatalogHandle => {
 
   // Read inside callbacks that must not be re-created on every state change.
   const modelsRef = useRef<readonly VoiceModel[]>([]);
+  const backendRef = useRef<VoiceEngineBackend>(backend);
+  backendRef.current = backend;
   const installsRef = useRef<Record<string, InstallState>>({});
   const profilesRef = useRef<readonly VoiceProfile[]>([]);
   modelsRef.current = models;
@@ -75,7 +83,7 @@ export const useVoiceCatalog = (): VoiceCatalogHandle => {
         await ipcBridge.foolVoice.catalog.invoke({
           version: 1,
           requestId: newRequestId(),
-          payload: { includeProfiles: true },
+          payload: { includeProfiles: true, backend: backendRef.current },
         })
       );
       setModels(catalog.models);
@@ -138,7 +146,10 @@ export const useVoiceCatalog = (): VoiceCatalogHandle => {
     });
 
     return () => unsubscribe();
-  }, [refresh]);
+    // `backend` is in the deps because what counts as installed changes with
+    // it: the same weights are ready under one build and missing under the
+    // other, and the picker has to say so without a reload.
+  }, [backend, refresh]);
 
   const install = useCallback((modelId: string) => {
     const active = installsRef.current[modelId];
@@ -157,7 +168,12 @@ export const useVoiceCatalog = (): VoiceCatalogHandle => {
       .invoke({
         version: 1,
         requestId: operationId,
-        payload: { operationId, providerId: localProviderFor(modelsRef.current, modelId), modelId },
+        payload: {
+          operationId,
+          providerId: localProviderFor(modelsRef.current, modelId),
+          modelId,
+          backend: backendRef.current,
+        },
       })
       .then((response) => {
         if (response.ok === false) throw new Error(response.error.code);
@@ -191,7 +207,11 @@ export const useVoiceCatalog = (): VoiceCatalogHandle => {
       // this page was opened.
       void refresh()
         .then((fresh) =>
-          verifyVoiceModel(fresh.find((candidate) => candidate.id === modelId) ?? model, borrowedProfileId)
+          verifyVoiceModel(
+            fresh.find((candidate) => candidate.id === modelId) ?? model,
+            borrowedProfileId,
+            backendRef.current
+          )
         )
         .then((result) => setVerifications((previous) => ({ ...previous, [modelId]: result.status })))
         .catch(() => setVerifications((previous) => ({ ...previous, [modelId]: 'unusable' })));

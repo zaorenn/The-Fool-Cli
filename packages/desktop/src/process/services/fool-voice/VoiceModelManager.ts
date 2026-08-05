@@ -1,9 +1,15 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import type { LocalVoiceProviderId, VoiceDownloadProgress, VoiceModelState } from '../../../common/types/foolVoice';
+import type {
+  LocalVoiceProviderId,
+  VoiceDownloadProgress,
+  VoiceEngineBackend,
+  VoiceModelState,
+} from '../../../common/types/foolVoice';
 import {
   AUDIOCPP_CATALOG_ENTRIES,
+  engineArchiveBytes,
   VoiceModelCatalog,
   type AudioCppCatalogEntry,
   type AudioCppFile,
@@ -94,8 +100,8 @@ export class VoiceModelManager {
    * binary as an injected dependency precisely so nothing has to assume a layout
    * that was not verified.
    */
-  public async getEngineBinaryPath(engineId: string): Promise<string | null> {
-    const engine = VoiceModelCatalog.getEngine(engineId);
+  public async getEngineBinaryPath(engineId: string, backend: VoiceEngineBackend = 'cpu'): Promise<string | null> {
+    const engine = VoiceModelCatalog.getEngine(engineId, backend);
     if (!engine) return null;
     const binary = path.join(this.engineDir(engine), engine.binaryPath);
     try {
@@ -122,9 +128,12 @@ export class VoiceModelManager {
     return true;
   }
 
-  public async getModelState(modelId: string): Promise<Exclude<VoiceModelState, { status: 'unmanaged' }>> {
+  public async getModelState(
+    modelId: string,
+    backend: VoiceEngineBackend = 'cpu'
+  ): Promise<Exclude<VoiceModelState, { status: 'unmanaged' }>> {
     const audioCpp = VoiceModelCatalog.getAudioCppEntry(modelId);
-    if (audioCpp) return this.getAudioCppModelState(audioCpp);
+    if (audioCpp) return this.getAudioCppModelState(audioCpp, backend);
 
     const entry = VoiceModelCatalog.getManagedEntry(modelId);
     if (!entry) return { status: 'not-installed' };
@@ -153,7 +162,8 @@ export class VoiceModelManager {
    * Install — which is exactly the action that fixes it.
    */
   private async getAudioCppModelState(
-    entry: AudioCppCatalogEntry
+    entry: AudioCppCatalogEntry,
+    backend: VoiceEngineBackend
   ): Promise<Exclude<VoiceModelState, { status: 'unmanaged' }>> {
     const modelDir = this.audioCppModelDir(entry.modelId);
     try {
@@ -165,7 +175,7 @@ export class VoiceModelManager {
     if (!(await this.filesExist(modelDir, entry.expectedFiles))) {
       return { status: 'invalid', reason: 'missing-files' };
     }
-    if ((await this.getEngineBinaryPath(entry.engineId)) === null) {
+    if ((await this.getEngineBinaryPath(entry.engineId, backend)) === null) {
       return { status: 'not-installed' };
     }
     return { status: 'ready' };
@@ -185,7 +195,8 @@ export class VoiceModelManager {
    */
   public async downloadModel(
     operationId: string,
-    modelId: string
+    modelId: string,
+    backend: VoiceEngineBackend = 'cpu'
   ): Promise<'started' | 'already-running' | 'already-installed'> {
     if (this.activeDownloads.has(modelId)) return 'already-running';
 
@@ -193,7 +204,7 @@ export class VoiceModelManager {
     // weights plus a prebuilt engine, so they take the transfer path below
     // rather than the archive one — same slot, same progress events, same cancel.
     const audioCppEntry = VoiceModelCatalog.getAudioCppEntry(modelId);
-    if (audioCppEntry) return this.downloadAudioCppModel(operationId, audioCppEntry);
+    if (audioCppEntry) return this.downloadAudioCppModel(operationId, audioCppEntry, backend);
 
     const entry = VoiceModelCatalog.getManagedEntry(modelId);
     if (!entry) throw new Error('Model not found in catalog');
@@ -227,7 +238,7 @@ export class VoiceModelManager {
     this.activeDownloads.set(modelId, operation);
 
     try {
-      const installed = await this.getModelState(modelId);
+      const installed = await this.getModelState(modelId, backend);
       if (installed.status === 'ready') {
         // Tell the listeners so a stale "installing" button settles.
         this.updateProgress(modelId, {
@@ -343,11 +354,13 @@ export class VoiceModelManager {
    */
   private async downloadAudioCppModel(
     operationId: string,
-    entry: AudioCppCatalogEntry
+    entry: AudioCppCatalogEntry,
+    backend: VoiceEngineBackend
   ): Promise<'started' | 'already-running' | 'already-installed'> {
     const { modelId } = entry;
-    const engine = VoiceModelCatalog.getEngine(entry.engineId);
+    const engine = VoiceModelCatalog.getEngine(entry.engineId, backend);
     if (!engine) throw new Error('Engine not found in catalog');
+    const engineBytes = engineArchiveBytes(engine);
 
     const abortController = new AbortController();
     const progress: VoiceDownloadProgress = {
@@ -358,7 +371,7 @@ export class VoiceModelManager {
       sequence: 1,
       attempt: 1,
       downloadedBytes: 0,
-      totalBytes: entry.archiveBytes + engine.archiveBytes,
+      totalBytes: entry.archiveBytes + engineBytes,
       updatedAtMs: Date.now(),
     };
     const operation: DownloadOperation = {
@@ -376,7 +389,7 @@ export class VoiceModelManager {
     const enginePart = path.join(this.getDownloadsDir(), `${engine.engineId}-${engine.version}.zip.part`);
 
     try {
-      if ((await this.getModelState(modelId)).status === 'ready') {
+      if ((await this.getModelState(modelId, backend)).status === 'ready') {
         this.updateProgress(modelId, {
           ...progress,
           state: 'ready',
@@ -388,14 +401,14 @@ export class VoiceModelManager {
       }
 
       await fs.mkdir(this.getDownloadsDir(), { recursive: true });
-      const engineInstalled = (await this.getEngineBinaryPath(engine.engineId)) !== null;
+      const engineInstalled = (await this.getEngineBinaryPath(entry.engineId, backend)) !== null;
 
       operation.progress = {
         ...progress,
         state: 'downloading',
         // The engine's bytes are already on disk, so counting them as still to
         // come would leave the bar stuck short of the end.
-        totalBytes: entry.archiveBytes + (engineInstalled ? 0 : engine.archiveBytes),
+        totalBytes: entry.archiveBytes + (engineInstalled ? 0 : engineBytes),
         sequence: progress.sequence + 1,
         updatedAtMs: Date.now(),
       };
@@ -403,33 +416,40 @@ export class VoiceModelManager {
 
       let transferred = 0;
       if (!engineInstalled) {
-        transferred = await this.transferFile(
-          operation,
-          enginePart,
-          { url: engine.url, sha256: engine.sha256, bytes: engine.archiveBytes, destination: enginePart },
-          0
-        );
+        // One directory, filled from every archive the build is made of. Only
+        // the last extraction is asked to prove the manifest: the CUDA runtime
+        // package carries DLLs and none of the executables, so checking after
+        // it would fail on a download that is going perfectly well.
+        for (const [index, archive] of engine.archives.entries()) {
+          const isLast = index === engine.archives.length - 1;
+          transferred = await this.transferFile(
+            operation,
+            enginePart,
+            { url: archive.url, sha256: archive.sha256, bytes: archive.bytes, destination: enginePart },
+            transferred
+          );
 
-        this.updateProgress(modelId, {
-          ...operation.progress,
-          state: 'extracting',
-          sequence: operation.progress.sequence + 1,
-          updatedAtMs: Date.now(),
-        });
-        await extractZip({
-          archivePath: enginePart,
-          targetDir: this.engineDir(engine),
-          expectedFiles: engine.expectedFiles,
-          ...extractionLimits(engine.archiveBytes),
-        });
-        await fs.unlink(enginePart).catch(() => {});
+          this.updateProgress(modelId, {
+            ...operation.progress,
+            state: 'extracting',
+            sequence: operation.progress.sequence + 1,
+            updatedAtMs: Date.now(),
+          });
+          await extractZip({
+            archivePath: enginePart,
+            targetDir: this.engineDir(engine),
+            expectedFiles: isLast ? engine.expectedFiles : [],
+            ...extractionLimits(archive.bytes),
+          });
+          await fs.unlink(enginePart).catch(() => {});
 
-        this.updateProgress(modelId, {
-          ...operation.progress,
-          state: 'downloading',
-          sequence: operation.progress.sequence + 1,
-          updatedAtMs: Date.now(),
-        });
+          this.updateProgress(modelId, {
+            ...operation.progress,
+            state: 'downloading',
+            sequence: operation.progress.sequence + 1,
+            updatedAtMs: Date.now(),
+          });
+        }
       }
 
       await fs.mkdir(modelDir, { recursive: true });
@@ -659,15 +679,30 @@ export class VoiceModelManager {
     await fs.unlink(downloadPath).catch(() => {});
   }
 
+  /**
+   * Removes every build of an engine once nothing is left that needs it.
+   *
+   * Both builds, not the one the setting currently names: a user who tried CUDA
+   * and went back has 800 MB sitting in a directory the app would otherwise
+   * never look at again, and removing the last model is the moment that becomes
+   * obvious. A build that was never installed is a no-op.
+   */
   private async removeEngineIfUnused(engineId: string): Promise<void> {
-    const engine = VoiceModelCatalog.getEngine(engineId);
-    if (!engine) return;
+    const builds = ['cpu' as const, 'cuda' as const]
+      .map((backend) => VoiceModelCatalog.getEngine(engineId, backend))
+      .filter((engine): engine is EngineCatalogEntry => engine !== undefined);
+    if (builds.length === 0) return;
 
     for (const entry of Object.values(AUDIOCPP_CATALOG_ENTRIES)) {
       if (entry.engineId !== engineId) continue;
       if (await this.filesExist(this.audioCppModelDir(entry.modelId), entry.expectedFiles)) return;
     }
-    await fs.rm(path.join(this.userDataPath, 'fool', 'engines', engineId), { recursive: true, force: true });
+    for (const build of builds) {
+      await fs.rm(path.join(this.userDataPath, 'fool', 'engines', build.engineId), {
+        recursive: true,
+        force: true,
+      });
+    }
   }
 
   private updateProgress(modelId: string, progress: VoiceDownloadProgress) {

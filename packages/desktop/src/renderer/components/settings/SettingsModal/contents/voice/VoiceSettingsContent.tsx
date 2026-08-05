@@ -5,34 +5,17 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Button, Input, Message, Select, Slider, Switch } from '@arco-design/web-react';
+import { Alert, Button, Input, Select, Slider, Switch } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
-import { ipcBridge } from '@/common';
-import { localProviderFor, synthesisProviderFor, type VoiceParams, type VoiceProfile } from '@/common/types/foolVoice';
 import { useFoolVoiceSettings } from '@renderer/hooks/voice/useFoolVoiceSettings';
-import { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybackService';
 import { reconcileVoiceModels } from '@renderer/services/voice/reconcileVoiceModels';
 import AudioDeviceSection from './AudioDeviceSection';
 import SummarySection from './SummarySection';
+import TranscriptRulesSection from './TranscriptRulesSection';
 import VoiceAgentSection from './VoiceAgentSection';
 import WakeWordSection from './WakeWordSection';
-import CloneVoiceUpload from './tts/CloneVoiceUpload';
-import SpeakerBrowser from './tts/SpeakerBrowser';
-import VoiceParamsSection from './tts/VoiceParamsSection';
-import VoicePicker from './tts/VoicePicker';
+import TextToSpeechSection from './tts/TextToSpeechSection';
 import { useVoiceCatalog } from './useVoiceCatalog';
-
-const PREVIEW_TEXT: Record<string, string> = {
-  en: 'This is how I will sound when I speak.',
-  tr: 'Konuşurken sesim böyle çıkacak.',
-};
-
-const newRequestId = () => `voice-settings-${crypto.randomUUID()}`;
-
-const unwrap = <T,>(envelope: { ok: true; data: T } | { ok: false; error: { code: string } }): T => {
-  if (envelope.ok === false) throw new Error(envelope.error.code);
-  return envelope.data;
-};
 
 type Section = { key: string; title: string; body: React.ReactNode };
 
@@ -48,11 +31,6 @@ const VoiceSettingsContent: React.FC = () => {
   const { t } = useTranslation();
   const { settings, ready, update } = useFoolVoiceSettings();
   const catalog = useVoiceCatalog();
-  const [browsingModelId, setBrowsingModelId] = useState<string | null>(null);
-  const [speakerCount, setSpeakerCount] = useState<number | null>(null);
-
-  const playback = useMemo(() => new AudioPlaybackService(), []);
-
   // Point the selection at models that are really installed. The shipped default
   // names a half-gigabyte download, so without this the page opens claiming to
   // use a model the user does not have while ignoring the ones they do.
@@ -63,121 +41,6 @@ const VoiceSettingsContent: React.FC = () => {
     reconciled.current = true;
     if (next) update(() => next);
   }, [catalog.models, ready, settings, update]);
-
-  const speak = useCallback(
-    async (modelId: string, profileId: string, language: string) => {
-      playback.setOutputDevice(settings.devices.outputDeviceId);
-      const requestId = newRequestId();
-      const synthesis = unwrap(
-        await ipcBridge.foolVoice.synthesize.invoke({
-          version: 1,
-          requestId,
-          payload: {
-            operationId: requestId,
-            providerId: synthesisProviderFor(catalog.models, modelId),
-            modelId,
-            profileId,
-            language,
-            speed: settings.tts.speed,
-            text: PREVIEW_TEXT[language] ?? PREVIEW_TEXT.en,
-            // The preview is the only place the knobs can be heard before a
-            // real reply is spoken with them, so it uses the saved values
-            // rather than the engine's defaults.
-            ...(settings.tts.params[modelId] ? { params: settings.tts.params[modelId] } : {}),
-          },
-        })
-      );
-      await playback.play(synthesis.audio);
-    },
-    [catalog.models, playback, settings.devices.outputDeviceId, settings.tts.params, settings.tts.speed]
-  );
-
-  const handleSelectVoice = useCallback(
-    (profile: VoiceProfile) => {
-      update((previous) => ({
-        ...previous,
-        tts: {
-          ...previous.tts,
-          // A cloned voice appears once per engine that can render it, so the
-          // card that was clicked is what says which engine will speak — and
-          // the provider has to be recorded with it, or every later request
-          // goes to whichever engine happened to be stored first.
-          providerId: synthesisProviderFor(catalog.models, profile.modelId),
-          modelId: profile.modelId,
-          profileId: profile.id,
-          language: profile.languages[0] ?? previous.tts.language,
-        },
-      }));
-    },
-    [update]
-  );
-
-  const handlePreview = useCallback(
-    async (profile: VoiceProfile) => {
-      try {
-        await speak(profile.modelId, profile.id, profile.languages[0] ?? 'en');
-      } catch {
-        Message.error(t('settings.voice.previewFailed'));
-      }
-    },
-    [speak, t]
-  );
-
-  const handleDeleteClonedVoice = useCallback(
-    async (profile: VoiceProfile) => {
-      const voiceId = profile.id.startsWith('cloned:') ? profile.id.slice('cloned:'.length) : profile.id;
-      try {
-        unwrap(
-          await ipcBridge.foolVoice.deleteClonedVoice.invoke({
-            version: 1,
-            requestId: newRequestId(),
-            payload: { voiceId },
-          })
-        );
-        void catalog.refresh();
-      } catch {
-        Message.error(t('settings.voice.deleteClonedFailed'));
-      }
-    },
-    [catalog, t]
-  );
-
-  const handleBrowseSpeakers = useCallback(
-    (modelId: string) => {
-      setSpeakerCount(null);
-      setBrowsingModelId(modelId);
-
-      // The count comes from the loaded engine, so it reflects the weights that
-      // were actually downloaded.
-      void ipcBridge.foolVoice.speakers
-        .invoke({
-          version: 1,
-          requestId: newRequestId(),
-          payload: { providerId: localProviderFor(catalog.models, modelId), modelId },
-        })
-        .then((response) => setSpeakerCount(response.ok ? response.data.speakerCount : 0))
-        .catch(() => setSpeakerCount(0));
-    },
-    [catalog.models]
-  );
-
-  const handleParamsChange = useCallback(
-    (params: VoiceParams) => {
-      update((previous) => {
-        const next = { ...previous.tts.params };
-        // An empty bag is stored as no bag at all: absent means "the engine's
-        // defaults", so keeping an empty record around would only be a slot for
-        // a stale model id to live in.
-        if (Object.keys(params).length === 0) delete next[previous.tts.modelId];
-        else next[previous.tts.modelId] = params;
-        return { ...previous, tts: { ...previous.tts, params: next } };
-      });
-    },
-    [update]
-  );
-
-  const browsingModel = catalog.models.find((model) => model.id === browsingModelId) ?? null;
-  const selectedTtsModel = catalog.models.find((model) => model.id === settings.tts.modelId);
 
   const sttModels = catalog.models.filter((model) => model.role === 'speech-to-text');
   const selectedSttModel = catalog.models.find((model) => model.id === settings.stt.modelId);
@@ -316,36 +179,14 @@ const VoiceSettingsContent: React.FC = () => {
       ),
     },
     {
+      key: 'transcriptRules',
+      title: t('settings.voice.transcriptRules'),
+      body: <TranscriptRulesSection settings={settings} onChange={update} />,
+    },
+    {
       key: 'textToSpeech',
       title: t('settings.voice.textToSpeech'),
-      body: (
-        <>
-          <VoicePicker
-            models={catalog.models}
-            profiles={catalog.profiles}
-            selectedProfileId={settings.tts.profileId}
-            selectedModelId={settings.tts.modelId}
-            installs={catalog.installs}
-            verifications={catalog.verifications}
-            onSelect={handleSelectVoice}
-            onPreview={handlePreview}
-            onInstall={catalog.install}
-            onVerify={catalog.verify}
-            onBrowseSpeakers={handleBrowseSpeakers}
-            onDelete={handleDeleteClonedVoice}
-          />
-          <CloneVoiceUpload
-            models={catalog.models}
-            preferredModelId={settings.tts.modelId}
-            onSaved={() => void catalog.refresh()}
-          />
-          <VoiceParamsSection
-            model={selectedTtsModel}
-            params={settings.tts.params[settings.tts.modelId] ?? {}}
-            onChange={handleParamsChange}
-          />
-        </>
-      ),
+      body: <TextToSpeechSection settings={settings} onChange={update} />,
     },
   ];
 
@@ -358,34 +199,6 @@ const VoiceSettingsContent: React.FC = () => {
           {section.body}
         </section>
       ))}
-
-      {browsingModel && speakerCount !== null && (
-        <SpeakerBrowser
-          model={browsingModel}
-          speakerCount={speakerCount}
-          selectedProfileId={settings.tts.profileId}
-          onClose={() => setBrowsingModelId(null)}
-          onSelect={(profileId) =>
-            update((previous) => ({
-              ...previous,
-              tts: {
-                ...previous.tts,
-                providerId: synthesisProviderFor(catalog.models, browsingModel.id),
-                modelId: browsingModel.id,
-                profileId,
-                language: browsingModel.languages[0] ?? previous.tts.language,
-              },
-            }))
-          }
-          onPreview={async (profileId) => {
-            try {
-              await speak(browsingModel.id, profileId, browsingModel.languages[0] ?? 'en');
-            } catch {
-              Message.error(t('settings.voice.previewFailed'));
-            }
-          }}
-        />
-      )}
     </div>
   );
 };

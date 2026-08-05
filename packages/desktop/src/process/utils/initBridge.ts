@@ -17,6 +17,7 @@ import {
   AudioCppVoiceProvider,
 } from '../services/fool-voice';
 import { registerLocalModelsBridge } from '../services/local-models';
+import { resolveRealtimeSession } from '../services/realtime-voice';
 import { speechToSpeechRuntime } from '../services/speech-to-speech';
 import { handleSummarize, handleSummaryPlan } from '../services/voice-summary';
 import { initVoiceStageHub } from '../voice/voiceStageHub';
@@ -57,9 +58,9 @@ const openaiProvider = new OpenAICompatibleVoiceProvider(
  */
 const audioCppProvider = new AudioCppVoiceProvider({
   installation: {
-    engineBinaryPath: () => modelManager.getEngineBinaryPath('audiocpp'),
+    engineBinaryPath: (backend) => modelManager.getEngineBinaryPath('audiocpp', backend),
     modelDir: (modelId) => modelManager.audioCppModelDir(modelId),
-    modelReady: async (modelId) => (await modelManager.getModelState(modelId)).status === 'ready',
+    modelReady: async (modelId, backend) => (await modelManager.getModelState(modelId, backend)).status === 'ready',
   },
   // The same directory the sherpa provider reads: a cloned voice belongs to the
   // user, not to an engine, and both render it from one recording on disk.
@@ -72,13 +73,14 @@ const voiceService = new FoolVoiceService(modelManager, sherpaProvider, openaiPr
 initAllBridges({
   foolVoice: {
     ensureRealtime: (req) => speechToSpeechRuntime.ensureReady(req),
+    realtimeSession: (request) => resolveRealtimeSession(request),
     catalog: async (req) => {
       const baseModels = VoiceModelCatalog.getModels();
       const models = await Promise.all(
         baseModels.map(async (model) => {
           if (model.distribution === 'managed') {
             try {
-              const state = await modelManager.getModelState(model.id);
+              const state = await modelManager.getModelState(model.id, req.backend);
               return { ...model, state };
             } catch {
               return model;
@@ -99,7 +101,7 @@ initAllBridges({
       };
     },
     health: (req) =>
-      voiceService.getHealth(req.providerId, req.capability, req.modelId).then(
+      voiceService.getHealth(req.providerId, req.capability, req.modelId, req.backend).then(
         (status) =>
           ({
             ...req,
@@ -114,7 +116,7 @@ initAllBridges({
     // pending IPC call for minutes and no way to show progress. Outcomes travel
     // on the download-progress events instead.
     download: (req) => {
-      void modelManager.downloadModel(req.operationId, req.modelId).catch(() => {
+      void modelManager.downloadModel(req.operationId, req.modelId, req.backend).catch(() => {
         // Failures are already reported as a `failed` progress event.
       });
       return { operationId: req.operationId, accepted: true as const };
@@ -165,7 +167,8 @@ initAllBridges({
           req.language,
           req.speed,
           req.text,
-          req.params
+          req.params,
+          req.backend
         )
         .then((res) => ({
           operationId: req.operationId,

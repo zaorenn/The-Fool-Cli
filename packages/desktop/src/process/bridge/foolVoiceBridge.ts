@@ -24,6 +24,8 @@ import type {
   VoiceRemoveResponse,
   VoiceRealtimeEnsureRequest,
   VoiceRealtimeEnsureResponse,
+  VoiceRealtimeSessionRequest,
+  VoiceRealtimeSessionResponse,
   VoiceRequestEnvelope,
   VoiceResponseEnvelope,
   VoiceSpeakersRequest,
@@ -44,6 +46,7 @@ type MaybePromise<T> = T | Promise<T>;
 
 export type FoolVoiceBridgeHandlers = {
   ensureRealtime: (request: VoiceRealtimeEnsureRequest) => MaybePromise<VoiceRealtimeEnsureResponse>;
+  realtimeSession: (request: VoiceRealtimeSessionRequest) => MaybePromise<VoiceRealtimeSessionResponse>;
   catalog: (request: VoiceCatalogRequest) => MaybePromise<VoiceCatalogResponse>;
   download: (request: VoiceDownloadRequest) => MaybePromise<VoiceDownloadResponse>;
   remove: (request: VoiceRemoveRequest) => MaybePromise<VoiceRemoveResponse>;
@@ -186,8 +189,23 @@ const registerHandler = <Request, Response>(
   });
 };
 
+/**
+ * Which audio.cpp build a request is about.
+ *
+ * Optional on every payload that carries it: a caller written before the two
+ * builds existed means the processor, and rejecting it would break the
+ * transcription path over a setting it has no opinion on.
+ */
+const ENGINE_BACKENDS = new Set(['cpu', 'cuda']);
+
+const isEngineBackend = (value: unknown): boolean =>
+  value === undefined || (typeof value === 'string' && ENGINE_BACKENDS.has(value));
+
 const validateCatalogRequest = (payload: unknown): BridgeErrorCode | null =>
-  isRecord(payload) && hasExactKeys(payload, ['includeProfiles']) && typeof payload.includeProfiles === 'boolean'
+  isRecord(payload) &&
+  hasExactKeys(payload, ['includeProfiles', 'backend']) &&
+  typeof payload.includeProfiles === 'boolean' &&
+  isEngineBackend(payload.backend)
     ? null
     : 'invalid-request';
 
@@ -200,13 +218,40 @@ const validateRealtimeEnsureRequest = (payload: unknown): BridgeErrorCode | null
   return null;
 };
 
+/** The three speech-to-speech backends a conversation may be opened against. */
+const REALTIME_PROVIDER_IDS = new Set(['openai-realtime', 'gemini-live', 'local-s2s']);
+
+const validateRealtimeSessionRequest = (payload: unknown): BridgeErrorCode | null =>
+  isRecord(payload) &&
+  hasExactKeys(payload, ['providerId', 'model']) &&
+  typeof payload.providerId === 'string' &&
+  REALTIME_PROVIDER_IDS.has(payload.providerId) &&
+  isModelReference(payload.model, true)
+    ? null
+    : 'invalid-request';
+
+/**
+ * A credential the window can actually connect with.
+ *
+ * Checked on the way out rather than trusted: a provider record with an empty
+ * key resolves to an empty token, and handing that over produces a socket that
+ * opens and is closed by the far end with no explanation. Caught here it is a
+ * provider fault with a name.
+ */
+const validateRealtimeSessionResponse = (response: VoiceRealtimeSessionResponse): boolean =>
+  typeof response.providerId === 'string' &&
+  typeof response.token === 'string' &&
+  typeof response.endpoint === 'string' &&
+  (response.providerId === 'local-s2s' ? response.endpoint.length > 0 : response.token.length > 0);
+
 const validateDownloadRequest = (payload: unknown): BridgeErrorCode | null =>
   isRecord(payload) &&
-  hasExactKeys(payload, ['operationId', 'providerId', 'modelId']) &&
+  hasExactKeys(payload, ['operationId', 'providerId', 'modelId', 'backend']) &&
   isIdentifier(payload.operationId) &&
   typeof payload.providerId === 'string' &&
   LOCAL_PROVIDER_IDS.has(payload.providerId) &&
-  isIdentifier(payload.modelId)
+  isIdentifier(payload.modelId) &&
+  isEngineBackend(payload.backend)
     ? null
     : 'invalid-request';
 
@@ -221,12 +266,13 @@ const validateRemoveRequest = (payload: unknown): BridgeErrorCode | null =>
 
 const validateHealthRequest = (payload: unknown): BridgeErrorCode | null =>
   isRecord(payload) &&
-  hasExactKeys(payload, ['providerId', 'capability', 'modelId']) &&
+  hasExactKeys(payload, ['providerId', 'capability', 'modelId', 'backend']) &&
   typeof payload.providerId === 'string' &&
   PROVIDER_IDS.has(payload.providerId) &&
   (payload.capability === undefined ||
     (typeof payload.capability === 'string' && CAPABILITIES.has(payload.capability))) &&
-  (payload.modelId === undefined || isIdentifier(payload.modelId))
+  (payload.modelId === undefined || isIdentifier(payload.modelId)) &&
+  isEngineBackend(payload.backend)
     ? null
     : 'invalid-request';
 
@@ -398,7 +444,9 @@ const validateSynthesizeRequest = (payload: unknown): BridgeErrorCode | null => 
       'speed',
       'text',
       'params',
+      'backend',
     ]) ||
+    !isEngineBackend(payload.backend) ||
     !isIdentifier(payload.operationId) ||
     typeof payload.providerId !== 'string' ||
     !SYNTHESIS_PROVIDER_IDS.has(payload.providerId) ||
@@ -529,6 +577,13 @@ export function initFoolVoiceBridge(handlers: Partial<FoolVoiceBridgeHandlers> =
     handlers.ensureRealtime,
     undefined,
     'realtime.ensure'
+  );
+  registerHandler(
+    ipcBridge.foolVoice.realtimeSession,
+    validateRealtimeSessionRequest,
+    handlers.realtimeSession,
+    validateRealtimeSessionResponse,
+    'realtime.session'
   );
   registerHandler(
     ipcBridge.foolVoice.catalog,

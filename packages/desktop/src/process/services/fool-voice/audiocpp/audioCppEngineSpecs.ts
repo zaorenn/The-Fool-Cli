@@ -5,6 +5,8 @@
  */
 
 import {
+  AUDIOCPP_CHATTERBOX_MODEL_ID,
+  AUDIOCPP_QWEN3_MODEL_ID,
   AUDIOCPP_POCKET_MODEL_ID,
   type VoiceParams,
   type VoiceParamSpec,
@@ -60,6 +62,31 @@ export type AudioCppModelSpec = {
   requiresVoiceReference: boolean;
   /** Whether the engine reads `reference_text`. Pocket does not. */
   usesReferenceText: boolean;
+  /**
+   * Voices the weights already carry, addressed by name.
+   *
+   * The other engines here have no voice of their own and are given a recording
+   * to imitate; this one ships a fixed cast and refuses a request that does not
+   * name one of them — `500 Qwen3 custom voice prefill requires speaker`. The
+   * name travels in the request's `voice` field, verified against a running
+   * server: `voice: "Ryan"` returns byte-for-byte what the CLI's
+   * `--speaker Ryan` does at the same seed.
+   */
+  presetSpeakers?: readonly { id: string; speaker: string; displayName: string; languages: readonly string[] }[];
+  /**
+   * A processor this model will not run without.
+   *
+   * Measured on this project's own hardware, warm servers, same sentence and
+   * seed: Chatterbox takes about 80 s on the processor and 0.87 s on a graphics
+   * card — near enough ninety times. Qwen3 lands between 0.5 s and 0.9 s on the
+   * card once its CUDA graphs are built.
+   *
+   * So this is not a hardware limit; the processor renders these perfectly well,
+   * a minute and a half at a time. A user who selects one and waits is not
+   * discovering a preference, they are discovering that the app is broken — so
+   * the request is refused with something they can act on instead.
+   */
+  requiresBackend?: 'cuda';
   params: readonly VoiceParamSpec[];
 };
 
@@ -90,6 +117,66 @@ const POCKET_PARAMS: readonly VoiceParamSpec[] = [
   { name: 'truncate_clone_audio', type: 'boolean', default: false },
 ];
 
+/**
+ * Chatterbox, the engine with a knob for how much feeling to put in.
+ *
+ * `exaggeration` was proved rather than read: with `--seed 42` fixed, two runs
+ * at 0.25 produced byte-identical audio and a run at 2.0 produced different
+ * audio. That test matters more here than anywhere else in this file, because
+ * the server accepts an option name it does not know **without complaining** and
+ * returns default-parameter audio — a misspelled knob is silent, not an error.
+ *
+ * The other three are the framework-wide sampling controls, spelled as the
+ * server's own JSON keys.
+ */
+const CHATTERBOX_PARAMS: readonly VoiceParamSpec[] = [
+  // Upstream's own range. 0.5 is neutral delivery; past ~1.5 it starts to
+  // over-act, which is the point of offering it.
+  { name: 'exaggeration', type: 'number', min: 0.25, max: 2, step: 0.05, default: 0.5 },
+  { name: 'temperature', type: 'number', min: 0.05, max: 2, step: 0.05, default: 0.8 },
+  { name: 'guidance_scale', type: 'number', min: 0, max: 5, step: 0.1, default: 0.5 },
+  { name: 'text_chunk_size', type: 'number', min: 32, max: 1024, step: 1, integer: true, default: 256 },
+];
+
+/**
+ * Qwen3 TTS, the one that is told how to sound in a sentence.
+ *
+ * `instruct` is why it is here. Every other engine in this app is directed with
+ * a number at best; this one is given a line of English — "speak in a slow, sad
+ * whisper" — and does it. Proved on real audio rather than read off a page: at
+ * a pinned seed two plain runs were byte-identical, and adding the instruction
+ * produced audio that was both different *and* a quarter longer, which is what
+ * a slow whisper of the same sentence should be.
+ *
+ * Capped at a couple of sentences: it is a direction, and a long one starts
+ * competing with the text that is meant to be spoken.
+ */
+const QWEN3_PARAMS: readonly VoiceParamSpec[] = [
+  { name: 'instruct', type: 'text', maxLength: 300, default: '' },
+  { name: 'temperature', type: 'number', min: 0.05, max: 2, step: 0.05, default: 0.8 },
+  { name: 'top_p', type: 'number', min: 0, max: 1, step: 0.05, default: 0.95 },
+  { name: 'text_chunk_size', type: 'number', min: 32, max: 1024, step: 1, integer: true, default: 256 },
+];
+
+/**
+ * The cast the weights ship with, from the model card embedded in the GGUF.
+ *
+ * Listed here rather than discovered because the server has no endpoint that
+ * reports them and answers an unknown name with `500 unsupported speaker` after
+ * a cold model load — which on a CPU is a minute spent to be told no.
+ */
+const QWEN3_SPEAKERS = [
+  { id: 'qwen3-ryan', speaker: 'Ryan', displayName: 'Ryan — dynamic, strong rhythm', languages: ['en'] },
+  { id: 'qwen3-aiden', speaker: 'Aiden', displayName: 'Aiden — sunny American, clear midrange', languages: ['en'] },
+  { id: 'qwen3-vivian', speaker: 'Vivian', displayName: 'Vivian — bright, slightly edgy', languages: ['zh'] },
+  { id: 'qwen3-serena', speaker: 'Serena', displayName: 'Serena — warm and gentle', languages: ['zh'] },
+  { id: 'qwen3-uncle-fu', speaker: 'Uncle_Fu', displayName: 'Uncle Fu — low, mellow, seasoned', languages: ['zh'] },
+  { id: 'qwen3-dylan', speaker: 'Dylan', displayName: 'Dylan — Beijing, clear and natural', languages: ['zh'] },
+  { id: 'qwen3-eric', speaker: 'Eric', displayName: 'Eric — Chengdu, husky brightness', languages: ['zh'] },
+  { id: 'qwen3-ono-anna', speaker: 'Ono_Anna', displayName: 'Ono Anna — playful, light', languages: ['ja'] },
+  { id: 'qwen3-sohee', speaker: 'Sohee', displayName: 'Sohee — warm, rich emotion', languages: ['ko'] },
+] as const;
+
 export const AUDIOCPP_MODEL_SPECS: readonly AudioCppModelSpec[] = [
   {
     modelId: AUDIOCPP_POCKET_MODEL_ID,
@@ -110,6 +197,43 @@ export const AUDIOCPP_MODEL_SPECS: readonly AudioCppModelSpec[] = [
     usesReferenceText: false,
     params: POCKET_PARAMS,
   },
+  {
+    modelId: AUDIOCPP_CHATTERBOX_MODEL_ID,
+    serverModelId: 'chatterbox',
+    family: 'chatterbox',
+    // `clon`, and it has to be: this loader rejects `tts` outright. Confirmed
+    // by running the CLI against the installed weights — `--task clon` renders,
+    // and it is also what the runtime's own header has said since Phase 2.
+    task: 'clon',
+    mode: 'offline',
+    weightsFile: 'chatterbox-q8_0.gguf',
+    languages: ['en'],
+    requiresVoiceReference: true,
+    // Builds a speaker embedding from the clip alone; a transcript would land
+    // under a key it never reads.
+    usesReferenceText: false,
+    requiresBackend: 'cuda',
+    params: CHATTERBOX_PARAMS,
+  },
+  {
+    modelId: AUDIOCPP_QWEN3_MODEL_ID,
+    serverModelId: 'qwen3-tts',
+    family: 'qwen3_tts',
+    // `tts`, and the cloning-sounding name is a trap: run against the real
+    // weights, `clon` answers `Qwen3 custom voice model only supports the Tts
+    // task`. The same mistake that shipped Pocket broken — the task names the
+    // session the loader builds, nothing about voices.
+    task: 'tts',
+    mode: 'offline',
+    weightsFile: 'qwen3-tts-12hz-1.7b-customvoice-q8_0.gguf',
+    languages: ['en', 'zh', 'ja', 'ko'],
+    // It has its own cast; there is nothing to imitate and nothing to transcribe.
+    requiresVoiceReference: false,
+    usesReferenceText: false,
+    presetSpeakers: QWEN3_SPEAKERS,
+    requiresBackend: 'cuda',
+    params: QWEN3_PARAMS,
+  },
 ];
 
 const SPECS_BY_MODEL_ID = new Map(AUDIOCPP_MODEL_SPECS.map((spec) => [spec.modelId, spec]));
@@ -117,6 +241,16 @@ const SPECS_BY_MODEL_ID = new Map(AUDIOCPP_MODEL_SPECS.map((spec) => [spec.model
 export const getAudioCppModelSpec = (modelId: string): AudioCppModelSpec | undefined => SPECS_BY_MODEL_ID.get(modelId);
 
 export const isAudioCppModel = (modelId: string): boolean => SPECS_BY_MODEL_ID.has(modelId);
+
+/**
+ * The name a request must carry for a given preset voice, or `undefined`.
+ *
+ * `undefined` covers both "this engine has no cast" and "that profile is not
+ * one of them", which are the same thing at the call site: send no `voice` and
+ * let the engine's own rule about reference clips apply.
+ */
+export const presetSpeakerNameFor = (modelId: string, profileId: string): string | undefined =>
+  getAudioCppModelSpec(modelId)?.presetSpeakers?.find((speaker) => speaker.id === profileId)?.speaker;
 
 /** Every parameter at its shipped default, for "reset" and for a fresh record. */
 export const defaultAudioCppParams = (modelId: string): VoiceParams => {

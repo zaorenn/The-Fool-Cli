@@ -1,6 +1,7 @@
 import type {
   VoiceCapability,
   VoiceCloneReferenceWav,
+  VoiceEngineBackend,
   VoiceParams,
   VoicePcm16Wav,
   VoiceProviderId,
@@ -26,7 +27,8 @@ export class FoolVoiceService {
   public async getHealth(
     providerId: VoiceProviderId,
     capability?: VoiceCapability,
-    modelId?: string
+    modelId?: string,
+    backend: VoiceEngineBackend = 'cpu'
   ): Promise<'ready' | 'unavailable' | 'unsupported'> {
     if (providerId === 'local-sherpa') {
       if (modelId) {
@@ -37,7 +39,7 @@ export class FoolVoiceService {
     } else if (providerId === 'local-audiocpp') {
       // No model id means "is the engine there at all", which the provider
       // answers without starting anything.
-      return this.audioCppProvider.getHealth(modelId || '');
+      return this.audioCppProvider.getHealth(modelId || '', backend);
     } else if (providerId === 'openai-compatible') {
       return this.openaiProvider.getHealth();
     }
@@ -88,7 +90,8 @@ export class FoolVoiceService {
     language: string,
     speed: number,
     text: string,
-    params?: VoiceParams
+    params?: VoiceParams,
+    backend: VoiceEngineBackend = 'cpu'
   ): Promise<{ audio: VoiceSynthesizedWav; durationMs: number }> {
     const controller = new AbortController();
     this.activeOperations.set(operationId, controller);
@@ -103,7 +106,8 @@ export class FoolVoiceService {
           speed,
           text,
           params,
-          controller.signal
+          controller.signal,
+          backend
         );
       } else if (providerId === 'openai-compatible') {
         return await this.openaiProvider.synthesize(modelId, profileId, language, speed, text, controller.signal);
