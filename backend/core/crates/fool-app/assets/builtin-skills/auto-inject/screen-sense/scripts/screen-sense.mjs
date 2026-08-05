@@ -58,9 +58,20 @@ const runPowerShell = (args, input) =>
     else child.stdin.end();
   });
 
+/**
+ * A list, whatever the producer sent.
+ *
+ * `ConvertTo-Json` on Windows PowerShell writes a one-item collection as a bare
+ * object and an empty one as nothing at all, so every list field here arrives in
+ * one of three shapes. Reading them as arrays regardless is what keeps a screen
+ * with a single control — a game, a canvas, some full-screen windows — from
+ * failing outright, which is the screen a model most needs described to it.
+ */
+const asList = (value) => (Array.isArray(value) ? value : value === null || value === undefined ? [] : [value]);
+
 /** A control worth listing: named, or somewhere the user could act. */
 const isUseful = (element) =>
-  element.name.length > 0 || element.clickable || element.typable || element.role === 'Edit';
+  (element.name ?? '').length > 0 || element.clickable || element.typable || element.role === 'Edit';
 
 /**
  * The snapshot as lines a model can act on directly.
@@ -75,12 +86,13 @@ const describe = (snapshot, { withText }) => {
   lines.push(`Screen: ${snapshot.screenshot.width}x${snapshot.screenshot.height}`);
   lines.push(`Screenshot saved to: ${snapshot.screenshot.path}`);
 
-  if (snapshot.windows.length > 0) {
+  const windows = asList(snapshot.windows);
+  if (windows.length > 0) {
     lines.push('', 'Open windows:');
-    for (const window of snapshot.windows) lines.push(`  - ${window.title}`);
+    for (const window of windows) lines.push(`  - ${window.title}`);
   }
 
-  const useful = snapshot.elements.filter(isUseful);
+  const useful = asList(snapshot.elements).filter(isUseful);
   lines.push('', `Controls (${useful.length}) — click(x,y) is the centre of each:`);
   for (const element of useful) {
     const name = element.name ? `"${element.name}"` : '(unnamed)';
@@ -95,9 +107,10 @@ const describe = (snapshot, { withText }) => {
     lines.push(`  [${element.role}] ${name}${value}  click(${element.x},${element.y})  ${flags}`.trimEnd());
   }
 
-  if (withText && snapshot.text.length > 0) {
-    lines.push('', `Text read from the pixels (${snapshot.text.length} lines):`);
-    for (const line of snapshot.text) lines.push(`  (${line.x},${line.y}) ${line.text}`);
+  const text = asList(snapshot.text);
+  if (withText && text.length > 0) {
+    lines.push('', `Text read from the pixels (${text.length} lines):`);
+    for (const line of text) lines.push(`  (${line.x},${line.y}) ${line.text}`);
   }
 
   return lines.join('\n');
@@ -114,11 +127,12 @@ const commands = {
 
   async read() {
     const result = await runPowerShell(['read']);
-    if (result.text.length === 0) {
+    const text = asList(result.text);
+    if (text.length === 0) {
       console.log('No text could be read from the screen.');
       return;
     }
-    console.log(result.text.map((line) => `(${line.x},${line.y}) ${line.text}`).join('\n'));
+    console.log(text.map((line) => `(${line.x},${line.y}) ${line.text}`).join('\n'));
   },
 
   async click([x, y, button]) {
@@ -155,16 +169,30 @@ const readStdin = () =>
     process.stdin.on('end', () => done(input));
   });
 
-const [command, ...args] = process.argv.slice(2);
-const handler = commands[command];
-if (!handler) {
-  console.error('Commands: look [--text] [--limit=N] [--json], read, click <x> <y>, type, keys <combo>, focus <title>');
-  process.exit(1);
-}
+/**
+ * Exported so the shapes this has to tolerate can be tested without a screen.
+ *
+ * The bug worth a test here lived in the seam between the two scripts rather
+ * than inside either, and the only way to pin it is to hand `describe` the shape
+ * PowerShell actually produces.
+ */
+export { asList, describe };
 
-try {
-  await handler(args);
-} catch (error) {
-  console.error(error.message);
-  process.exit(1);
+// Only when run as a command, so importing it for a test does not read argv.
+if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replaceAll('\\', '/').split('/').at(-1))) {
+  const [command, ...args] = process.argv.slice(2);
+  const handler = commands[command];
+  if (!handler) {
+    console.error(
+      'Commands: look [--text] [--limit=N] [--json], read, click <x> <y>, type, keys <combo>, focus <title>'
+    );
+    process.exit(1);
+  }
+
+  try {
+    await handler(args);
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
 }

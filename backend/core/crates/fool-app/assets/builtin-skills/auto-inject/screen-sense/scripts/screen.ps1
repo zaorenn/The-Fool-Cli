@@ -222,9 +222,16 @@ switch ($command) {
     $payload = [ordered] @{
       foreground = [FoolScreen]::TitleOf($handle)
       screenshot = $shot
-      windows    = Get-OpenWindows
-      elements   = $elements
-      text       = if ($withText) { Get-ScreenText -ImagePath $shotPath } else { @() }
+      # Wrapped so these stay lists in the JSON. `ConvertTo-Json` in Windows
+      # PowerShell unwraps a one-item collection into a bare object, so a
+      # foreground window exposing exactly one control — a game, a canvas, some
+      # full-screen apps — produced `elements: { … }` instead of `elements: [ … ]`
+      # and the reader failed with `snapshot.elements.filter is not a function`.
+      # Which is to say the agent's eyes closed on precisely the windows it could
+      # not otherwise describe.
+      windows    = @(Get-OpenWindows)
+      elements   = @($elements)
+      text       = if ($withText) { @(Get-ScreenText -ImagePath $shotPath) } else { @() }
     }
     $payload | ConvertTo-Json -Depth 6 -Compress
   }
