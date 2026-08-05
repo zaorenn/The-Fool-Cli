@@ -444,7 +444,16 @@ export class LocalVoicePipeline {
   private resolveVoice(readiness: Extract<LocalReadiness, { ok: true }>, sample: string): SpeakingVoice {
     const installed = readiness.ttsModels.map((model) => model.id);
     const target = selectTtsTarget(sample, this.options.settings, installed);
-    const modelId = installed.includes(target.modelId) ? target.modelId : installed[0];
+
+    // Falling back to a cloning engine would trade one silence for another:
+    // Chatterbox and Qwen3 have no voice of their own, and asked to speak with
+    // nothing to imitate they refuse the request. Prefer an engine that ships
+    // presets, and only settle for a cloning one when there is nothing else.
+    const fallbackId =
+      readiness.ttsModels.find((model) => model.role === 'text-to-speech' && (model.profileIds?.length ?? 0) > 0)?.id ??
+      installed[0];
+
+    const modelId = installed.includes(target.modelId) ? target.modelId : fallbackId;
     const profileId = modelId === target.modelId ? target.profileId : 'speaker-0';
     return {
       providerId: synthesisProviderFor(readiness.ttsModels, modelId),

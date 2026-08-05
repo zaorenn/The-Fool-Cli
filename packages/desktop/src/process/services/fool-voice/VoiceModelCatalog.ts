@@ -1,4 +1,10 @@
-import { AUDIOCPP_POCKET_MODEL_ID, type VoiceModel, type VoiceProfile } from '../../../common/types/foolVoice';
+import {
+  AUDIOCPP_CHATTERBOX_MODEL_ID,
+  AUDIOCPP_QWEN3_MODEL_ID,
+  AUDIOCPP_POCKET_MODEL_ID,
+  type VoiceModel,
+  type VoiceProfile,
+} from '../../../common/types/foolVoice';
 import { AUDIOCPP_MODEL_SPECS, getAudioCppModelSpec } from './audiocpp/audioCppEngineSpecs';
 
 const RELEASE_BASE = 'https://github.com/k2-fsa/sherpa-onnx/releases/download';
@@ -215,6 +221,42 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
     paramSpecs: getAudioCppModelSpec(AUDIOCPP_POCKET_MODEL_ID)?.params,
   },
   {
+    id: AUDIOCPP_CHATTERBOX_MODEL_ID,
+    providerId: 'local-audiocpp',
+    // The measurement belongs in the name. On the CPU build this app ships it
+    // renders one sentence in about forty seconds — roughly a hundred times
+    // Pocket — so it is a voice to *make* something with, not one to hold a
+    // conversation in, and the picker should say so before the download starts.
+    displayName: 'Chatterbox (Voice cloning + emotion, slow)',
+    languages: getAudioCppModelSpec(AUDIOCPP_CHATTERBOX_MODEL_ID)?.languages ?? ['en'],
+    role: 'text-to-speech',
+    distribution: 'managed',
+    state: { status: 'not-installed' },
+    downloadBytes: null,
+    installedBytes: null,
+    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
+    profileIds: [],
+    requiresClonedVoice: true,
+    paramSpecs: getAudioCppModelSpec(AUDIOCPP_CHATTERBOX_MODEL_ID)?.params,
+  },
+  {
+    id: AUDIOCPP_QWEN3_MODEL_ID,
+    providerId: 'local-audiocpp',
+    // The only voice in this app that takes a direction in words rather than a
+    // number, and the only one with a cast in four languages. Slow, like the
+    // one above it, and named so that is known before the download starts.
+    displayName: 'Qwen3 TTS (Directable voices, slow)',
+    languages: getAudioCppModelSpec(AUDIOCPP_QWEN3_MODEL_ID)?.languages ?? ['en'],
+    role: 'text-to-speech',
+    distribution: 'managed',
+    state: { status: 'not-installed' },
+    downloadBytes: null,
+    installedBytes: null,
+    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
+    profileIds: (getAudioCppModelSpec(AUDIOCPP_QWEN3_MODEL_ID)?.presetSpeakers ?? []).map((speaker) => speaker.id),
+    paramSpecs: getAudioCppModelSpec(AUDIOCPP_QWEN3_MODEL_ID)?.params,
+  },
+  {
     id: 'stt-phrase-v1',
     providerId: 'transcript-wake-word',
     displayName: 'Transcript Wake Word Phrase Matcher',
@@ -233,6 +275,21 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
  * stored preference survives catalog reordering.
  */
 export const FOOL_VOICE_PRESET_PROFILES: readonly VoiceProfile[] = [
+  ...(getAudioCppModelSpec(AUDIOCPP_QWEN3_MODEL_ID)?.presetSpeakers ?? []).map(
+    (speaker): VoiceProfile => ({
+      id: speaker.id,
+      providerId: 'local-audiocpp',
+      modelId: AUDIOCPP_QWEN3_MODEL_ID,
+      kind: 'preset',
+      state: 'ready',
+      displayName: speaker.displayName,
+      languages: speaker.languages,
+      // Addressed by name rather than by index — the request carries `Ryan`,
+      // not a number — so this is a placeholder the audio.cpp path never reads.
+      speakerId: 0,
+      deletable: false,
+    })
+  ),
   ...PIPER_LIBRITTS_VOICES.map(
     (voice): VoiceProfile => ({
       id: voice.id,
@@ -587,6 +644,39 @@ export const AUDIOCPP_CATALOG_ENTRIES: Record<string, AudioCppCatalogEntry> = {
     // roughly 150 MB of voices the picker already has better ones for.
     expectedFiles: ['pocket-tts-english-q8_0.gguf'],
     archiveBytes: 127856704,
+  },
+  // Sizes and checksums below are the LFS objects' own, read from the Hugging
+  // Face API rather than estimated — a two-gigabyte download with a wrong total
+  // is a progress bar that stalls at 103%, and a wrong checksum is a download
+  // that always fails validation.
+  [AUDIOCPP_CHATTERBOX_MODEL_ID]: {
+    modelId: AUDIOCPP_CHATTERBOX_MODEL_ID,
+    engineId: AUDIOCPP_ENGINE.engineId,
+    files: [
+      {
+        url: `${HUGGINGFACE_GGUF}/Chatterbox-GGUF/chatterbox-q8_0.gguf`,
+        sha256: 'd586dd1aa59613cab8046176fb7ca5ba191c02a9b10ffa5b0d892ed22b470656',
+        bytes: 2088393668,
+        destination: 'chatterbox-q8_0.gguf',
+      },
+    ],
+    expectedFiles: ['chatterbox-q8_0.gguf'],
+    archiveBytes: 2088393668,
+  },
+  [AUDIOCPP_QWEN3_MODEL_ID]: {
+    modelId: AUDIOCPP_QWEN3_MODEL_ID,
+    engineId: AUDIOCPP_ENGINE.engineId,
+    files: [
+      {
+        url: `${HUGGINGFACE_GGUF}/Qwen3-TTS-12Hz-1.7B-CustomVoice-GGUF/qwen3-tts-12hz-1.7b-customvoice-q8_0.gguf`,
+        // Measured from the file this app downloaded, not copied off a page.
+        sha256: '3cfaac8e9f13554f6daea3c5e0c53fede71ef5500cbaae7445e5fc3a5bb12e72',
+        bytes: 2817044064,
+        destination: 'qwen3-tts-12hz-1.7b-customvoice-q8_0.gguf',
+      },
+    ],
+    expectedFiles: ['qwen3-tts-12hz-1.7b-customvoice-q8_0.gguf'],
+    archiveBytes: 2817044064,
   },
 };
 

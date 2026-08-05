@@ -5,11 +5,12 @@
  */
 
 import React, { useMemo } from 'react';
-import { Alert, Button, Tag, Typography } from '@arco-design/web-react';
+import { Alert, Button, Tabs, Tag, Typography } from '@arco-design/web-react';
 import { Check, CloseOne, Link, Magic, Microphone, PauseOne, Voice } from '@icon-park/react';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import { useFoolVoiceSettings } from '@renderer/hooks/voice/useFoolVoiceSettings';
+import TextToSpeechSection from '@renderer/components/settings/SettingsModal/contents/voice/tts/TextToSpeechSection';
 import ConversationSettings from './ConversationSettings';
 import { useRealtimeConversation } from './useRealtimeConversation';
 import styles from './VoiceConversationPage.module.css';
@@ -114,7 +115,21 @@ const VoiceConversationPage: React.FC = () => {
 
           <aside className='flex min-h-0 flex-col rounded-18px border border-border-2 bg-bg-2/82 p-16px shadow-sm backdrop-blur-xl max-[920px]:mb-24px'>
             {!active ? (
-              <ConversationSettings settings={settings} disabled={false} onChange={update} />
+              // Two tabs rather than one long column: who is being talked to is
+              // a different decision from what they sound like, and the second
+              // is the one with a drop target in it. The voice tab is the same
+              // component Settings shows, so a clone made here is the clone
+              // there — not a second copy of the same surface.
+              <Tabs defaultActiveTab='conversation' size='small' className={styles.settingsTabs}>
+                <Tabs.TabPane key='conversation' title={t('settings.voice.conversation')}>
+                  <ConversationSettings settings={settings} disabled={false} onChange={update} />
+                </Tabs.TabPane>
+                <Tabs.TabPane key='voice' title={t('settings.voice.textToSpeech')}>
+                  <div className='max-h-460px overflow-y-auto pr-4px'>
+                    <TextToSpeechSection settings={settings} onChange={update} />
+                  </div>
+                </Tabs.TabPane>
+              </Tabs>
             ) : (
               <>
                 <div className='mb-14px flex items-center justify-between'>

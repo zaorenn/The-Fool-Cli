@@ -181,3 +181,18 @@
     animation-iteration-count: 1;
   }
 }
+
+/*
+ * The settings panel's tab strip.
+ *
+ * Arco's default tab header carries a bottom border and its own padding, both
+ * of which read as a seam inside a card that already has a border of its own.
+ */
+.settingsTabs :global(.arco-tabs-header-nav) {
+  border-bottom: none;
+  margin-bottom: 4px;
+}
+
+.settingsTabs :global(.arco-tabs-content) {
+  padding-top: 0;
+}

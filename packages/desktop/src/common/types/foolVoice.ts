@@ -473,6 +473,8 @@ export const CLONING_MODEL_ID = 'tts-pocket-int8-2026-01-26';
  * was unreachable from inside the app.
  */
 export const AUDIOCPP_POCKET_MODEL_ID = 'tts-audiocpp-pocket';
+export const AUDIOCPP_CHATTERBOX_MODEL_ID = 'tts-audiocpp-chatterbox';
+export const AUDIOCPP_QWEN3_MODEL_ID = 'tts-audiocpp-qwen3-customvoice';
 
 /**
  * Every engine that can speak in a voice it was not trained on.
@@ -484,6 +486,7 @@ export const AUDIOCPP_POCKET_MODEL_ID = 'tts-audiocpp-pocket';
 export const CLONING_ENGINES: readonly { modelId: string; providerId: LocalVoiceProviderId }[] = [
   { modelId: CLONING_MODEL_ID, providerId: 'local-sherpa' },
   { modelId: AUDIOCPP_POCKET_MODEL_ID, providerId: 'local-audiocpp' },
+  { modelId: AUDIOCPP_CHATTERBOX_MODEL_ID, providerId: 'local-audiocpp' },
 ];
 
 export const CLONING_MODEL_IDS: readonly string[] = CLONING_ENGINES.map((engine) => engine.modelId);

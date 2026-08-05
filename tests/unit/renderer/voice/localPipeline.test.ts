@@ -308,6 +308,46 @@ describe('LocalVoicePipeline', () => {
     expect(events.at(-1)).toEqual({ kind: 'phase', phase: 'listening' });
   });
 
+  it('falls back to a voice that can speak, not to a mute cloning engine', async () => {
+    // Chatterbox and Qwen3 have no voice of their own: asked to speak with
+    // nothing to imitate they refuse, so falling back to one is silence.
+    const preset: VoiceModel = { ...TTS_MODEL, id: 'tts-piper-en-libritts-r', profileIds: ['libritts-p0'] };
+    catalogInvoke.mockResolvedValue(okCatalog([STT_MODEL, TTS_MODEL, preset]));
+    transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'Merhaba.' } });
+    synthesizeInvoke.mockResolvedValue({
+      ok: true,
+      data: { audio: { dataBase64: pcm16ToWavBase64(pcmOf([1]), 24000), sampleRateHz: 24000 } },
+    });
+
+    const events: NormalizedRealtimeEvent[] = [];
+    const fetchMock = vi.fn(async (url: string) =>
+      String(url).endsWith('/models')
+        ? ({ ok: true, json: async () => ({ data: [{ id: 'm' }] }) } as unknown as Response)
+        : ({ ok: true, body: sseBody(['Selam.']) } as unknown as Response)
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const settings = settingsWith();
+    // The configured voice was uninstalled since it was chosen.
+    settings.tts.modelId = 'tts-a-voice-that-left';
+    const pipeline = new LocalVoicePipeline({
+      settings,
+      interfaceLanguage: 'tr',
+      onEvent: (event) => events.push(event),
+    });
+    await pipeline.connect();
+
+    pipeline.pushAudio(toBase64(pcmOf([1])), 'speech-started');
+    pipeline.pushAudio('', 'utterance-ended');
+    await settle();
+
+    expect(synthesizeInvoke.mock.calls[0][0].payload).toMatchObject({
+      modelId: 'tts-piper-en-libritts-r',
+      providerId: 'local-audiocpp',
+      profileId: 'speaker-0',
+    });
+  });
+
   it('keeps the model’s private thinking out of what it says', async () => {
     readyCatalog();
     transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'Merhaba.' } });

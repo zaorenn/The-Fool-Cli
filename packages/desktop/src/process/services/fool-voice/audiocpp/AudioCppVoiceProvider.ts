@@ -9,7 +9,7 @@ import type { VoiceParams, VoiceSynthesizedWav } from '../../../../common/types/
 import { ClonedVoiceStore, parseClonedProfileId } from '../ClonedVoiceStore';
 import { AudioCppClient, type AudioCppSpeechRequest, type AudioCppSpeechResult } from './AudioCppClient';
 import { AudioCppRuntime, type AudioCppRuntimeOptions, type AudioCppServerModel } from './AudioCppRuntime';
-import { AUDIOCPP_MODEL_SPECS, getAudioCppModelSpec, wireParamsFor } from './audioCppEngineSpecs';
+import { AUDIOCPP_MODEL_SPECS, getAudioCppModelSpec, presetSpeakerNameFor, wireParamsFor } from './audioCppEngineSpecs';
 
 /**
  * The `local-audiocpp` provider.
@@ -172,7 +172,11 @@ export class AudioCppVoiceProvider {
     // Both models shipped here refuse a request with no speaker reference, so
     // the refusal is made here rather than paid for as a 500 after a cold model
     // load — which on CPU is tens of seconds spent to be told no.
-    const voiceId = parseClonedProfileId(profileId);
+    // A model with its own cast is addressed by name instead: it has nothing to
+    // imitate, and a request that names nobody is refused with
+    // `500 Qwen3 custom voice prefill requires speaker`.
+    const presetSpeaker = presetSpeakerNameFor(modelId, profileId);
+    const voiceId = presetSpeaker ? null : parseClonedProfileId(profileId);
     const voice = voiceId ? this.clonedVoices().find(voiceId) : null;
     if (spec.requiresVoiceReference && !voice) {
       throw new Error(`${modelId} speaks by cloning and needs a reference recording; profile "${profileId}" has none`);
@@ -187,6 +191,7 @@ export class AudioCppVoiceProvider {
       // Top-level, not an option: the server folds it into the transcript, and a
       // model that reads its language from there never sees an `options.language`.
       language,
+      ...(presetSpeaker ? { voice: presetSpeaker } : {}),
       ...(voice
         ? {
             // The server opens this file itself — there is no multipart branch

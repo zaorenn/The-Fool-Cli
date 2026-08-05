@@ -10,26 +10,103 @@ import {
   defaultAudioCppParams,
   getAudioCppModelSpec,
   isAudioCppModel,
+  presetSpeakerNameFor,
   validateAudioCppParams,
   wireParamsFor,
 } from '@process/services/fool-voice/audiocpp/audioCppEngineSpecs';
-import { AUDIOCPP_POCKET_MODEL_ID } from '@/common/types/foolVoice';
+import {
+  AUDIOCPP_CHATTERBOX_MODEL_ID,
+  AUDIOCPP_POCKET_MODEL_ID,
+  AUDIOCPP_QWEN3_MODEL_ID,
+} from '@/common/types/foolVoice';
 
 const POCKET = AUDIOCPP_POCKET_MODEL_ID;
+const CHATTERBOX = AUDIOCPP_CHATTERBOX_MODEL_ID;
+const QWEN3 = AUDIOCPP_QWEN3_MODEL_ID;
 
 /**
- * One engine, and it is here because it is fast.
+ * Three engines, and which one is here for which reason is the whole point.
  *
- * Chatterbox, IndexTTS2 and MOSS-TTS-Nano were all shipped through this file
- * and all three were withdrawn after being measured on real hardware: roughly
- * forty seconds a sentence for the first two, and between nine and twenty-eight
- * for the third. Pocket does the same sentence in 0.43 s warm, 1.20 s cold.
+ * Pocket is the one a conversation is held in: 0.43 s a sentence warm, 1.20 s
+ * cold. The other two are here to *make* a voice rather than to speak in one,
+ * and they were measured on this hardware before being let back in —
+ * Chatterbox at 39.5 s a sentence, Qwen3 in the same class. Both were withdrawn
+ * once for exactly that, and nothing about the measurement has changed; what
+ * changed is that they are the only engines that take a direction — an
+ * `exaggeration` number, or an `instruct` sentence — and that is what they are
+ * offered for.
+ *
+ * IndexTTS2 stays out. It was measured at 1 m 47 s a sentence here and it takes
+ * no direction, so it is slower than Chatterbox for strictly less.
  */
 describe('audio.cpp model specs', () => {
   it('describes every shipped model and nothing else', () => {
-    expect(AUDIOCPP_MODEL_SPECS.map((spec) => spec.modelId)).toEqual([POCKET]);
+    expect(AUDIOCPP_MODEL_SPECS.map((spec) => spec.modelId)).toEqual([POCKET, CHATTERBOX, QWEN3]);
     expect(isAudioCppModel(POCKET)).toBe(true);
+    expect(isAudioCppModel('tts-audiocpp-indextts2')).toBe(false);
     expect(isAudioCppModel('tts-piper-en-libritts-r')).toBe(false);
+  });
+
+  /**
+   * The session kind is per model and each of these was run before it was
+   * written down: Pocket renders under `tts` and answers `clon` with
+   * `500 PocketTTS only supports VoiceTaskKind::Tts`; Chatterbox renders under
+   * `clon`; and Qwen3, which clones, still refuses anything but `tts`.
+   */
+  it('asks each engine for the session kind its own loader accepts', () => {
+    expect(getAudioCppModelSpec(CHATTERBOX)?.task).toBe('clon');
+    expect(getAudioCppModelSpec(CHATTERBOX)?.family).toBe('chatterbox');
+    // Cloning notwithstanding: `clon` is answered with
+    // `Qwen3 custom voice model only supports the Tts task`.
+    expect(getAudioCppModelSpec(QWEN3)?.task).toBe('tts');
+    expect(getAudioCppModelSpec(QWEN3)?.family).toBe('qwen3_tts');
+  });
+
+  /**
+   * Neither can say anything until the user gives it a voice to imitate, and
+   * only Qwen3 reads the clip's transcript.
+   */
+  it('says which of them needs a clip, and which reads its transcript', () => {
+    expect(getAudioCppModelSpec(CHATTERBOX)?.requiresVoiceReference).toBe(true);
+    expect(getAudioCppModelSpec(CHATTERBOX)?.usesReferenceText).toBe(false);
+    // Qwen3 ships its own cast: there is nothing to imitate, and naming one of
+    // them is what the request carries instead of a recording.
+    expect(getAudioCppModelSpec(QWEN3)?.requiresVoiceReference).toBe(false);
+    expect(getAudioCppModelSpec(QWEN3)?.usesReferenceText).toBe(false);
+    expect(presetSpeakerNameFor(QWEN3, 'qwen3-ryan')).toBe('Ryan');
+    // A cloned voice is not one of the cast, and neither is a made-up id.
+    expect(presetSpeakerNameFor(QWEN3, 'cloned:jarvis')).toBeUndefined();
+    expect(presetSpeakerNameFor(CHATTERBOX, 'qwen3-ryan')).toBeUndefined();
+  });
+
+  /**
+   * The knobs that make these two worth their download.
+   *
+   * `exaggeration` was proved on real audio rather than read off a page: with
+   * the seed pinned, two runs at 0.25 were byte-identical and a run at 2.0 was
+   * not. That test is not optional here — the server accepts an option name it
+   * does not know without complaining and returns default audio, so a
+   * misspelled knob fails silently.
+   */
+  it('carries the one control each engine exists for', () => {
+    const chatterbox = getAudioCppModelSpec(CHATTERBOX)?.params.map((param) => param.name);
+    expect(chatterbox).toContain('exaggeration');
+
+    const qwen3 = getAudioCppModelSpec(QWEN3)?.params.map((param) => param.name);
+    expect(qwen3).toContain('instruct');
+  });
+
+  it('keeps a direction inside its declared bounds', () => {
+    expect(validateAudioCppParams(CHATTERBOX, { exaggeration: 0.5 })).toBeNull();
+    expect(validateAudioCppParams(CHATTERBOX, { exaggeration: 9 })).toEqual({
+      key: 'exaggeration',
+      reason: 'range',
+    });
+    expect(validateAudioCppParams(QWEN3, { instruct: 'Speak slowly, as if telling a secret.' })).toBeNull();
+    expect(validateAudioCppParams(QWEN3, { instruct: 'x'.repeat(400) })).toEqual({
+      key: 'instruct',
+      reason: 'range',
+    });
   });
 
   /**
