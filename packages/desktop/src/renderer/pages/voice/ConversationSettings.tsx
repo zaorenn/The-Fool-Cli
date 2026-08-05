@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo } from 'react';
-import { Input, Select, Typography } from '@arco-design/web-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Input, Link, Select, Tag, Typography } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
+import { ipcBridge } from '@/common';
+import type { IProvider } from '@/common/config/storage';
 import {
   PERSONA_PRESET_IDS,
   REALTIME_PROVIDER_IDS,
@@ -31,6 +33,27 @@ type ConversationSettingsProps = {
   onChange: (change: (previous: FoolVoiceSettings) => FoolVoiceSettings) => void;
 };
 
+/**
+ * Whether the chosen provider can actually open a session, checked up front.
+ *
+ * Without this the answer arrives only after the user presses start and waits
+ * for a socket to fail — which is exactly how "voice chat is broken" gets
+ * reported for what is really an unconfigured API key. Mirrors the main
+ * process's own selection rule: the first enabled provider on a platform that
+ * can carry this kind of session, with a key in it.
+ */
+const findCredential = (providers: readonly IProvider[], providerId: RealtimeProviderId): IProvider | null => {
+  const spec = REALTIME_PROVIDER_SPECS[providerId];
+  if (!spec.requiresCredential) return null;
+  const platforms = new Set(spec.platforms);
+  return (
+    providers.find(
+      (provider) =>
+        provider.enabled !== false && platforms.has(provider.platform) && (provider.api_key ?? '').trim().length > 0
+    ) ?? null
+  );
+};
+
 /** Languages the app itself speaks, plus following whoever is talking. */
 const LANGUAGES = ['auto', 'en', 'tr', 'de', 'fr', 'es', 'pt', 'ru', 'uk', 'ja', 'ko', 'zh', 'fa'] as const;
 
@@ -40,6 +63,29 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
   const spec = REALTIME_PROVIDER_SPECS[realtime.providerId as RealtimeProviderId];
 
   const voiceOptions = useMemo(() => spec.voices.map((voice) => ({ label: voice, value: voice })), [spec.voices]);
+
+  const [providers, setProviders] = useState<IProvider[]>([]);
+  useEffect(() => {
+    let live = true;
+    void ipcBridge.mode.listProviders
+      .invoke()
+      .then((list) => {
+        if (live) setProviders(list ?? []);
+      })
+      .catch(() => {
+        // An unreadable provider list is reported as "not configured" below,
+        // which is the safe reading: it is certainly not usable.
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  const credential = useMemo(
+    () => findCredential(providers, realtime.providerId as RealtimeProviderId),
+    [providers, realtime.providerId]
+  );
+  const ready = !spec.requiresCredential || credential !== null;
 
   const patch = (change: Partial<FoolVoiceSettings['realtime']>): void => {
     onChange((previous) => ({ ...previous, realtime: { ...previous.realtime, ...change } }));
@@ -65,6 +111,22 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
             value: id,
           }))}
         />
+        {ready ? (
+          <Tag size='small' color='green'>
+            {credential
+              ? t('settings.voice.conversationProviderReady', { provider: credential.name })
+              : t('settings.voice.conversationProviderLocal')}
+          </Tag>
+        ) : (
+          <div className='flex flex-wrap items-center gap-6px'>
+            <Tag size='small' color='orange'>
+              {t('settings.voice.conversationProviderMissing')}
+            </Tag>
+            <Link className='!text-12px' href='#/settings/model'>
+              {t('settings.voice.conversationProviderAddKey')}
+            </Link>
+          </div>
+        )}
       </label>
 
       <div className='grid grid-cols-2 gap-10px'>

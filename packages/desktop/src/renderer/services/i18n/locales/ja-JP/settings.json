@@ -1497,7 +1497,11 @@
     "customFillersHint": "特有のくせがあれば、除きたい語を追加できます。それぞれ Enter を押してください。",
     "customFillersPlaceholder": "語を入力して Enter",
     "conversationStandbyOn": "待機中。ウェイクワードで再開します。",
-    "conversationStandbyOff": "戻りました。続きからどうぞ。"
+    "conversationStandbyOff": "戻りました。続きからどうぞ。",
+    "conversationProviderReady": "準備完了 · {{provider}}",
+    "conversationProviderLocal": "このパソコンで動作",
+    "conversationProviderMissing": "このプロバイダーのAPIキーがありません",
+    "conversationProviderAddKey": "モデルサービスで追加"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",

@@ -1495,7 +1495,11 @@
     "customFillersHint": "Дополнительные слова для удаления, если есть своя привычка. Нажимайте Enter после каждого.",
     "customFillersPlaceholder": "Введите слово и нажмите Enter",
     "conversationStandbyOn": "Ожидание. Скажите ключевую фразу, чтобы продолжить.",
-    "conversationStandbyOff": "Вернулся. Продолжаем с того же места."
+    "conversationStandbyOff": "Вернулся. Продолжаем с того же места.",
+    "conversationProviderReady": "Готово · {{provider}}",
+    "conversationProviderLocal": "Работает на этом компьютере",
+    "conversationProviderMissing": "Нет API-ключа для этого провайдера",
+    "conversationProviderAddKey": "Добавить в Сервисах моделей"
   },
   "themeCustomizer": {
     "title": "Настроить тему",

@@ -1495,7 +1495,11 @@
     "customFillersHint": "Mots supplémentaires à retirer, si vous avez une habitude. Appuyez sur Entrée après chacun.",
     "customFillersPlaceholder": "Saisissez un mot et appuyez sur Entrée",
     "conversationStandbyOn": "En attente. Dites le mot de réveil pour continuer.",
-    "conversationStandbyOff": "De retour. On reprend où on s'est arrêté."
+    "conversationStandbyOff": "De retour. On reprend où on s'est arrêté.",
+    "conversationProviderReady": "Prêt · {{provider}}",
+    "conversationProviderLocal": "S'exécute sur cet ordinateur",
+    "conversationProviderMissing": "Aucune clé API pour ce fournisseur",
+    "conversationProviderAddKey": "En ajouter une dans Services de modèles"
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

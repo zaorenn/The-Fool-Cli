@@ -1495,7 +1495,11 @@
     "customFillersHint": "Size özgü bir alışkanlık varsa atılacak ekstra kelimeler. Her birinden sonra Enter'a basın.",
     "customFillersPlaceholder": "Kelime yazıp Enter'a basın",
     "conversationStandbyOn": "Beklemede. Devam etmek için uyandırma sözcüğünü söyleyin.",
-    "conversationStandbyOff": "Döndü. Kaldığımız yerden devam."
+    "conversationStandbyOff": "Döndü. Kaldığımız yerden devam.",
+    "conversationProviderReady": "Hazır · {{provider}}",
+    "conversationProviderLocal": "Bu bilgisayarda çalışır",
+    "conversationProviderMissing": "Bu sağlayıcı için API anahtarı yok",
+    "conversationProviderAddKey": "Model Servisleri'nden ekle"
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

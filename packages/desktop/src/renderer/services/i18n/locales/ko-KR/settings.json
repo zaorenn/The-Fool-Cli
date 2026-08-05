@@ -1497,7 +1497,11 @@
     "customFillersHint": "나만의 습관이 있다면 제거할 단어를 추가하세요. 각각 Enter를 누르세요.",
     "customFillersPlaceholder": "단어를 입력하고 Enter",
     "conversationStandbyOn": "대기 중. 깨우기 말을 하면 이어갑니다.",
-    "conversationStandbyOff": "돌아왔어요. 멈춘 곳부터 이어갑니다."
+    "conversationStandbyOff": "돌아왔어요. 멈춘 곳부터 이어갑니다.",
+    "conversationProviderReady": "준비됨 · {{provider}}",
+    "conversationProviderLocal": "이 컴퓨터에서 실행",
+    "conversationProviderMissing": "이 공급자의 API 키가 없습니다",
+    "conversationProviderAddKey": "모델 서비스에서 추가"
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",

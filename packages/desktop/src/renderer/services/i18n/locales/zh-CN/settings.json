@@ -1496,7 +1496,11 @@
     "customFillersHint": "若你有特定习惯，可添加需要去除的词。每个后按回车。",
     "customFillersPlaceholder": "输入词语后按回车",
     "conversationStandbyOn": "待命中。说出唤醒词继续。",
-    "conversationStandbyOff": "已回来，接着刚才继续。"
+    "conversationStandbyOff": "已回来，接着刚才继续。",
+    "conversationProviderReady": "就绪 · {{provider}}",
+    "conversationProviderLocal": "在本机运行",
+    "conversationProviderMissing": "该提供商没有 API 密钥",
+    "conversationProviderAddKey": "在模型服务中添加"
   },
   "themeCustomizer": {
     "title": "自定义主题",

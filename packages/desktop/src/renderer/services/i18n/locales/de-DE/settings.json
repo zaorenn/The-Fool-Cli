@@ -1495,7 +1495,11 @@
     "customFillersHint": "Weitere Wörter zum Entfernen, falls du eine eigene Angewohnheit hast. Nach jedem Enter drücken.",
     "customFillersPlaceholder": "Wort eingeben und Enter drücken",
     "conversationStandbyOn": "Wartet. Sag das Weckwort, um fortzufahren.",
-    "conversationStandbyOff": "Zurück. Weiter, wo wir aufgehört haben."
+    "conversationStandbyOff": "Zurück. Weiter, wo wir aufgehört haben.",
+    "conversationProviderReady": "Bereit · {{provider}}",
+    "conversationProviderLocal": "Läuft auf diesem Computer",
+    "conversationProviderMissing": "Kein API-Schlüssel für diesen Anbieter",
+    "conversationProviderAddKey": "In Modelldiensten hinzufügen"
   },
   "themeCustomizer": {
     "title": "Design anpassen",

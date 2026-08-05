@@ -59,6 +59,14 @@ export class RealtimeVoiceClient {
   private readonly onEvent: (event: NormalizedRealtimeEvent) => void;
   private socket: RealtimeSocket | null = null;
   private ready = false;
+  /**
+   * Abandons a connection still being opened.
+   *
+   * Without this, stopping while it connects leaves the caller waiting on the
+   * ready timeout — ten seconds of a page that says "connecting" after the user
+   * pressed stop.
+   */
+  private abandon: ((error: Error) => void) | null = null;
   /** Set once the caller has been told; a later close is news, not a failure. */
   private settled = false;
 
@@ -96,6 +104,7 @@ export class RealtimeVoiceClient {
       const finish = (error?: Error): void => {
         if (this.settled) return;
         this.settled = true;
+        this.abandon = null;
         clearTimeout(timer);
         if (error) reject(error);
         else resolve();
@@ -106,6 +115,8 @@ export class RealtimeVoiceClient {
         // load, and tearing it down here would turn a slow start into a failure.
         finish(new Error('REALTIME_SESSION_TIMEOUT'));
       }, READY_TIMEOUT_MS);
+
+      this.abandon = finish;
 
       const socket = this.createSocket(url, this.adapter.subprotocols(this.credential));
       this.socket = socket;
@@ -187,6 +198,11 @@ export class RealtimeVoiceClient {
   }
 
   disconnect(): void {
+    // Settled before the socket is touched, so a caller awaiting `connect` is
+    // released now rather than when the ready timer eventually fires.
+    this.abandon?.(new Error('REALTIME_CONNECTION_CLOSED'));
+    this.abandon = null;
+
     const socket = this.socket;
     this.socket = null;
     this.ready = false;

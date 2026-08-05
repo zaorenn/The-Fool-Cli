@@ -1495,7 +1495,11 @@
     "customFillersHint": "Extra words to drop, if you have a habit of your own. Press Enter after each.",
     "customFillersPlaceholder": "Add a word and press Enter",
     "conversationStandbyOn": "Waiting. Say the wake phrase to carry on.",
-    "conversationStandbyOff": "Back. Carrying on where we stopped."
+    "conversationStandbyOff": "Back. Carrying on where we stopped.",
+    "conversationProviderReady": "Ready · {{provider}}",
+    "conversationProviderLocal": "Runs on this computer",
+    "conversationProviderMissing": "No API key for this provider",
+    "conversationProviderAddKey": "Add one in Model Services"
   },
   "themeCustomizer": {
     "title": "Customize theme",

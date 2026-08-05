@@ -1497,7 +1497,11 @@
     "customFillersHint": "若你有特定習慣，可新增需要去除的詞。每個後按 Enter。",
     "customFillersPlaceholder": "輸入詞語後按 Enter",
     "conversationStandbyOn": "待命中。說出喚醒詞繼續。",
-    "conversationStandbyOff": "已回來，接著剛才繼續。"
+    "conversationStandbyOff": "已回來，接著剛才繼續。",
+    "conversationProviderReady": "就緒 · {{provider}}",
+    "conversationProviderLocal": "在本機執行",
+    "conversationProviderMissing": "該提供者沒有 API 金鑰",
+    "conversationProviderAddKey": "在模型服務中新增"
   },
   "themeCustomizer": {
     "title": "自訂主題",

@@ -1495,7 +1495,11 @@
     "customFillersHint": "اگر عادت خاصی دارید، کلمات بیشتری برای حذف اضافه کنید. پس از هر کدام Enter بزنید.",
     "customFillersPlaceholder": "کلمه‌ای بنویسید و Enter بزنید",
     "conversationStandbyOn": "در انتظار. برای ادامه، عبارت بیدارباش را بگویید.",
-    "conversationStandbyOff": "برگشتم. از همانجا ادامه می‌دهیم."
+    "conversationStandbyOff": "برگشتم. از همانجا ادامه می‌دهیم.",
+    "conversationProviderReady": "آماده · {{provider}}",
+    "conversationProviderLocal": "روی این رایانه اجرا می‌شود",
+    "conversationProviderMissing": "برای این ارائه‌دهنده کلید API نیست",
+    "conversationProviderAddKey": "در سرویس‌های مدل اضافه کنید"
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",

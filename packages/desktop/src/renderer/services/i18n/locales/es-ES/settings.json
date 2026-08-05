@@ -1495,7 +1495,11 @@
     "customFillersHint": "Palabras adicionales que quitar, si tienes una costumbre propia. Pulsa Intro tras cada una.",
     "customFillersPlaceholder": "Escribe una palabra y pulsa Intro",
     "conversationStandbyOn": "En espera. Di la palabra de activación para continuar.",
-    "conversationStandbyOff": "De vuelta. Seguimos donde lo dejamos."
+    "conversationStandbyOff": "De vuelta. Seguimos donde lo dejamos.",
+    "conversationProviderReady": "Listo · {{provider}}",
+    "conversationProviderLocal": "Se ejecuta en este equipo",
+    "conversationProviderMissing": "Sin clave API para este proveedor",
+    "conversationProviderAddKey": "Añadir una en Servicios de modelos"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",
