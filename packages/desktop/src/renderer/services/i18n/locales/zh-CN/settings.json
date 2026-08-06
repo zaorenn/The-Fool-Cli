@@ -1406,7 +1406,19 @@
     "conversationAgentActivity": "Agent activity",
     "conversationActivityEmpty": "Real tool calls and delegated work will appear here as they happen.",
     "conversationActionRunning": "Working on it…",
-    "conversationThemeChanged": "Theme tone changed to {{tone}}.",
+    "conversationThemeSet": "已更改{{target}}",
+    "conversationThemeReset": "已恢复应用本身的配色",
+    "conversationThemeSaved": "已保存为“{{name}}”",
+    "conversationThemeUsed": "已重新应用“{{name}}”",
+    "conversationThemeBadColor": "这不是我能应用的颜色。",
+    "conversationThemeNoName": "保存需要一个名字。",
+    "conversationThemeUnknownName": "没有名为“{{name}}”的配色。",
+    "conversationThemeTarget": {
+      "primary": "强调色",
+      "background": "背景",
+      "surface": "表面",
+      "text": "文字"
+    },
     "conversationDelegated": "正在你的电脑上执行…",
     "conversationStillWorking": "还在处理中。",
     "conversationOpened": "正在打开 {{url}}",
@@ -1474,7 +1486,6 @@
     "conversationLocalUnreachable": "没有本地服务器响应",
     "conversationLocalEndpoint": "本地服务器",
     "conversationLocalVoiceHint": "音色、情绪与声音克隆在「设置 → 语音」中。",
-    "conversationToneUnknown": "该颜色不属于应用的色调。",
     "conversationActionUnsupported": "语音无法完成这个操作。",
     "conversationError": {
       "REALTIME_NO_PROVIDER": "尚未为该提供商配置 API 密钥。请在设置 → 模型服务中添加后重试。",

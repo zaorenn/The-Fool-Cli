@@ -1405,7 +1405,19 @@
     "conversationAgentActivity": "Agent activity",
     "conversationActivityEmpty": "Real tool calls and delegated work will appear here as they happen.",
     "conversationActionRunning": "Working on it…",
-    "conversationThemeChanged": "Theme tone changed to {{tone}}.",
+    "conversationThemeSet": "{{target}} cambiado",
+    "conversationThemeReset": "De vuelta a los colores de la app",
+    "conversationThemeSaved": "Guardado como «{{name}}»",
+    "conversationThemeUsed": "«{{name}}» aplicado de nuevo",
+    "conversationThemeBadColor": "Ese no es un color que pueda aplicar.",
+    "conversationThemeNoName": "Necesita un nombre para guardarse.",
+    "conversationThemeUnknownName": "No hay nada guardado como «{{name}}».",
+    "conversationThemeTarget": {
+      "primary": "Acento",
+      "background": "Fondo",
+      "surface": "Superficie",
+      "text": "Texto"
+    },
     "conversationDelegated": "Haciéndolo en tu ordenador…",
     "conversationStillWorking": "Sigo en ello.",
     "conversationOpened": "Abriendo {{url}}",
@@ -1473,7 +1485,6 @@
     "conversationLocalUnreachable": "Ningún servidor local responde",
     "conversationLocalEndpoint": "Servidor local",
     "conversationLocalVoiceHint": "La voz, su emoción y la clonación están en Ajustes → Voz.",
-    "conversationToneUnknown": "Ese color no es uno de los tonos de la aplicación.",
     "conversationActionUnsupported": "La voz no puede hacer eso.",
     "conversationError": {
       "REALTIME_NO_PROVIDER": "Aún no hay clave API para este proveedor. Añádela en Ajustes → Servicios de modelos y vuelve a empezar.",

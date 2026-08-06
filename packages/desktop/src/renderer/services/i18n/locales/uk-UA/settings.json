@@ -1406,7 +1406,19 @@
     "conversationAgentActivity": "Agent activity",
     "conversationActivityEmpty": "Real tool calls and delegated work will appear here as they happen.",
     "conversationActionRunning": "Working on it…",
-    "conversationThemeChanged": "Theme tone changed to {{tone}}.",
+    "conversationThemeSet": "{{target}} змінено",
+    "conversationThemeReset": "Повернув кольори застосунку",
+    "conversationThemeSaved": "Збережено як «{{name}}»",
+    "conversationThemeUsed": "«{{name}}» знову застосовано",
+    "conversationThemeBadColor": "Це не колір, який я можу застосувати.",
+    "conversationThemeNoName": "Щоб зберегти, потрібна назва.",
+    "conversationThemeUnknownName": "Під назвою «{{name}}» нічого немає.",
+    "conversationThemeTarget": {
+      "primary": "Акцент",
+      "background": "Тло",
+      "surface": "Поверхня",
+      "text": "Текст"
+    },
     "conversationDelegated": "Виконую на вашому комп’ютері…",
     "conversationStillWorking": "Ще працюю.",
     "conversationOpened": "Відкриваю {{url}}",
@@ -1474,7 +1486,6 @@
     "conversationLocalUnreachable": "Локальний сервер не відповідає",
     "conversationLocalEndpoint": "Локальний сервер",
     "conversationLocalVoiceHint": "Голос, його емоція та клонування — у «Налаштування → Голос».",
-    "conversationToneUnknown": "Цей колір не належить до палітри застосунку.",
     "conversationActionUnsupported": "Голос цього не вміє.",
     "conversationError": {
       "REALTIME_NO_PROVIDER": "Для цього провайдера ще немає API-ключа. Додайте його в Налаштуваннях → Сервіси моделей і почніть знову.",

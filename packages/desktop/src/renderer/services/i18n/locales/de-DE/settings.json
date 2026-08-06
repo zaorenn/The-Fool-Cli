@@ -1405,7 +1405,19 @@
     "conversationAgentActivity": "Agent activity",
     "conversationActivityEmpty": "Real tool calls and delegated work will appear here as they happen.",
     "conversationActionRunning": "Working on it…",
-    "conversationThemeChanged": "Theme tone changed to {{tone}}.",
+    "conversationThemeSet": "{{target}} geändert",
+    "conversationThemeReset": "Zurück zu den App-Farben",
+    "conversationThemeSaved": "Als „{{name}}“ gespeichert",
+    "conversationThemeUsed": "„{{name}}“ wieder aktiv",
+    "conversationThemeBadColor": "Das ist keine Farbe, die ich setzen kann.",
+    "conversationThemeNoName": "Zum Speichern braucht es einen Namen.",
+    "conversationThemeUnknownName": "Unter „{{name}}“ ist nichts gespeichert.",
+    "conversationThemeTarget": {
+      "primary": "Akzent",
+      "background": "Hintergrund",
+      "surface": "Fläche",
+      "text": "Text"
+    },
     "conversationDelegated": "Erledige das auf deinem Rechner…",
     "conversationStillWorking": "Ich bin noch dran.",
     "conversationOpened": "{{url}} wird geöffnet",
@@ -1473,7 +1485,6 @@
     "conversationLocalUnreachable": "Kein lokaler Server antwortet",
     "conversationLocalEndpoint": "Lokaler Server",
     "conversationLocalVoiceHint": "Stimme, Emotion und Stimmklonen findest du unter Einstellungen → Sprache.",
-    "conversationToneUnknown": "Diese Farbe gehört nicht zu den Farbtönen der App.",
     "conversationActionUnsupported": "Das kann die Stimme nicht tun.",
     "conversationError": {
       "REALTIME_NO_PROVIDER": "Für diesen Anbieter gibt es noch keinen API-Schlüssel. Füge ihn unter Einstellungen → Modelldienste hinzu und starte erneut.",

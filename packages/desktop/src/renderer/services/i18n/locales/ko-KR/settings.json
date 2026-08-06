@@ -1407,7 +1407,19 @@
     "conversationAgentActivity": "Agent activity",
     "conversationActivityEmpty": "Real tool calls and delegated work will appear here as they happen.",
     "conversationActionRunning": "Working on it…",
-    "conversationThemeChanged": "Theme tone changed to {{tone}}.",
+    "conversationThemeSet": "{{target}} 변경됨",
+    "conversationThemeReset": "앱 기본 색상으로 되돌림",
+    "conversationThemeSaved": "“{{name}}”(으)로 저장됨",
+    "conversationThemeUsed": "“{{name}}” 다시 적용됨",
+    "conversationThemeBadColor": "적용할 수 있는 색이 아닙니다.",
+    "conversationThemeNoName": "저장하려면 이름이 필요합니다.",
+    "conversationThemeUnknownName": "“{{name}}”(으)로 저장된 것이 없습니다.",
+    "conversationThemeTarget": {
+      "primary": "강조",
+      "background": "배경",
+      "surface": "표면",
+      "text": "텍스트"
+    },
     "conversationDelegated": "컴퓨터에서 처리하고 있어요…",
     "conversationStillWorking": "아직 진행 중입니다.",
     "conversationOpened": "{{url}} 여는 중",
@@ -1475,7 +1487,6 @@
     "conversationLocalUnreachable": "응답하는 로컬 서버가 없습니다",
     "conversationLocalEndpoint": "로컬 서버",
     "conversationLocalVoiceHint": "목소리와 감정, 음성 복제는 설정 → 음성에 있습니다.",
-    "conversationToneUnknown": "그 색은 앱의 색조가 아닙니다.",
     "conversationActionUnsupported": "음성으로는 할 수 없는 일입니다.",
     "conversationError": {
       "REALTIME_NO_PROVIDER": "이 공급자의 API 키가 아직 없습니다. 설정 → 모델 서비스에서 추가한 뒤 다시 시작하세요.",

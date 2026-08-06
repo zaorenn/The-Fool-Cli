@@ -1407,7 +1407,19 @@
     "conversationAgentActivity": "Agent activity",
     "conversationActivityEmpty": "Real tool calls and delegated work will appear here as they happen.",
     "conversationActionRunning": "Working on it…",
-    "conversationThemeChanged": "Theme tone changed to {{tone}}.",
+    "conversationThemeSet": "{{target}}を変更しました",
+    "conversationThemeReset": "アプリ本来の色に戻しました",
+    "conversationThemeSaved": "「{{name}}」として保存しました",
+    "conversationThemeUsed": "「{{name}}」を適用しました",
+    "conversationThemeBadColor": "これは適用できる色ではありません。",
+    "conversationThemeNoName": "保存するには名前が必要です。",
+    "conversationThemeUnknownName": "「{{name}}」で保存されたものはありません。",
+    "conversationThemeTarget": {
+      "primary": "アクセント",
+      "background": "背景",
+      "surface": "面",
+      "text": "文字"
+    },
     "conversationDelegated": "あなたのパソコンで実行中…",
     "conversationStillWorking": "まだ作業中です。",
     "conversationOpened": "{{url}} を開いています",
@@ -1475,7 +1487,6 @@
     "conversationLocalUnreachable": "応答するローカルサーバーがありません",
     "conversationLocalEndpoint": "ローカルサーバー",
     "conversationLocalVoiceHint": "声、その感情、声のクローンは「設定 → 音声」にあります。",
-    "conversationToneUnknown": "その色はアプリの色調にありません。",
     "conversationActionUnsupported": "それは音声ではできません。",
     "conversationError": {
       "REALTIME_NO_PROVIDER": "このプロバイダーのAPIキーがまだありません。設定 → モデルサービスで追加してやり直してください。",

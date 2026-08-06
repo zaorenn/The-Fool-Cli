@@ -1,6 +1,6 @@
 import type { ICssTheme } from '@/common/config/storage';
 import type { Theme } from '@/common/theme/types';
-import type { ThemeOverrides } from '@/common/config/themeOverrides';
+import type { ThemeOverrides, ThemePalettes } from '@/common/config/themeOverrides';
 
 export type ConfigKeyMap = {
   language: string;
@@ -11,6 +11,8 @@ export type ConfigKeyMap = {
   'ui.fontSize.markdown': number | undefined;
   'ui.fontSize.code': number | undefined;
   'ui.themeOverrides': ThemeOverrides | undefined;
+  /** Palettes the user asked to keep, recalled out loud by their own name. */
+  'ui.themePalettes': ThemePalettes | undefined;
   /** The chat that spoken turns go to, until the user asks for a new one. */
   'voice.boundConversationId': string | undefined;
   /**

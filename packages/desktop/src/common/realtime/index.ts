@@ -112,12 +112,30 @@ export const REALTIME_PROVIDER_IDS: readonly VoiceConversationProviderId[] = [
  */
 export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
-    name: 'app_change_theme',
-    description: "Change the application's accent colour. Use only when the user asks about how the app looks.",
+    name: 'app_theme',
+    description:
+      "Change how the app looks, keep a set of colours under a name, or put a kept one back on. Colours are yours to choose: the user describes what they want — warmer, deeper, like the sea, the colour of an old terminal — and you turn that into a hex value yourself. Only touch what they asked about; changing the background when they said 'accent' is a bigger change than they wanted. Say what you changed in a few words, and never read a hex code out loud.",
     parameters: {
       type: 'object',
-      properties: { tone: { type: 'string', enum: ['blue', 'violet', 'teal', 'warm', 'neutral'] } },
-      required: ['tone'],
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['set', 'save', 'use', 'reset'],
+          description:
+            "'set' applies a colour now, 'save' keeps the current colours under a name, 'use' puts a saved one back on, 'reset' returns to the app's own colours.",
+        },
+        target: {
+          type: 'string',
+          enum: ['accent', 'background', 'surface', 'text'],
+          description: "What the colour is for. Defaults to the accent, which is what 'the colour' usually means.",
+        },
+        color: {
+          type: 'string',
+          description: "A hex colour such as #1f6f8b, for 'set'. Choose it from what the user described.",
+        },
+        name: { type: 'string', description: "The user's own name for a palette, for 'save' and 'use'." },
+      },
+      required: ['action'],
     },
   },
   {

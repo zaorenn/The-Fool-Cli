@@ -1405,7 +1405,19 @@
     "conversationAgentActivity": "Agent activity",
     "conversationActivityEmpty": "Real tool calls and delegated work will appear here as they happen.",
     "conversationActionRunning": "Working on it…",
-    "conversationThemeChanged": "Theme tone changed to {{tone}}.",
+    "conversationThemeSet": "{{target}} تغییر کرد",
+    "conversationThemeReset": "بازگشت به رنگ‌های خود برنامه",
+    "conversationThemeSaved": "با نام «{{name}}» ذخیره شد",
+    "conversationThemeUsed": "«{{name}}» دوباره اعمال شد",
+    "conversationThemeBadColor": "این رنگی نیست که بتوانم اعمال کنم.",
+    "conversationThemeNoName": "برای ذخیره یک نام لازم است.",
+    "conversationThemeUnknownName": "چیزی با نام «{{name}}» ذخیره نشده.",
+    "conversationThemeTarget": {
+      "primary": "تأکید",
+      "background": "پس‌زمینه",
+      "surface": "سطح",
+      "text": "متن"
+    },
     "conversationDelegated": "روی رایانه‌ات انجامش می‌دهم…",
     "conversationStillWorking": "هنوز مشغولم.",
     "conversationOpened": "در حال باز کردن {{url}}",
@@ -1473,7 +1485,6 @@
     "conversationLocalUnreachable": "هیچ سرور محلی پاسخ نمی‌دهد",
     "conversationLocalEndpoint": "سرور محلی",
     "conversationLocalVoiceHint": "صدا، احساس آن و شبیه‌سازی صدا در تنظیمات ← صدا هستند.",
-    "conversationToneUnknown": "این رنگ جزء طیف رنگی برنامه نیست.",
     "conversationActionUnsupported": "این کار از عهدهٔ صدا برنمی‌آید.",
     "conversationError": {
       "REALTIME_NO_PROVIDER": "هنوز کلید API برای این ارائه‌دهنده ثبت نشده است. از تنظیمات ← سرویس‌های مدل اضافه کنید و دوباره شروع کنید.",

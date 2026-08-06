@@ -1405,7 +1405,19 @@
     "conversationAgentActivity": "Agent activity",
     "conversationActivityEmpty": "Real tool calls and delegated work will appear here as they happen.",
     "conversationActionRunning": "Working on it…",
-    "conversationThemeChanged": "Theme tone changed to {{tone}}.",
+    "conversationThemeSet": "{{target}} changed",
+    "conversationThemeReset": "Back to the app’s own colours",
+    "conversationThemeSaved": "Kept as “{{name}}”",
+    "conversationThemeUsed": "“{{name}}” put back on",
+    "conversationThemeBadColor": "That is not a colour I can apply.",
+    "conversationThemeNoName": "It needs a name to be kept under.",
+    "conversationThemeUnknownName": "Nothing is kept under “{{name}}”.",
+    "conversationThemeTarget": {
+      "primary": "Accent",
+      "background": "Background",
+      "surface": "Surface",
+      "text": "Text"
+    },
     "conversationDelegated": "Doing it on your computer…",
     "conversationStillWorking": "Still on it.",
     "conversationOpened": "Opening {{url}}",
@@ -1473,7 +1485,6 @@
     "conversationLocalUnreachable": "No local server answering",
     "conversationLocalEndpoint": "Local server",
     "conversationLocalVoiceHint": "The voice, its emotion and voice cloning are under Settings → Voice.",
-    "conversationToneUnknown": "That colour is not one of the app's tones.",
     "conversationActionUnsupported": "That is not something the voice can do.",
     "conversationError": {
       "REALTIME_NO_PROVIDER": "No API key for this provider yet. Add one under Settings → Model Services, then start again.",

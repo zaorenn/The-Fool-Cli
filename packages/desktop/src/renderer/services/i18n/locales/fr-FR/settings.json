@@ -1405,7 +1405,19 @@
     "conversationAgentActivity": "Agent activity",
     "conversationActivityEmpty": "Real tool calls and delegated work will appear here as they happen.",
     "conversationActionRunning": "Working on it…",
-    "conversationThemeChanged": "Theme tone changed to {{tone}}.",
+    "conversationThemeSet": "{{target}} modifié",
+    "conversationThemeReset": "Retour aux couleurs de l’app",
+    "conversationThemeSaved": "Gardé sous « {{name}} »",
+    "conversationThemeUsed": "« {{name}} » réappliqué",
+    "conversationThemeBadColor": "Ce n’est pas une couleur que je peux appliquer.",
+    "conversationThemeNoName": "Il faut un nom pour le garder.",
+    "conversationThemeUnknownName": "Rien n’est gardé sous « {{name}} ».",
+    "conversationThemeTarget": {
+      "primary": "Accent",
+      "background": "Arrière-plan",
+      "surface": "Surface",
+      "text": "Texte"
+    },
     "conversationDelegated": "Je le fais sur ton ordinateur…",
     "conversationStillWorking": "J’y suis toujours.",
     "conversationOpened": "Ouverture de {{url}}",
@@ -1473,7 +1485,6 @@
     "conversationLocalUnreachable": "Aucun serveur local ne répond",
     "conversationLocalEndpoint": "Serveur local",
     "conversationLocalVoiceHint": "La voix, son émotion et le clonage sont dans Paramètres → Voix.",
-    "conversationToneUnknown": "Cette couleur ne fait pas partie des teintes de l'application.",
     "conversationActionUnsupported": "La voix ne peut pas faire cela.",
     "conversationError": {
       "REALTIME_NO_PROVIDER": "Aucune clé API pour ce fournisseur. Ajoutez-la dans Paramètres → Services de modèles, puis recommencez.",

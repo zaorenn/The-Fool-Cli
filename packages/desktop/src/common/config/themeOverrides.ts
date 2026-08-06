@@ -43,6 +43,46 @@ export const THEME_OVERRIDES_CONFIG_KEY = 'ui.themeOverrides';
 
 export const defaultThemeOverrides = (): ThemeOverrides => ({ colors: {} });
 
+/**
+ * Palettes the user asked to keep, by the name they gave them.
+ *
+ * Named rather than numbered because they are recalled out loud — "put the sea
+ * one back on" only works if the name is the user's own word for it. Stored
+ * beside the active overrides rather than inside them: the active colours are a
+ * state, these are a library, and saving one must not change what is on screen.
+ */
+export const THEME_PALETTES_CONFIG_KEY = 'ui.themePalettes';
+
+export type ThemePalettes = Record<string, ThemeOverrides['colors']>;
+
+/** The most palettes kept, oldest dropped first. */
+export const MAX_THEME_PALETTES = 24;
+
+/** Trimmed, lower-cased, and short enough to be said: how a name is matched. */
+export const normalizePaletteName = (name: string): string =>
+  name.trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 48);
+
+/**
+ * Drops anything that is not a name mapped to valid colours.
+ *
+ * Same reasoning as {@link sanitizeThemeOverrides}: this comes back from disk,
+ * and every value here ends up in a CSS custom property.
+ */
+export const sanitizeThemePalettes = (value: unknown): ThemePalettes => {
+  if (typeof value !== 'object' || value === null) return {};
+
+  const palettes: ThemePalettes = {};
+  for (const [rawName, rawColors] of Object.entries(value as Record<string, unknown>)) {
+    const name = normalizePaletteName(rawName);
+    if (name.length === 0) continue;
+
+    const { colors } = sanitizeThemeOverrides({ colors: rawColors });
+    if (Object.keys(colors).length > 0) palettes[name] = colors;
+  }
+
+  return palettes;
+};
+
 /** Accepts `#rgb`, `#rrggbb`, or `#rrggbbaa`; anything else is rejected. */
 export const isValidHexColor = (value: string): boolean => /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value);
 

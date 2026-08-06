@@ -8,7 +8,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
 import { configService } from '@/common/config/configService';
-import { THEME_OVERRIDES_CONFIG_KEY, sanitizeThemeOverrides } from '@/common/config/themeOverrides';
+import {
+  isValidHexColor,
+  MAX_THEME_PALETTES,
+  normalizePaletteName,
+  sanitizeThemeOverrides,
+  sanitizeThemePalettes,
+  THEME_OVERRIDES_CONFIG_KEY,
+  THEME_PALETTES_CONFIG_KEY,
+  type ThemeColorKey,
+  type ThemeOverrides,
+} from '@/common/config/themeOverrides';
 import {
   buildPersonaInstructions,
   REALTIME_PROVIDER_SPECS,
@@ -63,12 +73,17 @@ export type ConversationActivity = {
   state: 'running' | 'completed' | 'failed';
 };
 
-const TONE_VARIABLES: Record<string, string | null> = {
-  blue: '--arcoblue-6',
-  violet: '--purple-6',
-  teal: '--cyan-6',
-  warm: '--orange-6',
-  neutral: null,
+/**
+ * What the spoken word for a colour's job maps to in the theme.
+ *
+ * "Accent" rather than "primary" in the tool, because that is what a person
+ * calls it — the stored key keeps the name the rest of the app uses.
+ */
+const THEME_TARGETS: Record<string, ThemeColorKey> = {
+  accent: 'primary',
+  background: 'background',
+  surface: 'surface',
+  text: 'text',
 };
 
 const rgbToHex = (value: string): string | null => {
@@ -225,22 +240,60 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
    *
    * @throws when the tone is not one the app has a colour for.
    */
-  const applyTone = useCallback(
-    async (tone: string): Promise<void> => {
-      const variable = TONE_VARIABLES[tone];
-      if (variable === undefined) throw new Error(t('settings.voice.conversationToneUnknown'));
-      const current = sanitizeThemeOverrides(configService.get(THEME_OVERRIDES_CONFIG_KEY));
-      const colors = { ...current.colors };
-      if (variable === null) {
-        delete colors.primary;
-      } else {
-        const color = readSemanticColor(variable);
-        if (!color) throw new Error(t('settings.voice.conversationToneUnknown'));
-        colors.primary = color;
+  /**
+   * Changes, keeps or recalls the app's colours, as asked out loud.
+   *
+   * The colour itself comes from the model rather than from a table here.
+   * "Warmer", "like the sea", "the green of an old terminal" are language
+   * problems, and a fixed list of five tones answered all of them with the same
+   * five colours — the setting existed, the request did not survive it.
+   *
+   * Everything written is validated before it reaches a CSS variable: a hex
+   * value from a model is untrusted input like any other.
+   */
+  const applyThemeAction = useCallback(
+    async (action: string, target: string, color: string, name: string): Promise<string> => {
+      const stored = sanitizeThemeOverrides(configService.get(THEME_OVERRIDES_CONFIG_KEY));
+      const palettes = sanitizeThemePalettes(configService.get(THEME_PALETTES_CONFIG_KEY));
+      const key = THEME_TARGETS[target] ?? 'primary';
+
+      const commit = async (colors: ThemeOverrides['colors']): Promise<void> => {
+        const next = { colors };
+        applyThemeOverrides(next);
+        await configService.set(THEME_OVERRIDES_CONFIG_KEY, next);
+      };
+
+      if (action === 'reset') {
+        await commit({});
+        return t('settings.voice.conversationThemeReset');
       }
-      const next = { ...current, colors };
-      applyThemeOverrides(next);
-      await configService.set(THEME_OVERRIDES_CONFIG_KEY, next);
+
+      if (action === 'set') {
+        const hex = color.trim().toLowerCase();
+        if (!isValidHexColor(hex)) throw new Error(t('settings.voice.conversationThemeBadColor'));
+        await commit({ ...stored.colors, [key]: hex });
+        return t('settings.voice.conversationThemeSet', { target: t(`settings.voice.conversationThemeTarget.${key}`) });
+      }
+
+      const label = normalizePaletteName(name);
+      if (label.length === 0) throw new Error(t('settings.voice.conversationThemeNoName'));
+
+      if (action === 'save') {
+        // Oldest first, so a library kept out loud never grows without bound.
+        const kept = Object.entries(palettes).slice(-(MAX_THEME_PALETTES - 1));
+        const next = Object.fromEntries([...kept, [label, stored.colors]]);
+        await configService.set(THEME_PALETTES_CONFIG_KEY, next);
+        return t('settings.voice.conversationThemeSaved', { name: label });
+      }
+
+      if (action === 'use') {
+        const found = palettes[label];
+        if (!found) throw new Error(t('settings.voice.conversationThemeUnknownName', { name: label }));
+        await commit(found);
+        return t('settings.voice.conversationThemeUsed', { name: label });
+      }
+
+      throw new Error(t('settings.voice.conversationActionUnsupported'));
     },
     [t]
   );
@@ -331,15 +384,16 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
       try {
         const args = JSON.parse(event.argumentsJson || '{}') as Record<string, unknown>;
 
-        if (event.name === 'app_change_theme') {
-          const tone = typeof args.tone === 'string' ? args.tone : '';
-          await applyTone(tone);
-          updateActivity(event.callId, {
-            detail: t('settings.voice.conversationThemeChanged', { tone }),
-            state: 'completed',
-          });
+        if (event.name === 'app_theme') {
+          const detail = await applyThemeAction(
+            typeof args.action === 'string' ? args.action : '',
+            typeof args.target === 'string' ? args.target : 'accent',
+            typeof args.color === 'string' ? args.color : '',
+            typeof args.name === 'string' ? args.name : ''
+          );
+          updateActivity(event.callId, { detail, state: 'completed' });
           backToListening();
-          return { ok: true };
+          return { ok: true, detail };
         }
 
         if (event.name === 'app_look_at_screen') {
@@ -437,7 +491,7 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
         return { ok: false, error: detail };
       }
     },
-    [applyPhase, applyTone, lookAtScreen, publish, t, updateActivity]
+    [applyPhase, applyThemeAction, lookAtScreen, publish, t, updateActivity]
   );
 
   /** The socket path: run it, then post the result back over the socket. */

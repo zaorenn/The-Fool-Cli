@@ -1405,7 +1405,19 @@
     "conversationAgentActivity": "Agent activity",
     "conversationActivityEmpty": "Real tool calls and delegated work will appear here as they happen.",
     "conversationActionRunning": "Working on it…",
-    "conversationThemeChanged": "Theme tone changed to {{tone}}.",
+    "conversationThemeSet": "{{target}} изменён",
+    "conversationThemeReset": "Вернул цвета приложения",
+    "conversationThemeSaved": "Сохранено как «{{name}}»",
+    "conversationThemeUsed": "«{{name}}» снова применена",
+    "conversationThemeBadColor": "Это не цвет, который я могу применить.",
+    "conversationThemeNoName": "Для сохранения нужно имя.",
+    "conversationThemeUnknownName": "Под именем «{{name}}» ничего нет.",
+    "conversationThemeTarget": {
+      "primary": "Акцент",
+      "background": "Фон",
+      "surface": "Поверхность",
+      "text": "Текст"
+    },
     "conversationDelegated": "Выполняю на вашем компьютере…",
     "conversationStillWorking": "Всё ещё работаю.",
     "conversationOpened": "Открываю {{url}}",
@@ -1473,7 +1485,6 @@
     "conversationLocalUnreachable": "Локальный сервер не отвечает",
     "conversationLocalEndpoint": "Локальный сервер",
     "conversationLocalVoiceHint": "Голос, его эмоция и клонирование — в «Настройки → Голос».",
-    "conversationToneUnknown": "Этот цвет не входит в палитру приложения.",
     "conversationActionUnsupported": "Голос этого не умеет.",
     "conversationError": {
       "REALTIME_NO_PROVIDER": "Для этого провайдера ещё нет API-ключа. Добавьте его в Настройки → Сервисы моделей и начните заново.",
