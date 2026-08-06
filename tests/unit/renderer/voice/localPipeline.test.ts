@@ -67,6 +67,20 @@ const settingsWith = (change: Partial<FoolVoiceSettings['realtime']> = {}): Fool
 
 const okCatalog = (models: readonly VoiceModel[]) => ({ ok: true, data: { models, profiles: [] } });
 
+/**
+ * The `messages` array of the last chat request that was sent.
+ *
+ * The cast is unavoidable — these are recorded `fetch` arguments — but the
+ * lookup is not allowed to be: reading through an optional chain and then
+ * dereferencing it turns "no request was made" into a TypeError several lines
+ * from the assertion that cares.
+ */
+const lastRequestMessages = (calls: readonly unknown[][]): { content: string }[] => {
+  const last = calls.at(-1);
+  if (!last) throw new Error('no chat request was made');
+  return JSON.parse(String((last[1] as RequestInit).body)).messages as { content: string }[];
+};
+
 /** An OpenAI-dialect stream body, one `data:` line per delta. */
 const sseBody = (deltas: readonly string[]): ReadableStream<Uint8Array> => {
   const encoder = new TextEncoder();
@@ -918,7 +932,7 @@ describe('LocalVoicePipeline while it is talking', () => {
 
     const chats = fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/chat/completions'));
     expect(chats.length).toBeGreaterThanOrEqual(2);
-    const messages = JSON.parse(String((chats.at(-1)?.[1] as RequestInit).body)).messages as { content: string }[];
+    const messages = lastRequestMessages(chats);
     expect(messages.map((turn) => turn.content)).toContain('bunun yerine hava nasil');
   });
 
@@ -965,7 +979,7 @@ describe('LocalVoicePipeline while it is talking', () => {
     await settleLong();
 
     const chats = fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/chat/completions'));
-    const messages = JSON.parse(String((chats.at(-1)?.[1] as RequestInit).body)).messages as { content: string }[];
+    const messages = lastRequestMessages(chats);
     expect(messages.map((turn) => turn.content)).toContain('hava nasil');
   });
 
