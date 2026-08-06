@@ -260,6 +260,33 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
         <VoiceAgentSection settings={settings} onChange={onChange} disabled={disabled} />
       </div>
 
+      {/* Whether the microphone is open at all, which decides whether silence
+          can be heard as a question. Above interruption because it makes most of
+          that question moot: nothing arrives to interrupt with. */}
+      <div className='grid gap-5px rounded-10px bg-fill-1 px-10px py-9px'>
+        <label className='flex items-center justify-between gap-10px'>
+          <Typography.Text className='text-12px font-600 text-t-secondary'>
+            {t('settings.voice.conversationHoldToTalk')}
+          </Typography.Text>
+          <Switch
+            data-testid='voice-hold-to-talk'
+            size='small'
+            checked={settings.activation.conversationHoldToTalk}
+            onChange={(value: boolean) =>
+              onChange((previous) => ({
+                ...previous,
+                activation: { ...previous.activation, conversationHoldToTalk: value },
+              }))
+            }
+          />
+        </label>
+        <Typography.Text className='text-11px leading-16px text-t-tertiary'>
+          {settings.activation.conversationHoldToTalk
+            ? t('settings.voice.conversationHoldToTalkOnHint')
+            : t('settings.voice.conversationHoldToTalkOffHint')}
+        </Typography.Text>
+      </div>
+
       {/* Interruption, which is a conversation setting rather than an audio one:
           it decides what happens to an answer when the room makes a noise. */}
       <div className='grid gap-5px rounded-10px bg-fill-1 px-10px py-9px'>

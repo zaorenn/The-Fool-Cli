@@ -259,6 +259,14 @@ export const foolVoice = {
   >('fool.voice.shortcut'),
   /** Raised when that shortcut is pressed, wherever the user was. */
   pushToTalk: bridge.buildEmitter<void>('fool.voice.push-to-talk'),
+  /**
+   * Right Ctrl going down and coming up, as a state rather than a toggle.
+   *
+   * `pushToTalk` above is a toggle, which is all the notch turn needs. A
+   * conversation needs the two edges apart: it holds a microphone open for as
+   * long as the key is held, and a toggle cannot say how long that was.
+   */
+  holdToTalk: bridge.buildEmitter<{ holding: boolean }>('fool.voice.hold-to-talk'),
   /** Silences a reply that is being read aloud, without ending the session. */
   interruptSpeech: bridge.buildEmitter<void>('fool.voice.interrupt-speech'),
   /**

@@ -143,6 +143,15 @@ const startHoldToTalk = (): void => {
   holdToTalk?.stop();
   holdToTalk = new HoldToTalkHook({
     onEffect: (effect) => {
+      // The two edges, before they are collapsed into a toggle below. A spoken
+      // conversation runs its own microphone and needs to know how long the key
+      // was held, which a toggle cannot say. Informational: whoever is not
+      // listening for it is unaffected.
+      if (effect.kind === 'start') ipcBridge.foolVoice.holdToTalk.emit({ holding: true });
+      if (effect.kind === 'commit' || effect.kind === 'cancel') {
+        ipcBridge.foolVoice.holdToTalk.emit({ holding: false });
+      }
+
       // What to do about the decision lives in `holdToTalkActions`, where it can
       // be tested without Electron. It was inline here, and being inline is how
       // a capture came to leave the microphone open: the branch handled the

@@ -19,6 +19,7 @@ import {
   type VoiceConversationProviderId,
 } from '@/common/realtime';
 import type { FoolVoiceSettings } from '@/common/types/foolVoice';
+import { createHoldGate } from '@/common/voice/holdToTalkGate';
 import { claimManualVoiceSession } from '@renderer/hooks/voice/useFoolVoiceSession';
 import { runAgentTask } from '@renderer/services/voice/session/runAgentTask';
 import { describeScreen } from '@renderer/services/voice/screenSight';
@@ -149,6 +150,14 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
   const phaseRef = useRef<ConversationPhase>('idle');
   /** True while waiting: audio still flows, nothing it says is let through. */
   const standbyRef = useRef(false);
+  /**
+   * Whether right Ctrl is down right now, when hold-to-talk is switched on.
+   *
+   * A ref rather than state: it is read inside the microphone's audio callback,
+   * which is subscribed once for the whole conversation and must not be torn
+   * down and rebuilt every time a key moves.
+   */
+  const holdingRef = useRef(false);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
 
@@ -453,6 +462,25 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
   useEffect(() => stop, [stop]);
 
   /**
+   * Right Ctrl, held, from the desktop-wide hook rather than from the window.
+   *
+   * A key handler on the page would only work while the app is focused, and the
+   * whole point of holding a key to talk is to do it while looking at something
+   * else — which is also when the assistant is asked to look at the screen.
+   *
+   * Subscribed for the life of the page, not only while a conversation runs:
+   * the state has to be correct the moment one starts, and a key already down
+   * when the conversation opens would otherwise never be seen going up.
+   */
+  useEffect(() => {
+    const emitter = ipcBridge.foolVoice?.holdToTalk;
+    if (typeof emitter?.on !== 'function') return;
+    return emitter.on(({ holding }) => {
+      holdingRef.current = holding;
+    });
+  }, []);
+
+  /**
    * The speaker, ready for whichever side is about to talk.
    *
    * `sampleRate` is the rate blocks are assumed to be at when they do not say;
@@ -522,6 +550,8 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
     vad.recalibrate();
     let verdict: VadEvent = 'idle';
 
+    const gate = createHoldGate();
+
     const microphone = new PcmMicrophone();
     await microphone.start({
       sampleRate: pipeline.inputSampleRate,
@@ -530,9 +560,27 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
       // lets the verdict below be the one for the block being handed over.
       onLevel: (level) => {
         verdict = vad.push(level, performance.now());
-        showLevel(level, vad.isSpeaking());
+        // Held: the key decides where the utterance starts and ends, and the
+        // detector's opinion about the level is not consulted. Still shown, so
+        // the ring reacts while the key is down.
+        showLevel(level, settingsRef.current.activation.conversationHoldToTalk ? holdingRef.current : vad.isSpeaking());
       },
-      onAudio: (audio) => pipeline.pushAudio(audio, VAD_TO_PIPELINE[verdict]),
+      onAudio: (audio) => {
+        if (!settingsRef.current.activation.conversationHoldToTalk) {
+          pipeline.pushAudio(audio, VAD_TO_PIPELINE[verdict]);
+          return;
+        }
+
+        // The key, and nothing else. A detector cannot tell a keystroke from a
+        // word, and the transcriber answers both with a confident sentence — so
+        // while the key is up nothing is captured at all, which is the only
+        // version of this with no false positives left in it.
+        const held = gate.next(holdingRef.current);
+        if (held === null) return;
+        // Nothing to send with the close: the pipeline already holds every block
+        // captured while the key was down.
+        pipeline.pushAudio(held === 'utterance-ended' ? '' : audio, held);
+      },
     });
     microphoneRef.current = microphone;
   }, [handleEvent, i18n.language, openOutput, runToolCall, showLevel, t]);
@@ -587,8 +635,17 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
       await microphone.start({
         sampleRate: client.inputSampleRate,
         deviceId: settingsRef.current.devices.inputDeviceId,
-        onAudio: (audio) => client.appendAudio(audio),
-        onLevel: (level) => showLevel(level, level > SPEECH_LEVEL),
+        // The socket providers run their own turn detection on whatever they
+        // are sent, so holding the key here is simply not sending anything.
+        onAudio: (audio) => {
+          if (settingsRef.current.activation.conversationHoldToTalk && !holdingRef.current) return;
+          client.appendAudio(audio);
+        },
+        onLevel: (level) =>
+          showLevel(
+            level,
+            settingsRef.current.activation.conversationHoldToTalk ? holdingRef.current : level > SPEECH_LEVEL
+          ),
       });
       microphoneRef.current = microphone;
     },

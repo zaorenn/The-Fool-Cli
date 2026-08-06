@@ -138,7 +138,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_open_url',
     description:
-      "Open a web page in the user's own default browser, in a new tab of the browser they already have open. Use this for anything of the form 'open X' where X is a site, and for playing something: a song, a video or an artist goes to a YouTube search or watch URL. This is instant and needs no agent, so prefer it over app_ask_jester whenever a URL is all that is needed. Say what you are opening in a few words; do not read the address out.",
+      "Open a web page in the user's own default browser, in a new tab of the browser they already have open. Use this only when getting the address open is the whole request — 'open YouTube', 'bring up the weather'. Anything that has to happen after the page loads (searching in it, clicking a result, playing something) is app_ask_jester's job, so send the whole request there instead of opening the site and stopping. Say what you are opening in a few words; do not read the address out.",
     parameters: {
       type: 'object',
       properties: {
@@ -154,7 +154,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_ask_jester',
     description:
-      "Carry out a real task on this computer through the built-in agent. It works the user's applications for them — opens something, clicks, types, fills in a form, sends a message in Discord or an email — and handles files, code and research. Use it for anything that changes something outside this conversation. It runs while you keep talking, so say briefly that you are on it, and report the outcome in a sentence when it comes back. Do not use it merely to look at the screen; that is app_look_at_screen.",
+      "Do anything at all on this computer, through an agent that drives it. Opening and using applications, clicking, typing, searching inside a page that is already open, filling in forms, sending a message in Discord or an email, files, code, research. This is not a fixed list: it is the user's own machine, so anything they could do sitting at it can be asked for in a sentence. Use it for every request that changes something outside this conversation, including the second half of a request whose first half was opening a page. It runs while you keep talking, so say briefly that you are on it, and report the outcome in a sentence when it comes back. Do not use it merely to look at the screen; that is app_look_at_screen.",
     parameters: {
       type: 'object',
       properties: { request: { type: 'string', description: "The task, in the user's own words." } },

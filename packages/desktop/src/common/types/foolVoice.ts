@@ -295,6 +295,21 @@ export type FoolVoiceSettings = {
      * Empty means none. Electron's accelerator syntax, e.g. `Control+Alt+V`.
      */
     pushToTalkShortcut: string;
+    /**
+     * In a conversation, hold right Ctrl to speak instead of always listening.
+     *
+     * Always-on listening only works if silence is heard as silence, and it is
+     * not: the transcriber answers a keystroke or a fan with a confident
+     * sentence, so an empty room produced a stream of questions nobody asked.
+     * Filtering the invented ones helps and cannot be complete — the model can
+     * always invent a sentence that is not on any list.
+     *
+     * Holding a key is the only version of this with no false positives at all,
+     * because the microphone is shut. Off by default: speaking without touching
+     * anything is the reason to have a spoken assistant, and this trades it away
+     * for certainty.
+     */
+    conversationHoldToTalk: boolean;
     wakePhrase: {
       enabled: boolean;
       modelId: 'stt-phrase-v1';
@@ -641,6 +656,8 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
   activation: {
     talkModeEnabled: false,
     pushToTalkShortcut: PUSH_TO_TALK_DEFAULT,
+    // Off: talking without touching anything is the reason to have this at all.
+    conversationHoldToTalk: false,
     wakePhrase: {
       // On by default because the desktop pet is the real switch: the listener
       // only opens the microphone while the pet is on screen.
@@ -808,6 +825,7 @@ const settingsSchema = z
       .object({
         talkModeEnabled: z.boolean().default(false),
         pushToTalkShortcut: z.string().max(128).default(PUSH_TO_TALK_DEFAULT),
+        conversationHoldToTalk: z.boolean().default(false),
         wakePhrase: z
           .object({
             enabled: z.boolean().default(true),

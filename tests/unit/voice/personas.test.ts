@@ -117,10 +117,31 @@ describe('what it admits it cannot do', () => {
     expect(instructions).toContain('Never describe a screen you have not looked at');
   });
 
+  /**
+   * The agent is a capability, not a menu.
+   *
+   * The rule used to read as a short list of things it had been given —
+   * "open an application, click, type, fill something in" — and the model
+   * treated anything outside that list as impossible, so "search for it on
+   * YouTube for me" got an apology instead of an attempt. It is the user's own
+   * machine with an agent driving it; the honest framing is that anything they
+   * could do sitting at it can be asked for.
+   */
   it('says how to actually do something on the computer', () => {
     const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
     expect(instructions).toContain('`app_ask_jester`');
-    expect(instructions).toContain('cannot touch anything');
+    expect(instructions).toContain('anything at all on this computer');
+    // And that refusing without having tried is itself the failure.
+    expect(instructions).toContain('without having asked');
+  });
+
+  it('sends the half of a request that comes after a page is open to the agent', () => {
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
+
+    // "Open YouTube and search for X" is the search, not the opening — and
+    // opening the site and stopping there is what it did.
+    expect(instructions).toContain('`app_open_url`');
+    expect(instructions).toContain('Do the whole request');
   });
 
   it('keeps the rule in every persona, and after the user’s own instructions', () => {
