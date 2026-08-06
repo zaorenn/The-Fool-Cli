@@ -28,6 +28,7 @@ import { describeScreen } from '@renderer/services/voice/screenSight';
 import { peekVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import { applyThemeOverrides } from '@renderer/utils/theme/applyThemeOverrides';
 import { normalizeEndpoint } from '../localPipeline';
+import { buildAndPreview } from './buildTool';
 import { applySpokenSetting } from './settingsTool';
 import type { ToolHost, ToolInvocation } from './types';
 
@@ -266,6 +267,16 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
         state: 'completed',
       });
       return { ok: true, result: outcome.summary };
+    }
+
+    if (invocation.name === 'app_build_app') {
+      const request = text('request').trim();
+      if (request.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));
+      const built = await buildAndPreview(host, invocation.callId, request);
+      if (built.ok === false) return { ok: false, error: built.error };
+      // The address goes back so the model knows it really opened, and is told
+      // not to read it out: nobody wants a port number spoken digit by digit.
+      return { ok: true, opened: true, url: built.url, result: built.summary };
     }
 
     if (invocation.name === 'app_settings') {

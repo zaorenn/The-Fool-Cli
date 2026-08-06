@@ -181,6 +181,22 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_build_app',
+    description:
+      "Build something the user asked for and put it in front of them. Use it whenever they ask you to make, build or design an app, a page, a site, a tool, a game or a dashboard — 'build me a web app, make it macOS style' is exactly this. It writes a real, working page, serves it locally and opens it in their own browser, so they are looking at it a moment after it is done; app_ask_jester would build the same thing and leave them with nowhere to see it. It runs for a few minutes while you keep talking, so say briefly that you are on it. When it comes back, say what you made in a sentence and that it is open — never read the address out.",
+    parameters: {
+      type: 'object',
+      properties: {
+        request: {
+          type: 'string',
+          description:
+            "What to build, in the user's own words, including anything they said about how it should look or what it should do.",
+        },
+      },
+      required: ['request'],
+    },
+  },
+  {
     name: 'app_settings',
     description:
       'Change how the assistant itself behaves, without the user having to leave the conversation and find a settings page. Use it whenever they say what they want changed: a different voice, a male or a female one, faster or slower speech, louder or quieter, what language you answer in, whether they have to hold a key to talk, whether tasks may run without asking, the word that cuts you off, the phrase that wakes you. Say what you changed in a few words. For colours use app_theme instead; for anything outside this app use app_ask_jester.',
