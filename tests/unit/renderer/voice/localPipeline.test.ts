@@ -643,6 +643,57 @@ describe('LocalVoicePipeline acting on the computer', () => {
     expect(body.tools).toBeUndefined();
   });
 
+  it('tells the model to look when the question is plainly about a screen', async () => {
+    readyCatalog();
+    speakOnce();
+    // No mention of a screen anywhere in it. This is what people actually say,
+    // and asked it the model used to answer from nothing.
+    transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'Bu hata ne demek?' } });
+
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline, fetchMock } = await connectWithTools(
+      events,
+      [() => ({ ok: true, body: sseBody(['Bir bakayim.']) }) as unknown as Response],
+      vi.fn(async () => ({ ok: true }))
+    );
+
+    pipeline.pushAudio(toBase64(pcmOf([1])), 'speech-started');
+    pipeline.pushAudio('', 'utterance-ended');
+    await settleRounds();
+
+    const chat = fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/chat/completions'))[0];
+    const messages = JSON.parse(String((chat[1] as RequestInit).body)).messages as {
+      role: string;
+      content: string;
+    }[];
+    const nudge = messages.filter((turn) => turn.role === 'system').at(-1);
+    expect(nudge?.content).toContain('app_look_at_screen');
+  });
+
+  it('leaves an ordinary question alone, so a screenshot is not taken for nothing', async () => {
+    readyCatalog();
+    speakOnce();
+    transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'Bugun hava nasil?' } });
+
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline, fetchMock } = await connectWithTools(
+      events,
+      [() => ({ ok: true, body: sseBody(['Bilmiyorum.']) }) as unknown as Response],
+      vi.fn(async () => ({ ok: true }))
+    );
+
+    pipeline.pushAudio(toBase64(pcmOf([1])), 'speech-started');
+    pipeline.pushAudio('', 'utterance-ended');
+    await settleRounds();
+
+    const chat = fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/chat/completions'))[0];
+    const messages = JSON.parse(String((chat[1] as RequestInit).body)).messages as {
+      role: string;
+      content: string;
+    }[];
+    expect(messages.filter((turn) => turn.role === 'system')).toHaveLength(1);
+  });
+
   it('runs the tool the model asked for and answers with what it learned', async () => {
     readyCatalog();
     speakOnce();

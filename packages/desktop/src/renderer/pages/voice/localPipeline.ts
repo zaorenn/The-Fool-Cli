@@ -14,6 +14,7 @@ import {
 import { synthesisProviderFor, type FoolVoiceSettings, type VoiceModel } from '@/common/types/foolVoice';
 import { isBackchannel } from '@/common/voice/backchannel';
 import { isHallucinatedTranscript } from '@/common/voice/hallucinations';
+import { refersToScreen } from '@/common/voice/screenIntent';
 import { applyTranscriptRules } from '@/common/voice/transcriptRules';
 import { peekVoiceMemory, rememberVoiceSession } from '@renderer/services/voice/session/voiceMemoryStore';
 import { findWakePhrase } from '@renderer/services/voice/wakePhrase';
@@ -254,6 +255,15 @@ type RenderedSpeech = { pcm16Base64: string; sampleRate: number };
 
 /** Below this a conversation was a question, and is not worth remembering. */
 const MIN_TURNS_WORTH_REMEMBERING = 2;
+
+/**
+ * What is added to a turn whose words plainly point at the screen.
+ *
+ * Phrased as a fact about this turn rather than as a standing rule, because it
+ * is one: it is added for exactly the turns {@link refersToScreen} matched, and
+ * a standing rule is what the persona already carries.
+ */
+const LOOK_FIRST = `The user just referred to something they can see and you cannot. Call \`app_look_at_screen\` now, before saying anything about it, and answer from what comes back. Do not describe anything until it has.`;
 
 /**
  * How long the closing summary may take.
@@ -580,6 +590,16 @@ export class LocalVoicePipeline {
 
       this.options.onEvent({ kind: 'user-transcript', text: heard, final: true });
       this.history.push({ role: 'user', content: heard });
+      // "What does this error mean" is a question about a screen, and asked it
+      // the model answers from nothing — confidently, which is the whole
+      // problem. Telling it in the persona to work that out for itself helps and
+      // is not enough: it has no sense of being unable to see, so the rule is one
+      // it has to remember to apply. This is the half that does not depend on
+      // remembering. Only when the tools are actually attached, because without
+      // them the instruction names something that cannot happen.
+      if (this.options.runTool && refersToScreen(heard)) {
+        this.history.push({ role: 'system', content: LOOK_FIRST });
+      }
       this.trimHistory();
 
       await this.speakReply(readiness, controller);
