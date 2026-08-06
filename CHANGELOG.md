@@ -2,6 +2,29 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.2.55
+
+### Agentic voice conversation
+
+- A spoken conversation now survives leaving the Voice Chat page. Opening the chat the assistant just created, answering a permission request, or looking at anything else in the app no longer closes the microphone and abandons the reply.
+- The notch keeps the request on screen for the whole turn instead of clearing it the moment transcription ended, and shows the agent's work step by step rather than overwriting one line, so a long task can be told apart from a stuck one.
+- The assistant decides for itself when it needs to look at the screen. "What does this error mean" and "what does it say here" are about something the user can see, and it now looks before answering instead of describing a screen it never opened.
+- Asking it to build something builds it and opens it: the work goes to the agent, the result is served locally, and the user's own browser opens on it. A build that finishes with nothing to show is reported as a failure rather than an empty tab.
+- Settings can be changed by saying so — the voice, faster or slower, louder, the language of replies, hold-to-talk, acting without asking, the interrupt word, the wake phrase, and which models think and see.
+- The assistant knows the app it belongs to: what each settings page is for, what the notch and hold-to-talk are, and where things live — and is told to say when it does not know rather than inventing a menu.
+
+### It remembers you
+
+- On the first conversation it asks what to call you, keeps the answer, and uses it from the next sentence. Saying "call me something else" later changes it for good.
+- Things you tell it about yourself are kept between sessions, along with a short record of each recent conversation, so it opens knowing who it is talking to instead of starting as a stranger every time.
+- What is remembered can be dropped by asking. It is stored locally like the rest of the voice settings.
+
+### Voices
+
+- Added Supertonic 3: the fastest and smallest voice in the catalogue, measured at 0.06-0.26 s a sentence on a graphics card — sixteen to seventy-six times faster than the audio plays — in 575 MiB of memory, and still faster than real time on a processor, so it needs no GPU download.
+- It carries ten voices, five male and five female, which is what makes asking for a male or a female voice out loud work.
+- It speaks real Turkish. Rendered and transcribed back, a Turkish sentence returns word for word with its diacritics, which no other engine in the catalogue manages.
+
 ## 2.2.54
 
 ### Mobile access
