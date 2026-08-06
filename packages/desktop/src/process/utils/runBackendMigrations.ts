@@ -16,6 +16,8 @@ import {
   type ImageGenerationMcpEnvResolveResult,
 } from '@/common/config/imageGenerationMcpEnv';
 import { BUILTIN_IMAGE_GEN_NAME, type IMcpServer, type IProvider } from '@/common/config/storage';
+import type { Assistant, AssistantDetail } from '@/common/types/agent/assistantTypes';
+import { VOICE_DEFAULT_ASSISTANT_ID } from '@/common/types/foolVoice';
 import { getBuiltinMcpScriptPath, type ProcessConfig as ProcessConfigType } from './initStorage';
 import { BUILTIN_BROWSER_NAME } from '../resources/builtinMcp/constants';
 import { browserControlHandshakePath } from '../voice/browserControlServer';
@@ -409,6 +411,49 @@ async function ensureBootstrapMcpServersInDb(configFile: ConfigFile): Promise<vo
   );
 }
 
+/**
+ * Gives The Fool the computer, which is the whole point of it.
+ *
+ * A server being `enabled` means it is offered, not that any assistant has it.
+ * Attachment is per-assistant, and a built-in materialises with
+ * `default_mcps_mode: "auto"` and no stored preference — which resolves to an
+ * empty list, so a fresh assistant starts with no MCP servers at all. Asked to
+ * search a page it had just opened, The Fool answered that it "cannot browse
+ * external websites" and was "limited to local file operations". It was right:
+ * it had no screen, no mouse and no keyboard.
+ *
+ * `fixed` rather than seeding the remembered selection, because the remembered
+ * selection is only writable by having held a conversation — there is no
+ * endpoint for it. A conversation can still deselect this in its own picker;
+ * an explicit per-conversation choice outranks the assistant's default.
+ *
+ * Only ever for this one assistant, and never against a choice already made:
+ * a default already naming servers is the user's and is left alone.
+ */
+async function giveTheFoolTheComputer(): Promise<void> {
+  const servers = (await mcpService.listServers.invoke().catch((): IMcpServer[] => [])) ?? [];
+  const computerUse = servers.find((server) => server.name === BUILTIN_COMPUTER_USE_NAME);
+  if (!computerUse) return;
+
+  const assistants = (await httpRequest<Assistant[]>('GET', '/api/assistants').catch((): Assistant[] => [])) ?? [];
+  // Built-in assistants are addressed both bare and `builtin-` prefixed,
+  // depending on where the id came from.
+  const fool = assistants.find(
+    (entry) => entry.id === VOICE_DEFAULT_ASSISTANT_ID || entry.id === `builtin-${VOICE_DEFAULT_ASSISTANT_ID}`
+  );
+  if (!fool) return;
+
+  const detail = await httpRequest<AssistantDetail>('GET', `/api/assistants/${encodeURIComponent(fool.id)}`).catch(
+    (): null => null
+  );
+  const current = detail?.defaults?.mcps;
+  if (current?.mode === 'fixed' && (current.value?.length ?? 0) > 0) return;
+
+  await httpRequest('PUT', `/api/assistants/${encodeURIComponent(fool.id)}`, {
+    defaults: { mcps: { mode: 'fixed', value: [computerUse.id] } },
+  });
+}
+
 const MIGRATION_STEPS: Array<{
   name: string;
   run: (configFile: ConfigFile) => Promise<MigrationStepResult>;
@@ -432,6 +477,9 @@ const MIGRATION_STEPS: Array<{
     run: async () => (await refreshLmStudioModels(), true),
   },
   { name: 'migrateAssistantsToBackend', run: async (configFile) => migrateAssistantsToBackend(configFile) },
+  // After the assistants exist and the servers are registered: neither half is
+  // any use to the other until both are there.
+  { name: 'giveTheFoolTheComputer', run: async () => (await giveTheFoolTheComputer(), true) },
 ];
 
 async function syncBuiltinMcpConfig(configFile: ConfigFile): Promise<void> {
