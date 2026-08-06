@@ -5,12 +5,24 @@
  */
 
 import { z } from 'zod';
+import { DEFAULT_TRANSCRIPT_RULES, type TranscriptRules } from '@/common/voice/transcriptRules';
 
 export type VoiceProviderId = 'local-sherpa' | 'local-audiocpp' | 'openai-compatible' | 'transcript-wake-word';
 export type VoiceProviderKind = 'local' | 'remote' | 'derived';
 
 /** Providers that install and run their models on this machine. */
 export type LocalVoiceProviderId = 'local-sherpa' | 'local-audiocpp';
+
+/**
+ * Which processor the local speech engine runs on.
+ *
+ * Not a performance preference so much as a different build: upstream ships a
+ * CPU-only package and a CUDA package, and the CUDA one is roughly eighty times
+ * the download because it carries the CUDA runtime beside it. Choosing `cuda`
+ * is therefore a decision to fetch that, which is why it is a setting rather
+ * than something detected and switched silently.
+ */
+export type VoiceEngineBackend = 'cpu' | 'cuda';
 
 /** Providers a synthesis request may name. */
 export type SynthesisProviderId = LocalVoiceProviderId | 'openai-compatible';
@@ -73,7 +85,15 @@ export type VoiceModelState =
   | { status: 'ready' }
   | {
       status: 'invalid';
-      reason: 'archive-invalid' | 'manifest-mismatch' | 'missing-files';
+      /**
+       * `no-engine` — the weights are here and nothing installed can load them.
+       *
+       * Its own reason because it is the only one a download cannot fix, and
+       * because it used to report `ready`: a row whose engine the synthesiser
+       * has no loader for was offered, installed, selected, and then produced
+       * silence, with the failure swallowed inside playback.
+       */
+      reason: 'archive-invalid' | 'manifest-mismatch' | 'missing-files' | 'no-engine';
     };
 
 type VoiceModelBase = {
@@ -275,6 +295,21 @@ export type FoolVoiceSettings = {
      * Empty means none. Electron's accelerator syntax, e.g. `Control+Alt+V`.
      */
     pushToTalkShortcut: string;
+    /**
+     * In a conversation, hold right Ctrl to speak instead of always listening.
+     *
+     * Always-on listening only works if silence is heard as silence, and it is
+     * not: the transcriber answers a keystroke or a fan with a confident
+     * sentence, so an empty room produced a stream of questions nobody asked.
+     * Filtering the invented ones helps and cannot be complete — the model can
+     * always invent a sentence that is not on any list.
+     *
+     * Holding a key is the only version of this with no false positives at all,
+     * because the microphone is shut. Off by default: speaking without touching
+     * anything is the reason to have a spoken assistant, and this trades it away
+     * for certainty.
+     */
+    conversationHoldToTalk: boolean;
     wakePhrase: {
       enabled: boolean;
       modelId: 'stt-phrase-v1';
@@ -300,7 +335,24 @@ export type FoolVoiceSettings = {
     modelId: string;
     language: string;
   };
+  /**
+   * What to do with a transcript before anyone acts on it.
+   *
+   * Held beside `stt` rather than inside it because these rules apply to text
+   * however it was produced — the local Whisper, a remote endpoint, or a
+   * speech-to-speech provider that was never configured here at all.
+   */
+  transcript: TranscriptRules;
   tts: {
+    /**
+     * Where audio.cpp runs.
+     *
+     * Only the audio.cpp engines read it — sherpa has no GPU path at all. The
+     * two voices that take a direction are unusable on a processor and say so
+     * rather than taking a minute a sentence; see `requiresBackend` in
+     * `audioCppEngineSpecs.ts`.
+     */
+    backend: VoiceEngineBackend;
     providerId: SynthesisProviderId;
     modelId: string;
     profileId: string;
@@ -355,8 +407,32 @@ export type FoolVoiceSettings = {
    * page would have used.
    */
   session: {
-    /** Assistant id, as the assistant list reports it. */
+    /**
+     * Assistant id, as the assistant list reports it.
+     *
+     * Defaults to {@link VOICE_DEFAULT_ASSISTANT_ID} rather than to nothing.
+     * Left empty this fell back to the first enabled agent, and the only one
+     * shipped enabled was the app's setup butler — so "find me some mods and
+     * open them" went to the assistant whose job is registering MCP servers.
+     * A default the user can change beats a default nobody chose.
+     */
     assistantId: string;
+    /**
+     * Let a spoken task act without stopping to ask.
+     *
+     * A conversation held out loud has no way to answer a confirmation. The
+     * prompt appears in a chat window the user is not looking at, the task
+     * waits on it until it times out, and the model — having called a tool and
+     * received nothing back — reports the work as done. "I've opened your
+     * browser and searched for Spider-Man", with nothing opened and nothing
+     * searched.
+     *
+     * So a spoken task runs unattended by default, because the alternative is
+     * not "safer", it is broken: the same actions attempted, none completed,
+     * and a false report of success. Switchable from the panel beside the
+     * microphone for anyone who would rather a task stall than proceed.
+     */
+    unattended: boolean;
     /** Provider holding the model. Empty leaves the model to the assistant. */
     providerId: string;
     modelId: string;
@@ -378,9 +454,76 @@ export type FoolVoiceSettings = {
      */
     screenshotSource: 'window' | 'screen';
   };
+  /**
+   * The spoken conversation mode: who answers, in whose voice, as whom.
+   *
+   * Separate from `stt`/`tts` because nothing is shared with them. Those two
+   * describe a pipeline this app assembles — transcribe, think, synthesise — and
+   * every stage is separately chosen. A speech-to-speech provider is one model
+   * that hears and speaks, so the only things left to choose are which one, what
+   * it sounds like, and who it is being.
+   */
+  realtime: {
+    providerId: 'openai-realtime' | 'gemini-live' | 'local-s2s' | 'local-pipeline';
+    /** Empty means the provider's own default, which is what most users want. */
+    model: string;
+    /**
+     * Where the thinking half of `local-pipeline` answers.
+     *
+     * Only that provider reads it. Empty means LM Studio on its own port, which
+     * is what is running on the machines this option exists for; a user who
+     * moved it, or who runs Ollama's OpenAI-compatible endpoint instead, points
+     * this at their own.
+     */
+    localEndpoint: string;
+    /**
+     * The model that looks at the screen when the conversation asks it to.
+     *
+     * Separate from {@link model} because seeing and talking are not the same
+     * job and are rarely the same weights: the fast model that holds a
+     * conversation may be text-only, and the one that reads a screen well is
+     * usually too slow to converse with. Empty means "use the thinking model",
+     * which is right when it happens to have vision — and if it does not, the
+     * request fails with something the user can act on rather than silently
+     * dropping the picture.
+     */
+    visionModel: string;
+    voice: string;
+    personaPresetId: 'companion' | 'english-teacher' | 'language-partner' | 'interview-coach' | 'custom';
+    /** Added to the preset, or the whole persona when the preset is `custom`. */
+    customInstructions: string;
+    /** A language to hold to, or `auto` to follow whoever is speaking. */
+    language: string;
+  };
   playback: {
     volume: number;
-    interruptible: true;
+    /**
+     * Whether the interrupt word can cut a reply short at all.
+     *
+     * A real setting rather than a constant, because it was a constant `true`
+     * and cancelling a reply took a single loud frame — so any sound in the room
+     * destroyed the answer while it was still being written, before a word of it
+     * was spoken and with nothing on screen to say why. Switched off, nothing
+     * cuts in: a reply always finishes, and whatever was said during it is
+     * answered afterwards.
+     */
+    interruptible: boolean;
+    /**
+     * The one thing that stops it mid-sentence.
+     *
+     * Nothing else does. Not a cough, not a keystroke, not "mhm" or "evet", and
+     * not another question — those wait their turn. This is deliberately a word
+     * rather than a sound level: a level cannot tell a chair from a sentence, and
+     * every attempt to guess from the audio alone threw away answers the user
+     * wanted. One word, chosen by the user, is unambiguous in a way no threshold
+     * is.
+     *
+     * Matched with the same whole-word, accent-folding comparison the wake phrase
+     * uses, so a single word has to be heard exactly — `durum` does not stop
+     * anything — and whatever follows it in the same breath becomes the next
+     * question.
+     */
+    interruptPhrase: string;
     fallbackToDefaultDevice: boolean;
     /**
      * Read the reply itself aloud, rather than a briefing about it.
@@ -410,6 +553,21 @@ export const WAKE_PHRASE_DEFAULT = 'wake up fool';
 export const PUSH_TO_TALK_DEFAULT = 'Control+Alt+V';
 
 /**
+ * The assistant a spoken conversation hands its work to, until told otherwise.
+ *
+ * `the-fool` is the shipped personal assistant: it can see the screen, drive
+ * the machine, write code and research, which is what a request made out loud
+ * usually needs.
+ *
+ * Named here rather than left empty. Empty meant "the first enabled agent", and
+ * the only assistant shipped enabled was the app's own setup butler — so asking
+ * the voice to find some mods and open them went to the assistant whose job is
+ * registering MCP servers and diagnosing stuck conversations. The picker beside
+ * the microphone changes it, and a stored choice always wins over this.
+ */
+export const VOICE_DEFAULT_ASSISTANT_ID = 'the-fool';
+
+/**
  * The shape of a stored settings record.
  *
  * 1 — as shipped before the shortcut did anything.
@@ -435,6 +593,9 @@ export const CLONING_MODEL_ID = 'tts-pocket-int8-2026-01-26';
  * was unreachable from inside the app.
  */
 export const AUDIOCPP_POCKET_MODEL_ID = 'tts-audiocpp-pocket';
+export const AUDIOCPP_CHATTERBOX_MODEL_ID = 'tts-audiocpp-chatterbox';
+export const AUDIOCPP_QWEN3_MODEL_ID = 'tts-audiocpp-qwen3-customvoice';
+export const AUDIOCPP_SUPERTONIC_MODEL_ID = 'tts-audiocpp-supertonic-3';
 
 /**
  * Every engine that can speak in a voice it was not trained on.
@@ -446,6 +607,7 @@ export const AUDIOCPP_POCKET_MODEL_ID = 'tts-audiocpp-pocket';
 export const CLONING_ENGINES: readonly { modelId: string; providerId: LocalVoiceProviderId }[] = [
   { modelId: CLONING_MODEL_ID, providerId: 'local-sherpa' },
   { modelId: AUDIOCPP_POCKET_MODEL_ID, providerId: 'local-audiocpp' },
+  { modelId: AUDIOCPP_CHATTERBOX_MODEL_ID, providerId: 'local-audiocpp' },
 ];
 
 export const CLONING_MODEL_IDS: readonly string[] = CLONING_ENGINES.map((engine) => engine.modelId);
@@ -504,6 +666,14 @@ export const localProviderFor = (models: readonly ProviderOwnedModel[], modelId:
 export const WAKE_PHRASE_LEGACY_DEFAULT = 'hey fool';
 
 /**
+ * How readily the wake phrase is accepted, on a fresh install.
+ *
+ * Lowered from 0.65: the phrase had to be said deliberately at the microphone
+ * to be heard, which is not what a wake word is for.
+ */
+export const WAKE_SENSITIVITY_DEFAULT = 0.3;
+
+/**
  * The detector sensitivity shipped before it was measured.
  *
  * Paired with the old noise floor it put the bar for speech around an RMS of
@@ -526,13 +696,15 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
   activation: {
     talkModeEnabled: false,
     pushToTalkShortcut: PUSH_TO_TALK_DEFAULT,
+    // Off: talking without touching anything is the reason to have this at all.
+    conversationHoldToTalk: false,
     wakePhrase: {
       // On by default because the desktop pet is the real switch: the listener
       // only opens the microphone while the pet is on screen.
       enabled: true,
       modelId: 'stt-phrase-v1',
       phrase: WAKE_PHRASE_DEFAULT,
-      sensitivity: 0.65,
+      sensitivity: WAKE_SENSITIVITY_DEFAULT,
     },
   },
   vad: {
@@ -553,7 +725,11 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     modelId: 'stt-whisper-turbo',
     language: 'auto',
   },
+  transcript: DEFAULT_TRANSCRIPT_RULES,
   tts: {
+    // The engine everyone has. Switching to `cuda` is opt-in because it is an
+    // 800 MB download, and the default voice does not need it.
+    backend: 'cpu',
     providerId: 'local-sherpa',
     modelId: 'tts-piper-en-libritts-r',
     profileId: 'libritts-p0',
@@ -576,15 +752,33 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     timeoutMs: 45000,
   },
   session: {
-    assistantId: '',
+    assistantId: VOICE_DEFAULT_ASSISTANT_ID,
+    unattended: true,
     providerId: '',
     modelId: '',
     attachScreenshot: true,
     screenshotSource: 'window',
   },
+  realtime: {
+    // The local pipeline by default: it is the only one of the four that can
+    // hold a conversation with nothing bought and no key entered, and the
+    // models it needs are the ones the voice settings already install.
+    providerId: 'local-pipeline',
+    model: '',
+    localEndpoint: '',
+    visionModel: '',
+    voice: 'marin',
+    personaPresetId: 'companion',
+    customInstructions: '',
+    language: 'auto',
+  },
   playback: {
     volume: 0.85,
     interruptible: true,
+    // One syllable, and the same word in most of the languages this app speaks —
+    // and one word has to be heard exactly, so a short unambiguous one is what
+    // works. Changed in the same panel that starts the conversation.
+    interruptPhrase: 'stop',
     fallbackToDefaultDevice: true,
     autoReadAloud: false,
   },
@@ -672,12 +866,18 @@ const settingsSchema = z
       .object({
         talkModeEnabled: z.boolean().default(false),
         pushToTalkShortcut: z.string().max(128).default(PUSH_TO_TALK_DEFAULT),
+        conversationHoldToTalk: z.boolean().default(false),
         wakePhrase: z
           .object({
             enabled: z.boolean().default(true),
             modelId: z.literal('stt-phrase-v1').default('stt-phrase-v1'),
             phrase: normalizedWakePhraseSchema.default(WAKE_PHRASE_DEFAULT),
-            sensitivity: z.number().min(0).max(1).default(0.65),
+            // Matches DEFAULT_FOOL_VOICE_SETTINGS. The two were allowed to
+            // drift when the shipped value was lowered, so a record with no
+            // stored sensitivity parsed to a bar twice as high as a fresh
+            // install's — the same phrase heard on one machine and not the
+            // other, with nothing in the settings to explain it.
+            sensitivity: z.number().min(0).max(1).default(WAKE_SENSITIVITY_DEFAULT),
           })
           .strict()
           .default({}),
@@ -714,8 +914,20 @@ const settingsSchema = z
       })
       .strict()
       .default({}),
+    transcript: z
+      .object({
+        removeFillers: z.boolean().default(true),
+        selfCorrection: z.boolean().default(true),
+        collapseRepeats: z.boolean().default(true),
+        // A speaker's own hesitations, not a word list: short entries, and few
+        // enough that the rule stays something a person can reason about.
+        customFillers: z.array(z.string().min(1).max(32)).max(64).default([]),
+      })
+      .strict()
+      .default({}),
     tts: z
       .object({
+        backend: z.enum(['cpu', 'cuda']).default('cpu'),
         providerId: z.enum(['local-sherpa', 'local-audiocpp', 'openai-compatible']).default('local-sherpa'),
         modelId: identifierSchema.default('tts-piper-en-libritts-r'),
         profileId: identifierSchema.default('libritts-p0'),
@@ -764,7 +976,8 @@ const settingsSchema = z
       .default({}),
     session: z
       .object({
-        assistantId: z.string().max(128).default(''),
+        assistantId: z.string().max(128).default(VOICE_DEFAULT_ASSISTANT_ID),
+        unattended: z.boolean().default(true),
         providerId: z.string().max(128).default(''),
         modelId: z.string().max(256).default(''),
         attachScreenshot: z.boolean().default(true),
@@ -772,10 +985,35 @@ const settingsSchema = z
       })
       .strict()
       .default({}),
+    realtime: z
+      .object({
+        providerId: z.enum(['openai-realtime', 'gemini-live', 'local-s2s', 'local-pipeline']).default('local-pipeline'),
+        model: z.string().max(256).default(''),
+        // Empty is the LM Studio default rather than an invalid URL, so the
+        // field can be cleared to get back to it.
+        localEndpoint: z.literal('').or(httpBaseUrlSchema).default(''),
+        // Empty means the thinking model does the looking too.
+        visionModel: z.string().max(256).default(''),
+        voice: z.string().max(64).default('marin'),
+        personaPresetId: z
+          .enum(['companion', 'english-teacher', 'language-partner', 'interview-coach', 'custom'])
+          .default('companion'),
+        // Room for a real brief — a teaching persona with the learner's level,
+        // their weak spots and the subjects they want to talk about runs to a
+        // few paragraphs — and short of anything that could be a pasted
+        // transcript.
+        customInstructions: z.string().max(4000).default(''),
+        language: languageSchema.default('auto'),
+      })
+      .strict()
+      .default({}),
     playback: z
       .object({
         volume: z.number().min(0).max(1).default(0.85),
-        interruptible: z.literal(true).default(true),
+        interruptible: z.boolean().default(true),
+        // Short, because a phrase this is compared against word by word wants to
+        // be one or two words. Empty is not allowed: it would match everything.
+        interruptPhrase: z.string().trim().min(1).max(64).default('stop'),
         fallbackToDefaultDevice: z.boolean().default(true),
         autoReadAloud: z.boolean().default(false),
       })
@@ -1068,13 +1306,27 @@ export type VoiceEventEnvelope<T> = {
   payload: T;
 };
 
-export type VoiceCatalogRequest = { includeProfiles: boolean };
+export type VoiceCatalogRequest = {
+  includeProfiles: boolean;
+  /**
+   * Which audio.cpp build to answer "is it installed?" about.
+   *
+   * A model is only ready if the engine that can run it is on disk, and the two
+   * builds are separate downloads — so switching a machine with the CPU build
+   * to `cuda` correctly reports every audio.cpp voice as needing an install
+   * again. Absent means the processor, which is what a caller that has not
+   * heard of this setting wants.
+   */
+  backend?: VoiceEngineBackend;
+};
 export type VoiceCatalogResponse = {
   providers: readonly VoiceProvider[];
   models: readonly VoiceModel[];
   profiles: readonly VoiceProfile[];
 };
 export type VoiceDownloadRequest = {
+  /** Which engine build to fetch alongside the weights. */
+  backend?: VoiceEngineBackend;
   operationId: string;
   providerId: LocalVoiceProviderId;
   modelId: string;
@@ -1091,6 +1343,8 @@ export type VoiceRemoveResponse = {
 };
 export type VoiceHealthRequest = {
   providerId: VoiceProviderId;
+  /** Which audio.cpp build the check is about. Ignored by the other providers. */
+  backend?: VoiceEngineBackend;
   capability?: VoiceCapability;
   modelId?: string;
 };
@@ -1163,6 +1417,8 @@ export type VoiceDeleteClonedResponse = {
 };
 export type VoiceSynthesizeRequest = {
   operationId: string;
+  /** Where audio.cpp should run this. Ignored by the other providers. */
+  backend?: VoiceEngineBackend;
   providerId: SynthesisProviderId;
   modelId: string;
   profileId: string;
@@ -1282,8 +1538,36 @@ export type VoiceCancelResponse = {
   state: 'cancelling' | 'cancelled' | 'not-found' | 'already-terminal';
 };
 
-export type VoiceRealtimeEnsureRequest = Record<string, never>;
+export type VoiceRealtimeEnsureRequest = {
+  modelId?: string;
+  voiceId?: string;
+};
 export type VoiceRealtimeEnsureResponse = {
   endpoint: string;
   reused: boolean;
+};
+
+/**
+ * Asking the main process where — and as whom — to open a spoken conversation.
+ *
+ * The model is part of the request because the credential can depend on it: a
+ * minted client secret is issued against the session it will be used for, so the
+ * process cannot mint one without knowing which model the window is about to
+ * ask for.
+ */
+export type VoiceRealtimeSessionRequest = {
+  providerId: string;
+  model: string;
+};
+
+export type VoiceRealtimeSessionResponse = {
+  providerId: string;
+  /** Empty for the local pipeline, which is not authenticated. */
+  token: string;
+  /** Empty where the adapter already knows the provider's fixed address. */
+  endpoint: string;
+  /** True when the token is short-lived and a later session must ask again. */
+  ephemeral: boolean;
+  /** The provider record's own name, so the page can say which account is paying. */
+  providerName: string;
 };

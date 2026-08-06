@@ -9,7 +9,7 @@ import { synthesisProviderFor, type FoolVoiceSettings, type VoiceSynthesizedWav 
 import type { AudioPlaybackService } from '@renderer/services/voice/AudioPlaybackService';
 import { summarizeForSpeech } from '@renderer/services/voice/narration/englishSummary';
 import { splitForSpeech } from '@renderer/services/voice/narration/speechChunks';
-import { selectTtsTarget } from '@renderer/services/voice/selectTtsTarget';
+import { CLONED_PROFILE_PREFIX } from '@/common/voice/clonedProfile';
 import { createSpeechClipQueue } from '@renderer/services/voice/speechClipQueue';
 import { publishVoiceReply } from '@renderer/services/voice/publishVoiceStage';
 
@@ -44,14 +44,6 @@ const unwrap = <T>(envelope: { ok: true; data: T } | { ok: false; error: { code:
   return envelope.data;
 };
 
-/**
- * Matches `CLONED_PROFILE_PREFIX` in the main process's `ClonedVoiceStore`.
- * Not imported directly: that module lives under `process/`, off limits to
- * the renderer, and the prefix is part of the profile id's public shape
- * rather than an implementation detail of the store.
- */
-const CLONED_PROFILE_PREFIX = 'cloned:';
-
 export type PreparedSynthesis = { synthesize: (text: string) => Promise<VoiceSynthesizedWav> };
 
 /** No text-to-speech model is installed to speak with. */
@@ -84,12 +76,18 @@ export const prepareSynthesis = async (
       payload: { includeProfiles: true },
     })
   );
-  const installed = catalog.models
-    .filter((model) => model.role === 'text-to-speech' && model.state.status === 'ready')
-    .map((model) => model.id);
+  const speakable = catalog.models.filter((model) => model.role === 'text-to-speech' && model.state.status === 'ready');
+  const installed = speakable.map((model) => model.id);
   if (installed.length === 0) return { unavailable: true };
 
-  const target = selectTtsTarget(sampleText, settings, installed);
+  // The voice the user chose, with no second-guessing from the text. A reply
+  // that looked Turkish used to be handed to a Turkish preset instead, which
+  // changed who was speaking mid-conversation and had no setting to turn off.
+  const target = {
+    modelId: settings.tts.modelId,
+    profileId: settings.tts.profileId,
+    language: settings.tts.language,
+  };
 
   // A cloned voice is a recording, not a trained model: its id names a real,
   // installed engine (Pocket) whichever machine runs it, so "the model is

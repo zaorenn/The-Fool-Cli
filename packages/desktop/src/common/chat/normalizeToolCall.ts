@@ -208,6 +208,29 @@ export function normalizeToolCall(message: IMessageToolCall): NormalizedToolCall
     : args && Object.keys(args).length > 0
       ? formatValue(args)
       : undefined;
+  let displayOutput = output;
+  let imagePath: string | undefined = undefined;
+
+  if (output) {
+    try {
+      const parsed = JSON.parse(output);
+      if (Array.isArray(parsed)) {
+        const imageBlock = parsed.find((b) => b.type === 'image' && b.data);
+        if (imageBlock) {
+          imagePath = `data:${imageBlock.mimeType || 'image/png'};base64,${imageBlock.data}`;
+          // Filter out the image block from the display text to avoid huge base64 spam
+          const textBlocks = parsed.filter((b) => b.type === 'text' && b.text).map((b) => b.text);
+          displayOutput = textBlocks.length > 0 ? textBlocks.join('\n') : undefined;
+        }
+      }
+    } catch (e) {
+      // Not JSON, check if it looks like a base64 string (starts with data:image or is just base64)
+      if (typeof output === 'string' && output.startsWith('iVBORw0KGgo')) {
+        imagePath = `data:image/png;base64,${output}`;
+        displayOutput = undefined;
+      }
+    }
+  }
 
   return {
     key: call_id,
@@ -215,7 +238,8 @@ export function normalizeToolCall(message: IMessageToolCall): NormalizedToolCall
     status: normalizeToolCallStatus(status),
     description: description || undefined,
     input: displayInput,
-    output,
+    output: displayOutput,
+    imagePath,
   };
 }
 

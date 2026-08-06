@@ -103,6 +103,30 @@ describe('sanitizeForSpeech', () => {
 
     expect(sanitizeForSpeech(prose)).toBe(prose);
   });
+
+  /**
+   * A model narrating itself, which a voice must not read out.
+   *
+   * Reported as "it says 'calls ask app jester' and there are constantly things
+   * in brackets and it reads them". Both come from the model describing its own
+   * actions in the reply text: unwrapping the emphasis left the words behind, so
+   * the assistant announced the name of the function it was about to call.
+   */
+  it('drops a stage direction naming the tool it is about to call', () => {
+    expect(sanitizeForSpeech('Sure. *calls app_ask_jester* Opening it now.')).toBe('Sure. Opening it now.');
+  });
+
+  it('drops the bare tool name, however it was written', () => {
+    expect(sanitizeForSpeech('I will use app_look_at_screen to check.')).toBe('I will use to check.');
+  });
+
+  it('drops asides in brackets, which a voice reads mid-sentence', () => {
+    expect(sanitizeForSpeech('The tests pass (all 41 of them) on the branch.')).toBe('The tests pass on the branch.');
+  });
+
+  it('keeps emphasis that is emphasis rather than a stage direction', () => {
+    expect(sanitizeForSpeech('That is *really* the last one.')).toBe('That is really the last one.');
+  });
 });
 
 describe('truncateToSpokenLength', () => {

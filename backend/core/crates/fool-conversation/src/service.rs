@@ -1198,9 +1198,21 @@ impl ConversationService {
                     .await
                     .map_err(|e| ConversationError::internal(format!("Failed to list MCP servers: {e}")))?,
             };
+            // Built-in servers are rows like any other. They were filtered out
+            // here, and the list this produces is the whole of what the agent is
+            // later allowed to load — so the screen, the mouse and the keyboard
+            // never reached a single conversation. Asked to search a page it had
+            // just opened, the agent answered that its "available tools are file
+            // system manipulation", and it was right.
+            //
+            // The agent layer already came to this conclusion: see
+            // `load_user_mcp_servers`, where the same exclusion was removed for
+            // the same reason. This is the other half of it. Nothing is switched
+            // on by doing this — an assistant that names its servers gets those,
+            // one that names none gets whatever the user enabled, and a server
+            // the user has not enabled stays out either way.
             let selected_rows = rows
                 .into_iter()
-                .filter(|row| !row.builtin)
                 .filter(|row| match selected_mcp_server_ids.as_ref() {
                     Some(ids) => ids.iter().any(|id| id == &row.id),
                     None => row.enabled,

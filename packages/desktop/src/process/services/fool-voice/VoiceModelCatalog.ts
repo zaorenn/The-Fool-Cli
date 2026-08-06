@@ -1,4 +1,12 @@
-import { AUDIOCPP_POCKET_MODEL_ID, type VoiceModel, type VoiceProfile } from '../../../common/types/foolVoice';
+import {
+  AUDIOCPP_CHATTERBOX_MODEL_ID,
+  AUDIOCPP_QWEN3_MODEL_ID,
+  AUDIOCPP_POCKET_MODEL_ID,
+  AUDIOCPP_SUPERTONIC_MODEL_ID,
+  type VoiceEngineBackend,
+  type VoiceModel,
+  type VoiceProfile,
+} from '../../../common/types/foolVoice';
 import { AUDIOCPP_MODEL_SPECS, getAudioCppModelSpec } from './audiocpp/audioCppEngineSpecs';
 
 const RELEASE_BASE = 'https://github.com/k2-fsa/sherpa-onnx/releases/download';
@@ -36,6 +44,16 @@ const PIPER_LIBRITTS_VOICES: readonly { id: string; displayName: string; speaker
   { id: 'libritts-p800', displayName: 'Reader 8 (US)', speakerId: 800 },
 ];
 
+/**
+ * The languages a multilingual Whisper actually transcribes.
+ *
+ * Listed so the model picker can stop implying that local transcription is only
+ * for Turkish and English. It is the set the app has translations for rather
+ * than all ninety-nine: a picker filtered by a language the interface cannot
+ * speak is offering a choice it cannot then describe.
+ */
+const WHISPER_LANGUAGES: readonly string[] = ['tr', 'en', 'de', 'fr', 'es', 'pt', 'ru', 'uk', 'ja', 'ko', 'zh', 'fa'];
+
 export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
   {
     id: 'stt-whisper-turbo',
@@ -63,19 +81,6 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
     profileIds: PIPER_LIBRITTS_VOICES.map((voice) => voice.id),
   },
   {
-    id: 'tts-piper-tr-fettah',
-    providerId: 'local-sherpa',
-    displayName: 'Piper Fettah (Türkçe)',
-    languages: ['tr'],
-    role: 'text-to-speech',
-    distribution: 'managed',
-    state: { status: 'not-installed' },
-    downloadBytes: null,
-    installedBytes: null,
-    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
-    profileIds: ['piper-tr-fettah-v2'],
-  },
-  {
     id: 'tts-kitten-nano-en-v0_8',
     providerId: 'local-sherpa',
     displayName: 'Kitten Nano (English)',
@@ -87,6 +92,21 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
     installedBytes: null,
     audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
     profileIds: ['kitten-nano-0', 'kitten-nano-1', 'kitten-nano-2', 'kitten-nano-3'],
+  },
+  {
+    id: 'stt-whisper-large-v3',
+    providerId: 'local-sherpa',
+    // Every language Whisper knows, not the two this app was first tuned for:
+    // the list below is what the picker filters on, and a short one made the
+    // most capable model look like a Turkish-and-English one.
+    displayName: 'Whisper Large v3 (99 languages, most accurate)',
+    languages: WHISPER_LANGUAGES,
+    role: 'speech-to-text',
+    distribution: 'managed',
+    state: { status: 'not-installed' },
+    downloadBytes: null,
+    installedBytes: null,
+    audioInput: { container: 'wav', encoding: 'pcm16le', sampleRateHz: 16000, channels: 1 },
   },
   {
     id: 'stt-whisper-tiny-int8-v1',
@@ -121,30 +141,6 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
   // The int8 Piper builds were removed after measurement: they synthesise 4x
   // slower than the float builds above (300 ms vs 82 ms) because quantisation
   // overhead dominates at this model size.
-  {
-    id: 'tts-supertonic-3-int8-2026-05-11',
-    providerId: 'local-sherpa',
-    displayName: 'Supertonic 3 (int8, Turkish)',
-    languages: ['tr'],
-    role: 'text-to-speech',
-    distribution: 'managed',
-    state: { status: 'not-installed' },
-    downloadBytes: null,
-    installedBytes: null,
-    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
-    profileIds: [
-      'supertonic-speaker-0',
-      'supertonic-speaker-1',
-      'supertonic-speaker-2',
-      'supertonic-speaker-3',
-      'supertonic-speaker-4',
-      'supertonic-speaker-5',
-      'supertonic-speaker-6',
-      'supertonic-speaker-7',
-      'supertonic-speaker-8',
-      'supertonic-speaker-9',
-    ],
-  },
   {
     id: 'tts-pocket-int8-2026-01-26',
     providerId: 'local-sherpa',
@@ -190,6 +186,70 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
     paramSpecs: getAudioCppModelSpec(AUDIOCPP_POCKET_MODEL_ID)?.params,
   },
   {
+    id: AUDIOCPP_SUPERTONIC_MODEL_ID,
+    providerId: 'local-audiocpp',
+    // The fastest voice in this catalog by a wide margin, and the only one that
+    // is both fast and multilingual. Measured here against a warm server on a
+    // 4070 Ti Super: 0.06 s to 0.26 s a sentence, which is between sixteen and
+    // seventy-six times faster than the audio plays, in 575 MiB of graphics
+    // memory. The engines it sits beside cost 0.43 s (Pocket), 0.87 s
+    // (Chatterbox) and 0.5-0.9 s (Qwen3), the last two of which also want
+    // gigabytes of card.
+    //
+    // Its Turkish was round-tripped rather than assumed: rendered and then
+    // transcribed back, "Merhaba, bugün hava çok güzel ve seninle konuşmak
+    // istiyorum" came back word for word with every diacritic intact. Pocket
+    // returns a recognisable mangling of the same sentence and MOSS-Nano
+    // returns English.
+    displayName: 'Supertonic 3 (Fastest, 30+ languages, male and female)',
+    languages: getAudioCppModelSpec(AUDIOCPP_SUPERTONIC_MODEL_ID)?.languages ?? ['en'],
+    role: 'text-to-speech',
+    distribution: 'managed',
+    state: { status: 'not-installed' },
+    downloadBytes: null,
+    installedBytes: null,
+    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
+    profileIds: (getAudioCppModelSpec(AUDIOCPP_SUPERTONIC_MODEL_ID)?.presetSpeakers ?? []).map((speaker) => speaker.id),
+    paramSpecs: getAudioCppModelSpec(AUDIOCPP_SUPERTONIC_MODEL_ID)?.params,
+  },
+  {
+    id: AUDIOCPP_CHATTERBOX_MODEL_ID,
+    providerId: 'local-audiocpp',
+    // Measured here on both, warm, same sentence and seed: about 80 s on the
+    // processor and 0.87 s on a graphics card. That is not a preference, it is
+    // the line between a voice and a progress bar, which is why the spec
+    // refuses the processor outright and the name says what is needed.
+    displayName: 'Chatterbox (Voice cloning + emotion, needs GPU)',
+    languages: getAudioCppModelSpec(AUDIOCPP_CHATTERBOX_MODEL_ID)?.languages ?? ['en'],
+    role: 'text-to-speech',
+    distribution: 'managed',
+    state: { status: 'not-installed' },
+    downloadBytes: null,
+    installedBytes: null,
+    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
+    profileIds: [],
+    requiresClonedVoice: true,
+    paramSpecs: getAudioCppModelSpec(AUDIOCPP_CHATTERBOX_MODEL_ID)?.params,
+  },
+  {
+    id: AUDIOCPP_QWEN3_MODEL_ID,
+    providerId: 'local-audiocpp',
+    // The only voice here that takes a direction in words rather than a number,
+    // and the only one with a cast in four languages. Between 0.5 s and 0.9 s a
+    // sentence on a graphics card once its CUDA graphs are built — the first
+    // couple of requests pay about twenty seconds for that.
+    displayName: 'Qwen3 TTS (Directable voices, needs GPU)',
+    languages: getAudioCppModelSpec(AUDIOCPP_QWEN3_MODEL_ID)?.languages ?? ['en'],
+    role: 'text-to-speech',
+    distribution: 'managed',
+    state: { status: 'not-installed' },
+    downloadBytes: null,
+    installedBytes: null,
+    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
+    profileIds: (getAudioCppModelSpec(AUDIOCPP_QWEN3_MODEL_ID)?.presetSpeakers ?? []).map((speaker) => speaker.id),
+    paramSpecs: getAudioCppModelSpec(AUDIOCPP_QWEN3_MODEL_ID)?.params,
+  },
+  {
     id: 'stt-phrase-v1',
     providerId: 'transcript-wake-word',
     displayName: 'Transcript Wake Word Phrase Matcher',
@@ -207,7 +267,31 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
  * `speakerId` is the value passed to the synthesiser; the ids are stable so a
  * stored preference survives catalog reordering.
  */
+/**
+ * The profiles an audio.cpp model with its own cast contributes.
+ *
+ * Every one of these engines addresses a voice by name rather than by index, so
+ * `speakerId` is a placeholder the audio.cpp path never reads — the request
+ * carries `Ryan` or `M1`.
+ */
+const audioCppPresetProfiles = (modelId: string): readonly VoiceProfile[] =>
+  (getAudioCppModelSpec(modelId)?.presetSpeakers ?? []).map(
+    (speaker): VoiceProfile => ({
+      id: speaker.id,
+      providerId: 'local-audiocpp',
+      modelId,
+      kind: 'preset',
+      state: 'ready',
+      displayName: speaker.displayName,
+      languages: speaker.languages,
+      speakerId: 0,
+      deletable: false,
+    })
+  );
+
 export const FOOL_VOICE_PRESET_PROFILES: readonly VoiceProfile[] = [
+  ...audioCppPresetProfiles(AUDIOCPP_SUPERTONIC_MODEL_ID),
+  ...audioCppPresetProfiles(AUDIOCPP_QWEN3_MODEL_ID),
   ...PIPER_LIBRITTS_VOICES.map(
     (voice): VoiceProfile => ({
       id: voice.id,
@@ -221,17 +305,6 @@ export const FOOL_VOICE_PRESET_PROFILES: readonly VoiceProfile[] = [
       deletable: false,
     })
   ),
-  {
-    id: 'piper-tr-fettah-v2',
-    providerId: 'local-sherpa',
-    modelId: 'tts-piper-tr-fettah',
-    kind: 'preset',
-    state: 'unavailable',
-    displayName: 'Fettah (Türkçe)',
-    languages: ['tr'],
-    speakerId: 0,
-    deletable: false,
-  },
   ...Array.from(
     { length: 4 },
     (_, index): VoiceProfile => ({
@@ -259,20 +332,14 @@ export const FOOL_VOICE_PRESET_PROFILES: readonly VoiceProfile[] = [
       deletable: false,
     })
   ),
-  ...Array.from(
-    { length: 10 },
-    (_, index): VoiceProfile => ({
-      id: `supertonic-speaker-${index}`,
-      providerId: 'local-sherpa',
-      modelId: 'tts-supertonic-3-int8-2026-05-11',
-      kind: 'preset',
-      state: 'unavailable',
-      displayName: `Supertonic ${index + 1} (Türkçe)`,
-      languages: ['tr'],
-      speakerId: index,
-      deletable: false,
-    })
-  ),
+  // Supertonic's ten Turkish speakers were here, and they were the worst kind of
+  // entry: the only Turkish voice besides Piper, offered as a 129 MB download,
+  // installable, selectable — and mute. `sherpa-onnx-node` carries no Supertonic
+  // loader at all, so a reply routed to it threw `Not a text-to-speech model`
+  // inside playback, where the failure is swallowed. An English voice reading
+  // Turkish is a bad accent; this was silence, and it looked like the whole
+  // feature being broken. Removed rather than fixed because there is nothing
+  // here to fix until upstream ships the loader.
 ];
 
 /**
@@ -318,6 +385,22 @@ export const MANAGED_CATALOG_ENTRIES: Record<string, ManagedCatalogEntry> = {
       'sherpa-onnx-whisper-turbo/turbo-tokens.txt',
     ],
   },
+  // The most accurate transcription available locally, and the slowest by a
+  // wide margin — a gigabyte of int8 weights against turbo's half. Worth the
+  // wait for dictation and for an accent turbo keeps mishearing; wrong for the
+  // wake word, which has to answer before the user gives up on it.
+  // URL, checksum and size measured from the downloaded archive.
+  'stt-whisper-large-v3': {
+    modelId: 'stt-whisper-large-v3',
+    url: `${RELEASE_BASE}/asr-models/sherpa-onnx-whisper-large-v3.tar.bz2`,
+    sha256: '2d0e134b3b5fc4a0533baf24a0c9d473b629aa47f030af0a165a05f461df7a03',
+    archiveBytes: 1068482488,
+    expectedFiles: [
+      'sherpa-onnx-whisper-large-v3/large-v3-encoder.int8.onnx',
+      'sherpa-onnx-whisper-large-v3/large-v3-decoder.int8.onnx',
+      'sherpa-onnx-whisper-large-v3/large-v3-tokens.txt',
+    ],
+  },
   // Fastest measured voice: 82 ms for a short sentence (29.6x realtime).
   // float weights beat the int8 build here — quantisation overhead dominates at
   // this model size.
@@ -329,17 +412,6 @@ export const MANAGED_CATALOG_ENTRIES: Record<string, ManagedCatalogEntry> = {
     expectedFiles: [
       'vits-piper-en_US-libritts_r-medium/en_US-libritts_r-medium.onnx',
       'vits-piper-en_US-libritts_r-medium/tokens.txt',
-    ],
-  },
-  // Turkish voice: 214 ms for 5 s of speech (23.2x realtime).
-  'tts-piper-tr-fettah': {
-    modelId: 'tts-piper-tr-fettah',
-    url: `${RELEASE_BASE}/tts-models/vits-piper-tr_TR-fettah-medium.tar.bz2`,
-    sha256: '314a9910616fb17be882c77f0bcf76796a1914d4d606f3c984f9094cb9abf1e5',
-    archiveBytes: 67174342,
-    expectedFiles: [
-      'vits-piper-tr_TR-fettah-medium/tr_TR-fettah-medium.onnx',
-      'vits-piper-tr_TR-fettah-medium/tokens.txt',
     ],
   },
   // Alternative English voice: 241 ms (12.3x realtime).
@@ -378,21 +450,6 @@ export const MANAGED_CATALOG_ENTRIES: Record<string, ManagedCatalogEntry> = {
       'kokoro-int8-en-v0_19/model.int8.onnx',
       'kokoro-int8-en-v0_19/voices.bin',
       'kokoro-int8-en-v0_19/tokens.txt',
-    ],
-  },
-  'tts-supertonic-3-int8-2026-05-11': {
-    modelId: 'tts-supertonic-3-int8-2026-05-11',
-    url: `${RELEASE_BASE}/tts-models/sherpa-onnx-supertonic-3-tts-int8-2026-05-11.tar.bz2`,
-    sha256: '82fa96f91c4ef8abaae3a14a3f4153facf88bed821d1f7331cec2700f432c427',
-    archiveBytes: 128774318,
-    expectedFiles: [
-      'sherpa-onnx-supertonic-3-tts-int8-2026-05-11/duration_predictor.int8.onnx',
-      'sherpa-onnx-supertonic-3-tts-int8-2026-05-11/text_encoder.int8.onnx',
-      'sherpa-onnx-supertonic-3-tts-int8-2026-05-11/vector_estimator.int8.onnx',
-      'sherpa-onnx-supertonic-3-tts-int8-2026-05-11/vocoder.int8.onnx',
-      'sherpa-onnx-supertonic-3-tts-int8-2026-05-11/tts.json',
-      'sherpa-onnx-supertonic-3-tts-int8-2026-05-11/unicode_indexer.bin',
-      'sherpa-onnx-supertonic-3-tts-int8-2026-05-11/voice.bin',
     ],
   },
   // Cloning without a transcript, and with the speaker embedding cached between
@@ -455,42 +512,109 @@ export type EngineCatalogEntry = {
   engineId: string;
   /** Release tag, used only as the on-disk directory name. */
   version: string;
-  url: string;
-  sha256: string | null;
-  archiveBytes: number;
-  /** Paths inside the zip, which stores its files at the archive root. */
+  /**
+   * The zips that together make one usable engine, unpacked into one directory.
+   *
+   * A list rather than a single archive because upstream splits the CUDA build
+   * in two: a 575 MB runtime package carrying the CUDA DLLs, and a much smaller
+   * profile package with the executables. They are published separately so the
+   * runtime can be reused across profiles and releases, and neither half runs
+   * without the other.
+   */
+  archives: readonly { url: string; sha256: string | null; bytes: number }[];
+  /** Paths inside the zips, which store their files at the archive root. */
   expectedFiles: string[];
   /** The executable to spawn, relative to the extracted directory. */
   binaryPath: string;
 };
 
+/** Total bytes to fetch for an engine, across every archive it is made of. */
+export const engineArchiveBytes = (engine: EngineCatalogEntry): number =>
+  engine.archives.reduce((total, archive) => total + archive.bytes, 0);
+
 /**
- * The Windows CPU package, `balance` profile.
+ * The two builds of audio.cpp this app can install, and why there are two.
  *
- * Upstream builds three CPU variants and its own packaging script documents what
- * separates them: `fast` compiles with `-CpuArch native` and may bake in AVX-512,
- * which upstream itself calls "not the safest choice for broad public
- * distribution"; `portable` drops to a baseline arch with llamafile SGEMM off,
- * the slowest but most compatible; `balance` targets AVX2 and is upstream's
- * "recommended default for most modern Windows PCs". This app ships to whatever
- * machine the user has, so `balance` it is.
+ * Upstream publishes a CPU-only package and a CUDA one. They are not the same
+ * program with a flag: the CPU package has no CUDA backend registered at all,
+ * and asking it for one is answered with
+ * `CUDA backend requested but it is not registered in this build`. So choosing
+ * a processor is choosing a download, and the sizes are three orders of
+ * magnitude apart.
  *
- * `sha256` is unset because no download has been made on this project to measure
- * it from — the same footing the Whisper tiny and Pocket entries are on. The
- * manifest check after extraction is what proves the archive was the right one.
+ * Both are the `balance` profile. Upstream builds three CPU variants and its own
+ * packaging script says what separates them: `fast` compiles with
+ * `-CpuArch native` and may bake in AVX-512, which upstream itself calls "not
+ * the safest choice for broad public distribution"; `portable` drops to a
+ * baseline arch with llamafile SGEMM off, the slowest but most compatible;
+ * `balance` targets AVX2 and is upstream's "recommended default for most modern
+ * Windows PCs". This app ships to whatever machine the user has, so `balance`
+ * it is — and the CUDA profile packages carry the same CPU kernels, so the same
+ * reasoning applies to the fallback path inside them.
+ *
+ * `sha256` is unset because no download has been made on this project to
+ * measure it from — the same footing the Whisper tiny entry is on. The manifest
+ * check after extraction is what proves the archives were the right ones.
  */
+const AUDIOCPP_RELEASE = 'release-0.5';
+const AUDIOCPP_DOWNLOADS = `https://github.com/0xShug0/audio.cpp/releases/download/${AUDIOCPP_RELEASE}`;
+
+/**
+ * Flat, not under `bin/`: upstream's packaging script stages the build's `bin`
+ * directory plus the MSVC and OpenMP redistributables, then archives the
+ * staging directory's *contents*.
+ */
+const AUDIOCPP_EXPECTED_FILES = ['audiocpp_server.exe', 'MSVCP140.dll', 'VCRUNTIME140.dll'];
+
 export const AUDIOCPP_ENGINE: EngineCatalogEntry = {
   engineId: 'audiocpp',
-  version: 'release-0.5',
-  url: 'https://github.com/0xShug0/audio.cpp/releases/download/release-0.5/audiocpp-windows-cpu-balance-3178daf4.zip',
-  sha256: null,
-  archiveBytes: 11399800,
-  // Flat, not under `bin/`: upstream's packaging script stages the build's `bin`
-  // directory plus the MSVC and OpenMP redistributables, then archives the
-  // staging directory's *contents*.
-  expectedFiles: ['audiocpp_server.exe', 'MSVCP140.dll', 'VCRUNTIME140.dll'],
+  version: AUDIOCPP_RELEASE,
+  archives: [
+    {
+      url: `${AUDIOCPP_DOWNLOADS}/audiocpp-windows-cpu-balance-3178daf4.zip`,
+      sha256: null,
+      bytes: 11399800,
+    },
+  ],
+  expectedFiles: AUDIOCPP_EXPECTED_FILES,
   binaryPath: 'audiocpp_server.exe',
 };
+
+/**
+ * The same release, built with CUDA — and it is 800 MB, so it is never fetched
+ * unless the user asks for it.
+ *
+ * The runtime archive is listed first so the DLLs are in place before the
+ * executables that link against them, and both land in one directory because
+ * that is where the loader looks: beside the `.exe`.
+ *
+ * Kept under its own engine id rather than as a variant of the one above, so
+ * the two never share an install directory. They contain files of the same
+ * names, and a half-overwritten engine is the kind of failure that presents as
+ * a model being broken.
+ */
+export const AUDIOCPP_CUDA_ENGINE: EngineCatalogEntry = {
+  engineId: 'audiocpp-cuda',
+  version: AUDIOCPP_RELEASE,
+  archives: [
+    {
+      url: `${AUDIOCPP_DOWNLOADS}/audiocpp-windows-cuda-runtime.zip`,
+      sha256: null,
+      bytes: 575505446,
+    },
+    {
+      url: `${AUDIOCPP_DOWNLOADS}/audiocpp-windows-cuda-balance-3178daf4.zip`,
+      sha256: null,
+      bytes: 248471641,
+    },
+  ],
+  expectedFiles: AUDIOCPP_EXPECTED_FILES,
+  binaryPath: 'audiocpp_server.exe',
+};
+
+/** The build that can run on a given processor. */
+export const audioCppEngineFor = (backend: VoiceEngineBackend): EngineCatalogEntry =>
+  backend === 'cuda' ? AUDIOCPP_CUDA_ENGINE : AUDIOCPP_ENGINE;
 
 /**
  * A model whose weights arrive as plain files rather than inside an archive.
@@ -547,6 +671,56 @@ export const AUDIOCPP_CATALOG_ENTRIES: Record<string, AudioCppCatalogEntry> = {
     expectedFiles: ['pocket-tts-english-q8_0.gguf'],
     archiveBytes: 127856704,
   },
+  // Sizes and checksums below are the LFS objects' own, read from the Hugging
+  // Face API rather than estimated — a two-gigabyte download with a wrong total
+  // is a progress bar that stalls at 103%, and a wrong checksum is a download
+  // that always fails validation.
+  // A quarter of Chatterbox and a sixth of Qwen3, and faster than both. The
+  // checksum and the size are the LFS object's own, read from the API and
+  // confirmed against the file this machine actually downloaded.
+  [AUDIOCPP_SUPERTONIC_MODEL_ID]: {
+    modelId: AUDIOCPP_SUPERTONIC_MODEL_ID,
+    engineId: AUDIOCPP_ENGINE.engineId,
+    files: [
+      {
+        url: `${HUGGINGFACE_GGUF}/Supertonic-3-GGUF/supertonic-3-orig.gguf`,
+        sha256: 'af814486a0bc9513fb36afabd9b1155ad14fb2c36a107ac6ffe62ea9adafb662',
+        bytes: 454072836,
+        destination: 'supertonic-3-orig.gguf',
+      },
+    ],
+    expectedFiles: ['supertonic-3-orig.gguf'],
+    archiveBytes: 454072836,
+  },
+  [AUDIOCPP_CHATTERBOX_MODEL_ID]: {
+    modelId: AUDIOCPP_CHATTERBOX_MODEL_ID,
+    engineId: AUDIOCPP_ENGINE.engineId,
+    files: [
+      {
+        url: `${HUGGINGFACE_GGUF}/Chatterbox-GGUF/chatterbox-q8_0.gguf`,
+        sha256: 'd586dd1aa59613cab8046176fb7ca5ba191c02a9b10ffa5b0d892ed22b470656',
+        bytes: 2088393668,
+        destination: 'chatterbox-q8_0.gguf',
+      },
+    ],
+    expectedFiles: ['chatterbox-q8_0.gguf'],
+    archiveBytes: 2088393668,
+  },
+  [AUDIOCPP_QWEN3_MODEL_ID]: {
+    modelId: AUDIOCPP_QWEN3_MODEL_ID,
+    engineId: AUDIOCPP_ENGINE.engineId,
+    files: [
+      {
+        url: `${HUGGINGFACE_GGUF}/Qwen3-TTS-12Hz-1.7B-CustomVoice-GGUF/qwen3-tts-12hz-1.7b-customvoice-q8_0.gguf`,
+        // Measured from the file this app downloaded, not copied off a page.
+        sha256: '3cfaac8e9f13554f6daea3c5e0c53fede71ef5500cbaae7445e5fc3a5bb12e72',
+        bytes: 2817044064,
+        destination: 'qwen3-tts-12hz-1.7b-customvoice-q8_0.gguf',
+      },
+    ],
+    expectedFiles: ['qwen3-tts-12hz-1.7b-customvoice-q8_0.gguf'],
+    archiveBytes: 2817044064,
+  },
 };
 
 export class VoiceModelCatalog {
@@ -566,8 +740,15 @@ export class VoiceModelCatalog {
     return AUDIOCPP_CATALOG_ENTRIES[modelId];
   }
 
-  public static getEngine(engineId: string): EngineCatalogEntry | undefined {
-    return engineId === AUDIOCPP_ENGINE.engineId ? AUDIOCPP_ENGINE : undefined;
+  /**
+   * The engine build a request should use.
+   *
+   * `backend` rather than an id because the catalog entries name a logical
+   * engine — the model rows say `audiocpp`, and which build of it runs is the
+   * user's setting, not a property of the model.
+   */
+  public static getEngine(engineId: string, backend: VoiceEngineBackend = 'cpu'): EngineCatalogEntry | undefined {
+    return engineId === AUDIOCPP_ENGINE.engineId ? audioCppEngineFor(backend) : undefined;
   }
 
   /** Every audio.cpp model, as the runtime's server config needs to see them. */

@@ -105,6 +105,7 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
         // browse — and the audio.cpp provider has no route to ask for one.
         const hasOwnSpeakerList = model.role === 'text-to-speech' && model.profileIds.length > 1;
         const installed = isInstalled(model);
+        const noEngine = model.state.status === 'invalid' && model.state.reason === 'no-engine';
         const install = installs[model.id];
         const verification = verifications[model.id];
         const busy = Boolean(install) && install.phase !== 'failed';
@@ -134,18 +135,29 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
                 </Tooltip>
               )}
 
-              {(!installed || busy) && (
-                <Button
-                  size='mini'
-                  type='primary'
-                  data-testid={`voice-model-install-${model.id}`}
-                  onClick={() => onInstall(model.id)}
-                  loading={busy}
-                  disabled={busy}
-                  status={install?.phase === 'failed' ? 'danger' : undefined}
-                >
-                  {install ? installLabel(install) : t('settings.voice.install')}
-                </Button>
+              {/* An install button is only honest when installing would help.
+                  Weights that are all present with no engine to load them are
+                  not a failed download, and offering the download again is the
+                  app telling the user to keep trying something that cannot
+                  work. */}
+              {noEngine ? (
+                <Tag size='small' color='red' data-testid={`voice-model-no-engine-${model.id}`}>
+                  {t('settings.voice.modelNoEngine')}
+                </Tag>
+              ) : (
+                (!installed || busy) && (
+                  <Button
+                    size='mini'
+                    type='primary'
+                    data-testid={`voice-model-install-${model.id}`}
+                    onClick={() => onInstall(model.id)}
+                    loading={busy}
+                    disabled={busy}
+                    status={install?.phase === 'failed' ? 'danger' : undefined}
+                  >
+                    {install ? installLabel(install) : t('settings.voice.install')}
+                  </Button>
+                )
               )}
 
               {/* Checks what is really on disk and that the engine can open it. */}
@@ -158,10 +170,15 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
                 {t('settings.voice.check')}
               </Button>
 
-              {verification === 'usable' && (
+              {/* The time is shown, not just the verdict. It is the only thing
+                  on this page that answers "is the graphics card really doing
+                  this?" — a voice that needs one takes about a second on it and
+                  the better part of a minute without, so the number says which
+                  happened where the setting can only say what was asked for. */}
+              {typeof verification === 'object' && (
                 <span className='flex items-center gap-4px text-12px text-success' data-testid={`voice-ok-${model.id}`}>
                   <Check theme='outline' size='14' />
-                  {t('settings.voice.checkUsable')}
+                  {t('settings.voice.checkUsableIn', { seconds: (verification.usableInMs / 1000).toFixed(2) })}
                 </span>
               )}
               {(verification === 'unusable' || verification === 'not-installed') && (

@@ -32,7 +32,25 @@ export interface ElectronBridgeAPI {
   // Forward feedback diagnostics logs to the main process console / 转发反馈诊断日志到主进程控制台
   logFeedbackEvent?: (payload: { details?: unknown; level: 'info' | 'warn' | 'error'; message: string }) => void;
   recoverCorruptedDatabase?: () => Promise<void>;
+  /**
+   * The folder a spoken "build me an app" builds into.
+   *
+   * Chosen by the main process rather than by the caller: it is also the only
+   * place {@link servePreview} will serve from.
+   */
+  previewWorkspaceRoot?: () => Promise<string>;
+  /**
+   * Serves a built app over loopback and hands back the address to open.
+   *
+   * One at a time; a second call replaces the first. Refuses anything outside
+   * the workspace root, and anything with no `index.html` in it.
+   */
+  servePreview?: (directory: string) => Promise<PreviewResult>;
+  stopPreview?: () => Promise<void>;
 }
+
+/** What {@link ElectronBridgeAPI.servePreview} answers with. */
+export type PreviewResult = { ok: true; url: string } | { ok: false; reason: 'no-entry' | 'not-a-folder' | 'failed' };
 
 export type BackendStartupFailureReason =
   | 'backend_incompatible_runtime'

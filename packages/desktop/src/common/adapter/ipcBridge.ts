@@ -34,6 +34,8 @@ import type {
   VoiceRemoveResponse,
   VoiceRealtimeEnsureRequest,
   VoiceRealtimeEnsureResponse,
+  VoiceRealtimeSessionRequest,
+  VoiceRealtimeSessionResponse,
   VoiceRequestEnvelope,
   VoiceResponseEnvelope,
   VoiceSpeakersRequest,
@@ -178,6 +180,17 @@ export const foolVoice = {
     VoiceResponseEnvelope<VoiceRealtimeEnsureResponse>,
     VoiceRequestEnvelope<VoiceRealtimeEnsureRequest>
   >('fool.voice.realtime.ensure'),
+  /**
+   * Where to open a spoken conversation, and as whom.
+   *
+   * The socket is opened by the window; only the credential comes from here, so
+   * that the account key stays in the process that already holds it and a
+   * short-lived token is handed over instead wherever the provider mints one.
+   */
+  realtimeSession: bridge.buildProvider<
+    VoiceResponseEnvelope<VoiceRealtimeSessionResponse>,
+    VoiceRequestEnvelope<VoiceRealtimeSessionRequest>
+  >('fool.voice.realtime.session'),
   catalog: bridge.buildProvider<VoiceResponseEnvelope<VoiceCatalogResponse>, VoiceRequestEnvelope<VoiceCatalogRequest>>(
     'fool.voice.catalog'
   ),
@@ -210,6 +223,10 @@ export const foolVoice = {
   cancel: bridge.buildProvider<VoiceResponseEnvelope<VoiceCancelResponse>, VoiceRequestEnvelope<VoiceCancelRequest>>(
     'fool.voice.cancel'
   ),
+  executeMcpTool: bridge.buildProvider<
+    VoiceResponseEnvelope<import('@/common/types/voiceMcp').VoiceExecuteMcpToolResponse>,
+    VoiceRequestEnvelope<import('@/common/types/voiceMcp').VoiceExecuteMcpToolRequest>
+  >('fool.voice.executeMcpTool'),
   speakers: bridge.buildProvider<
     VoiceResponseEnvelope<VoiceSpeakersResponse>,
     VoiceRequestEnvelope<VoiceSpeakersRequest>
@@ -242,6 +259,23 @@ export const foolVoice = {
   >('fool.voice.shortcut'),
   /** Raised when that shortcut is pressed, wherever the user was. */
   pushToTalk: bridge.buildEmitter<void>('fool.voice.push-to-talk'),
+  /**
+   * Right Ctrl going down and coming up, as a state rather than a toggle.
+   *
+   * `pushToTalk` above is a toggle, which is all the notch turn needs. A
+   * conversation needs the two edges apart: it holds a microphone open for as
+   * long as the key is held, and a toggle cannot say how long that was.
+   */
+  holdToTalk: bridge.buildEmitter<{ holding: boolean }>('fool.voice.hold-to-talk'),
+  /**
+   * A spoken conversation claiming the talk key, for as long as it is open.
+   *
+   * Said rather than observed: the conversation lives in the renderer and the
+   * key is read in the main process, and the stage it publishes is the same one
+   * the notch turn publishes — so the stage cannot tell them apart, and the two
+   * want opposite handling of the same key.
+   */
+  conversationActive: bridge.buildEmitter<{ active: boolean }>('fool.voice.conversation-active'),
   /** Silences a reply that is being read aloud, without ending the session. */
   interruptSpeech: bridge.buildEmitter<void>('fool.voice.interrupt-speech'),
   /**

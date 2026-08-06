@@ -70,9 +70,24 @@ const RULES: readonly { pattern: RegExp; replacement: string }[] = [
   // Markdown emphasis, headings, list bullets, block quotes.
   { pattern: /^#{1,6}\s*/gm, replacement: '' },
   { pattern: /^\s*[>*+-]\s+/gm, replacement: '' },
+  // Stage directions before emphasis, because they are written as emphasis.
+  //
+  // A model narrating itself writes "*calls app_ask_jester*" and "(pauses to
+  // think)", and unwrapping the emphasis left the words behind to be read out —
+  // so the assistant announced the name of the function it was about to call,
+  // out loud, in the middle of a sentence. An asterisk span containing an
+  // identifier is never emphasis; it is the model describing its own actions.
+  { pattern: /\*+[^*\n]*\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b[^*\n]*\*+/gi, replacement: ' ' },
   { pattern: /\*\*([^*]+)\*\*/g, replacement: '$1' },
   { pattern: /\*([^*]+)\*/g, replacement: '$1' },
   { pattern: /__([^_]+)__/g, replacement: '$1' },
+  // Parentheses, which in a spoken reply are an aside nobody asked to hear.
+  // Written text uses them for detail; a voice reading them aloud interrupts
+  // its own sentence to do it, and the model produces them constantly.
+  { pattern: /[(（][^)）\n]*[)）]/g, replacement: ' ' },
+  // Bare identifiers: a function name read letter-by-letter, or worse, as
+  // "ask app jester". Nothing spoken is ever meant to contain one.
+  { pattern: /\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/gi, replacement: ' ' },
 ];
 
 /** Values that look like credentials must never reach a speech provider. */

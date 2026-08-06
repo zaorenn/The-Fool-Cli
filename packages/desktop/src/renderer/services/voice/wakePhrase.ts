@@ -101,11 +101,18 @@ export const findWakePhrase = (transcript: string, phrase: string): WakeMatch | 
 
   // Recognisers sometimes emit the phrase as one token, which leaves no word
   // boundaries to slice a command out of.
+  //
+  // Only worth doing for a phrase of several words. A one-word phrase was
+  // already compared exactly above, so all this can add is a substring hit — and
+  // a substring hit is how "durum ne" cut off a reply that only "dur" was meant
+  // to stop. One word is heard whole or not at all.
+  if (wanted.length < 2) return null;
+
   const joinedWanted = wanted.join('');
   if (heard.some((word) => word.length >= joinedWanted.length && word.includes(joinedWanted))) {
     return { commandText: '' };
   }
-  if (wanted.length > 1 && heard.join('').includes(joinedWanted)) return { commandText: '' };
+  if (heard.join('').includes(joinedWanted)) return { commandText: '' };
 
   return null;
 };

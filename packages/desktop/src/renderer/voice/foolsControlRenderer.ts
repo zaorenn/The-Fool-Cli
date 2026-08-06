@@ -288,3 +288,26 @@ window.foolsControlAPI.onStage((event) => {
 
 window.addEventListener('resize', resize);
 resize();
+
+/**
+ * Fades the notch while the pointer is over it.
+ *
+ * The window ignores the mouse, so nothing here can be clicked and no ordinary
+ * hover fires — the events arrive only because the window forwards them while
+ * staying click-through. That is the whole point: the notch covers the top of
+ * the screen, and the moment the user reaches for what is underneath it is
+ * exactly the moment it should stop being in the way.
+ *
+ * `mouseout` to a null relatedTarget is the pointer leaving the window
+ * altogether, which `mouseleave` does not reliably report for a forwarded
+ * stream.
+ */
+const setUnderPointer = (under: boolean): void => {
+  notch.classList.toggle('under-pointer', under);
+};
+
+window.addEventListener('mousemove', () => setUnderPointer(true));
+window.addEventListener('mouseout', (event) => {
+  if (!event.relatedTarget) setUnderPointer(false);
+});
+window.addEventListener('blur', () => setUnderPointer(false));

@@ -2,6 +2,61 @@
   "version": "1.0.0",
   "assistants": [
     {
+      "id": "the-fool",
+      "sort_order": -10,
+      "default_enabled": true,
+      "name": "The Fool",
+      "name_i18n": {
+        "en-US": "The Fool",
+        "tr-TR": "The Fool",
+        "zh-CN": "愚者",
+        "ru-RU": "Шут-Помощник",
+        "uk-UA": "Блазень-Помічник"
+      },
+      "description": "Your own assistant, with your computer in its hands: it sees the screen, drives your applications, writes and fixes code, researches, and handles documents. Not a setup wizard — the one you talk to about whatever you are doing.",
+      "description_i18n": {
+        "en-US": "Your own assistant, with your computer in its hands: it sees the screen, drives your applications, writes and fixes code, researches, and handles documents. Not a setup wizard — the one you talk to about whatever you are doing.",
+        "tr-TR": "Bilgisayarın elinde olan kişisel asistanın: ekranı görür, uygulamalarını kullanır, kod yazar ve düzeltir, araştırır, belgelerle çalışır. Kurulum sihirbazı değil — ne yapıyorsan onun hakkında konuştuğun asistan.",
+        "zh-CN": "你自己的助手，掌握着你的电脑：它能看屏幕、操作应用、写代码和修代码、做调研、处理文档。不是安装向导，而是你日常要聊的那一个。",
+        "ru-RU": "Ваш личный помощник, у которого в руках ваш компьютер: видит экран, управляет приложениями, пишет и правит код, ищет информацию, работает с документами. Не мастер настройки, а тот, с кем вы говорите о текущих делах.",
+        "uk-UA": "Ваш особистий помічник, у якого у руках ваш комп’ютер: бачить екран, керує застосунками, пише та виправляє код, шукає інформацію, працює з документами. Не майстер налаштування, а той, з ким ви говорите про поточні справи."
+      },
+      "agent_ref": "foolrs",
+      "enabled_skills": [
+        "officecli-docx",
+        "officecli-xlsx",
+        "officecli-pptx",
+        "officecli-data-dashboard",
+        "officecli-academic-paper",
+        "officecli-financial-model",
+        "officecli-pitch-deck",
+        "officecli-word-form",
+        "morph-ppt",
+        "morph-ppt-3d",
+        "pdf",
+        "mermaid",
+        "openclaw-setup"
+      ],
+      "custom_skill_names": [],
+      "disabled_builtin_skills": [],
+      "rule_file": "rules/the-fool.{locale}.md",
+      "prompts": [
+        "Look at my screen and tell me what I am looking at",
+        "Open YouTube and search it for the song I just named",
+        "This is my favourite song — remember it, and put it on when I ask",
+        "Read this project, run the tests, and fix whatever is failing"
+      ],
+      "prompts_i18n": {
+        "tr-TR": [
+          "Ekranıma bak ve neye baktığımı söyle",
+          "YouTube’u aç ve az önce söylediğim şarkıyı orada arat",
+          "Bu benim favori şarkım — hatırla, istediğimde aç",
+          "Bu projeyi oku, testleri çalıştır ve başarısız olanları düzelt"
+        ]
+      },
+      "models": []
+    },
+    {
       "id": "word-creator",
       "sort_order": 10,
       "default_enabled": false,
@@ -1039,7 +1094,7 @@
       },
       "avatar": "avatars/fool-assistant.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": ["fool-config", "fool-troubleshooting", "fool-webui-public"],
+      "enabled_skills": ["fool-config", "fool-troubleshooting", "fool-webui-public", "computer_use"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/fool-assistant.{locale}.md",

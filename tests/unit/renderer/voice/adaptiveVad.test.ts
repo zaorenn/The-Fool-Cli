@@ -60,7 +60,11 @@ describe('AdaptiveVad', () => {
     const silent = new AdaptiveVad({ ...config, sensitivity: 1 });
     feed(silent, 0, 0, 1000);
 
-    expect(silent.push(0.008, 1050)).toBe('idle');
+    // The floor and the minimum bar were both lowered about threefold so a
+    // quiet speaker is heard without leaning into the microphone. A dead-silent
+    // room still calibrates to the minimum rather than to zero, which is what
+    // this checks: below the bar is nothing, above it is speech.
+    expect(silent.push(0.002, 1050)).toBe('idle');
     expect(silent.push(0.02, 1100)).toBe('speech-started');
   });
 

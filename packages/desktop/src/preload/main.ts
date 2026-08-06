@@ -48,6 +48,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // The display the pointer is on, and a region of it the user draws
   captureScreen: () => ipcRenderer.invoke('voice:capture-screen'),
   captureScreenRegion: () => ipcRenderer.invoke('voice:capture-screen-region'),
+  // Where a spoken "build me an app" puts what it builds, and how to look at it
+  previewWorkspaceRoot: () => ipcRenderer.invoke('preview:workspace-root'),
+  servePreview: (directory: string) => ipcRenderer.invoke('preview:serve', directory),
+  stopPreview: () => ipcRenderer.invoke('preview:stop'),
   // Feedback: forward diagnostics logs to the main process console
   logFeedbackEvent: (payload: { details?: unknown; level: 'info' | 'warn' | 'error'; message: string }) =>
     ipcRenderer.send('feedback:renderer-log', payload),

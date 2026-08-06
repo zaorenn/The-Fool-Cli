@@ -135,6 +135,18 @@ export const VOICE_ENGINE_SPECS: Record<string, VoiceEngineSpec> = {
       tokens: 'turbo-tokens.txt',
     },
   },
+  // The full multilingual Whisper. Same layout as turbo, named after its own
+  // release: `large-v3-…` rather than `turbo-…`.
+  'stt-whisper-large-v3': {
+    role: 'speech-to-text',
+    engine: {
+      kind: 'whisper',
+      dir: 'sherpa-onnx-whisper-large-v3',
+      encoder: 'large-v3-encoder.int8.onnx',
+      decoder: 'large-v3-decoder.int8.onnx',
+      tokens: 'large-v3-tokens.txt',
+    },
+  },
   // Names match the archive: `tiny.en-…`, after the model, not a bare `tiny-…`.
   'stt-whisper-tiny-int8-v1': {
     role: 'speech-to-text',
@@ -154,14 +166,6 @@ export const VOICE_ENGINE_SPECS: Record<string, VoiceEngineSpec> = {
       kind: 'vits',
       dir: 'vits-piper-en_US-libritts_r-medium',
       model: 'en_US-libritts_r-medium.onnx',
-    },
-  },
-  'tts-piper-tr-fettah': {
-    role: 'text-to-speech',
-    engine: {
-      kind: 'vits',
-      dir: 'vits-piper-tr_TR-fettah-medium',
-      model: 'tr_TR-fettah-medium.onnx',
     },
   },
   'tts-kitten-nano-en-v0_8': {

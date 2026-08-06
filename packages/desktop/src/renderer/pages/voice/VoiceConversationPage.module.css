@@ -1,107 +1,134 @@
+/*
+ * The conversation surface.
+ *
+ * What was here was an orb: a glowing sphere with rotating rings, a blurred halo
+ * and a tech grid behind it. It looked the same whether the app was listening,
+ * thinking or talking — so none of it told the user anything, which makes it
+ * decoration standing in the middle of an interface.
+ *
+ * This replaces it with an instrument. The only thing that moves is the level
+ * meter, and it moves because sound is arriving. Everything else is type and
+ * hairlines. Every colour comes from the theme's own variables, so a palette the
+ * user changes by voice reaches this page like any other surface.
+ */
+
 .page {
   position: relative;
   min-height: 100%;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 28%, color-mix(in srgb, rgb(var(--primary-6)) 14%, transparent), transparent 36%),
-    var(--color-bg-1);
+  background: var(--color-bg-1);
 }
 
-.grid {
-  position: absolute;
-  inset: 0;
-  opacity: 0.28;
-  pointer-events: none;
-  background-image:
-    linear-gradient(color-mix(in srgb, var(--color-border-2) 50%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--color-border-2) 50%, transparent) 1px, transparent 1px);
-  background-size: 40px 40px;
-  mask-image: linear-gradient(to bottom, transparent, black 26%, black 70%, transparent);
+/*
+ * One hairline under the header, and nothing else drawn on the ground.
+ *
+ * The grid that used to be here was texture for its own sake: it carried no
+ * information and it competed with the only element that does.
+ */
+.rule {
+  height: 1px;
+  background: var(--color-border-2);
+  opacity: 0.7;
 }
 
-.orbStage {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: min(43vw, 430px);
-  aspect-ratio: 1;
+/* ── the meter ─────────────────────────────────────────────────────────────── */
+
+.meterStage {
+  width: min(72vw, 620px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.orbGlow,
-.orbRing,
-.orbCore {
-  position: absolute;
-  border-radius: 999px;
+.meter {
+  width: 100%;
+  height: 96px;
+  display: block;
 }
 
-.orbGlow {
-  inset: 4%;
-  background: rgb(var(--primary-6));
-  opacity: 0.13;
-  filter: blur(56px);
-  animation: breathe 3.4s ease-in-out infinite;
+.meter rect {
+  fill: var(--color-text-3);
+  transition: fill 260ms ease;
 }
 
-.orbRing {
-  inset: 11%;
-  border: 1px solid color-mix(in srgb, rgb(var(--primary-6)) 38%, transparent);
-  box-shadow:
-    inset 0 0 44px color-mix(in srgb, rgb(var(--primary-6)) 12%, transparent),
-    0 0 32px color-mix(in srgb, rgb(var(--primary-6)) 8%, transparent);
-  animation: rotate 12s linear infinite;
+/* Hearing is the user; speaking is the app. Two sources, two colours — told
+   apart across the room rather than by reading a label. */
+.hearing .meter rect {
+  fill: var(--color-text-1);
 }
 
-.orbRing::before,
-.orbRing::after {
-  content: '';
-  position: absolute;
-  inset: 10%;
-  border-radius: inherit;
-  border: 1px dashed color-mix(in srgb, rgb(var(--primary-6)) 28%, transparent);
+.speaking .meter rect {
+  fill: rgb(var(--primary-6));
 }
 
-.orbRing::after {
-  inset: -8%;
-  border-style: solid;
-  border-color: transparent rgb(var(--primary-6)) transparent transparent;
-  opacity: 0.45;
+.thinking .meter rect,
+.acting .meter rect,
+.connecting .meter rect {
+  fill: var(--color-text-4);
 }
 
-.orbCore {
-  inset: 25%;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 34% 30%, color-mix(in srgb, var(--color-white) 72%, transparent), transparent 20%),
-    radial-gradient(circle at 62% 68%, color-mix(in srgb, rgb(var(--primary-6)) 82%, transparent), transparent 48%),
-    color-mix(in srgb, rgb(var(--primary-6)) 46%, var(--color-bg-5));
-  box-shadow:
-    inset -20px -24px 40px color-mix(in srgb, var(--color-bg-5) 62%, transparent),
-    inset 18px 14px 34px color-mix(in srgb, var(--color-white) 20%, transparent),
-    0 18px 70px color-mix(in srgb, rgb(var(--primary-6)) 28%, transparent);
-  animation: float 5s ease-in-out infinite;
+/* ── telemetry ─────────────────────────────────────────────────────────────── */
+
+/*
+ * Labels and numbers in a monospaced face, aligned.
+ *
+ * This is where the instrument feeling comes from — figures that line up under
+ * each other, not glow. `tabular-nums` matters: a number that changes width as
+ * it counts reads as unstable even when the value is fine.
+ */
+.telemetry {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-3);
+  font-variant-numeric: tabular-nums;
 }
 
-.orbCore::after {
-  content: '';
-  position: absolute;
-  inset: -18%;
-  border-radius: 42% 58% 66% 34% / 40% 38% 62% 60%;
-  background: color-mix(in srgb, var(--color-white) 18%, transparent);
-  filter: blur(12px);
-  animation: liquid 7s ease-in-out infinite alternate;
+.telemetry b {
+  font-weight: 400;
+  color: var(--color-text-2);
 }
 
-.active .orbRing {
-  animation-duration: 4s;
+.stamp {
+  font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-3);
 }
 
-.speaking .orbCore {
-  animation: speak 0.72s ease-in-out infinite alternate;
+.speaking .stamp {
+  color: rgb(var(--primary-6));
 }
 
-.acting .orbRing {
-  border-style: dashed;
-  animation-duration: 1.8s;
+/* ── what was said ─────────────────────────────────────────────────────────── */
+
+.heard {
+  font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--color-text-3);
+  margin: 0;
+}
+
+/*
+ * The reply, at the size of the only thing worth reading here.
+ *
+ * `pretty` rather than `balance`: this arrives a sentence at a time and grows,
+ * and balancing re-flows every line on each addition, which is visible as the
+ * paragraph twitching while it is being spoken.
+ */
+.said {
+  font-size: 19px;
+  line-height: 1.55;
+  letter-spacing: -0.011em;
+  color: var(--color-text-1);
+  margin: 0;
+  text-wrap: pretty;
 }
 
 .timeline {
@@ -109,51 +136,33 @@
   mask-image: linear-gradient(to bottom, black 88%, transparent);
 }
 
-@keyframes rotate {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes breathe {
-  50% {
-    opacity: 0.24;
-    transform: scale(1.08);
-  }
-}
-
-@keyframes float {
-  50% {
-    transform: translateY(-8px) scale(1.025);
-  }
-}
-
-@keyframes liquid {
-  to {
-    transform: rotate(72deg) scale(1.1);
-    border-radius: 68% 32% 45% 55% / 62% 56% 44% 38%;
-  }
-}
-
-@keyframes speak {
-  to {
-    transform: scale(1.09);
-    filter: saturate(1.16) brightness(1.08);
-  }
-}
-
 @media (max-width: 920px) {
-  .orbStage {
-    width: min(72vw, 360px);
+  .meterStage {
+    width: 100%;
+  }
+
+  .meter {
+    height: 72px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .orbGlow,
-  .orbRing,
-  .orbCore,
-  .orbCore::after {
-    animation-duration: 1ms;
-    animation-iteration-count: 1;
+  .meter rect {
+    transition: none;
   }
+}
+
+/*
+ * The settings panel's tab strip.
+ *
+ * Arco's default tab header carries a bottom border and its own padding, both
+ * of which read as a seam inside a card that already has a border of its own.
+ */
+.settingsTabs :global(.arco-tabs-header-nav) {
+  border-bottom: none;
+  margin-bottom: 4px;
+}
+
+.settingsTabs :global(.arco-tabs-content) {
+  padding-top: 0;
 }

@@ -10,7 +10,13 @@ import { describe, expect, it, vi } from 'vitest';
 import type { VoiceModel, VoiceProfile } from '@/common/types/foolVoice';
 import VoicePicker from '@renderer/components/settings/SettingsModal/contents/voice/tts/VoicePicker';
 
-vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+// Interpolation is kept, because one of the assertions below is about a value
+// passed through it rather than about which key was chosen.
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, values?: Record<string, unknown>) => (values ? `${key} ${Object.values(values).join(' ')}` : key),
+  }),
+}));
 
 /**
  * `profileIds` are the model's own presets, and the picker reads them to decide
@@ -271,10 +277,13 @@ describe('VoicePicker', () => {
     expect(onInstall).toHaveBeenCalledWith('kokoro');
   });
 
-  it('checks a model on request and reports what the check found', () => {
-    const { onVerify } = setup(true, { verifications: { kokoro: 'usable' } });
+  it('checks a model on request and reports how long the engine took', () => {
+    const { onVerify } = setup(true, { verifications: { kokoro: { usableInMs: 870 } } });
 
-    expect(screen.getByTestId('voice-ok-kokoro')).toBeTruthy();
+    // The number, not just a tick. It is the only thing here that distinguishes
+    // a voice running on the graphics card from the same voice running on the
+    // processor, where it takes the better part of a minute.
+    expect(screen.getByTestId('voice-ok-kokoro').textContent).toContain('0.87');
 
     fireEvent.click(screen.getByTestId('voice-model-verify-kokoro'));
     expect(onVerify).toHaveBeenCalledWith('kokoro');

@@ -5,7 +5,12 @@
  */
 
 import { ipcBridge } from '@/common';
-import { synthesisProviderFor, type VoiceModel, type VoicePcm16Wav } from '@/common/types/foolVoice';
+import {
+  synthesisProviderFor,
+  type VoiceEngineBackend,
+  type VoiceModel,
+  type VoicePcm16Wav,
+} from '@/common/types/foolVoice';
 
 /**
  * Proving that a model is usable, rather than merely present.
@@ -18,7 +23,19 @@ import { synthesisProviderFor, type VoiceModel, type VoicePcm16Wav } from '@/com
  */
 
 export type VerifyResult =
-  | { status: 'usable'; detail: { sampleRateHz: number; bytes: number } }
+  | {
+      status: 'usable';
+      /**
+       * `durationMs` is what the engine took, and it is the only honest answer
+       * to "is the graphics card actually being used?". The setting says which
+       * processor was asked for; this says what happened. Measured on this
+       * project's hardware, warm, same sentence: Qwen3 lands between 0.5 s and
+       * 0.9 s on the card, and Chatterbox takes about 80 s on the processor
+       * against 0.87 s on it — so the number tells the two apart at a glance
+       * with no room for interpretation.
+       */
+      detail: { sampleRateHz: number; bytes: number; durationMs: number };
+    }
   | { status: 'not-installed' }
   | { status: 'unusable' };
 
@@ -75,7 +92,11 @@ export const silentProbeWav = (): VoicePcm16Wav => {
 };
 
 /** Runs the model and reports whether it produced anything. */
-export const verifyVoiceModel = async (model: VoiceModel, profileId?: string): Promise<VerifyResult> => {
+export const verifyVoiceModel = async (
+  model: VoiceModel,
+  profileId?: string,
+  backend: VoiceEngineBackend = 'cpu'
+): Promise<VerifyResult> => {
   if (model.distribution === 'managed' && model.state.status !== 'ready') {
     return { status: 'not-installed' };
   }
@@ -93,6 +114,10 @@ export const verifyVoiceModel = async (model: VoiceModel, profileId?: string): P
             // every audio.cpp check to a provider that has never heard of the
             // model, and reported a perfectly good install as "Not usable".
             operationId: requestId,
+            // The check has to run where the voice will: a graphics-card voice
+            // probed on the processor is refused, and "Not usable" would be the
+            // wrong answer to give about a perfectly good install.
+            backend,
             providerId: synthesisProviderFor([model], model.id),
             modelId: model.id,
             profileId: profileId ?? model.profileIds[0] ?? 'verify',
@@ -105,14 +130,18 @@ export const verifyVoiceModel = async (model: VoiceModel, profileId?: string): P
       return synthesis.audio.byteLength > 0
         ? {
             status: 'usable',
-            detail: { sampleRateHz: synthesis.audio.sampleRateHz, bytes: synthesis.audio.byteLength },
+            detail: {
+              sampleRateHz: synthesis.audio.sampleRateHz,
+              bytes: synthesis.audio.byteLength,
+              durationMs: synthesis.durationMs,
+            },
           }
         : { status: 'unusable' };
     }
 
     if (model.role === 'speech-to-text') {
       const audio = silentProbeWav();
-      unwrap(
+      const transcription = unwrap(
         await ipcBridge.foolVoice.transcribe.invoke({
           version: 1,
           requestId,
@@ -127,12 +156,15 @@ export const verifyVoiceModel = async (model: VoiceModel, profileId?: string): P
       );
       // Silence transcribes to an empty string; loading the engine at all is the
       // signal we are after.
-      return { status: 'usable', detail: { sampleRateHz: audio.sampleRateHz, bytes: audio.byteLength } };
+      return {
+        status: 'usable',
+        detail: { sampleRateHz: audio.sampleRateHz, bytes: audio.byteLength, durationMs: transcription.durationMs },
+      };
     }
 
     // Wake-word phrase matching runs on the transcript, so there is no separate
     // engine to load.
-    return { status: 'usable', detail: { sampleRateHz: 0, bytes: 0 } };
+    return { status: 'usable', detail: { sampleRateHz: 0, bytes: 0, durationMs: 0 } };
   } catch {
     return { status: 'unusable' };
   }

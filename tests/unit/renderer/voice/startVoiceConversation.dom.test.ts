@@ -130,8 +130,29 @@ describe('startVoiceConversation', () => {
     expect(stored.files).toEqual([{ kind: 'upload', path: '/tmp/shot.png' }]);
   });
 
-  it('stands aside when no agent is pinned, so the home page still opens the chat', async () => {
-    const result = await startVoiceConversation({ text: 'hello', settings: settings() });
+  /**
+   * What the settings picker calls "inherit", honoured.
+   *
+   * Nothing pinned is the picker's own default, and it used to mean refusal:
+   * asking the voice to do anything answered "no agent is selected for voice,
+   * choose one under Settings → Voice" — pointing at a control that was already
+   * set, to the option that was refusing.
+   */
+  it('falls back to the first enabled agent when nothing is pinned', async () => {
+    // An ACP agent, which brings its own model — the fallback is about which
+    // agent answers, and a Fool CLI one would fail on the missing model instead.
+    listAssistants.mockResolvedValue([assistant({ agent: { type: 'claude-code', source: 'builtin' } })]);
+
+    const result = await startVoiceConversation({ text: 'hello', settings: settings({ assistantId: '' }) });
+
+    expect(result).toEqual({ ok: true, conversationId: 'conv-1' });
+    expect(createConversation).toHaveBeenCalled();
+  });
+
+  it('stands aside only when there is no agent at all to ask', async () => {
+    listAssistants.mockResolvedValue([]);
+
+    const result = await startVoiceConversation({ text: 'hello', settings: settings({ assistantId: '' }) });
 
     expect(result).toEqual({ ok: false, reason: 'no-agent' });
     expect(createConversation).not.toHaveBeenCalled();

@@ -64,8 +64,17 @@ const readProviders = async (): Promise<IProvider[]> => {
  *
  * Built-in assistants are addressed both ways across the app, and a stored id
  * that no longer resolves would silence the wake word entirely.
+ *
+ * Nothing pinned means the first enabled agent, because that is what the
+ * settings picker calls "inherit" and offers as its default. It used to mean
+ * refusal: asking the voice to do anything answered "no agent is selected for
+ * voice, choose one under Settings → Voice" — pointing at a control that was
+ * already set, to its own default, which the picker gave no way to read as
+ * wrong. An option a menu offers has to mean something.
  */
 export const findPinnedAssistant = (assistants: readonly Assistant[], assistantId: string): Assistant | undefined => {
+  if (assistantId.length === 0) return assistants.find((assistant) => assistant.enabled) ?? assistants[0];
+
   const stripped = assistantId.replace(/^builtin-/, '');
   const candidates = new Set([assistantId, `builtin-${stripped}`, stripped]);
   return assistants.find((assistant) => candidates.has(assistant.id));
@@ -97,11 +106,12 @@ export const findPinnedModel = (
 
 export const startVoiceConversation = async (request: VoiceConversationRequest): Promise<VoiceConversationResult> => {
   const { assistantId, providerId, modelId } = request.settings.session;
-  if (assistantId.length === 0) return { ok: false, reason: 'no-agent' };
 
   const [assistants, providers] = await Promise.all([readAssistants(), readProviders()]);
   const assistant = findPinnedAssistant(assistants, assistantId);
-  if (!assistant) return { ok: false, reason: 'agent-missing' };
+  // Only when there is genuinely nothing to ask. A pin that no longer resolves
+  // is a different problem with a different remedy, so it keeps its own reason.
+  if (!assistant) return { ok: false, reason: assistantId.length === 0 ? 'no-agent' : 'agent-missing' };
 
   const model = findPinnedModel(providers, providerId, modelId);
   const files = request.files ?? [];

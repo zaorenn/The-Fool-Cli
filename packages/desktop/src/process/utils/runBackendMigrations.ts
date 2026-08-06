@@ -5,6 +5,8 @@
  */
 
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { migrateConfigStorage, migrateLegacyMcpConfigToDb, migrateProviders } from '@/common/config/configMigration';
 import { httpRequest } from '@/common/adapter/httpBridge';
 import { mcpService } from '@/common/adapter/ipcBridge';
@@ -26,6 +28,7 @@ type MigrationStepResult = boolean;
 type McpImportServer = Partial<IMcpServer> & Pick<IMcpServer, 'name' | 'transport'>;
 type BackendClientPreferences = Record<string, unknown>;
 const BUILTIN_CHROME_DEVTOOLS_NAME = 'chrome-devtools';
+const BUILTIN_COMPUTER_USE_NAME = 'computer-use';
 
 const LEGACY_BACKEND_CLIENT_PREFERENCE_KEYS = [
   'assistants',
@@ -163,10 +166,41 @@ function isSameStdioTransport(left: IMcpServer['transport'], right: IMcpServer['
   );
 }
 
+/**
+ * A Chromium browser the user has, preferring the one they browse in.
+ *
+ * Only the default-handler question matters here — a browser they never open
+ * has none of their sessions, which is the whole reason to drive theirs. Read
+ * from the registry rather than guessed, and `null` when nothing is found: a
+ * wrong path is worse than no path, because the package would fail to launch
+ * instead of falling back to its own default.
+ */
+function findInstalledChromium(): string | null {
+  const home = process.env.LOCALAPPDATA ?? '';
+  const programFiles = process.env.ProgramFiles ?? '';
+  const candidates = [
+    path.join(home, 'Programs', 'Opera', 'opera.exe'),
+    path.join(home, 'Programs', 'Opera GX', 'opera.exe'),
+    path.join(programFiles, 'Opera', 'opera.exe'),
+  ];
+
+  return candidates.find((candidate) => candidate.length > 0 && existsSync(candidate)) ?? null;
+}
+
 function buildDefaultMcpServers(): McpImportServer[] {
+  // Whichever Chromium browser the user actually has, not whichever one the
+  // package looks for. `chrome-devtools-mcp` drives Chrome by default and takes
+  // `--executablePath` for anything else built on Chromium — Opera, Edge, Brave,
+  // Vivaldi. Driving the browser the user already lives in is the difference
+  // between acting as them, with their sessions, and acting in a stranger's
+  // empty profile.
+  //
+  // Nothing is passed when no other Chromium is found, which leaves the package
+  // on its own default.
+  const chromium = findInstalledChromium();
   const chromeConfig = {
     command: 'npx',
-    args: ['-y', 'chrome-devtools-mcp@latest'],
+    args: ['-y', 'chrome-devtools-mcp@latest', ...(chromium ? ['--executablePath', chromium] : [])],
   };
 
   // The in-app browser, as tools. Unlike chrome-devtools this needs nothing
@@ -194,6 +228,11 @@ function buildDefaultMcpServers(): McpImportServer[] {
       ]
     : [];
 
+  const computerUseConfig = {
+    command: 'npx',
+    args: ['-y', '@betrayzl/windows-computer-use-mcp@latest'],
+  };
+
   return [
     ...browserServers,
     {
@@ -207,6 +246,18 @@ function buildDefaultMcpServers(): McpImportServer[] {
         args: chromeConfig.args,
       },
       original_json: JSON.stringify({ mcpServers: { [BUILTIN_CHROME_DEVTOOLS_NAME]: chromeConfig } }, null, 2),
+    },
+    {
+      name: BUILTIN_COMPUTER_USE_NAME,
+      description: 'Default MCP server: computer-use (Allows AI to control screen, mouse and keyboard)',
+      enabled: true,
+      builtin: true,
+      transport: {
+        type: 'stdio',
+        command: computerUseConfig.command,
+        args: computerUseConfig.args,
+      },
+      original_json: JSON.stringify({ mcpServers: { [BUILTIN_COMPUTER_USE_NAME]: computerUseConfig } }, null, 2),
     },
   ];
 }

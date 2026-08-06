@@ -14,6 +14,7 @@ import { initWebuiBridge } from './webuiBridge';
 import { initThemeBridge } from './themeBridge';
 import { initFoolVoiceBridge, type FoolVoiceBridgeHandlers } from './foolVoiceBridge';
 import { initScreenCaptureBridge } from '@process/voice/screenCaptureBridge';
+import { initPreviewBridge } from '@process/preview/previewBridge';
 
 export type BridgeDependencies = {
   foolVoice?: Partial<FoolVoiceBridgeHandlers>;
@@ -30,6 +31,7 @@ export function initAllBridges(deps: BridgeDependencies = {}): void {
   initThemeBridge();
   initFoolVoiceBridge(deps.foolVoice);
   initScreenCaptureBridge();
+  initPreviewBridge();
 }
 
 export {

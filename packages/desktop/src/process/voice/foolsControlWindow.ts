@@ -113,7 +113,11 @@ const create = (): BrowserWindow => {
   // full-screen windows as well as over ordinary ones.
   window.setAlwaysOnTop(true, 'screen-saver');
   window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  window.setIgnoreMouseEvents(true);
+  // Click-through, but the renderer still hears the pointer. Without
+  // `forward` the notch cannot know the cursor has arrived over it, and a
+  // window that ignores the mouse fires no hover of its own — so the fade that
+  // gets it out of the way could never trigger.
+  window.setIgnoreMouseEvents(true, { forward: true });
 
   window.webContents.once('did-finish-load', () => {
     ready = true;

@@ -65,6 +65,23 @@
         transform: translateY(0);
       }
 
+      /* Gets out of the way of the pointer.
+
+         The notch sits over the top of whatever is underneath it, and the one
+         moment the user needs to see through it is the moment they move the
+         cursor there — a tab strip, a menu bar, a close button. It cannot be
+         clicked through to (the window ignores the mouse entirely), so hiding
+         is the whole of the interaction: the pointer arrives, the notch fades
+         out of the way, and what it was covering is usable again.
+
+         Faint rather than gone, so it is clear the thing is still there and
+         still listening, and quick out but slow back so it does not flicker
+         while the cursor passes across it. */
+      #notch.shown.under-pointer {
+        opacity: 0.06;
+        transition: opacity 120ms ease-out;
+      }
+
       /* Expanded: room for the sentence and for what is being done about it. */
       #notch.wide {
         width: 560px;
@@ -161,7 +178,7 @@
       }
 
       #notch.wide #body {
-        max-height: 190px;
+        max-height: 232px;
         opacity: 1;
       }
 
@@ -197,12 +214,19 @@
         display: none;
       }
 
+      /* The agent's steps, oldest at the top.
+
+         `flex-end` so that when there are more of them than there is room for,
+         what falls off is the beginning and not the end. The list is a record of
+         work still going on, and the line that answers "is it stuck?" is always
+         the last one — clipping the bottom would hide the only one that matters. */
       #activity {
         margin-top: 10px;
         display: flex;
         flex-direction: column;
+        justify-content: flex-end;
         gap: 6px;
-        max-height: 116px;
+        max-height: 132px;
         overflow: hidden;
       }
 

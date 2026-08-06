@@ -1,6 +1,7 @@
 import type { FoolVoiceSettings } from '@/common/types/foolVoice';
 import type { SpeechToTextConfig } from '@/common/types/provider/speech';
 import type { IMcpServer, TProviderWithModel } from '@/common/config/storage';
+import type { VoiceMemory } from '@/common/voice/memory';
 
 export type GoogleClientSetting = {
   proxy?: string;
@@ -16,6 +17,15 @@ export type ClientBusinessSettingMap = {
   'tools.imageGenerationModel': ImageGenerationModelSetting | undefined;
   'tools.speechToText': SpeechToTextConfig | undefined;
   'fool.voice': FoolVoiceSettings | undefined;
+  /**
+   * Who the voice is talking to, kept separately from how it is configured.
+   *
+   * Its own key rather than a field on the settings: this is written by the
+   * assistant during a conversation and the settings are written by the user in
+   * a panel, so sharing one record would have every remembered name racing a
+   * half-finished settings form.
+   */
+  'fool.voice.memory': VoiceMemory | undefined;
   'acp.promptTimeout': number | undefined;
   'acp.agentIdleTimeout': number | undefined;
 };

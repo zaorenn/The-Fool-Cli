@@ -12,6 +12,8 @@ import {
   isValidHexColor,
   sanitizeThemeOverrides,
   shellBackgroundCss,
+  sanitizeThemePalettes,
+  normalizePaletteName,
 } from '@/common/config/themeOverrides';
 
 describe('isValidHexColor', () => {
@@ -140,5 +142,46 @@ describe('shellBackgroundCss', () => {
 
   it('is null for an invalid colour', () => {
     expect(shellBackgroundCss('nope')).toBeNull();
+  });
+});
+
+/**
+ * Palettes the user asked to keep, recalled out loud.
+ *
+ * "Save this one as sea" and "put the sea one back on" only work if the name is
+ * matched the way it is said — with whatever spacing and capitals came out of a
+ * transcriber. And every value here ends up in a CSS custom property, so what
+ * comes back from disk is checked exactly as strictly as the live overrides.
+ */
+describe('sanitizeThemePalettes', () => {
+  it('keeps a palette of valid colours under its normalized name', () => {
+    const kept = sanitizeThemePalettes({ '  Deniz  Mavisi ': { primary: '#1F6F8B' } });
+
+    expect(kept).toEqual({ 'deniz mavisi': { primary: '#1f6f8b' } });
+  });
+
+  it('drops a colour that is not a colour, and a palette left with none', () => {
+    const kept = sanitizeThemePalettes({
+      good: { primary: '#112233', background: 'rgb(1,2,3)' },
+      empty: { primary: 'darkish blue' },
+    });
+
+    expect(kept).toEqual({ good: { primary: '#112233' } });
+  });
+
+  it('drops keys the theme does not have, so nothing unknown reaches a variable', () => {
+    expect(sanitizeThemePalettes({ x: { primary: '#000000', evil: '#fff' } })).toEqual({
+      x: { primary: '#000000' },
+    });
+  });
+
+  it('has nothing to offer for a shape that is not a record of palettes', () => {
+    expect(sanitizeThemePalettes(null)).toEqual({});
+    expect(sanitizeThemePalettes('sea')).toEqual({});
+    expect(sanitizeThemePalettes({ '   ': { primary: '#000000' } })).toEqual({});
+  });
+
+  it('matches a name however it was said', () => {
+    expect(normalizePaletteName('  THE  Sea ')).toBe('the sea');
   });
 });

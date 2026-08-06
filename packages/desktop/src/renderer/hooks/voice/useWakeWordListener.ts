@@ -161,13 +161,13 @@ export const useWakeWordListener = (): void => {
     return () => window.removeEventListener('tray:toggle-wake-listening', toggle);
   }, []);
 
-  const shouldListen = ready && petEnabled && wakeEnabled && !manualActive;
+  const shouldListen = ready && wakeEnabled && !manualActive;
 
   useEffect(() => {
     if (!shouldListen) {
       sessionRef.current.stop();
       setWakeState('off');
-      setWakeReason(!petEnabled ? 'pet-off' : manualActive ? 'talking' : 'phrase-off');
+      setWakeReason(manualActive ? 'talking' : 'phrase-off');
       return;
     }
 

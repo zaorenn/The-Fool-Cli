@@ -123,7 +123,12 @@ export const publishVoiceStage = (input: StageInput): void => {
   const event: VoiceStageEvent = {
     stage: input.stage,
     level: input.level ?? 0,
-    transcript: input.transcript ?? '',
+    // Kept until something replaces it. It used to be cleared by every publish
+    // that did not restate it, which meant the request vanished from the notch
+    // the instant the loop moved off transcription — so the one surface the user
+    // is actually looking at showed the work without showing what it was for.
+    // A caller that genuinely wants it gone passes an empty string.
+    transcript: input.transcript ?? current.transcript,
     phrase,
     accent: readAccent(),
     // Translated here rather than in the other windows: they have no i18n

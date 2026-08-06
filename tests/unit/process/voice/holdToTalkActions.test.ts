@@ -145,4 +145,38 @@ describe('stopping wake listening with the V combination', () => {
 
     expect(actions.some((action) => action.kind === 'stop-wake-listening')).toBe(false);
   });
+
+  /**
+   * Once a spoken conversation is open, the key is its microphone and nothing
+   * else.
+   *
+   * Reported as "hold-to-talk works the first time and is completely dead
+   * afterwards, and it listens the whole time". Two things were driving off the
+   * same key: the conversation's own microphone and the notch turn behind it —
+   * and the notch's second gesture, two taps for a screen region, opens a turn
+   * it never closes.
+   */
+  describe('while a conversation owns the key', () => {
+    it('drives nothing but the conversation, whatever the gesture', () => {
+      const effects = [
+        { kind: 'start' } as const,
+        { kind: 'commit', heldMs: 900 } as const,
+        { kind: 'cancel', reason: 'too-short' } as const,
+        { kind: 'capture-region' } as const,
+        { kind: 'stop-wake-listening' } as const,
+      ];
+
+      for (const effect of effects) {
+        expect(voiceActionsFor(effect, 'listening', true)).toEqual([]);
+      }
+    });
+
+    it('does not even interrupt the reply, which the conversation handles itself', () => {
+      expect(voiceActionsFor({ kind: 'start' }, 'speaking', true)).toEqual([]);
+    });
+
+    it('goes back to driving the notch once the conversation is closed', () => {
+      expect(voiceActionsFor({ kind: 'start' }, 'off', false)).toEqual([{ kind: 'toggle-turn' }]);
+    });
+  });
 });

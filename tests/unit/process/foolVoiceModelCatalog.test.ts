@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   VoiceModelCatalog,
   MANAGED_CATALOG_ENTRIES,
+  engineArchiveBytes,
 } from '../../../packages/desktop/src/process/services/fool-voice/VoiceModelCatalog';
+import { getEngineSpec } from '../../../packages/desktop/src/process/services/fool-voice/voiceEngineSpecs';
+import { AUDIOCPP_SUPERTONIC_MODEL_ID } from '../../../packages/desktop/src/common/types/foolVoice';
 
 describe('VoiceModelCatalog', () => {
   it('exposes one entry per catalog id with no duplicates', () => {
@@ -23,17 +26,58 @@ describe('VoiceModelCatalog', () => {
     expect(whisper?.languages).toContain('tr');
   });
 
-  it('contains Supertonic 3 int8 TTS with Turkish and ten speakers', () => {
+  /**
+   * The sherpa Supertonic is gone, and this is the test that says so on purpose.
+   *
+   * It was the only Turkish voice besides Piper, and `sherpa-onnx-node` has no
+   * Supertonic loader — so it downloaded, reported ready, could be selected, and
+   * then said nothing, because the throw happens inside playback where the
+   * failure is swallowed. An offered voice that cannot speak is worse than one
+   * that is absent: it reads as the whole feature being broken.
+   *
+   * Supertonic itself is back, under audio.cpp, which does have a loader for it —
+   * proved by running the weights rather than by reading a family list. That is
+   * the distinction this test now draws: the model is welcome, the engine that
+   * could not play it is not.
+   */
+  it('offers no voice it has no engine to speak with', () => {
     const models = VoiceModelCatalog.getModels();
-    const supertonic = models.find((m) => m.id === 'tts-supertonic-3-int8-2026-05-11');
-    expect(supertonic).toBeDefined();
-    expect(supertonic?.role).toBe('text-to-speech');
-    expect(supertonic?.languages).toContain('tr');
-    if (supertonic && 'profileIds' in supertonic) {
-      expect(supertonic.profileIds.length).toBe(10);
-    } else {
-      expect.fail('missing profileIds');
-    }
+    expect(models.find((model) => model.id === 'tts-supertonic-3-int8-2026-05-11')).toBeUndefined();
+    expect(VoiceModelCatalog.getManagedEntry('tts-supertonic-3-int8-2026-05-11')).toBeUndefined();
+    expect(
+      VoiceModelCatalog.getPresetProfiles().filter(
+        (profile) => profile.id.startsWith('supertonic-') && profile.providerId === 'local-sherpa'
+      )
+    ).toHaveLength(0);
+  });
+
+  it('offers the audio.cpp Supertonic, with a cast and an engine that loads it', () => {
+    const model = VoiceModelCatalog.getModels().find((entry) => entry.id === AUDIOCPP_SUPERTONIC_MODEL_ID);
+
+    expect(model?.role).toBe('text-to-speech');
+    expect(model?.languages).toContain('tr');
+    expect(VoiceModelCatalog.getAudioCppEntry(AUDIOCPP_SUPERTONIC_MODEL_ID)?.expectedFiles).toEqual([
+      'supertonic-3-orig.gguf',
+    ]);
+    expect(
+      VoiceModelCatalog.getPresetProfiles().filter(
+        (profile) => profile.modelId === AUDIOCPP_SUPERTONIC_MODEL_ID && profile.state === 'ready'
+      )
+    ).toHaveLength(10);
+  });
+
+  it('has an engine behind every voice it offers', () => {
+    // The rule the removal above is an instance of: a sherpa row is loaded
+    // in-process from its engine spec, so one without a spec has nothing behind
+    // it. audio.cpp rows are excluded because they are not loaded in-process at
+    // all — their engine is a child server, declared in AUDIOCPP_MODEL_SPECS,
+    // and their readiness already accounts for the binary being absent.
+    const inProcess = VoiceModelCatalog.getModels().filter(
+      (model) => model.distribution === 'managed' && VoiceModelCatalog.getAudioCppEntry(model.id) === undefined
+    );
+    expect(inProcess.length).toBeGreaterThan(0);
+    const orphans = inProcess.filter((model) => getEngineSpec(model.id) === undefined).map((model) => model.id);
+    expect(orphans).toEqual([]);
   });
 
   it('has required file manifests for managed entries', () => {
@@ -45,9 +89,9 @@ describe('VoiceModelCatalog', () => {
     expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny.en/tiny.en-decoder.int8.onnx');
     expect(whisperEntry?.expectedFiles).toContain('sherpa-onnx-whisper-tiny.en/tiny.en-tokens.txt');
 
-    const supertonicEntry = VoiceModelCatalog.getManagedEntry('tts-supertonic-3-int8-2026-05-11');
-    expect(supertonicEntry?.expectedFiles).toContain('sherpa-onnx-supertonic-3-tts-int8-2026-05-11/tts.json');
-    expect(supertonicEntry?.sha256).toBe('82fa96f91c4ef8abaae3a14a3f4153facf88bed821d1f7331cec2700f432c427');
+    const piperEntry = VoiceModelCatalog.getManagedEntry('tts-piper-en-libritts-r');
+    expect(piperEntry?.expectedFiles.some((file) => file.endsWith('.onnx'))).toBe(true);
+    expect(piperEntry?.sha256).toBeTruthy();
   });
 });
 
@@ -55,7 +99,6 @@ describe('built-in downloadable voices', () => {
   it.each([
     ['tts-kokoro-en-v0_19-int8', 'en', 11],
     ['tts-piper-en-libritts-r', 'en', 8],
-    ['tts-piper-tr-fettah', 'tr', 1],
   ])('registers %s as a %s text-to-speech model with %i pickable voices', (modelId, language, voiceCount) => {
     const model = VoiceModelCatalog.getModels().find((entry) => entry.id === modelId);
 
@@ -70,7 +113,7 @@ describe('built-in downloadable voices', () => {
     expect(model && 'profileIds' in model ? model.profileIds : null).toEqual([]);
   });
 
-  it.each(['tts-kokoro-en-v0_19-int8', 'tts-piper-en-libritts-r', 'tts-piper-tr-fettah', 'tts-zipvoice-distill-int8'])(
+  it.each(['tts-kokoro-en-v0_19-int8', 'tts-piper-en-libritts-r', 'tts-zipvoice-distill-int8'])(
     'pins a measured checksum and manifest for %s',
     (modelId) => {
       const entry = VoiceModelCatalog.getManagedEntry(modelId);
@@ -103,5 +146,47 @@ describe('built-in downloadable voices', () => {
     const ids = VoiceModelCatalog.getPresetProfiles().map((profile) => profile.id);
 
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+/**
+ * Two builds of one engine, and they must not be confused for each other.
+ *
+ * The CPU package has no CUDA backend compiled in at all — asked for one it
+ * answers `CUDA backend requested but it is not registered in this build` — so
+ * "which processor" is really "which download", and the wrong answer is a model
+ * that installs and then cannot run.
+ */
+describe('audio.cpp engine builds', () => {
+  it('offers a different build per processor, under different ids', () => {
+    const cpu = VoiceModelCatalog.getEngine('audiocpp', 'cpu');
+    const cuda = VoiceModelCatalog.getEngine('audiocpp', 'cuda');
+
+    expect(cpu?.engineId).toBe('audiocpp');
+    expect(cuda?.engineId).toBe('audiocpp-cuda');
+    // Separate ids mean separate directories. They contain files of the same
+    // names, and a half-overwritten engine presents as a broken model.
+    expect(cpu?.engineId).not.toBe(cuda?.engineId);
+    // Absent means the processor, for a caller that predates the setting.
+    expect(VoiceModelCatalog.getEngine('audiocpp')?.engineId).toBe('audiocpp');
+    expect(VoiceModelCatalog.getEngine('something-else', 'cuda')).toBeUndefined();
+  });
+
+  it('fetches the CUDA runtime before the executables that link against it', () => {
+    const cuda = VoiceModelCatalog.getEngine('audiocpp', 'cuda');
+
+    expect(cuda?.archives).toHaveLength(2);
+    expect(cuda?.archives[0].url).toContain('cuda-runtime');
+    expect(cuda?.archives[1].url).toContain('cuda-balance');
+    // Both halves are spoken for in the progress total, or the bar finishes
+    // three quarters of the way through an 800 MB download.
+    expect(engineArchiveBytes(cuda!)).toBe(cuda!.archives[0].bytes + cuda!.archives[1].bytes);
+    expect(engineArchiveBytes(cuda!)).toBeGreaterThan(engineArchiveBytes(VoiceModelCatalog.getEngine('audiocpp')!));
+  });
+
+  it('spawns the same executable whichever build is installed', () => {
+    expect(VoiceModelCatalog.getEngine('audiocpp', 'cpu')?.binaryPath).toBe(
+      VoiceModelCatalog.getEngine('audiocpp', 'cuda')?.binaryPath
+    );
   });
 });

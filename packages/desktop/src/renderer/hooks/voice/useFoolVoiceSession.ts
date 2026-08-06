@@ -18,6 +18,8 @@ import { MicrophoneCapture } from '@renderer/services/voice/MicrophoneCapture';
 import { EMPTY_EVIDENCE, describeEvidence, type RunEvidence } from '@renderer/services/voice/narration/FoolNarrator';
 import { truncateToSpokenLength } from '@renderer/services/voice/narration/narrationSanitizer';
 import { createRunEvidenceCollector } from '@renderer/services/voice/RunEvidenceCollector';
+import { isHallucinatedTranscript } from '@/common/voice/hallucinations';
+import { applyTranscriptRules } from '@/common/voice/transcriptRules';
 import { createIncrementalSpeechCollector } from '@renderer/services/voice/IncrementalSpeechCollector';
 import { createSpeechClipQueue, type SpeechClipQueue } from '@renderer/services/voice/speechClipQueue';
 import { prepareSynthesis, speakText } from '@renderer/services/voice/speakText';
@@ -129,6 +131,22 @@ export const subscribeManualVoiceSession = (listener: (active: boolean) => void)
 };
 
 export const isManualVoiceSessionActive = (): boolean => manualSessionActive;
+
+/**
+ * Takes the microphone for something that is not this session's turn loop.
+ *
+ * The speech-to-speech conversation holds its own capture for as long as it
+ * runs. Without this the wake-word listener keeps its microphone open alongside
+ * it: two recorders on one device, and — far worse — a pet that hears the
+ * assistant's reply come out of the speakers, matches the wake phrase in it, and
+ * starts a second conversation about the first one.
+ *
+ * Returns the release, so the caller cannot forget which flag it set.
+ */
+export const claimManualVoiceSession = (): (() => void) => {
+  setManualSessionActive(true);
+  return () => setManualSessionActive(false);
+};
 
 const idleState = (): VoiceTurnState => ({
   phase: 'idle',
@@ -297,7 +315,9 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
   }, [listen, listenForWake]);
 
   const submit = useCallback((text: string) => {
-    window.dispatchEvent(new CustomEvent<VoiceSubmitDetail>(VOICE_TURN_EVENT, { detail: { text } }));
+    const filteredText = text.replace(/\b(eee|umm|hımm|wake up fool)\b/gi, '').trim();
+    if (filteredText.length === 0) return;
+    window.dispatchEvent(new CustomEvent<VoiceSubmitDetail>(VOICE_TURN_EVENT, { detail: { text: filteredText } }));
   }, []);
 
   const transcribe = useCallback(
@@ -330,9 +350,19 @@ export const useFoolVoiceSession = (settings: FoolVoiceSettings = DEFAULT_FOOL_V
         })
       );
 
-      return transcription.text.trim();
+      const text = transcription.text.trim();
+      // Whisper answers silence with the likeliest thing to follow silence in
+      // captioned video, not with nothing — so a keystroke arrives here as "you"
+      // or a Spanish subtitling credit, and used to be sent on as a message the
+      // user never spoke. Dropped before either path sees it.
+      if (isHallucinatedTranscript(text)) return '';
+
+      // The wake check sees the raw transcript: it is matching a fixed phrase
+      // against what was actually said, and a rule that removed a hesitation
+      // inside the phrase would stop the app answering to its own name.
+      return purpose === 'wake' ? text : applyTranscriptRules(text, settings.transcript);
     },
-    [enter, sessionId, settings.stt]
+    [enter, sessionId, settings.stt, settings.transcript]
   );
 
   const handleUtterance = useCallback(

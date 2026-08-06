@@ -36,8 +36,22 @@ export type VoiceAction =
  *
  * @param effect what the key's state machine decided
  * @param stage what the voice loop is doing right now
+ * @param conversationActive whether a spoken conversation is running
  */
-export function voiceActionsFor(effect: HoldToTalkEffect, stage: VoiceStage): VoiceAction[] {
+export function voiceActionsFor(
+  effect: HoldToTalkEffect,
+  stage: VoiceStage,
+  conversationActive = false
+): VoiceAction[] {
+  // While a conversation is running the key is its microphone and nothing else.
+  //
+  // Everything below drives the notch turn, which is a different session with a
+  // different microphone: pressing the key opened both at once, and the second
+  // gesture the key carries — two taps to grab a region — opened one of them
+  // without closing it. The conversation reads the key's own up/down events
+  // directly, so leaving it to them here is not a loss of function.
+  if (conversationActive) return [];
+
   // Pressed while the reply is being read, the key means "stop talking" — the
   // natural thing to reach for when the answer is already long enough. It
   // silences the reply without ending the session, and opens no turn, so there

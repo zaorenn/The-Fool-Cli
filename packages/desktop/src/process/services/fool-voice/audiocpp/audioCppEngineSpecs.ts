@@ -5,7 +5,10 @@
  */
 
 import {
+  AUDIOCPP_CHATTERBOX_MODEL_ID,
+  AUDIOCPP_QWEN3_MODEL_ID,
   AUDIOCPP_POCKET_MODEL_ID,
+  AUDIOCPP_SUPERTONIC_MODEL_ID,
   type VoiceParams,
   type VoiceParamSpec,
   type VoiceParamValue,
@@ -60,6 +63,57 @@ export type AudioCppModelSpec = {
   requiresVoiceReference: boolean;
   /** Whether the engine reads `reference_text`. Pocket does not. */
   usesReferenceText: boolean;
+  /**
+   * Voices the weights already carry, addressed by name.
+   *
+   * The other engines here have no voice of their own and are given a recording
+   * to imitate; this one ships a fixed cast and refuses a request that does not
+   * name one of them — `500 Qwen3 custom voice prefill requires speaker`. The
+   * name travels in the request's `voice` field, verified against a running
+   * server: `voice: "Ryan"` returns byte-for-byte what the CLI's
+   * `--speaker Ryan` does at the same seed.
+   */
+  presetSpeakers?: readonly { id: string; speaker: string; displayName: string; languages: readonly string[] }[];
+  /**
+   * A processor this model will not run without.
+   *
+   * Measured on this project's own hardware, warm servers, same sentence and
+   * seed: Chatterbox takes about 80 s on the processor and 0.87 s on a graphics
+   * card — near enough ninety times. Qwen3 lands between 0.5 s and 0.9 s on the
+   * card once its CUDA graphs are built.
+   *
+   * So this is not a hardware limit; the processor renders these perfectly well,
+   * a minute and a half at a time. A user who selects one and waits is not
+   * discovering a preference, they are discovering that the app is broken — so
+   * the request is refused with something they can act on instead.
+   */
+  requiresBackend?: 'cuda';
+  /**
+   * How this engine wants a language named, when a code is not what it reads.
+   *
+   * Note that "reads" is doing work here: Pocket accepts the field and ignores
+   * it. Asked for the same Turkish sentence as `tr` and as `en` it returned
+   * byte-identical audio, so its pronunciation comes from the text alone.
+   *
+   * Most families take the request's `language` verbatim and are happy with a
+   * BCP code. Qwen3 is not: its talker matches the string against a table of
+   * English language *names* and answers anything else with
+   * `500 unsupported language: en`, which is every request this app ever sent
+   * it. Measured against a running server rather than read: `English` and
+   * `Chinese` render, `en`, `zh` and `en-US` are all refused.
+   *
+   * Absent means "send the code through untouched", which is what Pocket and
+   * Chatterbox want.
+   */
+  wireLanguages?: Readonly<Record<string, string>>;
+  /**
+   * What to send when the wanted language is not in {@link wireLanguages}.
+   *
+   * Only meaningful alongside it. For Qwen3 this is `Auto`, an accepted value
+   * that lets the model judge from the text: a Turkish reply reaching a cast
+   * that has no Turkish in it should be read with an accent, not refused.
+   */
+  wireLanguageFallback?: string;
   params: readonly VoiceParamSpec[];
 };
 
@@ -90,6 +144,174 @@ const POCKET_PARAMS: readonly VoiceParamSpec[] = [
   { name: 'truncate_clone_audio', type: 'boolean', default: false },
 ];
 
+/**
+ * Chatterbox, the engine with a knob for how much feeling to put in.
+ *
+ * `exaggeration` was proved rather than read: with `--seed 42` fixed, two runs
+ * at 0.25 produced byte-identical audio and a run at 2.0 produced different
+ * audio. That test matters more here than anywhere else in this file, because
+ * the server accepts an option name it does not know **without complaining** and
+ * returns default-parameter audio — a misspelled knob is silent, not an error.
+ *
+ * The other three are the framework-wide sampling controls, spelled as the
+ * server's own JSON keys.
+ */
+const CHATTERBOX_PARAMS: readonly VoiceParamSpec[] = [
+  // Upstream's own range. 0.5 is neutral delivery; past ~1.5 it starts to
+  // over-act, which is the point of offering it.
+  { name: 'exaggeration', type: 'number', min: 0.25, max: 2, step: 0.05, default: 0.5 },
+  { name: 'temperature', type: 'number', min: 0.05, max: 2, step: 0.05, default: 0.8 },
+  { name: 'guidance_scale', type: 'number', min: 0, max: 5, step: 0.1, default: 0.5 },
+  { name: 'text_chunk_size', type: 'number', min: 32, max: 1024, step: 1, integer: true, default: 256 },
+];
+
+/**
+ * Qwen3 TTS, the one that is told how to sound in a sentence.
+ *
+ * `instruct` is why it is here. Every other engine in this app is directed with
+ * a number at best; this one is given a line of English — "speak in a slow, sad
+ * whisper" — and does it. Proved on real audio rather than read off a page: at
+ * a pinned seed two plain runs were byte-identical, and adding the instruction
+ * produced audio that was both different *and* a quarter longer, which is what
+ * a slow whisper of the same sentence should be.
+ *
+ * Capped at a couple of sentences: it is a direction, and a long one starts
+ * competing with the text that is meant to be spoken.
+ */
+const QWEN3_PARAMS: readonly VoiceParamSpec[] = [
+  { name: 'instruct', type: 'text', maxLength: 300, default: '' },
+  { name: 'temperature', type: 'number', min: 0.05, max: 2, step: 0.05, default: 0.8 },
+  { name: 'top_p', type: 'number', min: 0, max: 1, step: 0.05, default: 0.95 },
+  { name: 'text_chunk_size', type: 'number', min: 32, max: 1024, step: 1, integer: true, default: 256 },
+];
+
+/**
+ * The cast the weights ship with, from the model card embedded in the GGUF.
+ *
+ * Listed here rather than discovered because the server has no endpoint that
+ * reports them and answers an unknown name with `500 unsupported speaker` after
+ * a cold model load — which on a CPU is a minute spent to be told no.
+ */
+/**
+ * The language names the talker accepts, keyed by the code this app speaks in.
+ *
+ * Read off a running server, one request per spelling, because getting this
+ * wrong is not a degraded voice but a dead one: the talker compares the request's
+ * `language` against a table of English names and throws
+ * `Qwen3 talker unsupported language: <what you sent>` on a miss. Every request
+ * this app had ever sent it carried `en`, so the engine had never once spoken.
+ *
+ * Ten languages answered — four more than the model card lists, which is why
+ * they are enumerated here rather than derived from it. Refused: `en`, `zh`,
+ * `ja`, `ko`, `tr`, `en-US`, `Mandarin`, `Arabic`. Matching is
+ * case-insensitive server-side; the canonical capitalisation is used anyway.
+ */
+const QWEN3_WIRE_LANGUAGES: Readonly<Record<string, string>> = {
+  en: 'English',
+  zh: 'Chinese',
+  ja: 'Japanese',
+  ko: 'Korean',
+  de: 'German',
+  fr: 'French',
+  es: 'Spanish',
+  it: 'Italian',
+  pt: 'Portuguese',
+  ru: 'Russian',
+};
+
+const QWEN3_SPEAKERS = [
+  { id: 'qwen3-ryan', speaker: 'Ryan', displayName: 'Ryan — dynamic, strong rhythm', languages: ['en'] },
+  { id: 'qwen3-aiden', speaker: 'Aiden', displayName: 'Aiden — sunny American, clear midrange', languages: ['en'] },
+  { id: 'qwen3-vivian', speaker: 'Vivian', displayName: 'Vivian — bright, slightly edgy', languages: ['zh'] },
+  { id: 'qwen3-serena', speaker: 'Serena', displayName: 'Serena — warm and gentle', languages: ['zh'] },
+  { id: 'qwen3-uncle-fu', speaker: 'Uncle_Fu', displayName: 'Uncle Fu — low, mellow, seasoned', languages: ['zh'] },
+  { id: 'qwen3-dylan', speaker: 'Dylan', displayName: 'Dylan — Beijing, clear and natural', languages: ['zh'] },
+  { id: 'qwen3-eric', speaker: 'Eric', displayName: 'Eric — Chengdu, husky brightness', languages: ['zh'] },
+  { id: 'qwen3-ono-anna', speaker: 'Ono_Anna', displayName: 'Ono Anna — playful, light', languages: ['ja'] },
+  { id: 'qwen3-sohee', speaker: 'Sohee', displayName: 'Sohee — warm, rich emotion', languages: ['ko'] },
+] as const;
+
+/**
+ * Supertonic has exactly one knob that was proved to do anything.
+ *
+ * The engine is non-deterministic — the same request rendered three times here
+ * produced three different files, differing in length by up to ten percent — so
+ * "the output changed" is not evidence a parameter was read. `speaking_rate` is
+ * kept because its effect is far outside that noise and in the right direction:
+ * 1.5 gave 250 KB and 0.7 gave 537 KB against a 326 KB baseline.
+ *
+ * `pitch_shift` and `energy_scale` are deliberately absent. Both were tried, and
+ * both produced a file indistinguishable from what a knob named
+ * `nonsense_knob` produced — which is the failure this whole file is written
+ * around: the server accepts an option it does not know without complaining and
+ * returns default audio, so an unproved parameter is a slider that does nothing
+ * and says nothing.
+ */
+const SUPERTONIC_PARAMS: readonly VoiceParamSpec[] = [
+  { name: 'speaking_rate', type: 'number', min: 0.5, max: 2, step: 0.05, default: 1 },
+];
+
+/**
+ * Supertonic's ten voice styles, five of each.
+ *
+ * Named `M1`–`M5` and `F1`–`F5` upstream, which is what the request's `voice`
+ * field has to carry — verified against a running server: `M1` and `F1` render
+ * different audio, and a name that is not on this list is refused with
+ * `500 missing asset resource: voice_style_<name>`. The display names say male
+ * and female because that is what people ask for out loud, and because the
+ * weights carry nothing else to distinguish them by.
+ *
+ * The languages are the model's own list, which is thirty-two of them; the
+ * per-voice list is left at the ones the app has translations for, so the
+ * picker's language filter has something meaningful to filter on.
+ */
+const SUPERTONIC_LANGUAGES = [
+  'en',
+  'tr',
+  'de',
+  'fr',
+  'es',
+  'pt',
+  'ru',
+  'uk',
+  'ja',
+  'ko',
+  'ar',
+  'bg',
+  'cs',
+  'da',
+  'el',
+  'et',
+  'fi',
+  'hi',
+  'hr',
+  'hu',
+  'id',
+  'it',
+  'lt',
+  'lv',
+  'nl',
+  'pl',
+  'ro',
+  'sk',
+  'sl',
+  'sv',
+  'vi',
+] as const;
+
+const SUPERTONIC_SPEAKERS = [
+  { id: 'supertonic-m1', speaker: 'M1', displayName: 'Reader 1 (male)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-m2', speaker: 'M2', displayName: 'Reader 2 (male)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-m3', speaker: 'M3', displayName: 'Reader 3 (male)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-m4', speaker: 'M4', displayName: 'Reader 4 (male)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-m5', speaker: 'M5', displayName: 'Reader 5 (male)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-f1', speaker: 'F1', displayName: 'Reader 6 (female)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-f2', speaker: 'F2', displayName: 'Reader 7 (female)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-f3', speaker: 'F3', displayName: 'Reader 8 (female)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-f4', speaker: 'F4', displayName: 'Reader 9 (female)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-f5', speaker: 'F5', displayName: 'Reader 10 (female)', languages: SUPERTONIC_LANGUAGES },
+] as const;
+
 export const AUDIOCPP_MODEL_SPECS: readonly AudioCppModelSpec[] = [
   {
     modelId: AUDIOCPP_POCKET_MODEL_ID,
@@ -102,13 +324,95 @@ export const AUDIOCPP_MODEL_SPECS: readonly AudioCppModelSpec[] = [
     task: 'tts',
     mode: 'offline',
     weightsFile: 'pocket-tts-english-q8_0.gguf',
-    languages: ['en', 'de', 'it', 'pt', 'es'],
+    /**
+     * Turkish is on this list because it was measured, not because the weights
+     * claim it.
+     *
+     * This is the only engine here that both clones a voice and speaks Turkish
+     * at all, which makes it the only way to hear your own cloned voice say
+     * something in Turkish. It reads it with an English accent — synthesised and
+     * transcribed back through Whisper, "Merhaba, bugün hava çok güzel ve
+     * seninle konuşmak istiyorum" comes back as "merhaba bugun hava sok guzel ve
+     * senin lakonumak istiorum": every word recognisable, none of them quite
+     * right. Worth offering with that caveat, and the opposite of MOSS-Nano,
+     * which is fast and fluent-sounding and returns "I have a... You better have
+     * a cook" for the same sentence.
+     *
+     * Automatic routing still prefers a native Turkish voice — see
+     * `TURKISH_TARGETS` — so this applies when the user has deliberately chosen
+     * a cloned voice and set its language.
+     */
+    languages: ['en', 'de', 'it', 'pt', 'es', 'tr'],
     requiresVoiceReference: true,
     // Pocket does read a clone transcript, but through the `voice_clone_text`
     // option rather than the request's `reference_text` field — which is what
     // this flag controls. Sending it there would land under a key it never reads.
     usesReferenceText: false,
     params: POCKET_PARAMS,
+  },
+  {
+    modelId: AUDIOCPP_SUPERTONIC_MODEL_ID,
+    serverModelId: 'supertonic',
+    family: 'supertonic',
+    task: 'tts',
+    mode: 'offline',
+    /**
+     * `orig`, and it has to be.
+     *
+     * The repository offers `q8_0`, `f16` and `orig` for this model and only the
+     * last one loads in release-0.5: `q8_0` is refused outright with "Supertonic
+     * unsupported weight dtype: q8_0", and `f16` gets further and then dies
+     * inside ggml on a dtype assertion — on CUDA *and* on the processor. Both
+     * were tried here before this line was written. It costs 454 MB instead of
+     * 256, which for the fastest voice in the catalog is not a trade worth
+     * thinking about.
+     */
+    weightsFile: 'supertonic-3-orig.gguf',
+    languages: SUPERTONIC_LANGUAGES,
+    requiresVoiceReference: false,
+    usesReferenceText: false,
+    presetSpeakers: SUPERTONIC_SPEAKERS,
+    params: SUPERTONIC_PARAMS,
+  },
+  {
+    modelId: AUDIOCPP_CHATTERBOX_MODEL_ID,
+    serverModelId: 'chatterbox',
+    family: 'chatterbox',
+    // `clon`, and it has to be: this loader rejects `tts` outright. Confirmed
+    // by running the CLI against the installed weights — `--task clon` renders,
+    // and it is also what the runtime's own header has said since Phase 2.
+    task: 'clon',
+    mode: 'offline',
+    weightsFile: 'chatterbox-q8_0.gguf',
+    languages: ['en'],
+    requiresVoiceReference: true,
+    // Builds a speaker embedding from the clip alone; a transcript would land
+    // under a key it never reads.
+    usesReferenceText: false,
+    requiresBackend: 'cuda',
+    params: CHATTERBOX_PARAMS,
+  },
+  {
+    modelId: AUDIOCPP_QWEN3_MODEL_ID,
+    serverModelId: 'qwen3-tts',
+    family: 'qwen3_tts',
+    // `tts`, and the cloning-sounding name is a trap: run against the real
+    // weights, `clon` answers `Qwen3 custom voice model only supports the Tts
+    // task`. The same mistake that shipped Pocket broken — the task names the
+    // session the loader builds, nothing about voices.
+    task: 'tts',
+    mode: 'offline',
+    weightsFile: 'qwen3-tts-12hz-1.7b-customvoice-q8_0.gguf',
+    // The ten the talker actually answered, not the four the model card claims.
+    languages: Object.keys(QWEN3_WIRE_LANGUAGES),
+    // It has its own cast; there is nothing to imitate and nothing to transcribe.
+    requiresVoiceReference: false,
+    usesReferenceText: false,
+    presetSpeakers: QWEN3_SPEAKERS,
+    requiresBackend: 'cuda',
+    wireLanguages: QWEN3_WIRE_LANGUAGES,
+    wireLanguageFallback: 'Auto',
+    params: QWEN3_PARAMS,
   },
 ];
 
@@ -117,6 +421,33 @@ const SPECS_BY_MODEL_ID = new Map(AUDIOCPP_MODEL_SPECS.map((spec) => [spec.model
 export const getAudioCppModelSpec = (modelId: string): AudioCppModelSpec | undefined => SPECS_BY_MODEL_ID.get(modelId);
 
 export const isAudioCppModel = (modelId: string): boolean => SPECS_BY_MODEL_ID.has(modelId);
+
+/**
+ * The name a request must carry for a given preset voice, or `undefined`.
+ *
+ * `undefined` covers both "this engine has no cast" and "that profile is not
+ * one of them", which are the same thing at the call site: send no `voice` and
+ * let the engine's own rule about reference clips apply.
+ */
+export const presetSpeakerNameFor = (modelId: string, profileId: string): string | undefined =>
+  getAudioCppModelSpec(modelId)?.presetSpeakers?.find((speaker) => speaker.id === profileId)?.speaker;
+
+/**
+ * The language string a request must carry, for the language that was asked for.
+ *
+ * A family with no naming table gets the code back untouched — Pocket and
+ * Chatterbox both read it that way. A family that has one gets its own name for
+ * the language, or its fallback when it has no name for it, because the
+ * alternative for the caller is a 500 and silence.
+ */
+export const wireLanguageFor = (modelId: string, language: string): string => {
+  const spec = getAudioCppModelSpec(modelId);
+  if (!spec?.wireLanguages) return language;
+  // Case-folded and stripped of any region: `en-GB` is still English, and the
+  // app's own settings are free to carry a regional code.
+  const code = language.trim().toLowerCase().split(/[-_]/)[0];
+  return spec.wireLanguages[code] ?? spec.wireLanguageFallback ?? language;
+};
 
 /** Every parameter at its shipped default, for "reset" and for a fresh record. */
 export const defaultAudioCppParams = (modelId: string): VoiceParams => {

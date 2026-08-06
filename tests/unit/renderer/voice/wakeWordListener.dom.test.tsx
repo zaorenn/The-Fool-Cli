@@ -78,23 +78,31 @@ describe('useWakeWordListener', () => {
     await waitFor(() => expect(session.startWakeListening).toHaveBeenCalledTimes(1));
   });
 
-  it('stays silent while the pet is off', async () => {
+  /**
+   * The pet used to gate this, and no longer does.
+   *
+   * Saying the wake phrase is how this app is spoken to; hiding the character
+   * on screen is a decision about the character. Tying the two meant a user who
+   * turned the pet off lost the wake word with it and had nothing in the voice
+   * settings to explain why.
+   */
+  it('listens whether or not the pet is on screen', async () => {
     getPetEnabled.mockResolvedValue(false);
 
     render(<Harness />);
 
-    await waitFor(() => expect(session.stop).toHaveBeenCalled());
-    expect(session.startWakeListening).not.toHaveBeenCalled();
+    await waitFor(() => expect(session.startWakeListening).toHaveBeenCalledTimes(1));
   });
 
-  it('closes capture when the pet is switched off', async () => {
+  it('keeps listening when the pet is switched off mid-session', async () => {
     getPetEnabled.mockResolvedValue(true);
     render(<Harness />);
     await waitFor(() => expect(session.startWakeListening).toHaveBeenCalled());
 
     act(() => configSubscribers.get('pet.enabled')?.(false));
 
-    await waitFor(() => expect(session.stop).toHaveBeenCalled());
+    await waitFor(() => expect(session.startWakeListening).toHaveBeenCalledTimes(1));
+    expect(session.stop).not.toHaveBeenCalled();
   });
 
   it('stands down while the user is deliberately talking', async () => {
@@ -125,12 +133,11 @@ describe('useWakeWordListener', () => {
     expect(session.startWakeListening).not.toHaveBeenCalled();
   });
 
-  it('treats an unreachable pet setting as pet off', async () => {
+  it('is not stopped by a pet setting it cannot read', async () => {
     getPetEnabled.mockRejectedValue(new Error('no ipc'));
 
     render(<Harness />);
 
-    await waitFor(() => expect(session.stop).toHaveBeenCalled());
-    expect(session.startWakeListening).not.toHaveBeenCalled();
+    await waitFor(() => expect(session.startWakeListening).toHaveBeenCalledTimes(1));
   });
 });
