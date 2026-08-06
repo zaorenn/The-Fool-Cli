@@ -115,7 +115,7 @@ const enabledMcpServerIds = async (): Promise<string[]> => {
 const openTaskConversation = async (
   request: AgentTaskRequest
 ): Promise<{ ok: true; conversationId: string; foolrs: boolean } | Extract<AgentTaskResult, { ok: false }>> => {
-  const { assistantId, providerId, modelId } = request.settings.session;
+  const { assistantId, providerId, modelId, unattended } = request.settings.session;
 
   const [assistants, providers] = await Promise.all([
     ipcBridge.assistants.list.invoke().catch((): Assistant[] => []),
@@ -152,6 +152,16 @@ const openTaskConversation = async (
         locale: i18next.language || 'en-US',
         conversation_overrides: {
           model: overrideModelId,
+          // A spoken conversation cannot answer a confirmation. The prompt
+          // opens in a chat window the user is not looking at, the task waits
+          // on it for fifteen minutes, and the model — having called a tool and
+          // been told nothing — says the work is done. "I've opened your
+          // browser and searched for Spider-Man", with nothing opened.
+          //
+          // Stalling is not the safe option here; it is the one that produces a
+          // false report. So a spoken task acts unattended unless the user has
+          // said otherwise in the panel beside the microphone.
+          ...(unattended ? { permission: 'yolo' } : {}),
           // Without this the task runs with no MCP servers at all. A built-in
           // assistant materialises with `mcps: auto` and no remembered
           // selection, which resolves to an empty list — so asked to search a

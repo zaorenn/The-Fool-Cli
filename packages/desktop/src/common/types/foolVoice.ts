@@ -417,6 +417,22 @@ export type FoolVoiceSettings = {
      * A default the user can change beats a default nobody chose.
      */
     assistantId: string;
+    /**
+     * Let a spoken task act without stopping to ask.
+     *
+     * A conversation held out loud has no way to answer a confirmation. The
+     * prompt appears in a chat window the user is not looking at, the task
+     * waits on it until it times out, and the model — having called a tool and
+     * received nothing back — reports the work as done. "I've opened your
+     * browser and searched for Spider-Man", with nothing opened and nothing
+     * searched.
+     *
+     * So a spoken task runs unattended by default, because the alternative is
+     * not "safer", it is broken: the same actions attempted, none completed,
+     * and a false report of success. Switchable from the panel beside the
+     * microphone for anyone who would rather a task stall than proceed.
+     */
+    unattended: boolean;
     /** Provider holding the model. Empty leaves the model to the assistant. */
     providerId: string;
     modelId: string;
@@ -736,6 +752,7 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
   },
   session: {
     assistantId: VOICE_DEFAULT_ASSISTANT_ID,
+    unattended: true,
     providerId: '',
     modelId: '',
     attachScreenshot: true,
@@ -959,6 +976,7 @@ const settingsSchema = z
     session: z
       .object({
         assistantId: z.string().max(128).default(VOICE_DEFAULT_ASSISTANT_ID),
+        unattended: z.boolean().default(true),
         providerId: z.string().max(128).default(''),
         modelId: z.string().max(256).default(''),
         attachScreenshot: z.boolean().default(true),

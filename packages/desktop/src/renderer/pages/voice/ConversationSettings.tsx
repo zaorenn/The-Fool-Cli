@@ -258,6 +258,25 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
           {t('settings.voice.agentSection')}
         </Typography.Text>
         <VoiceAgentSection settings={settings} onChange={onChange} disabled={disabled} />
+
+        <label className='mt-2px flex items-center justify-between gap-10px'>
+          <Typography.Text className='text-11px text-t-tertiary'>
+            {t('settings.voice.conversationUnattended')}
+          </Typography.Text>
+          <Switch
+            data-testid='voice-unattended'
+            size='small'
+            checked={settings.session.unattended}
+            onChange={(value: boolean) =>
+              onChange((previous) => ({ ...previous, session: { ...previous.session, unattended: value } }))
+            }
+          />
+        </label>
+        <Typography.Text className='text-11px leading-16px text-t-tertiary'>
+          {settings.session.unattended
+            ? t('settings.voice.conversationUnattendedOnHint')
+            : t('settings.voice.conversationUnattendedOffHint')}
+        </Typography.Text>
       </div>
 
       {/* Whether the microphone is open at all, which decides whether silence

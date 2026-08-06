@@ -491,8 +491,19 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
     if (typeof emitter?.on !== 'function') return;
     return emitter.on(({ holding }) => {
       holdingRef.current = holding;
+
+      // Reaching for the key while it is talking means "my turn now". Holding
+      // it opens the microphone either way, and without this the reply carries
+      // on underneath — the user talks over a voice that is still going, and
+      // both end up in the recording.
+      if (holding && phaseRef.current === 'speaking') {
+        localRef.current?.interrupt();
+        outputRef.current?.flush();
+        applyPhase('listening');
+        publish('listening');
+      }
     });
-  }, []);
+  }, [applyPhase, publish]);
 
   /**
    * The speaker, ready for whichever side is about to talk.

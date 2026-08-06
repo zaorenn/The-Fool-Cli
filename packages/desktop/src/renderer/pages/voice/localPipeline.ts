@@ -231,6 +231,19 @@ type Turn =
  */
 const MAX_TOOL_ROUNDS = 4;
 
+/**
+ * How many sentences may be in the engine at once.
+ *
+ * Two, not more. The point is to cover the render of the next sentence with the
+ * playback of the current one, which one spare does; going wider spends the
+ * engine on sentences a barge-in is about to throw away, and on a single GPU
+ * the requests queue behind each other anyway.
+ */
+const SPEECH_LOOKAHEAD = 2;
+
+/** One sentence, synthesised and ready for the speaker. */
+type RenderedSpeech = { pcm16Base64: string; sampleRate: number };
+
 /** The tool list in the dialect the local server speaks. */
 const WIRE_TOOLS = REALTIME_TOOLS.map((tool) => ({
   type: 'function' as const,
@@ -269,6 +282,15 @@ export class LocalVoicePipeline {
   private draining = false;
   /** Settles when the speaker runs out of sentences, so nothing has to poll it. */
   private speakerIdle: Promise<void> = Promise.resolve();
+  /**
+   * Sentences already handed to the engine, in the order they were written.
+   *
+   * An instance field rather than a local, because the loop that consumes these
+   * spends most of its time awaiting the one at the front — and the sentence
+   * that should be rendered during that wait arrives from the model, not from
+   * the loop. Whoever adds to the queue starts the render.
+   */
+  private renders: Promise<RenderedSpeech | null>[] = [];
   /** The voice this reply is being read in, fixed at its first sentence. */
   private voice: SpeakingVoice | null = null;
   /**
@@ -586,7 +608,7 @@ export class LocalVoicePipeline {
         // carry on with.
         for (const sentence of detector.push(frame.text)) {
           this.voice ??= this.resolveVoice(readiness);
-          this.queueForSpeech(sentence);
+          this.queueForSpeech(sentence, controller);
         }
         this.startDraining(controller);
       }
@@ -595,7 +617,7 @@ export class LocalVoicePipeline {
     const tail = detector.flush().trim();
     if (tail.length > 0) {
       this.voice ??= this.resolveVoice(readiness);
-      this.queueForSpeech(tail);
+      this.queueForSpeech(tail, controller);
       this.startDraining(controller);
     }
 
@@ -670,9 +692,16 @@ export class LocalVoicePipeline {
    * A sentence that is nothing but a stage direction is dropped rather than
    * spoken as the silence it reduces to.
    */
-  private queueForSpeech(sentence: string): void {
+  private queueForSpeech(sentence: string, controller: AbortController): void {
     const spoken = sanitizeForSpeech(sentence).trim();
-    if (spoken.length > 0) this.pending.push(spoken);
+    if (spoken.length === 0) return;
+
+    this.pending.push(spoken);
+    // Straight into the engine if there is room. The drain loop is asleep
+    // awaiting the sentence in front of this one, so if the producer does not
+    // start this render nobody will until that wait is over — which is the
+    // whole gap this look-ahead exists to remove.
+    if (this.voice) this.pumpRenders(this.voice, controller);
   }
 
   /** Starts the speaker on the queue, if it is not already working through it. */
@@ -683,15 +712,38 @@ export class LocalVoicePipeline {
     this.speakerIdle = this.drain(voice, controller);
   }
 
-  /** Speaks the queue, one sentence at a time, until it is empty or abandoned. */
+  /**
+   * Speaks the queue, rendering the next sentence while the current one plays.
+   *
+   * Rendering was strictly sequential: a sentence was synthesised, handed to the
+   * speaker, and only then did the next request start. Since handing over is
+   * instant and rendering is not, the gap between sentences was the whole cost
+   * of synthesising one — inaudible with a fast engine, and with Qwen3 on a
+   * graphics card it is most of a second a sentence, plus the twenty the first
+   * requests spend building CUDA graphs. The reported symptom is exactly that
+   * shape: the first sentence arrives, the rest crawl, and the text is on screen
+   * long before the voice reaches it.
+   *
+   * So a few renders are kept in flight at once. Their *results* are still taken
+   * in order, because the reply has to be spoken in the order it was written —
+   * only the waiting overlaps.
+   */
   private async drain(voice: SpeakingVoice, controller: AbortController): Promise<void> {
     if (this.draining) return;
     this.draining = true;
     try {
-      while (this.pending.length > 0 && !controller.signal.aborted && !this.closed) {
-        const sentence = this.pending.shift();
-        if (sentence === undefined) break;
-        await this.say(sentence, voice, controller);
+      while (!controller.signal.aborted && !this.closed) {
+        this.pumpRenders(voice, controller);
+
+        // Read without removing: the one being awaited is still in the engine,
+        // and taking it out of the queue first would let the look-ahead top up
+        // against a slot that is not actually free — one more sentence in
+        // flight than intended, and one more thrown away by a barge-in.
+        const next = this.renders[0];
+        if (next === undefined) break;
+        const rendered = await next;
+        this.renders.shift();
+        this.emitSpeech(rendered);
       }
     } catch (error) {
       if (!controller.signal.aborted) {
@@ -702,6 +754,27 @@ export class LocalVoicePipeline {
       }
     } finally {
       this.draining = false;
+      // Whatever was still being rendered when this ended is now unwanted, and
+      // an unawaited rejection from an abandoned turn must not surface as an
+      // unhandled one.
+      for (const outstanding of this.renders) outstanding.catch((): null => null);
+      this.renders = [];
+    }
+  }
+
+  /**
+   * Keeps the engine fed, up to the look-ahead.
+   *
+   * Called both by the loop that consumes renders and by the code that queues a
+   * sentence, because those are the two moments the answer can change — one
+   * frees a slot, the other supplies work — and the loop is asleep awaiting the
+   * front of the queue for almost all of the time in between.
+   */
+  private pumpRenders(voice: SpeakingVoice, controller: AbortController): void {
+    while (this.renders.length < SPEECH_LOOKAHEAD && this.pending.length > 0) {
+      const sentence = this.pending.shift();
+      if (sentence === undefined) return;
+      this.renders.push(this.render(sentence, voice, controller));
     }
   }
 
@@ -771,9 +844,13 @@ export class LocalVoicePipeline {
   }
 
   /** Renders one sentence and hands the audio to whoever is playing it. */
-  private async say(sentence: string, voice: SpeakingVoice, controller: AbortController): Promise<void> {
+  private async render(
+    sentence: string,
+    voice: SpeakingVoice,
+    controller: AbortController
+  ): Promise<RenderedSpeech | null> {
     const text = sentence.trim();
-    if (text.length === 0 || controller.signal.aborted) return;
+    if (text.length === 0 || controller.signal.aborted) return null;
 
     const params = this.options.settings.tts.params[voice.modelId];
     const response = await ipcBridge.foolVoice.synthesize.invoke({
@@ -792,19 +869,30 @@ export class LocalVoicePipeline {
       },
     });
 
-    if (controller.signal.aborted) return;
+    if (controller.signal.aborted) return null;
     if (response.ok === false) throw new Error('LOCAL_SYNTHESIZE_FAILED');
+
+    const audio = response.data.audio;
+    return { pcm16Base64: wavToPcm16Base64(audio.dataBase64), sampleRate: audio.sampleRateHz };
+  }
+
+  /**
+   * Hands one rendered sentence to the speaker.
+   *
+   * Separate from rendering so that several sentences can be in the engine at
+   * once while their audio still reaches the speaker in the order it was
+   * written. The phase is announced here rather than at render time: the reply
+   * starts *being spoken* when the first block reaches the speaker, not when a
+   * request for it was sent.
+   */
+  private emitSpeech(rendered: RenderedSpeech | null): void {
+    if (!rendered) return;
 
     if (!this.speaking) {
       this.speaking = true;
       this.options.onEvent({ kind: 'phase', phase: 'speaking' });
     }
-    const audio = response.data.audio;
-    this.options.onEvent({
-      kind: 'audio',
-      pcm16Base64: wavToPcm16Base64(audio.dataBase64),
-      sampleRate: audio.sampleRateHz,
-    });
+    this.options.onEvent({ kind: 'audio', pcm16Base64: rendered.pcm16Base64, sampleRate: rendered.sampleRate });
   }
 
   /**

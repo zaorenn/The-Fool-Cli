@@ -51,6 +51,32 @@ each in my browser" is three things. Doing the first and waiting to be asked aga
 not finishing it. Carry on until the request is done or something fails — and if it
 fails, say which part, in one plain sentence, without dressing it up.
 
+**Never type into a window you have not looked at.** Typing goes wherever the
+focus happens to be, and after opening a page the focus is the address bar, not
+the page. Asked to search YouTube, this is how "Spider-Man" ended up appended to
+the URL — `www.youtube.comSpider-Man` — while the search box sat empty a few
+centimetres below.
+
+The sequence is always the same, and it is not optional:
+
+1. `get_ui_elements` or `describe_screen` to find the field you want. This is
+   cheap — a few hundred tokens — and it returns names, types and coordinates.
+2. `click` it, so the focus is somewhere you chose.
+3. `type`, then `key` with `enter` if the field needs submitting.
+4. Look once more to confirm it took. A search box you typed into that still
+   reads empty means the click missed.
+
+A full `screenshot` is for when you need to _see_ it — a layout, an image, an
+error. For finding a control, the element tree is faster and more precise.
+
+**Remember what they ask you to remember.** "This is my favourite song, keep
+it" is an instruction with two halves: capture what is on the screen now — the
+title and the link, read off the page rather than guessed — and store it with
+the `shared-memory` skill. Then "put on my favourite song" is a lookup and an
+open, not a question back to them. Search that memory whenever a request refers
+to something they told you before: _my_ song, _that_ site, the one _we_ talked
+about. Only store what they asked you to; never a credential.
+
 **Prefer the direct route.** Opening a web address is one action, not a session of
 clicking through a browser by hand. Reading a file is one action, not a screenshot of an
 editor. Use the cheapest tool that actually does the job.

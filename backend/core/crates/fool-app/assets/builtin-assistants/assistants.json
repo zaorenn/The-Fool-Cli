@@ -42,16 +42,16 @@
       "rule_file": "rules/the-fool.{locale}.md",
       "prompts": [
         "Look at my screen and tell me what I am looking at",
-        "Find the best mods for the game I just installed, list them, and open each in my browser",
-        "Read this project, run the tests, and fix whatever is failing",
-        "Open my email and draft a reply to the newest message"
+        "Open YouTube and search it for the song I just named",
+        "This is my favourite song — remember it, and put it on when I ask",
+        "Read this project, run the tests, and fix whatever is failing"
       ],
       "prompts_i18n": {
         "tr-TR": [
           "Ekranıma bak ve neye baktığımı söyle",
-          "Yeni kurduğum oyunun en iyi modlarını bul, listele ve her birini tarayıcımda aç",
-          "Bu projeyi oku, testleri çalıştır ve başarısız olanları düzelt",
-          "E-postamı aç ve en yeni mesaja bir yanıt taslağı yaz"
+          "YouTube’u aç ve az önce söylediğim şarkıyı orada arat",
+          "Bu benim favori şarkım — hatırla, istediğimde aç",
+          "Bu projeyi oku, testleri çalıştır ve başarısız olanları düzelt"
         ]
       },
       "models": []
@@ -76,9 +76,7 @@
       },
       "avatar": "avatars/word-creator.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "officecli-docx"
-      ],
+      "enabled_skills": ["officecli-docx"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/word-creator.{locale}.md",
@@ -131,9 +129,7 @@
       },
       "avatar": "avatars/ppt-creator.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "officecli-pptx"
-      ],
+      "enabled_skills": ["officecli-pptx"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/ppt-creator.{locale}.md",
@@ -186,9 +182,7 @@
       },
       "avatar": "avatars/excel-creator.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "officecli-xlsx"
-      ],
+      "enabled_skills": ["officecli-xlsx"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/excel-creator.{locale}.md",
@@ -241,9 +235,7 @@
       },
       "avatar": "avatars/morph-ppt.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "morph-ppt"
-      ],
+      "enabled_skills": ["morph-ppt"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/morph-ppt.{locale}.md",
@@ -292,10 +284,7 @@
       },
       "avatar": "avatars/morph-ppt-3d.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "morph-ppt-3d",
-        "morph-ppt"
-      ],
+      "enabled_skills": ["morph-ppt-3d", "morph-ppt"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/morph-ppt-3d.{locale}.md",
@@ -338,9 +327,7 @@
       },
       "avatar": "avatars/pitch-deck-creator.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "officecli-pitch-deck"
-      ],
+      "enabled_skills": ["officecli-pitch-deck"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/pitch-deck-creator.{locale}.md",
@@ -393,9 +380,7 @@
       },
       "avatar": "avatars/dashboard-creator.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "officecli-data-dashboard"
-      ],
+      "enabled_skills": ["officecli-data-dashboard"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/dashboard-creator.{locale}.md",
@@ -448,9 +433,7 @@
       },
       "avatar": "avatars/academic-paper.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "officecli-academic-paper"
-      ],
+      "enabled_skills": ["officecli-academic-paper"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/academic-paper.{locale}.md",
@@ -503,9 +486,7 @@
       },
       "avatar": "avatars/financial-model-creator.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "officecli-financial-model"
-      ],
+      "enabled_skills": ["officecli-financial-model"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/financial-model-creator.{locale}.md",
@@ -558,10 +539,7 @@
       },
       "avatar": "avatars/openclaw-setup.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "openclaw-setup",
-        "fool-webui-setup"
-      ],
+      "enabled_skills": ["openclaw-setup", "fool-webui-setup"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/openclaw-setup.{locale}.md",
@@ -576,11 +554,7 @@
           "My OpenClaw isn't working, please diagnose the issue",
           "Configure Telegram channel for OpenClaw integration"
         ],
-        "zh-CN": [
-          "帮我一步步安装 OpenClaw",
-          "我的 OpenClaw 出问题了，请帮我诊断",
-          "为 OpenClaw 配置 Telegram 渠道"
-        ],
+        "zh-CN": ["帮我一步步安装 OpenClaw", "我的 OpenClaw 出问题了，请帮我诊断", "为 OpenClaw 配置 Telegram 渠道"],
         "ru-RU": [
           "Помоги мне установить OpenClaw пошагово",
           "Мой OpenClaw не работает, пожалуйста, диагностируй проблему",
@@ -614,13 +588,7 @@
       },
       "avatar": "avatars/cowork.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "skill-creator",
-        "officecli-pptx",
-        "officecli-docx",
-        "pdf",
-        "officecli-xlsx"
-      ],
+      "enabled_skills": ["skill-creator", "officecli-pptx", "officecli-docx", "pdf", "officecli-xlsx"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/cowork.{locale}.md",
@@ -635,11 +603,7 @@
           "Automate the build and deployment process",
           "Extract and summarize key information from all PDF files"
         ],
-        "zh-CN": [
-          "分析当前项目结构并建议改进方案",
-          "自动化构建和部署流程",
-          "提取并总结所有 PDF 文件的关键信息"
-        ],
+        "zh-CN": ["分析当前项目结构并建议改进方案", "自动化构建和部署流程", "提取并总结所有 PDF 文件的关键信息"],
         "ru-RU": [
           "Проанализируй структуру текущего проекта и предложи улучшения",
           "Автоматизируй процесс сборки и развёртывания",
@@ -688,11 +652,7 @@
           "Make a coin collection game with obstacles",
           "Build a 3D maze exploration game"
         ],
-        "zh-CN": [
-          "创建一个带跳跃机制的 3D 平台游戏",
-          "制作一个带障碍物的金币收集游戏",
-          "构建一个 3D 迷宫探索游戏"
-        ],
+        "zh-CN": ["创建一个带跳跃机制的 3D 平台游戏", "制作一个带障碍物的金币收集游戏", "构建一个 3D 迷宫探索游戏"],
         "ru-RU": [
           "Создай 3D-платформер с механикой прыжков",
           "Сделай игру со сбором монет и препятствиями",
@@ -741,11 +701,7 @@
           "Create a color palette for a nature-themed website",
           "Design a dashboard interface for a SaaS product"
         ],
-        "zh-CN": [
-          "为金融科技移动应用设计现代登录页",
-          "创建自然主题网站的配色方案",
-          "为 SaaS 产品设计仪表板界面"
-        ],
+        "zh-CN": ["为金融科技移动应用设计现代登录页", "创建自然主题网站的配色方案", "为 SaaS 产品设计仪表板界面"],
         "ru-RU": [
           "Разработай современную страницу входа для мобильного финтех-приложения",
           "Создай цветовую палитру для сайта в природной тематике",
@@ -794,11 +750,7 @@
           "Break down the feature implementation into actionable steps",
           "Create a project plan for migrating to a new framework"
         ],
-        "zh-CN": [
-          "规划一个包含里程碑的全面重构任务",
-          "将功能实现拆分为可执行的步骤",
-          "创建迁移到新框架的项目计划"
-        ],
+        "zh-CN": ["规划一个包含里程碑的全面重构任务", "将功能实现拆分为可执行的步骤", "创建迁移到新框架的项目计划"],
         "ru-RU": [
           "Спланируй комплексную задачу рефакторинга с вехами",
           "Разбей реализацию функции на конкретные шаги",
@@ -885,10 +837,7 @@
       },
       "avatar": "avatars/social-job-publisher.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "xiaohongshu-recruiter",
-        "x-recruiter"
-      ],
+      "enabled_skills": ["xiaohongshu-recruiter", "x-recruiter"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/social-job-publisher.{locale}.md",
@@ -941,9 +890,7 @@
       },
       "avatar": "avatars/moltbook.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "moltbook"
-      ],
+      "enabled_skills": ["moltbook"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/moltbook.{locale}.md",
@@ -958,11 +905,7 @@
           "Post an interesting update to moltbook",
           "Check for new direct messages"
         ],
-        "zh-CN": [
-          "查看我的 moltbook 最新动态",
-          "在 moltbook 发布一条有趣的动态",
-          "检查是否有新私信"
-        ],
+        "zh-CN": ["查看我的 moltbook 最新动态", "在 moltbook 发布一条有趣的动态", "检查是否有新私信"],
         "ru-RU": [
           "Проверь мою ленту moltbook на наличие новых обновлений",
           "Опубликуй интересное обновление в moltbook",
@@ -996,9 +939,7 @@
       },
       "avatar": "avatars/beautiful-mermaid.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "mermaid"
-      ],
+      "enabled_skills": ["mermaid"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/beautiful-mermaid.{locale}.md",
@@ -1013,11 +954,7 @@
           "Create an API sequence diagram for payment processing",
           "Create a system architecture diagram"
         ],
-        "zh-CN": [
-          "绘制详细的用户登录认证流程图",
-          "创建支付处理的 API 时序图",
-          "创建系统架构图"
-        ],
+        "zh-CN": ["绘制详细的用户登录认证流程图", "创建支付处理的 API 时序图", "创建系统架构图"],
         "ru-RU": [
           "Нарисуй подробную блок-схему аутентификации при входе пользователя",
           "Создай sequence-диаграмму API для обработки платежей",
@@ -1051,9 +988,7 @@
       },
       "avatar": "avatars/story-roleplay.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "story-roleplay"
-      ],
+      "enabled_skills": ["story-roleplay"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/story-roleplay.{locale}.md",
@@ -1106,9 +1041,7 @@
       },
       "avatar": "📋",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "officecli-word-form"
-      ],
+      "enabled_skills": ["officecli-word-form"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/word-form-creator.{locale}.md",
@@ -1161,12 +1094,7 @@
       },
       "avatar": "avatars/fool-assistant.jpg",
       "agent_ref": "foolrs",
-      "enabled_skills": [
-        "fool-config",
-        "fool-troubleshooting",
-        "fool-webui-public",
-        "computer_use"
-      ],
+      "enabled_skills": ["fool-config", "fool-troubleshooting", "fool-webui-public", "computer_use"],
       "custom_skill_names": [],
       "disabled_builtin_skills": [],
       "rule_file": "rules/fool-assistant.{locale}.md",

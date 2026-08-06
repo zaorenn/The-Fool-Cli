@@ -453,17 +453,19 @@ describe('LocalVoicePipeline', () => {
     readyCatalog();
     transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'Anlat.' } });
 
-    let speak: (() => void) | null = null;
-    synthesizeInvoke.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          speak = () =>
-            resolve({
-              ok: true,
-              data: { audio: { dataBase64: pcm16ToWavBase64(pcmOf([1]), 24000), sampleRateHz: 24000 } },
-            });
-        })
-    );
+    // Every outstanding render, not just the latest: the speaker keeps one
+    // sentence in the engine while another plays, so a harness that remembers
+    // only the last resolver leaves the one actually being awaited hanging.
+    const waiting: ((value: unknown) => void)[] = [];
+    synthesizeInvoke.mockImplementation(() => new Promise((resolve) => waiting.push(resolve)));
+    const speak = (): void => {
+      for (const resolve of waiting.splice(0)) {
+        resolve({
+          ok: true,
+          data: { audio: { dataBase64: pcm16ToWavBase64(pcmOf([1]), 24000), sampleRateHz: 24000 } },
+        });
+      }
+    };
 
     const events: NormalizedRealtimeEvent[] = [];
     const { pipeline } = await connect(
@@ -480,7 +482,7 @@ describe('LocalVoicePipeline', () => {
     // the detector would not have opened a *turn* on it, and it still killed the
     // reply, so the user heard nothing and never learned why.
     pipeline.pushAudio(toBase64(pcmOf([2])), 'speech-started');
-    speak?.();
+    speak();
     await settle();
 
     expect(events.some((event) => event.kind === 'interrupted')).toBe(false);
@@ -940,5 +942,45 @@ describe('LocalVoicePipeline while it is talking', () => {
     // Silence here is indistinguishable from the app being broken, which is
     // precisely how this was reported.
     expect(events).toContainEqual({ kind: 'error', message: 'LOCAL_HEARD_NOTHING' });
+  });
+
+  /**
+   * The next sentence is rendered while the current one is playing.
+   *
+   * Rendering used to be strictly sequential — synthesise, hand over,
+   * synthesise the next — and since handing over is instant, the gap between
+   * sentences was the full cost of synthesising one. Inaudible with a fast
+   * engine; with Qwen3 on a graphics card it is most of a second each, plus the
+   * twenty the first requests spend building CUDA graphs. Reported as "it says
+   * the first sentence and then takes forever, while I can already read the
+   * rest".
+   */
+  it('renders the next sentence while the current one is still at the speaker', async () => {
+    readyCatalog();
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline, speakNext } = await start(events, ['Bir. ', 'Iki. ', 'Uc.']);
+    await ask(pipeline);
+
+    // Nothing has been handed to the speaker yet — the first render is still
+    // outstanding — and the second is already in the engine.
+    expect(synthesizeInvoke.mock.calls.length).toBe(2);
+
+    // Order is still the order it was written in: the first to resolve is the
+    // first to be spoken.
+    speakNext();
+    await settleLong();
+    const spoken = synthesizeInvoke.mock.calls.map((call) => call[0].payload.text);
+    expect(spoken.slice(0, 2)).toEqual(['Bir.', 'Iki.']);
+  });
+
+  it('does not run the whole reply through the engine at once', async () => {
+    readyCatalog();
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline } = await start(events, ['Bir. ', 'Iki. ', 'Uc. ', 'Dort. ', 'Bes.']);
+    await ask(pipeline);
+
+    // A barge-in throws away whatever was rendered ahead, so rendering ahead is
+    // worth exactly one sentence of cover and no more.
+    expect(synthesizeInvoke.mock.calls.length).toBeLessThanOrEqual(2);
   });
 });

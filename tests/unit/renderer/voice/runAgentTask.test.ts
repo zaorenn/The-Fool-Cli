@@ -152,7 +152,11 @@ describe('runAgentTask', () => {
       expect.objectContaining({
         assistant: expect.objectContaining({
           id: 'fool-assistant',
-          conversation_overrides: { model: 'qwen/qwen3-14b', mcp_ids: ['mcp-computer-use'] },
+          conversation_overrides: {
+            model: 'qwen/qwen3-14b',
+            permission: 'yolo',
+            mcp_ids: ['mcp-computer-use'],
+          },
         }),
       })
     );
@@ -312,5 +316,39 @@ describe('runAgentTask', () => {
     stream({ conversation_id: 'conv-1', type: 'finish', data: '' });
 
     await expect(running).resolves.toMatchObject({ ok: true });
+  });
+
+  /**
+   * A spoken task cannot answer a confirmation.
+   *
+   * Reported from real use: the task opened its own chat, that chat asked for
+   * permission, and the prompt sat in a window the user was not looking at. The
+   * model had called a tool and been told nothing, so it reported the work as
+   * done — "I've opened your browser and searched for Spider-Man", with nothing
+   * opened and nothing searched. Stalling is not the safe outcome here; it is
+   * the one that produces a false report.
+   */
+  it('runs unattended, because there is no window to answer a prompt in', async () => {
+    const running = runAgentTask({ request: 'YouTube aç.', settings: settingsWith() });
+    await settle();
+    stream({ conversation_id: 'conv-1', type: 'finish', data: '' });
+    await running;
+
+    const params = conversationCreate.mock.calls[0][0] as {
+      assistant: { conversation_overrides: { permission?: string } };
+    };
+    expect(params.assistant.conversation_overrides.permission).toBe('yolo');
+  });
+
+  it('leaves the prompt in place for anyone who turned that off', async () => {
+    const running = runAgentTask({ request: 'YouTube aç.', settings: settingsWith({ unattended: false }) });
+    await settle();
+    stream({ conversation_id: 'conv-1', type: 'finish', data: '' });
+    await running;
+
+    const params = conversationCreate.mock.calls[0][0] as {
+      assistant: { conversation_overrides: Record<string, unknown> };
+    };
+    expect(params.assistant.conversation_overrides).not.toHaveProperty('permission');
   });
 });
