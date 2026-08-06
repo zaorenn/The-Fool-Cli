@@ -143,7 +143,7 @@ describe('startVoiceConversation', () => {
     // agent answers, and a Fool CLI one would fail on the missing model instead.
     listAssistants.mockResolvedValue([assistant({ agent: { type: 'claude-code', source: 'builtin' } })]);
 
-    const result = await startVoiceConversation({ text: 'hello', settings: settings() });
+    const result = await startVoiceConversation({ text: 'hello', settings: settings({ assistantId: '' }) });
 
     expect(result).toEqual({ ok: true, conversationId: 'conv-1' });
     expect(createConversation).toHaveBeenCalled();
@@ -152,7 +152,7 @@ describe('startVoiceConversation', () => {
   it('stands aside only when there is no agent at all to ask', async () => {
     listAssistants.mockResolvedValue([]);
 
-    const result = await startVoiceConversation({ text: 'hello', settings: settings() });
+    const result = await startVoiceConversation({ text: 'hello', settings: settings({ assistantId: '' }) });
 
     expect(result).toEqual({ ok: false, reason: 'no-agent' });
     expect(createConversation).not.toHaveBeenCalled();

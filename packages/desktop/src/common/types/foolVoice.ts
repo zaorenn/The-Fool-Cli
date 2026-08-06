@@ -407,7 +407,15 @@ export type FoolVoiceSettings = {
    * page would have used.
    */
   session: {
-    /** Assistant id, as the assistant list reports it. */
+    /**
+     * Assistant id, as the assistant list reports it.
+     *
+     * Defaults to {@link VOICE_DEFAULT_ASSISTANT_ID} rather than to nothing.
+     * Left empty this fell back to the first enabled agent, and the only one
+     * shipped enabled was the app's setup butler — so "find me some mods and
+     * open them" went to the assistant whose job is registering MCP servers.
+     * A default the user can change beats a default nobody chose.
+     */
     assistantId: string;
     /** Provider holding the model. Empty leaves the model to the assistant. */
     providerId: string;
@@ -527,6 +535,21 @@ export const WAKE_PHRASE_DEFAULT = 'wake up fool';
  * silently doing nothing.
  */
 export const PUSH_TO_TALK_DEFAULT = 'Control+Alt+V';
+
+/**
+ * The assistant a spoken conversation hands its work to, until told otherwise.
+ *
+ * `the-fool` is the shipped personal assistant: it can see the screen, drive
+ * the machine, write code and research, which is what a request made out loud
+ * usually needs.
+ *
+ * Named here rather than left empty. Empty meant "the first enabled agent", and
+ * the only assistant shipped enabled was the app's own setup butler — so asking
+ * the voice to find some mods and open them went to the assistant whose job is
+ * registering MCP servers and diagnosing stuck conversations. The picker beside
+ * the microphone changes it, and a stored choice always wins over this.
+ */
+export const VOICE_DEFAULT_ASSISTANT_ID = 'the-fool';
 
 /**
  * The shape of a stored settings record.
@@ -712,7 +735,7 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     timeoutMs: 45000,
   },
   session: {
-    assistantId: '',
+    assistantId: VOICE_DEFAULT_ASSISTANT_ID,
     providerId: '',
     modelId: '',
     attachScreenshot: true,
@@ -935,7 +958,7 @@ const settingsSchema = z
       .default({}),
     session: z
       .object({
-        assistantId: z.string().max(128).default(''),
+        assistantId: z.string().max(128).default(VOICE_DEFAULT_ASSISTANT_ID),
         providerId: z.string().max(128).default(''),
         modelId: z.string().max(256).default(''),
         attachScreenshot: z.boolean().default(true),
