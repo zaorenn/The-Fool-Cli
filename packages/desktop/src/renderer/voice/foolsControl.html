@@ -65,6 +65,23 @@
         transform: translateY(0);
       }
 
+      /* Gets out of the way of the pointer.
+
+         The notch sits over the top of whatever is underneath it, and the one
+         moment the user needs to see through it is the moment they move the
+         cursor there — a tab strip, a menu bar, a close button. It cannot be
+         clicked through to (the window ignores the mouse entirely), so hiding
+         is the whole of the interaction: the pointer arrives, the notch fades
+         out of the way, and what it was covering is usable again.
+
+         Faint rather than gone, so it is clear the thing is still there and
+         still listening, and quick out but slow back so it does not flicker
+         while the cursor passes across it. */
+      #notch.shown.under-pointer {
+        opacity: 0.06;
+        transition: opacity 120ms ease-out;
+      }
+
       /* Expanded: room for the sentence and for what is being done about it. */
       #notch.wide {
         width: 560px;

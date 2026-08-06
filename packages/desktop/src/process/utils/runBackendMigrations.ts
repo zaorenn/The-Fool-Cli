@@ -5,6 +5,8 @@
  */
 
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { migrateConfigStorage, migrateLegacyMcpConfigToDb, migrateProviders } from '@/common/config/configMigration';
 import { httpRequest } from '@/common/adapter/httpBridge';
 import { mcpService } from '@/common/adapter/ipcBridge';
@@ -164,10 +166,41 @@ function isSameStdioTransport(left: IMcpServer['transport'], right: IMcpServer['
   );
 }
 
+/**
+ * A Chromium browser the user has, preferring the one they browse in.
+ *
+ * Only the default-handler question matters here — a browser they never open
+ * has none of their sessions, which is the whole reason to drive theirs. Read
+ * from the registry rather than guessed, and `null` when nothing is found: a
+ * wrong path is worse than no path, because the package would fail to launch
+ * instead of falling back to its own default.
+ */
+function findInstalledChromium(): string | null {
+  const home = process.env.LOCALAPPDATA ?? '';
+  const programFiles = process.env.ProgramFiles ?? '';
+  const candidates = [
+    path.join(home, 'Programs', 'Opera', 'opera.exe'),
+    path.join(home, 'Programs', 'Opera GX', 'opera.exe'),
+    path.join(programFiles, 'Opera', 'opera.exe'),
+  ];
+
+  return candidates.find((candidate) => candidate.length > 0 && existsSync(candidate)) ?? null;
+}
+
 function buildDefaultMcpServers(): McpImportServer[] {
+  // Whichever Chromium browser the user actually has, not whichever one the
+  // package looks for. `chrome-devtools-mcp` drives Chrome by default and takes
+  // `--executablePath` for anything else built on Chromium — Opera, Edge, Brave,
+  // Vivaldi. Driving the browser the user already lives in is the difference
+  // between acting as them, with their sessions, and acting in a stranger's
+  // empty profile.
+  //
+  // Nothing is passed when no other Chromium is found, which leaves the package
+  // on its own default.
+  const chromium = findInstalledChromium();
   const chromeConfig = {
     command: 'npx',
-    args: ['-y', 'chrome-devtools-mcp@latest'],
+    args: ['-y', 'chrome-devtools-mcp@latest', ...(chromium ? ['--executablePath', chromium] : [])],
   };
 
   // The in-app browser, as tools. Unlike chrome-devtools this needs nothing
