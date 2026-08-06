@@ -462,6 +462,10 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
     outputRef.current = null;
     releaseMicrophoneClaim.current?.();
     releaseMicrophoneClaim.current = null;
+    // The talk key goes back to the notch turn, which is what owns it when no
+    // conversation is open.
+    ipcBridge.foolVoice.conversationActive?.emit({ active: false });
+    holdingRef.current = false;
     standbyRef.current = false;
     applyPhase('idle');
     publishVoiceStageOff();
@@ -674,6 +678,10 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
     // listener has to have stood down before this conversation opens capture,
     // not while it is already running.
     releaseMicrophoneClaim.current ??= claimManualVoiceSession();
+    // From here the talk key is this conversation's microphone and nothing
+    // else: it must not also be opening a notch turn behind it, nor grabbing a
+    // screen region on two quick taps.
+    ipcBridge.foolVoice.conversationActive?.emit({ active: true });
 
     try {
       const providerId = settingsRef.current.realtime.providerId as VoiceConversationProviderId;

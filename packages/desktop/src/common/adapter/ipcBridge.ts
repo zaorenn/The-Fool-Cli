@@ -267,6 +267,15 @@ export const foolVoice = {
    * long as the key is held, and a toggle cannot say how long that was.
    */
   holdToTalk: bridge.buildEmitter<{ holding: boolean }>('fool.voice.hold-to-talk'),
+  /**
+   * A spoken conversation claiming the talk key, for as long as it is open.
+   *
+   * Said rather than observed: the conversation lives in the renderer and the
+   * key is read in the main process, and the stage it publishes is the same one
+   * the notch turn publishes — so the stage cannot tell them apart, and the two
+   * want opposite handling of the same key.
+   */
+  conversationActive: bridge.buildEmitter<{ active: boolean }>('fool.voice.conversation-active'),
   /** Silences a reply that is being read aloud, without ending the session. */
   interruptSpeech: bridge.buildEmitter<void>('fool.voice.interrupt-speech'),
   /**

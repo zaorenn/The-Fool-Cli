@@ -47,6 +47,7 @@ let petBridge: PetBridge | null = null;
 let unsubscribe: (() => void) | null = null;
 let unsubscribeWakeListening: (() => void) | null = null;
 let unsubscribePermission: (() => void) | null = null;
+let unsubscribeConversation: (() => void) | null = null;
 let lastStage: VoiceStage = 'off';
 /**
  * Whether the wake word is currently holding the microphone.
@@ -91,6 +92,14 @@ const handle = (event: VoiceStageEvent): void => {
 };
 
 let holdToTalk: HoldToTalkHook | null = null;
+/**
+ * Whether a spoken conversation is open, which changes who the talk key is for.
+ *
+ * The conversation is in the renderer and the key is read here, so it has to be
+ * said rather than observed. Not derived from the stage: the notch turn reports
+ * the same stages, and the two want opposite handling of the same key.
+ */
+let conversationActive = false;
 
 /**
  * Draws the overlay, captures what was drawn, and hands it to the composer.
@@ -145,18 +154,21 @@ const startHoldToTalk = (): void => {
     onEffect: (effect) => {
       // The two edges, before they are collapsed into a toggle below. A spoken
       // conversation runs its own microphone and needs to know how long the key
-      // was held, which a toggle cannot say. Informational: whoever is not
-      // listening for it is unaffected.
-      if (effect.kind === 'start') ipcBridge.foolVoice.holdToTalk.emit({ holding: true });
-      if (effect.kind === 'commit' || effect.kind === 'cancel') {
-        ipcBridge.foolVoice.holdToTalk.emit({ holding: false });
-      }
+      // was held, which a toggle cannot say.
+      //
+      // `start` is the only effect that opens; every other one ends the hold,
+      // and *every* other one has to say so. Listing the two obvious ones was
+      // the bug: two quick taps report `capture-region` instead of a cancel, so
+      // the close never arrived, the microphone stayed open for good, and every
+      // press after it arrived at a gate that was already open — heard once,
+      // then dead, and listening the whole time.
+      ipcBridge.foolVoice.holdToTalk.emit({ holding: effect.kind === 'start' });
 
       // What to do about the decision lives in `holdToTalkActions`, where it can
       // be tested without Electron. It was inline here, and being inline is how
       // a capture came to leave the microphone open: the branch handled the
       // gesture and returned without closing the turn its own press had opened.
-      for (const action of voiceActionsFor(effect, lastStage)) {
+      for (const action of voiceActionsFor(effect, lastStage, conversationActive)) {
         switch (action.kind) {
           case 'toggle-turn':
             ipcBridge.foolVoice.pushToTalk.emit();
@@ -221,6 +233,12 @@ export function initVoiceStageHub(): void {
     void import('@process/utils/tray').then(({ setTrayWakeListening }) => setTrayWakeListening(listening));
   });
 
+  // A conversation claiming the talk key, for as long as it is open.
+  unsubscribeConversation?.();
+  unsubscribeConversation = ipcBridge.foolVoice.conversationActive.on(({ active }) => {
+    conversationActive = active;
+  });
+
   // A permission request the app is waiting on: onto the notch, and the digits
   // that answer it are read from the keyboard for exactly as long as it is open.
   unsubscribePermission?.();
@@ -239,6 +257,9 @@ export function disposeVoiceStageHub(): void {
   unsubscribeWakeListening = null;
   unsubscribePermission?.();
   unsubscribePermission = null;
+  unsubscribeConversation?.();
+  unsubscribeConversation = null;
+  conversationActive = false;
   destroyFoolsControl();
   lastStage = VOICE_STAGE_OFF.stage;
   lastPose = null;
