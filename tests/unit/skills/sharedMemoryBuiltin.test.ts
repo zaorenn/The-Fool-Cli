@@ -19,11 +19,21 @@ const run = (args: string[], input?: string) => {
 };
 
 describe('shared-memory builtin skill', () => {
-  it('is auto-injected and documents the privacy boundary', () => {
+  /**
+   * It was superseded rather than deleted.
+   *
+   * What it wrote lands in `~/.the-fool/shared-memory.json` — durable, shared
+   * with every agent, and invisible to the person it is about, who therefore
+   * cannot correct a word of it. That is what the two markdown documents
+   * replaced, so the skill's job now is to be read once and migrated from,
+   * while the file itself stays where it is.
+   */
+  it('sends anything new to the documents rather than to its own file', () => {
     const body = readFileSync(join(SKILL_ROOT, 'SKILL.md'), 'utf8');
-    expect(body).toContain('shared with every agent');
-    expect(body).toContain('Never store secrets');
-    expect(body).toContain('explicitly asks');
+    expect(body).toContain('It is not where memory lives any more');
+    expect(body).toContain('Do not call `remember`');
+    // Still readable, so an install that has been here a while keeps what it had.
+    expect(body).toContain('shared-memory.mjs list');
   });
 
   it('persists a bounded memory record and can search it', () => {

@@ -30,6 +30,14 @@ On a fresh install the key is absent. That is not an error and not a reason to s
 - **Always, when the request contains a word that is theirs rather than the world's.** "Put it on my desktop", "add it to the project", "send it to work". Every one of those is unactionable until it is resolved, and guessing produces a file in the wrong place with complete confidence.
 - Follow anything under "Skills you taught me" as written. They taught it because your own way of doing it was not what they wanted.
 
+## The old store
+
+Installs that have been here a while may also have `~/.the-fool/shared-memory.json`,
+a flat list written by earlier versions through the `shared-memory` skill. It is
+superseded and nothing new should go into it — but it may hold something true
+that was never carried across. If you find one, write it into `user.md` here and
+say that you moved it.
+
 ## Write down what you learn
 
 Only two things belong in here, and neither is a log of what you did:
