@@ -530,13 +530,18 @@ Writing these by hand replaces the whole structure and loses whatever else it he
 `voice.boundConversationId`, `voice.summaryModelId`,
 `migration.providersMigrated_v1`, `migration.assistantsMigrated_v1`.
 
-`fool.voice.memory` belongs here too, and for a stronger reason than the rest:
-it holds what the spoken assistant has been told about the user — their name,
-what they asked to be called, things they said about themselves, and a line
-about each recent conversation. It is written during a conversation by the
-assistant itself, at the user's word. Read it if you are asked to show or clear
-what is remembered; never write it to make the assistant believe something the
-user did not say.
+`fool.voice.memory` is the exception on this list: it is meant to be read, and
+written carefully. It holds the two documents The Fool remembers a user by —
+`user` (their name, what to call them, what their own words mean, a line about
+each recent conversation) and `agent` (lessons taken from mistakes, and the ways
+of doing things they have taught) — plus `introduced`. Both are markdown the
+user can edit themselves in Settings → Memory.
+
+The `memory` builtin skill is the one to follow when reading or appending to it;
+it is auto-injected, so you already have it. Two rules matter here: `put`
+replaces the whole value, so send all three fields or you will drop a document
+to save the other; and never write something the user did not say, because this
+is what the assistant believes about a real person and they read it.
 
 Deprecated and migrated away from — read only, to understand an old install:
 `theme`, `colorScheme`, `customCss`, `css.themes`, `css.activeThemeId`.

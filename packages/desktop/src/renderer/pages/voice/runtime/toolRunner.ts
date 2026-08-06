@@ -18,11 +18,18 @@ import {
   type ThemeOverrides,
 } from '@/common/config/themeOverrides';
 import { parseOpenUrls } from '@/common/realtime/openUrls';
-import { runAgentTask } from '@renderer/services/voice/session/runAgentTask';
+import { buildSiteSearch } from '@/common/realtime/siteSearch';
+import { runAgentTask, type AgentTaskStep } from '@renderer/services/voice/session/runAgentTask';
 import {
+  peekVoiceMemory,
   forgetVoiceFact,
+  forgetVoiceLesson,
+  forgetVoiceSkill,
+  learnVoiceLesson,
+  learnVoiceSkill,
   rememberVoiceAddress,
   rememberVoiceFact,
+  rememberVoiceMeaning,
 } from '@renderer/services/voice/session/voiceMemoryStore';
 import { describeScreen } from '@renderer/services/voice/screenSight';
 import { peekVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
@@ -151,15 +158,43 @@ export const lookAtScreen = async (question: string): Promise<string> => {
  * Each step is its own entry, and the one before it is marked done as the next
  * arrives. Repeats are dropped: agents restate the same line while a tool runs,
  * and a list of eight identical rows is worse than one.
+ *
+ * What the agent is *writing* is not a step, and this is where that used to go
+ * wrong. The answer arrives a few characters at a time, every fragment differing
+ * from the last, so a hundred rows appeared holding a hundred prefixes of the
+ * same sentence — the panel spelling out the reply letter by letter instead of
+ * saying what was being done. It now has one row of its own, rewritten in place,
+ * and it says the last thing written rather than all of it.
  */
-const trackSteps = (host: ToolHost, callId: string): { note: (detail: string) => void; finish: () => void } => {
+const trackSteps = (host: ToolHost, callId: string): { note: (step: AgentTaskStep) => void; finish: () => void } => {
   let step = 0;
   let previous = '';
+  let writing = false;
+
+  const writingId = `${callId}#writing`;
+
+  /** The tail of what has been written — a row, not a transcript. */
+  const tail = (text: string): string => {
+    const sentences = text.split(/(?<=[.!?])\s+/).filter((part) => part.trim().length > 0);
+    return (sentences.at(-1) ?? text).trim().slice(0, 160);
+  };
 
   return {
-    note: (detail: string): void => {
-      const line = detail.trim();
-      if (line.length === 0 || line === previous) return;
+    note: (event: AgentTaskStep): void => {
+      const line = event.text.trim();
+      if (line.length === 0) return;
+
+      if (event.kind === 'writing') {
+        writing = true;
+        host.updateActivity(writingId, {
+          label: host.t('settings.voice.conversationTaskWriting'),
+          detail: tail(line),
+          state: 'running',
+        });
+        return;
+      }
+
+      if (line === previous) return;
       if (step > 0) host.updateActivity(`${callId}#${step}`, { state: 'completed' });
       step += 1;
       previous = line;
@@ -167,6 +202,7 @@ const trackSteps = (host: ToolHost, callId: string): { note: (detail: string) =>
     },
     finish: (): void => {
       if (step > 0) host.updateActivity(`${callId}#${step}`, { state: 'completed' });
+      if (writing) host.updateActivity(writingId, { state: 'completed' });
     },
   };
 };
@@ -232,6 +268,22 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
       return { ok: true, opened: urls.length };
     }
 
+    if (invocation.name === 'app_search') {
+      // The whole of "open YouTube and find that song", in one navigation. It
+      // used to be the agent's job — open a browser, find the box, type — which
+      // is three minutes of clicking for something that is an address.
+      const search = buildSiteSearch(text('site'), text('query'));
+      if (!search) throw new Error(t('settings.voice.conversationActionUnsupported'));
+
+      await ipcBridge.shell.openExternal.invoke(search.url);
+      const detail = t('settings.voice.conversationSearched', { site: search.label, query: text('query').trim() });
+      host.updateActivity(invocation.callId, { detail, state: 'completed' });
+      host.backToListening();
+      // The site goes back so the model can say where it looked rather than
+      // guessing, and notice when the site it named was not one we know.
+      return { ok: true, site: search.site, searched: true };
+    }
+
     if (invocation.name === 'app_ask_jester') {
       const request = text('request').trim();
       if (request.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));
@@ -252,6 +304,7 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
       const outcome = await runAgentTask({
         request,
         settings: peekVoiceSettings(),
+        memory: peekVoiceMemory(),
         onProgress: steps.note,
       }).finally(stopHeartbeat);
       steps.finish();
@@ -259,6 +312,15 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
         const detail = t(`settings.voice.conversationTaskError.${outcome.reason}`, {
           defaultValue: outcome.detail ?? outcome.reason,
         });
+        // Written down without being asked, for the two failures that say
+        // something about the request rather than about the moment. A dropped
+        // connection is not a lesson; a task this machine cannot carry out is
+        // one, and finding that out twice is how the user loses faith in it.
+        // The others are left alone on purpose — a memory that records every
+        // hiccup is a memory nobody can read.
+        if (outcome.reason === 'run-failed' || outcome.reason === 'agent-unavailable') {
+          void learnVoiceLesson(`Asked to "${request}", the agent could not finish it: ${detail}`);
+        }
         host.updateActivity(invocation.callId, { detail, state: 'failed' });
         return { ok: false, error: detail };
       }
@@ -289,19 +351,25 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
     if (invocation.name === 'app_remember') {
       const fact = text('fact').trim();
       const callMe = text('callMe').trim();
-      if (fact.length === 0 && callMe.length === 0) {
+      const word = text('word').trim();
+      const means = text('means').trim();
+      const meaning = word.length > 0 && means.length > 0;
+      if (fact.length === 0 && callMe.length === 0 && !meaning) {
         throw new Error(t('settings.voice.conversationActionUnsupported'));
       }
 
-      // The name first, so that if only one of the two survives a failure it is
-      // the one the very next sentence needs.
+      // The name first, so that if only one of the several survives a failure it
+      // is the one the very next sentence needs.
       if (callMe.length > 0) await rememberVoiceAddress(callMe);
+      if (meaning) await rememberVoiceMeaning(word, means);
       if (fact.length > 0) await rememberVoiceFact(fact);
 
       const detail =
         callMe.length > 0
           ? t('settings.voice.conversationRememberedName', { name: callMe })
-          : t('settings.voice.conversationRemembered');
+          : meaning
+            ? t('settings.voice.conversationRememberedMeaning', { word })
+            : t('settings.voice.conversationRemembered');
       host.updateActivity(invocation.callId, { detail, state: 'completed' });
       host.backToListening();
       // The name goes back as well as the acknowledgement: a model that has just
@@ -310,10 +378,36 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
       return { ok: true, detail, ...(callMe.length > 0 ? { callMe } : {}) };
     }
 
+    if (invocation.name === 'app_learn') {
+      const lesson = text('lesson').trim();
+      const name = text('skillName').trim();
+      const steps = text('skillSteps').trim();
+      const teaching = name.length > 0 && steps.length > 0;
+      if (lesson.length === 0 && !teaching) throw new Error(t('settings.voice.conversationActionUnsupported'));
+
+      if (teaching) await learnVoiceSkill({ name, when: text('skillWhen').trim(), steps });
+      if (lesson.length > 0) await learnVoiceLesson(lesson);
+
+      const detail = teaching
+        ? t('settings.voice.conversationLearnedSkill', { name })
+        : t('settings.voice.conversationLearned');
+      host.updateActivity(invocation.callId, { detail, state: 'completed' });
+      host.backToListening();
+      return { ok: true, detail };
+    }
+
     if (invocation.name === 'app_forget') {
       const about = text('about').trim();
       if (about.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));
-      await forgetVoiceFact(about);
+
+      const scope = text('scope').trim();
+      // A skill is a named block and a lesson is a line, so they come out of the
+      // document differently. Anything else is something known about the person,
+      // which is what "forget that" nearly always means.
+      if (scope === 'skill') await forgetVoiceSkill(about);
+      else if (scope === 'lesson') await forgetVoiceLesson(about);
+      else await forgetVoiceFact(about);
+
       const detail = t('settings.voice.conversationForgot', { about });
       host.updateActivity(invocation.callId, { detail, state: 'completed' });
       host.backToListening();

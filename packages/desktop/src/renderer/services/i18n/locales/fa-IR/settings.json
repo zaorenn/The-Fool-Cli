@@ -1599,7 +1599,14 @@
     "conversationInterruptible": "یک کلمه بتواند حرفش را قطع کند",
     "conversationInterruptibleHint": "فقط همان کلمه وسط جمله متوقفش می‌کند. سر و صدا، «همم» و «بله، فهمیدم» نه؛ سؤال دیگر هم تا پایان حرفش صبر می‌کند.",
     "conversationInterruptibleOffHint": "هیچ‌چیز قطعش نمی‌کند. حرفش را تمام می‌کند و بعد به گفته‌های تو پاسخ می‌دهد.",
-    "conversationInterruptPhrase": "کلمهٔ متوقف‌کننده"
+    "conversationInterruptPhrase": "کلمهٔ متوقف‌کننده",
+    "conversationSearched": "«{{query}}» در {{site}} جست‌وجو شد",
+    "conversationRememberedMeaning": "معنای «{{word}}» یادداشت شد",
+    "conversationLearned": "برای دفعه‌ی بعد یادداشت شد",
+    "conversationLearnedSkill": "«{{name}}» یاد گرفته شد",
+    "conversationTaskWriting": "در حال نوشتن پاسخ",
+    "conversationGroupMicrophone": "میکروفون",
+    "conversationGroupModel": "مدل"
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",
@@ -1627,5 +1634,17 @@
     "cronFailing": "{{count}} scheduled task(s) failing",
     "conversationsNone": "No conversations are currently running.",
     "conversationsRunning": "{{count}} conversation(s) running"
+  },
+  "memory": {
+    "title": "حافظه",
+    "subtitle": "آنچه The Fool درباره‌ی شما به یاد دارد و آنچه در کار کردن برای شما آموخته است. هر دو فایل پیش از هر گفت‌وگو و توسط هر عاملی که از طرف شما کار می‌کند خوانده می‌شود.",
+    "userTab": "user.md",
+    "agentTab": "agent.md",
+    "userHint": "اینکه چه کسی هستید، چطور صدایتان کنیم، واژه‌های خودتان به چه معناست، و یک سطر درباره‌ی هر گفت‌وگو. هر سطر را می‌توانید اصلاح کنید.",
+    "agentHint": "درس‌هایی از آنچه اشتباه پیش رفت، و شیوه‌هایی که خودتان با صدای بلند یاد داده‌اید. اینجا همه چیز قابل ویرایش است.",
+    "placeholder": "هنوز چیزی به خاطر سپرده نشده. هرچه می‌خواهید بداند بنویسید، یا فقط شروع به حرف زدن کنید.",
+    "unsaved": "تغییرات ذخیره‌نشده",
+    "upToDate": "به‌روز",
+    "revert": "بازگرداندن"
   }
 }

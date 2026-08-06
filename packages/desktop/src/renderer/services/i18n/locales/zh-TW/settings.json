@@ -1601,7 +1601,14 @@
     "conversationInterruptible": "用一個詞打斷它",
     "conversationInterruptibleHint": "只有那個詞能讓它中途停下。雜音、「嗯」和「對，我懂了」都不會；其他問題會等它說完。",
     "conversationInterruptibleOffHint": "沒有任何東西能打斷它。它會說完，然後回答你期間說的話。",
-    "conversationInterruptPhrase": "用來打斷的詞"
+    "conversationInterruptPhrase": "用來打斷的詞",
+    "conversationSearched": "已在 {{site}} 搜尋「{{query}}」",
+    "conversationRememberedMeaning": "已記下「{{word}}」的意思",
+    "conversationLearned": "已記下，下次注意",
+    "conversationLearnedSkill": "已學會「{{name}}」",
+    "conversationTaskWriting": "正在寫回答",
+    "conversationGroupMicrophone": "麥克風",
+    "conversationGroupModel": "模型"
   },
   "themeCustomizer": {
     "title": "自訂主題",
@@ -1629,5 +1636,17 @@
     "cronFailing": "{{count}} scheduled task(s) failing",
     "conversationsNone": "No conversations are currently running.",
     "conversationsRunning": "{{count}} conversation(s) running"
+  },
+  "memory": {
+    "title": "記憶",
+    "subtitle": "The Fool 記住的關於你的內容，以及它在為你工作時學到的東西。每次對話之前都會讀取這兩個檔案，代表你工作的智慧體也會讀取。",
+    "userTab": "user.md",
+    "agentTab": "agent.md",
+    "userHint": "你是誰、該怎麼稱呼你、你自己的說法指的是什麼，以及每次對話留下的一行。每一行你都可以改。",
+    "agentHint": "從出錯中總結的經驗，以及你親口教過的做事方式。這裡的內容都可以編輯。",
+    "placeholder": "還沒有記住任何內容。寫下你希望它知道的事，或者直接開始說話。",
+    "unsaved": "有未儲存的修改",
+    "upToDate": "已是最新",
+    "revert": "還原"
   }
 }

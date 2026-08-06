@@ -1599,7 +1599,14 @@
     "conversationInterruptible": "Bir kelime sözünü kesebilsin",
     "conversationInterruptibleHint": "Sadece o kelime cümlesinin ortasında durdurur. Gürültü, \"hıhı\" ve \"evet anladım\" durdurmaz; başka bir soru da sözü bitene kadar bekler.",
     "conversationInterruptibleOffHint": "Hiçbir şey sözünü kesmez. Bitirir, sonra bu arada söylediklerini yanıtlar.",
-    "conversationInterruptPhrase": "Durduran kelime"
+    "conversationInterruptPhrase": "Durduran kelime",
+    "conversationSearched": "{{site}} üzerinde “{{query}}” arandı",
+    "conversationRememberedMeaning": "“{{word}}” ne demek, not aldım",
+    "conversationLearned": "Bir dahakine not aldım",
+    "conversationLearnedSkill": "“{{name}}” öğrenildi",
+    "conversationTaskWriting": "Cevabı yazıyor",
+    "conversationGroupMicrophone": "Mikrofon",
+    "conversationGroupModel": "Model"
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",
@@ -1627,5 +1634,17 @@
     "cronFailing": "{{count}} zamanlanmış görev başarısız",
     "conversationsNone": "Şu anda çalışan bir konuşma yok.",
     "conversationsRunning": "{{count}} konuşma çalışıyor"
+  },
+  "memory": {
+    "title": "Hafıza",
+    "subtitle": "The Fool'un seninle ilgili hatırladıkları ve senin için çalışırken öğrendikleri. Her iki dosya da her sohbetten önce ve senin adına iş yapan her ajan tarafından okunur.",
+    "userTab": "user.md",
+    "agentTab": "agent.md",
+    "userHint": "Kim olduğun, sana nasıl seslenileceği, kendi kelimelerinin ne anlama geldiği ve her sohbetten kalan bir satır. Her satırı değiştirebilirsin.",
+    "agentHint": "Yanlış giden şeylerden çıkarılan dersler ve sesli olarak öğrettiğin yapma biçimleri. Burada her şeyi düzenleyebilirsin.",
+    "placeholder": "Henüz bir şey hatırlanmıyor. Bilinmesini istediğin her şeyi yaz ya da konuşmaya başla.",
+    "unsaved": "Kaydedilmemiş değişiklikler",
+    "upToDate": "Güncel",
+    "revert": "Geri al"
   }
 }

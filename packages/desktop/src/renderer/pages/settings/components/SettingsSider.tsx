@@ -4,6 +4,7 @@ import { type IExtensionSettingsTab } from '@/common/adapter/ipcBridge';
 import { useExtI18n } from '@/renderer/hooks/system/useExtI18n';
 import { useExtensionSettingsTabs } from '@/renderer/hooks/system/useExtensionSettingsTabs';
 import {
+  Brain,
   Cat,
   Communication,
   Computer,
@@ -33,6 +34,7 @@ export const BUILTIN_TAB_IDS = [
   'skills',
   'tools',
   'voice',
+  'memory',
   'appearance',
   'webui',
   'pet',
@@ -122,6 +124,7 @@ const SettingsSider: React.FC<{ collapsed?: boolean; tooltipEnabled?: boolean }>
         path: 'tools',
       },
       voice: { id: 'voice', label: t('settings.voice.title'), icon: <Voice />, path: 'voice' },
+      memory: { id: 'memory', label: t('settings.memory.title'), icon: <Brain />, path: 'memory' },
       appearance: { id: 'appearance', label: t('settings.appearancePanel'), icon: <Computer />, path: 'appearance' },
       webui: {
         id: 'webui',

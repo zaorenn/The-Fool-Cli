@@ -1599,7 +1599,14 @@
     "conversationInterruptible": "Ein Wort kann es abbrechen",
     "conversationInterruptibleHint": "Nur dieses Wort stoppt es mitten im Satz. Geräusche, \"mhm\" und \"ja, verstanden\" nicht — und eine andere Frage wartet, bis es fertig ist.",
     "conversationInterruptibleOffHint": "Nichts unterbricht es. Es spricht zu Ende und antwortet dann auf das, was du gesagt hast.",
-    "conversationInterruptPhrase": "Wort, das es stoppt"
+    "conversationInterruptPhrase": "Wort, das es stoppt",
+    "conversationSearched": "Auf {{site}} nach „{{query}}“ gesucht",
+    "conversationRememberedMeaning": "Gemerkt, was „{{word}}“ bedeutet",
+    "conversationLearned": "Fürs nächste Mal gemerkt",
+    "conversationLearnedSkill": "„{{name}}“ gelernt",
+    "conversationTaskWriting": "Schreibt die Antwort",
+    "conversationGroupMicrophone": "Mikrofon",
+    "conversationGroupModel": "Modell"
   },
   "themeCustomizer": {
     "title": "Design anpassen",
@@ -1627,5 +1634,17 @@
     "cronFailing": "{{count}} scheduled task(s) failing",
     "conversationsNone": "No conversations are currently running.",
     "conversationsRunning": "{{count}} conversation(s) running"
+  },
+  "memory": {
+    "title": "Gedächtnis",
+    "subtitle": "Was The Fool über dich weiß und was es beim Arbeiten für dich gelernt hat. Beide Dateien werden vor jedem Gespräch gelesen, und von jedem Agenten, der in deinem Auftrag arbeitet.",
+    "userTab": "user.md",
+    "agentTab": "agent.md",
+    "userHint": "Wer du bist, wie du angesprochen werden willst, was deine eigenen Wörter bedeuten, und eine Zeile zu jedem Gespräch. Jede Zeile kannst du ändern.",
+    "agentHint": "Lehren aus dem, was schiefging, und die Arbeitsweisen, die du laut beigebracht hast. Hier ist alles bearbeitbar.",
+    "placeholder": "Noch nichts gemerkt. Schreib auf, was bekannt sein soll, oder fang einfach an zu reden.",
+    "unsaved": "Nicht gespeicherte Änderungen",
+    "upToDate": "Aktuell",
+    "revert": "Zurücksetzen"
   }
 }

@@ -199,4 +199,47 @@ describe('realtime tool schemas', () => {
     // the agent, so the distinction has to be stated in it.
     expect(open?.description).toMatch(/browser/i);
   });
+
+  /**
+   * Searching inside a site is a third thing, between opening a page and driving
+   * the machine. The results have an address, so it is one navigation — and the
+   * description is the only thing standing between that and the agent spending
+   * three minutes finding a search box.
+   */
+  it('offers searching a site as a tool of its own, needing only what to look for', () => {
+    const search = REALTIME_TOOLS.find((tool) => tool.name === 'app_search');
+
+    expect(search?.parameters.required).toEqual(['query']);
+    // The site is optional: "look it up" with no site named is a web search,
+    // and refusing it would send a perfectly ordinary request to the agent.
+    expect(search?.parameters.properties).toHaveProperty('site');
+    expect(search?.description).toMatch(/youtube/i);
+    expect(search?.description).toMatch(/instantly/i);
+  });
+
+  it('offers one tool for being taught, covering both a lesson and a way of working', () => {
+    const learn = REALTIME_TOOLS.find((tool) => tool.name === 'app_learn');
+
+    // Nothing is required: either half on its own is a complete use of it, and
+    // a schema demanding both would make recording a one-line correction
+    // impossible without inventing a skill to hang it on.
+    expect(learn?.parameters.required).toEqual([]);
+    for (const field of ['lesson', 'skillName', 'skillWhen', 'skillSteps']) {
+      expect(learn?.parameters.properties).toHaveProperty(field);
+    }
+  });
+
+  it('lets what is remembered say what one of the user’s own words means', () => {
+    const remember = REALTIME_TOOLS.find((tool) => tool.name === 'app_remember');
+
+    expect(remember?.parameters.properties).toHaveProperty('word');
+    expect(remember?.parameters.properties).toHaveProperty('means');
+  });
+
+  it('lets a forget say which of the three kinds of thing it is', () => {
+    const forget = REALTIME_TOOLS.find((tool) => tool.name === 'app_forget');
+    const properties = forget?.parameters.properties as Record<string, { enum?: string[] }> | undefined;
+
+    expect(properties?.scope?.enum).toEqual(['about-them', 'skill', 'lesson']);
+  });
 });

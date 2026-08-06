@@ -1599,7 +1599,14 @@
     "conversationInterruptible": "Un mot peut l’arrêter",
     "conversationInterruptibleHint": "Seul ce mot l’arrête au milieu d’une phrase. Un bruit, « mhm » ou « oui, je vois » ne l’arrêtent pas, et une autre question attend la fin.",
     "conversationInterruptibleOffHint": "Rien ne l’interrompt. Il finit, puis répond à ce que tu as dit entre-temps.",
-    "conversationInterruptPhrase": "Mot qui l’arrête"
+    "conversationInterruptPhrase": "Mot qui l’arrête",
+    "conversationSearched": "« {{query}} » recherché sur {{site}}",
+    "conversationRememberedMeaning": "Noté ce que veut dire « {{word}} »",
+    "conversationLearned": "Noté pour la prochaine fois",
+    "conversationLearnedSkill": "« {{name}} » appris",
+    "conversationTaskWriting": "Rédige la réponse",
+    "conversationGroupMicrophone": "Microphone",
+    "conversationGroupModel": "Modèle"
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",
@@ -1627,5 +1634,17 @@
     "cronFailing": "{{count}} scheduled task(s) failing",
     "conversationsNone": "No conversations are currently running.",
     "conversationsRunning": "{{count}} conversation(s) running"
+  },
+  "memory": {
+    "title": "Mémoire",
+    "subtitle": "Ce que The Fool retient de vous et ce qu’il a appris en travaillant pour vous. Les deux fichiers sont lus avant chaque conversation, et par tout agent qui agit en votre nom.",
+    "userTab": "user.md",
+    "agentTab": "agent.md",
+    "userHint": "Qui vous êtes, comment vous appeler, ce que veulent dire vos propres mots, et une ligne par conversation. Chaque ligne est à vous de corriger.",
+    "agentHint": "Les leçons tirées de ce qui a mal tourné, et les façons de faire que vous avez enseignées à voix haute. Tout est modifiable ici.",
+    "placeholder": "Rien de retenu pour l’instant. Écrivez ce qu’il faut savoir, ou commencez simplement à parler.",
+    "unsaved": "Modifications non enregistrées",
+    "upToDate": "À jour",
+    "revert": "Rétablir"
   }
 }

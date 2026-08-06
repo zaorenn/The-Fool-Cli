@@ -6,6 +6,7 @@
 
 import { ipcBridge } from '@/common';
 import { runAgentTask } from '@renderer/services/voice/session/runAgentTask';
+import { peekVoiceMemory } from '@renderer/services/voice/session/voiceMemoryStore';
 import { peekVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import type { ToolHost } from './types';
 
@@ -109,10 +110,14 @@ export const buildAndPreview = async (host: ToolHost, callId: string, request: s
   const outcome = await runAgentTask({
     request: buildBrief(request, directory),
     settings: peekVoiceSettings(),
-    onProgress: (detail) => {
-      if (detail.length === 0) return;
+    memory: peekVoiceMemory(),
+    // Steps only. What the agent is *writing* arrives a fragment at a time and
+    // would put one row on screen per token — a build showing the alphabet
+    // rather than the files it is creating.
+    onProgress: (event) => {
+      if (event.kind !== 'step' || event.text.length === 0) return;
       step += 1;
-      host.updateActivity(`${callId}#${step}`, { label: detail, detail, state: 'completed' });
+      host.updateActivity(`${callId}#${step}`, { label: event.text, detail: event.text, state: 'completed' });
     },
   }).finally(stopHeartbeat);
 

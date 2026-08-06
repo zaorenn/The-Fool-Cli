@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Input, Link, Select, Switch, Tag, Typography } from '@arco-design/web-react';
+import { Collapse, Input, Link, Select, Switch, Tag, Typography } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
 import type { IProvider } from '@/common/config/storage';
@@ -21,14 +21,22 @@ import type { FoolVoiceSettings } from '@/common/types/foolVoice';
 // two controls over one stored value is how they come to disagree.
 import VoiceAgentSection from '@renderer/components/settings/SettingsModal/contents/voice/VoiceAgentSection';
 import { LOCAL_LLM_DEFAULT_ENDPOINT, listLocalModels } from './localPipeline';
+import styles from './VoiceConversationPage.module.css';
 
 /**
- * The four decisions that change what a conversation is like.
+ * What to decide before starting a conversation, and everything else folded away.
  *
- * Everything else about the voice loop lives in Settings; these are here,
- * beside the button that starts it, because they are the ones a person changes
- * *between* conversations rather than once — who they are talking to today, in
- * what language, and about what.
+ * This panel had grown to fourteen controls in one column, all at the same
+ * weight: who you are talking to sat between an audio-interrupt phrase and a
+ * vision-model id, and the thing you actually came to press — the microphone —
+ * was below the fold. A wall of switches beside a button that starts a
+ * conversation reads as a machine to be configured rather than someone to talk
+ * to, which is the opposite of what a voice is for.
+ *
+ * So there are three decisions at the top, in full, because they are the ones
+ * that change between one conversation and the next: who is answering, in what
+ * language, and as whom. Everything else is set once and then never again, so it
+ * is behind a heading that says what it is.
  */
 
 type ConversationSettingsProps = {
@@ -60,6 +68,32 @@ const findCredential = (providers: readonly IProvider[], providerId: VoiceConver
 
 /** Languages the app itself speaks, plus following whoever is talking. */
 const LANGUAGES = ['auto', 'en', 'tr', 'de', 'fr', 'es', 'pt', 'ru', 'uk', 'ja', 'ko', 'zh', 'fa'] as const;
+
+/** One labelled control, at the one weight every control in here shares. */
+const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <label className='grid gap-5px'>
+    <Typography.Text className='text-11px font-600 uppercase tracking-wide text-t-tertiary'>{label}</Typography.Text>
+    {children}
+  </label>
+);
+
+/** A switch with its explanation underneath, which most of these need. */
+const Toggle: React.FC<{
+  label: string;
+  hint: string;
+  checked: boolean;
+  disabled?: boolean;
+  testId?: string;
+  onChange: (value: boolean) => void;
+}> = ({ label, hint, checked, disabled, testId, onChange }) => (
+  <div className='grid gap-3px'>
+    <label className='flex items-center justify-between gap-10px'>
+      <Typography.Text className='text-12px text-t-primary'>{label}</Typography.Text>
+      <Switch data-testid={testId} size='small' checked={checked} disabled={disabled} onChange={onChange} />
+    </label>
+    <Typography.Text className='text-11px leading-16px text-t-tertiary'>{hint}</Typography.Text>
+  </div>
+);
 
 const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, disabled, onChange }) => {
   const { t } = useTranslation();
@@ -116,10 +150,7 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
 
   return (
     <div className='grid gap-12px'>
-      <label className='grid gap-5px'>
-        <Typography.Text className='text-12px font-600 text-t-secondary'>
-          {t('settings.voice.conversationProvider')}
-        </Typography.Text>
+      <Field label={t('settings.voice.conversationProvider')}>
         <Select
           value={realtime.providerId}
           disabled={disabled}
@@ -150,30 +181,24 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
             </Link>
           </div>
         )}
-      </label>
+      </Field>
 
       <div className={isLocal ? 'grid gap-10px' : 'grid grid-cols-2 gap-10px'}>
         {/* Hidden rather than disabled for the local pipeline: it has no voice
             list of its own, and an empty picker beside a working conversation
             reads as something failing to load. */}
         {isLocal ? null : (
-          <label className='grid gap-5px'>
-            <Typography.Text className='text-12px font-600 text-t-secondary'>
-              {t('settings.voice.conversationVoice')}
-            </Typography.Text>
+          <Field label={t('settings.voice.conversationVoice')}>
             <Select
               value={realtime.voice}
               disabled={disabled || voiceOptions.length <= 1}
               onChange={(value: string) => patch({ voice: value })}
               options={voiceOptions}
             />
-          </label>
+          </Field>
         )}
 
-        <label className='grid gap-5px'>
-          <Typography.Text className='text-12px font-600 text-t-secondary'>
-            {t('settings.voice.conversationLanguage')}
-          </Typography.Text>
+        <Field label={t('settings.voice.conversationLanguage')}>
           <Select
             value={realtime.language}
             disabled={disabled}
@@ -186,13 +211,10 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
               value: code,
             }))}
           />
-        </label>
+        </Field>
       </div>
 
-      <label className='grid gap-5px'>
-        <Typography.Text className='text-12px font-600 text-t-secondary'>
-          {t('settings.voice.conversationPersona')}
-        </Typography.Text>
+      <Field label={t('settings.voice.conversationPersona')}>
         <Select
           value={realtime.personaPresetId}
           disabled={disabled}
@@ -202,187 +224,172 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
             value: id,
           }))}
         />
-      </label>
+      </Field>
 
-      <label className='grid gap-5px'>
-        <Typography.Text className='text-12px font-600 text-t-secondary'>
-          {realtime.personaPresetId === 'custom'
-            ? t('settings.voice.conversationInstructions')
-            : t('settings.voice.conversationInstructionsExtra')}
-        </Typography.Text>
-        <Input.TextArea
-          value={realtime.customInstructions}
-          disabled={disabled}
-          onChange={(value: string) => patch({ customInstructions: value })}
-          autoSize={{ minRows: 3, maxRows: 7 }}
-          maxLength={4000}
-          showWordLimit
-          placeholder={t('settings.voice.conversationInstructionsPlaceholder')}
-        />
-      </label>
-
-      <label className='grid gap-5px'>
-        <Typography.Text className='text-12px font-600 text-t-secondary'>
-          {isLocal ? t('settings.voice.conversationLocalModel') : t('settings.voice.conversationModel')}
-        </Typography.Text>
-        {isLocal ? (
-          <Select
-            value={realtime.model || undefined}
+      {/* Everything below is decided once. Closed by default, in the order they
+          are reached for: what it should say, who does the work, then the two
+          groups nobody opens twice. */}
+      <Collapse bordered={false} className={styles.settingsGroups}>
+        <Collapse.Item
+          name='instructions'
+          header={
+            realtime.personaPresetId === 'custom'
+              ? t('settings.voice.conversationInstructions')
+              : t('settings.voice.conversationInstructionsExtra')
+          }
+        >
+          <Input.TextArea
+            value={realtime.customInstructions}
             disabled={disabled}
-            allowCreate
-            showSearch
-            onChange={(value: string) => patch({ model: value })}
-            placeholder={
-              localModels.length > 0
-                ? t('settings.voice.conversationLocalModelPlaceholder')
-                : t('settings.voice.conversationLocalUnreachable')
-            }
-            options={localModels.map((id) => ({ label: id, value: id }))}
+            onChange={(value: string) => patch({ customInstructions: value })}
+            autoSize={{ minRows: 3, maxRows: 7 }}
+            maxLength={4000}
+            showWordLimit
+            placeholder={t('settings.voice.conversationInstructionsPlaceholder')}
           />
-        ) : (
-          <Input
-            value={realtime.model}
-            disabled={disabled}
-            onChange={(value: string) => patch({ model: value })}
-            placeholder={spec.defaultModel}
-          />
-        )}
-      </label>
+        </Collapse.Item>
 
-      {/* Who does the work when the conversation asks for something real.
-          Beside the start button rather than only in Settings because it is the
-          difference between "open YouTube" happening and not, and the failure it
-          causes reads as the voice being broken rather than as a setting. */}
-      <div className='grid gap-6px rounded-10px bg-fill-1 px-10px py-9px'>
-        <Typography.Text className='text-12px font-600 text-t-secondary'>
-          {t('settings.voice.agentSection')}
-        </Typography.Text>
-        <VoiceAgentSection settings={settings} onChange={onChange} disabled={disabled} />
-
-        <label className='mt-2px flex items-center justify-between gap-10px'>
-          <Typography.Text className='text-11px text-t-tertiary'>
-            {t('settings.voice.conversationUnattended')}
-          </Typography.Text>
-          <Switch
-            data-testid='voice-unattended'
-            size='small'
-            checked={settings.session.unattended}
-            onChange={(value: boolean) =>
-              onChange((previous) => ({ ...previous, session: { ...previous.session, unattended: value } }))
-            }
-          />
-        </label>
-        <Typography.Text className='text-11px leading-16px text-t-tertiary'>
-          {settings.session.unattended
-            ? t('settings.voice.conversationUnattendedOnHint')
-            : t('settings.voice.conversationUnattendedOffHint')}
-        </Typography.Text>
-      </div>
-
-      {/* Whether the microphone is open at all, which decides whether silence
-          can be heard as a question. Above interruption because it makes most of
-          that question moot: nothing arrives to interrupt with. */}
-      <div className='grid gap-5px rounded-10px bg-fill-1 px-10px py-9px'>
-        <label className='flex items-center justify-between gap-10px'>
-          <Typography.Text className='text-12px font-600 text-t-secondary'>
-            {t('settings.voice.conversationHoldToTalk')}
-          </Typography.Text>
-          <Switch
-            data-testid='voice-hold-to-talk'
-            size='small'
-            checked={settings.activation.conversationHoldToTalk}
-            onChange={(value: boolean) =>
-              onChange((previous) => ({
-                ...previous,
-                activation: { ...previous.activation, conversationHoldToTalk: value },
-              }))
-            }
-          />
-        </label>
-        <Typography.Text className='text-11px leading-16px text-t-tertiary'>
-          {settings.activation.conversationHoldToTalk
-            ? t('settings.voice.conversationHoldToTalkOnHint')
-            : t('settings.voice.conversationHoldToTalkOffHint')}
-        </Typography.Text>
-      </div>
-
-      {/* Interruption, which is a conversation setting rather than an audio one:
-          it decides what happens to an answer when the room makes a noise. */}
-      <div className='grid gap-5px rounded-10px bg-fill-1 px-10px py-9px'>
-        <label className='flex items-center justify-between gap-10px'>
-          <Typography.Text className='text-12px font-600 text-t-secondary'>
-            {t('settings.voice.conversationInterruptible')}
-          </Typography.Text>
-          <Switch
-            size='small'
-            checked={settings.playback.interruptible}
-            disabled={disabled}
-            onChange={(value: boolean) =>
-              onChange((previous) => ({ ...previous, playback: { ...previous.playback, interruptible: value } }))
-            }
-          />
-        </label>
-        <Typography.Text className='text-11px leading-16px text-t-tertiary'>
-          {settings.playback.interruptible
-            ? t('settings.voice.conversationInterruptibleHint')
-            : t('settings.voice.conversationInterruptibleOffHint')}
-        </Typography.Text>
-        {settings.playback.interruptible ? (
-          <label className='mt-4px grid gap-4px'>
-            <Typography.Text className='text-11px text-t-tertiary'>
-              {t('settings.voice.conversationInterruptPhrase')}
-            </Typography.Text>
-            <Input
-              value={settings.playback.interruptPhrase}
-              disabled={disabled}
-              maxLength={64}
-              placeholder='stop'
-              onChange={(value: string) =>
-                onChange((previous) => ({ ...previous, playback: { ...previous.playback, interruptPhrase: value } }))
+        {/* Who does the work when the conversation asks for something real —
+            the difference between "open YouTube" happening and not, and the
+            failure it causes reads as the voice being broken rather than as a
+            setting. */}
+        <Collapse.Item name='agent' header={t('settings.voice.agentSection')}>
+          <div className='grid gap-10px'>
+            <VoiceAgentSection settings={settings} onChange={onChange} disabled={disabled} />
+            <Toggle
+              testId='voice-unattended'
+              label={t('settings.voice.conversationUnattended')}
+              hint={
+                settings.session.unattended
+                  ? t('settings.voice.conversationUnattendedOnHint')
+                  : t('settings.voice.conversationUnattendedOffHint')
+              }
+              checked={settings.session.unattended}
+              onChange={(value) =>
+                onChange((previous) => ({ ...previous, session: { ...previous.session, unattended: value } }))
               }
             />
-          </label>
-        ) : null}
-      </div>
+          </div>
+        </Collapse.Item>
 
-      {isLocal ? (
-        <label className='grid gap-5px'>
-          <Typography.Text className='text-12px font-600 text-t-secondary'>
-            {t('settings.voice.conversationVisionModel')}
-          </Typography.Text>
-          <Select
-            value={realtime.visionModel || ''}
-            disabled={disabled}
-            allowCreate
-            showSearch
-            onChange={(value: string) => patch({ visionModel: value })}
-            options={[
-              { label: t('settings.voice.conversationVisionModelSame'), value: '' },
-              ...localModels.map((id) => ({ label: id, value: id })),
-            ]}
-          />
-          <Typography.Text className='text-11px text-t-tertiary'>
-            {t('settings.voice.conversationVisionModelHint')}
-          </Typography.Text>
-        </label>
-      ) : null}
+        <Collapse.Item name='microphone' header={t('settings.voice.conversationGroupMicrophone')}>
+          <div className='grid gap-12px'>
+            {/* Whether the microphone is open at all, which decides whether
+                silence can be heard as a question. Above interruption because it
+                makes most of that question moot: nothing arrives to interrupt
+                with. */}
+            <Toggle
+              testId='voice-hold-to-talk'
+              label={t('settings.voice.conversationHoldToTalk')}
+              hint={
+                settings.activation.conversationHoldToTalk
+                  ? t('settings.voice.conversationHoldToTalkOnHint')
+                  : t('settings.voice.conversationHoldToTalkOffHint')
+              }
+              checked={settings.activation.conversationHoldToTalk}
+              onChange={(value) =>
+                onChange((previous) => ({
+                  ...previous,
+                  activation: { ...previous.activation, conversationHoldToTalk: value },
+                }))
+              }
+            />
 
-      {isLocal ? (
-        <label className='grid gap-5px'>
-          <Typography.Text className='text-12px font-600 text-t-secondary'>
-            {t('settings.voice.conversationLocalEndpoint')}
-          </Typography.Text>
-          <Input
-            value={realtime.localEndpoint}
-            disabled={disabled}
-            onChange={(value: string) => patch({ localEndpoint: value })}
-            placeholder={LOCAL_LLM_DEFAULT_ENDPOINT}
-          />
-          <Typography.Text className='text-11px text-t-tertiary'>
-            {t('settings.voice.conversationLocalVoiceHint')}
-          </Typography.Text>
-        </label>
-      ) : null}
+            <Toggle
+              label={t('settings.voice.conversationInterruptible')}
+              hint={
+                settings.playback.interruptible
+                  ? t('settings.voice.conversationInterruptibleHint')
+                  : t('settings.voice.conversationInterruptibleOffHint')
+              }
+              checked={settings.playback.interruptible}
+              disabled={disabled}
+              onChange={(value) =>
+                onChange((previous) => ({ ...previous, playback: { ...previous.playback, interruptible: value } }))
+              }
+            />
+
+            {settings.playback.interruptible ? (
+              <Field label={t('settings.voice.conversationInterruptPhrase')}>
+                <Input
+                  value={settings.playback.interruptPhrase}
+                  disabled={disabled}
+                  maxLength={64}
+                  placeholder='stop'
+                  onChange={(value: string) =>
+                    onChange((previous) => ({
+                      ...previous,
+                      playback: { ...previous.playback, interruptPhrase: value },
+                    }))
+                  }
+                />
+              </Field>
+            ) : null}
+          </div>
+        </Collapse.Item>
+
+        <Collapse.Item name='model' header={t('settings.voice.conversationGroupModel')}>
+          <div className='grid gap-12px'>
+            <Field label={isLocal ? t('settings.voice.conversationLocalModel') : t('settings.voice.conversationModel')}>
+              {isLocal ? (
+                <Select
+                  value={realtime.model || undefined}
+                  disabled={disabled}
+                  allowCreate
+                  showSearch
+                  onChange={(value: string) => patch({ model: value })}
+                  placeholder={
+                    localModels.length > 0
+                      ? t('settings.voice.conversationLocalModelPlaceholder')
+                      : t('settings.voice.conversationLocalUnreachable')
+                  }
+                  options={localModels.map((id) => ({ label: id, value: id }))}
+                />
+              ) : (
+                <Input
+                  value={realtime.model}
+                  disabled={disabled}
+                  onChange={(value: string) => patch({ model: value })}
+                  placeholder={spec.defaultModel}
+                />
+              )}
+            </Field>
+
+            {isLocal ? (
+              <>
+                <Field label={t('settings.voice.conversationVisionModel')}>
+                  <Select
+                    value={realtime.visionModel || ''}
+                    disabled={disabled}
+                    allowCreate
+                    showSearch
+                    onChange={(value: string) => patch({ visionModel: value })}
+                    options={[
+                      { label: t('settings.voice.conversationVisionModelSame'), value: '' },
+                      ...localModels.map((id) => ({ label: id, value: id })),
+                    ]}
+                  />
+                  <Typography.Text className='text-11px text-t-tertiary'>
+                    {t('settings.voice.conversationVisionModelHint')}
+                  </Typography.Text>
+                </Field>
+
+                <Field label={t('settings.voice.conversationLocalEndpoint')}>
+                  <Input
+                    value={realtime.localEndpoint}
+                    disabled={disabled}
+                    onChange={(value: string) => patch({ localEndpoint: value })}
+                    placeholder={LOCAL_LLM_DEFAULT_ENDPOINT}
+                  />
+                  <Typography.Text className='text-11px text-t-tertiary'>
+                    {t('settings.voice.conversationLocalVoiceHint')}
+                  </Typography.Text>
+                </Field>
+              </>
+            ) : null}
+          </div>
+        </Collapse.Item>
+      </Collapse>
     </div>
   );
 };

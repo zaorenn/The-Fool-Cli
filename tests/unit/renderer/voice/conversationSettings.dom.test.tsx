@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_FOOL_VOICE_SETTINGS, type FoolVoiceSettings } from '@/common/types/foolVoice';
@@ -19,6 +19,12 @@ import { DEFAULT_FOOL_VOICE_SETTINGS, type FoolVoiceSettings } from '@/common/ty
  * being and what it has been told — and that the pickers are populated from the
  * local server rather than asking the user to type an id like
  * `google/gemma-4-e4b` exactly.
+ *
+ * All of it on one surface is not the same as all of it at once. Fourteen
+ * controls in one column put "who am I talking to" between an interrupt phrase
+ * and a vision-model id, so the things that change between conversations are
+ * open and the things set once are behind a heading — which is why most of what
+ * follows opens a group first.
  */
 
 const listProviders = vi.fn();
@@ -61,18 +67,39 @@ beforeEach(() => {
   );
 });
 
+/** Opens one of the folded groups, the way the user does. */
+const openGroup = (header: string): void => fireEvent.click(screen.getByText(header));
+
 describe('the panel beside the microphone', () => {
+  it('opens on the three decisions that change between conversations, and nothing else', () => {
+    render(<ConversationSettings settings={settings()} disabled={false} onChange={vi.fn()} />);
+
+    expect(screen.getByText('settings.voice.conversationProvider')).toBeTruthy();
+    expect(screen.getByText('settings.voice.conversationLanguage')).toBeTruthy();
+    expect(screen.getByText('settings.voice.conversationPersona')).toBeTruthy();
+
+    // Set once and then never again — reachable by name, not in the way.
+    expect(screen.queryByText('settings.voice.conversationLocalEndpoint')).toBeNull();
+    expect(screen.queryByPlaceholderText('settings.voice.conversationInstructionsPlaceholder')).toBeNull();
+  });
+
   it('offers both models, where they answer, and what they were told', async () => {
     render(<ConversationSettings settings={settings()} disabled={false} onChange={vi.fn()} />);
 
+    openGroup('settings.voice.conversationGroupModel');
+
     // The thinking model and the one that looks at the screen are separate
     // choices, because the fast conversational model is often text-only.
-    expect(screen.getByText('settings.voice.conversationLocalModel')).toBeTruthy();
+    await waitFor(() => expect(screen.getByText('settings.voice.conversationLocalModel')).toBeTruthy());
     expect(screen.getByText('settings.voice.conversationVisionModel')).toBeTruthy();
     expect(screen.getByText('settings.voice.conversationLocalEndpoint')).toBeTruthy();
     expect(screen.getByText('settings.voice.conversationPersona')).toBeTruthy();
+
     // Custom instructions, which is the "and their instructions" half.
-    expect(screen.getByPlaceholderText('settings.voice.conversationInstructionsPlaceholder')).toBeTruthy();
+    openGroup('settings.voice.conversationInstructionsExtra');
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText('settings.voice.conversationInstructionsPlaceholder')).toBeTruthy()
+    );
   });
 
   it('asks the local server what it has, rather than expecting an exact id typed', async () => {
@@ -97,6 +124,8 @@ describe('the panel beside the microphone', () => {
   it('says the vision model follows the thinking one when it is left alone', async () => {
     render(<ConversationSettings settings={settings()} disabled={false} onChange={vi.fn()} />);
 
+    openGroup('settings.voice.conversationGroupModel');
+
     await waitFor(() => expect(screen.getByText('settings.voice.conversationVisionModelSame')).toBeTruthy());
   });
 
@@ -111,6 +140,8 @@ describe('the panel beside the microphone', () => {
   it('offers the agent and its model, not only the model that talks', async () => {
     render(<ConversationSettings settings={settings()} disabled={false} onChange={vi.fn()} />);
 
+    openGroup('settings.voice.agentSection');
+
     await waitFor(() => expect(screen.getByTestId('voice-agent')).toBeTruthy());
     expect(screen.getByTestId('voice-agent-model')).toBeTruthy();
   });
@@ -118,7 +149,20 @@ describe('the panel beside the microphone', () => {
   it('locks the agent picker while a conversation is running', async () => {
     render(<ConversationSettings settings={settings()} disabled onChange={vi.fn()} />);
 
+    openGroup('settings.voice.agentSection');
+
     await waitFor(() => expect(screen.getByTestId('voice-agent')).toBeTruthy());
     expect(screen.getByTestId('voice-agent').getAttribute('class')).toContain('disabled');
+  });
+
+  it('keeps the microphone switches together, and out of the way until asked for', async () => {
+    render(<ConversationSettings settings={settings()} disabled={false} onChange={vi.fn()} />);
+
+    expect(screen.queryByTestId('voice-hold-to-talk')).toBeNull();
+
+    openGroup('settings.voice.conversationGroupMicrophone');
+
+    await waitFor(() => expect(screen.getByTestId('voice-hold-to-talk')).toBeTruthy());
+    expect(screen.getByText('settings.voice.conversationInterruptible')).toBeTruthy();
   });
 });

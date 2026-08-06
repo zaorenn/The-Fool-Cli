@@ -7,16 +7,22 @@
 import {
   EMPTY_VOICE_MEMORY,
   forgetFact,
+  forgetLesson,
+  forgetSkill,
+  learnLesson,
+  learnSkill,
   rememberAddress,
   rememberFact,
+  rememberMeaning,
   rememberSession,
   sanitizeVoiceMemory,
+  type TaughtSkill,
   type VoiceMemory,
 } from '@/common/voice/memory';
 import { getClientBusinessSetting, setClientBusinessSetting } from '@renderer/services/clientBusinessSettings';
 
 /**
- * Where what the voice remembers actually lives.
+ * Where what the assistant remembers actually lives.
  *
  * The same shape as the voice settings store next to it, for the same reason: a
  * conversation, the settings page and anything else that wants to show what is
@@ -25,9 +31,14 @@ import { getClientBusinessSetting, setClientBusinessSetting } from '@renderer/se
  *
  * Reads are cached and writes are applied in memory first — a failed save must
  * not lose the name the user just gave, and the next successful write carries it.
+ *
+ * The key keeps its old name through the change from a record to two documents.
+ * It is the same memory; renaming it would have orphaned every install that
+ * already had one, and the migration in `sanitizeVoiceMemory` only runs on what
+ * it can still find.
  */
 
-const CONFIG_KEY = 'fool.voice.memory';
+export const MEMORY_CONFIG_KEY = 'fool.voice.memory';
 
 type Listener = (memory: VoiceMemory) => void;
 
@@ -49,7 +60,7 @@ export const readVoiceMemory = async (): Promise<VoiceMemory> => {
   inFlight ??= (async () => {
     let stored: unknown;
     try {
-      stored = await getClientBusinessSetting(CONFIG_KEY);
+      stored = await getClientBusinessSetting(MEMORY_CONFIG_KEY);
     } catch {
       // An unreachable backend must not stop someone talking to their computer.
       stored = undefined;
@@ -70,7 +81,7 @@ const write = async (memory: VoiceMemory): Promise<void> => {
   cached = memory;
   notify(memory);
   try {
-    await setClientBusinessSetting(CONFIG_KEY, memory);
+    await setClientBusinessSetting(MEMORY_CONFIG_KEY, memory);
   } catch {
     // Kept for this session; the next successful write persists it.
   }
@@ -93,6 +104,9 @@ export const updateVoiceMemory = async (change: (previous: VoiceMemory) => Voice
 export const rememberVoiceFact = (text: string): Promise<VoiceMemory> =>
   updateVoiceMemory((memory) => rememberFact(memory, text));
 
+export const rememberVoiceMeaning = (word: string, means: string): Promise<VoiceMemory> =>
+  updateVoiceMemory((memory) => rememberMeaning(memory, word, means));
+
 export const forgetVoiceFact = (about: string): Promise<VoiceMemory> =>
   updateVoiceMemory((memory) => forgetFact(memory, about));
 
@@ -101,6 +115,28 @@ export const rememberVoiceAddress = (addressAs: string): Promise<VoiceMemory> =>
 
 export const rememberVoiceSession = (summary: string): Promise<VoiceMemory> =>
   updateVoiceMemory((memory) => rememberSession(memory, summary));
+
+export const learnVoiceLesson = (lesson: string): Promise<VoiceMemory> =>
+  updateVoiceMemory((memory) => learnLesson(memory, lesson));
+
+export const learnVoiceSkill = (skill: TaughtSkill): Promise<VoiceMemory> =>
+  updateVoiceMemory((memory) => learnSkill(memory, skill));
+
+export const forgetVoiceSkill = (name: string): Promise<VoiceMemory> =>
+  updateVoiceMemory((memory) => forgetSkill(memory, name));
+
+export const forgetVoiceLesson = (about: string): Promise<VoiceMemory> =>
+  updateVoiceMemory((memory) => forgetLesson(memory, about));
+
+/**
+ * Replaces a document with what the user typed in the settings page.
+ *
+ * Written whole rather than merged, because the editor showed them the whole
+ * thing: anything a merge kept would be something they deleted and watched come
+ * back. The other document is left exactly as it was.
+ */
+export const writeMemoryDoc = (which: 'user' | 'agent', text: string): Promise<VoiceMemory> =>
+  updateVoiceMemory((memory) => sanitizeVoiceMemory({ ...memory, [which]: text }));
 
 /**
  * Records that the introduction has happened.

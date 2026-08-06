@@ -6,6 +6,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_FOOL_VOICE_SETTINGS, type FoolVoiceSettings } from '@/common/types/foolVoice';
+import { EMPTY_VOICE_MEMORY, rememberMeaning } from '@/common/voice/memory';
+import type { AgentTaskStep } from '@renderer/services/voice/session/runAgentTask';
 
 /**
  * A spoken instruction becoming work that actually happens.
@@ -118,11 +120,11 @@ afterEach(() => {
 
 describe('runAgentTask', () => {
   it('sends the task and answers with what the agent wrote', async () => {
-    const progress: string[] = [];
+    const progress: AgentTaskStep[] = [];
     const running = runAgentTask({
       request: 'Discord’u aç ve arkadaşıma yaz.',
       settings: settingsWith(),
-      onProgress: (detail) => progress.push(detail),
+      onProgress: (step) => progress.push(step),
     });
     await settle();
 
@@ -139,7 +141,71 @@ describe('runAgentTask', () => {
     );
 
     await expect(running).resolves.toEqual({ ok: true, conversationId: 'conv-1', summary: 'Mesajı gönderdim.' });
-    expect(progress).toContain('opening Discord');
+    expect(progress).toContainEqual({ kind: 'step', text: 'opening Discord' });
+  });
+
+  /**
+   * The letter-by-letter activity list came from here: the answer arrives a
+   * fragment at a time, and every fragment was reported as a step of its own.
+   */
+  it('reports the answer as writing rather than as a step per fragment', async () => {
+    const progress: AgentTaskStep[] = [];
+    const running = runAgentTask({
+      request: 'Bir şey yap.',
+      settings: settingsWith(),
+      onProgress: (step) => progress.push(step),
+    });
+    await settle();
+
+    stream(
+      { conversation_id: 'conv-1', type: 'content', data: 'Mesajı' },
+      { conversation_id: 'conv-1', type: 'content', data: 'gönderdim.' },
+      { conversation_id: 'conv-1', type: 'finish', data: '' }
+    );
+    await running;
+
+    expect(progress.every((step) => step.kind === 'writing')).toBe(true);
+    // The whole answer so far each time, so one row can be rewritten in place.
+    expect(progress.at(-1)).toEqual({ kind: 'writing', text: 'Mesajı gönderdim.' });
+  });
+
+  /**
+   * A step is named by the tool it calls, and different agents put that name in
+   * different fields — reading only one of them leaves rows saying nothing.
+   */
+  it('names a step from the tool call rather than from the JSON around it', async () => {
+    const progress: AgentTaskStep[] = [];
+    const running = runAgentTask({
+      request: 'Bir şey yap.',
+      settings: settingsWith(),
+      onProgress: (step) => progress.push(step),
+    });
+    await settle();
+
+    stream(
+      { conversation_id: 'conv-1', type: 'tool_call', data: { content: [{ name: 'browser_navigate', args: {} }] } },
+      { conversation_id: 'conv-1', type: 'finish', data: '' }
+    );
+    await running;
+
+    expect(progress).toContainEqual({ kind: 'step', text: 'browser_navigate' });
+  });
+
+  it('hands the agent what the assistant knows about the user, ahead of the request', async () => {
+    const memory = rememberMeaning(
+      { ...EMPTY_VOICE_MEMORY, introduced: true },
+      'my desktop',
+      'C:\\Users\\sarhen\\Desktop'
+    );
+    const running = runAgentTask({ request: 'masaüstüme koy', settings: settingsWith(), memory });
+    await settle();
+
+    const sent = sendMessage.mock.calls[0][0] as { input: string };
+    expect(sent.input).toContain('C:\\Users\\sarhen\\Desktop');
+    expect(sent.input.trimEnd().endsWith('masaüstüme koy')).toBe(true);
+
+    stream({ conversation_id: 'conv-1', type: 'finish', data: '' });
+    await running;
   });
 
   it('opens the chat on the agent and model pinned for voice', async () => {

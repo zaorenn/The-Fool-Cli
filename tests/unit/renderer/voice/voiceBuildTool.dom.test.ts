@@ -5,6 +5,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { EMPTY_VOICE_MEMORY } from '@/common/voice/memory';
+import type { AgentTaskStep } from '@renderer/services/voice/session/runAgentTask';
 import type { ConversationActivity, ToolHost } from '@renderer/pages/voice/runtime/types';
 
 /**
@@ -23,6 +25,7 @@ vi.mock('@renderer/services/voice/session/runAgentTask', () => ({
   runAgentTask: (request: unknown) => runAgentTask(request),
 }));
 vi.mock('@renderer/services/voice/voiceSettingsStore', () => ({ peekVoiceSettings: () => ({}) }));
+vi.mock('@renderer/services/voice/session/voiceMemoryStore', () => ({ peekVoiceMemory: () => EMPTY_VOICE_MEMORY }));
 vi.mock('@/common', () => ({
   ipcBridge: { shell: { openExternal: { invoke: (url: string) => openExternal(url) } } },
 }));
@@ -151,9 +154,9 @@ describe('buildAndPreview', () => {
   });
 
   it('keeps each thing the agent reported as its own line', async () => {
-    runAgentTask.mockImplementation(async (request: { onProgress?: (detail: string) => void }) => {
-      request.onProgress?.('writing index.html');
-      request.onProgress?.('writing the stylesheet');
+    runAgentTask.mockImplementation(async (request: { onProgress?: (step: AgentTaskStep) => void }) => {
+      request.onProgress?.({ kind: 'step', text: 'writing index.html' });
+      request.onProgress?.({ kind: 'step', text: 'writing the stylesheet' });
       return { ok: true, conversationId: 'c1', summary: 'done' };
     });
     servePreview.mockResolvedValue({ ok: true, url: 'http://127.0.0.1:1/' });
@@ -162,5 +165,22 @@ describe('buildAndPreview', () => {
 
     const steps = [...activities.values()].filter((item) => item.id.includes('#'));
     expect(steps.map((item) => item.detail)).toEqual(['writing index.html', 'writing the stylesheet']);
+  });
+
+  /**
+   * The build's own version of the letter-by-letter bug: the agent narrating
+   * what it is writing put one row on screen per fragment of the narration.
+   */
+  it('ignores the answer being written, which is not a step of the build', async () => {
+    runAgentTask.mockImplementation(async (request: { onProgress?: (step: AgentTaskStep) => void }) => {
+      request.onProgress?.({ kind: 'writing', text: 'I have' });
+      request.onProgress?.({ kind: 'writing', text: 'I have made it.' });
+      return { ok: true, conversationId: 'c1', summary: 'done' };
+    });
+    servePreview.mockResolvedValue({ ok: true, url: 'http://127.0.0.1:1/' });
+
+    await buildAndPreview(host, 'call-1', 'a notes app');
+
+    expect([...activities.values()].filter((item) => item.id.includes('#'))).toHaveLength(0);
   });
 });

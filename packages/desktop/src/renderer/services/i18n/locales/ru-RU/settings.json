@@ -1599,7 +1599,14 @@
     "conversationInterruptible": "Одно слово может его прервать",
     "conversationInterruptibleHint": "Только это слово останавливает его на полуслове. Шум, «мхм» и «да, понятно» — нет, а другой вопрос дождётся конца.",
     "conversationInterruptibleOffHint": "Его ничто не прерывает. Он договаривает, а затем отвечает на сказанное вами.",
-    "conversationInterruptPhrase": "Слово, которое останавливает"
+    "conversationInterruptPhrase": "Слово, которое останавливает",
+    "conversationSearched": "Искал «{{query}}» на {{site}}",
+    "conversationRememberedMeaning": "Запомнил, что значит «{{word}}»",
+    "conversationLearned": "Запомнил на следующий раз",
+    "conversationLearnedSkill": "Выучил «{{name}}»",
+    "conversationTaskWriting": "Пишет ответ",
+    "conversationGroupMicrophone": "Микрофон",
+    "conversationGroupModel": "Модель"
   },
   "themeCustomizer": {
     "title": "Настроить тему",
@@ -1627,5 +1634,17 @@
     "cronFailing": "{{count}} scheduled task(s) failing",
     "conversationsNone": "No conversations are currently running.",
     "conversationsRunning": "{{count}} conversation(s) running"
+  },
+  "memory": {
+    "title": "Память",
+    "subtitle": "Что The Fool помнит о вас и чему научился, работая для вас. Оба файла читаются перед каждым разговором и любым агентом, который действует от вашего имени.",
+    "userTab": "user.md",
+    "agentTab": "agent.md",
+    "userHint": "Кто вы, как к вам обращаться, что означают ваши собственные слова, и по строке о каждом разговоре. Любую строку можно исправить.",
+    "agentHint": "Выводы из того, что пошло не так, и способы работы, которым вы научили вслух. Здесь можно править всё.",
+    "placeholder": "Пока ничего не запомнено. Напишите то, что стоит знать, или просто начните говорить.",
+    "unsaved": "Есть несохранённые изменения",
+    "upToDate": "Всё сохранено",
+    "revert": "Вернуть"
   }
 }

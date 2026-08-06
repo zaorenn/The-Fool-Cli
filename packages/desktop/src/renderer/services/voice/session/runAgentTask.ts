@@ -11,6 +11,7 @@ import type { ChatFileRef } from '@/common/types/chatFile';
 import { chatFileRefPath } from '@/common/types/chatFile';
 import { isFoolrsAssistant, type Assistant } from '@/common/types/agent/assistantTypes';
 import type { FoolVoiceSettings } from '@/common/types/foolVoice';
+import { buildAgentBriefing, type VoiceMemory } from '@/common/voice/memory';
 import { findPinnedAssistant, findPinnedModel } from './startVoiceConversation';
 
 /**
@@ -28,14 +29,34 @@ import { findPinnedAssistant, findPinnedModel } from './startVoiceConversation';
  * comes back into the same conversation.
  */
 
+/**
+ * One thing the agent reported while working, and which kind of thing it is.
+ *
+ * The distinction is the whole reason this is not a string. A step is something
+ * the agent *did* — a tool it called, a page it opened — and belongs on its own
+ * row. Writing is the answer being composed, which arrives a few characters at a
+ * time; treated as steps, one delegated task produced several hundred activity
+ * rows, each holding one more letter than the last. Watching an agent work is
+ * the point of that panel, and it was showing the alphabet.
+ */
+export type AgentTaskStep = { kind: 'step' | 'writing'; text: string };
+
 export type AgentTaskRequest = {
   /** The task, in the user's own words. */
   request: string;
   settings: FoolVoiceSettings;
+  /**
+   * What the agent should know about the person before it starts.
+   *
+   * Prepended to the message rather than to the conversation's name, so the chat
+   * is still titled with what was asked. Absent for a caller with no memory to
+   * offer — the tests, and anything asking for work on nobody's behalf.
+   */
+  memory?: VoiceMemory;
   /** Attached to the first message — the screen, when one was captured. */
   files?: readonly ChatFileRef[];
   /** Called as the agent reports what it is doing, for the activity list. */
-  onProgress?: (detail: string) => void;
+  onProgress?: (step: AgentTaskStep) => void;
   signal?: AbortSignal;
 };
 
@@ -193,6 +214,33 @@ const progressLine = (data: unknown): string => {
 };
 
 /**
+ * What one step of an agent's work is called, in a few words.
+ *
+ * A tool call arrives as a record with the tool's own name on it, and that name
+ * — "browser_navigate", "Read" — is the most useful thing that can be said about
+ * a step at the moment it starts, because the arguments have not been decided
+ * and there is no result yet. Read defensively rather than typed to one shape:
+ * the field is `name` on one agent's messages and `title` on another's, and a
+ * step that cannot be named is better shown by whatever text it carried than
+ * dropped.
+ */
+const stepLabel = (data: unknown): string => {
+  if (data !== null && typeof data === 'object') {
+    const record = data as Record<string, unknown>;
+    const parts = Array.isArray(record.content) ? record.content : [record];
+    for (const part of parts) {
+      if (part === null || typeof part !== 'object') continue;
+      const entry = part as Record<string, unknown>;
+      for (const key of ['name', 'title', 'label', 'description'] as const) {
+        const value = entry[key];
+        if (typeof value === 'string' && value.trim().length > 0) return value.trim().slice(0, 80);
+      }
+    }
+  }
+  return progressLine(data);
+};
+
+/**
  * Watches one conversation until it has answered.
  *
  * Subscribed *before* the message is sent, because a short task can finish
@@ -207,7 +255,7 @@ const progressLine = (data: unknown): string => {
  */
 const awaitTurn = (
   conversationId: string,
-  onProgress: ((detail: string) => void) | undefined,
+  onProgress: ((step: AgentTaskStep) => void) | undefined,
   signal: AbortSignal | undefined
 ): { finished: Promise<AgentTaskResult>; stop: () => void } => {
   let settle: (result: AgentTaskResult) => void = () => undefined;
@@ -245,7 +293,10 @@ const awaitTurn = (
         const text = summarise(message.data);
         if (text.length > 0) {
           written += written.length > 0 ? ` ${text}` : text;
-          onProgress?.(progressLine(message.data));
+          // The whole answer so far, marked as writing rather than as a step.
+          // Reporting the delta was the bug: each arriving fragment differed
+          // from the last, so the activity list grew a row per token.
+          onProgress?.({ kind: 'writing', text: written.trim() });
         }
         return;
       }
@@ -257,11 +308,11 @@ const awaitTurn = (
         finish({ ok: false, reason: 'run-failed', detail: progressLine(message.data) });
         return;
       }
-      // Every other step — a tool call, a file read — is progress and nothing
-      // more. Named where it names itself, so the activity row says what the
-      // agent is doing rather than repeating the request.
-      const detail = progressLine(message.data);
-      if (detail.length > 0) onProgress?.(detail);
+      // Every other message — a tool call, a file read — is a step, and a step
+      // is a row of its own. Named where it names itself, so the row says what
+      // the agent is doing rather than repeating the request.
+      const detail = stepLabel(message.data);
+      if (detail.length > 0) onProgress?.({ kind: 'step', text: detail });
     })
   );
 
@@ -315,7 +366,11 @@ export const runAgentTask = async (request: AgentTaskRequest): Promise<AgentTask
 
     await ipcBridge.conversation.sendMessage.invoke({
       conversation_id: conversationId,
-      input: request.request,
+      // What the assistant knows about the user rides along with the job. The
+      // agent is a separate process with its own model and no history at all,
+      // and "put it on my desktop" cannot be carried out by anything that has
+      // not been told what they mean by desktop.
+      input: request.memory ? buildAgentBriefing(request.memory, request.request) : request.request,
       ...(request.files && request.files.length > 0 ? { files: [...request.files] } : {}),
     });
   } catch (error) {

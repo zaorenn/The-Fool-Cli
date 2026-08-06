@@ -15,6 +15,7 @@ import { synthesisProviderFor, type FoolVoiceSettings, type VoiceModel } from '@
 import { isBackchannel } from '@/common/voice/backchannel';
 import { isHallucinatedTranscript } from '@/common/voice/hallucinations';
 import { refersToScreen } from '@/common/voice/screenIntent';
+import { describeSpokenTurns, worthRemembering, type SpokenTurn } from '@/common/voice/sessionSummary';
 import { applyTranscriptRules } from '@/common/voice/transcriptRules';
 import { peekVoiceMemory, rememberVoiceSession } from '@renderer/services/voice/session/voiceMemoryStore';
 import { findWakePhrase } from '@renderer/services/voice/wakePhrase';
@@ -253,9 +254,6 @@ const SPEECH_LOOKAHEAD = 2;
 /** One sentence, synthesised and ready for the speaker. */
 type RenderedSpeech = { pcm16Base64: string; sampleRate: number };
 
-/** Below this a conversation was a question, and is not worth remembering. */
-const MIN_TURNS_WORTH_REMEMBERING = 2;
-
 /**
  * What is added to a turn whose words plainly point at the screen.
  *
@@ -439,13 +437,16 @@ export class LocalVoicePipeline {
    */
   async rememberConversation(): Promise<void> {
     const readiness = this.ready;
-    const spoken = this.history.filter((turn) => turn.role === 'user' || turn.role === 'assistant');
-    const asked = spoken.filter((turn) => turn.role === 'user' && turn.content.trim().length > 0);
+    const turns = this.history.flatMap((turn): SpokenTurn[] =>
+      turn.role === 'user' || turn.role === 'assistant' ? [{ role: turn.role, text: turn.content }] : []
+    );
     // One exchange is a question, not a conversation. Remembering "what time is
     // it" as a session would fill the memory with nothing.
-    if (!readiness || asked.length < MIN_TURNS_WORTH_REMEMBERING) return;
+    if (!readiness || !worthRemembering(turns)) return;
 
-    const fallback = asked[0].content.trim();
+    // The same line every other provider writes, kept for when the model that
+    // could have written a better one is unreachable.
+    const fallback = describeSpokenTurns(turns);
 
     try {
       const response = await fetch(`${readiness.endpoint}/chat/completions`, {
@@ -461,8 +462,8 @@ export class LocalVoicePipeline {
             { role: 'system', content: SESSION_SUMMARY_PROMPT },
             {
               role: 'user',
-              content: spoken
-                .map((turn) => `${turn.role === 'user' ? 'Them' : 'You'}: ${turn.content.trim()}`)
+              content: turns
+                .map((turn) => `${turn.role === 'user' ? 'Them' : 'You'}: ${turn.text.trim()}`)
                 .join('\n')
                 .slice(-SUMMARY_INPUT_LIMIT),
             },

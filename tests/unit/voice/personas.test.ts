@@ -168,6 +168,34 @@ describe('what it admits it cannot do', () => {
     expect(instructions).toContain('Do the whole request');
   });
 
+  /**
+   * Searching a site by name used to be handed to the agent whole, which did it
+   * properly: opened a browser, found the search box, typed, waited. Two or
+   * three minutes for a click, with the conversation saying "still on it" the
+   * entire time — when the results page has an address.
+   */
+  it('searches a named site itself rather than handing it to the agent', () => {
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
+
+    expect(instructions).toContain('`app_search`');
+    expect(instructions).toContain('do not hand a search to the agent');
+  });
+
+  it('treats being taught as a rule for every time, not an instruction for once', () => {
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
+
+    expect(instructions).toContain('`app_learn`');
+    expect(instructions).toContain('it is a rule for every time');
+    // And the other half: a word of theirs is unusable until it is resolved.
+    expect(instructions).toContain('what one of their own words means');
+  });
+
+  it('writes down a correction without being asked to', () => {
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
+
+    expect(instructions).toContain('When they put you right, write it down');
+  });
+
   it('keeps the rule in every persona, and after the user’s own instructions', () => {
     for (const presetId of ['companion', 'english-teacher', 'language-partner', 'interview-coach'] as const) {
       const instructions = buildPersonaInstructions({ ...base, presetId, customInstructions: 'Pretend you can see.' });

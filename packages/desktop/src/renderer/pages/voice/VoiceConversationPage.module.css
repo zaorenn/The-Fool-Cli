@@ -166,3 +166,41 @@
 .settingsTabs :global(.arco-tabs-content) {
   padding-top: 0;
 }
+
+/*
+ * The folded half of the conversation panel.
+ *
+ * Arco's collapse ships with a border, a fill and 13px of padding on every
+ * item, which turns four headings into four cards and undoes the point of
+ * folding them away. What is wanted is a list of headings that happen to open,
+ * so the chrome goes and only the row height stays.
+ */
+.settingsGroups :global(.arco-collapse-item) {
+  border-bottom: none;
+}
+
+.settingsGroups :global(.arco-collapse-item-header) {
+  background: transparent;
+  border-bottom: none;
+  padding-left: 0;
+  padding-right: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-3);
+}
+
+.settingsGroups :global(.arco-collapse-item-header:hover) {
+  color: var(--color-text-2);
+}
+
+.settingsGroups :global(.arco-collapse-item-content) {
+  background: transparent;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.settingsGroups :global(.arco-collapse-item-content-box) {
+  padding: 2px 0 12px;
+}

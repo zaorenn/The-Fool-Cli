@@ -171,6 +171,23 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_search',
+    description:
+      "Search inside a site and put the results in front of the user, in one step. This is the whole of 'open YouTube and find that song', 'search GitHub for it', 'look it up on Wikipedia' — it goes straight to the site's own results page, so it happens instantly instead of taking the agent minutes of clicking. Use it for every request that ends in a search on a named site, and for a plain web search when no site was named. Say what you looked for and where, in a few words; do not read the address out. If they then want something done with a result — playing it, buying it, replying to it — that part is app_ask_jester.",
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: "What to search for, in the user's own words." },
+        site: {
+          type: 'string',
+          description:
+            'Where to search: youtube, google, github, wikipedia, reddit, x, spotify, maps, amazon, stackoverflow, npm, imdb. A domain such as youtube.com works too. Leave out for a plain web search.',
+        },
+      },
+      required: ['query'],
+    },
+  },
+  {
     name: 'app_ask_jester',
     description:
       "Do anything at all on this computer, through an agent that drives it. Opening and using applications, clicking, typing, searching inside a page that is already open, filling in forms, sending a message in Discord or an email, files, code, research. This is not a fixed list: it is the user's own machine, so anything they could do sitting at it can be asked for in a sentence. Use it for every request that changes something outside this conversation, including the second half of a request whose first half was opening a page. It runs while you keep talking, so say briefly that you are on it, and report the outcome in a sentence when it comes back. Do not use it merely to look at the screen; that is app_look_at_screen.",
@@ -246,6 +263,41 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
           description:
             'What they want to be called, exactly as they said it. Set this only when they have said so — a name mentioned in passing is not an instruction to use it.',
         },
+        word: {
+          type: 'string',
+          description:
+            'One of their own words that does not mean what it says — "my desktop", "the project", "work". Set it with `means`, and only when they have told you what it stands for.',
+        },
+        means: {
+          type: 'string',
+          description:
+            'What that word stands for, exactly enough to act on: a full folder path, a person\'s full name, the address of a site. "C:\\Users\\sarhen\\Desktop".',
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'app_learn',
+    description:
+      "Get better at working for this person. Two uses, and they are both about not making them say the same thing twice. Use `lesson` the moment they correct you, tell you that is not what they meant, or you find out something you did was wrong — write down what to do differently next time, in one sentence, without being asked. Use `skillName` with `skillSteps` when they are teaching you how they want something done: 'when I ask you to find a video, search YouTube and open the first result'. What you keep here is read back at the start of every future conversation and by any agent working on their behalf, so write it as an instruction to yourself rather than as a note about what happened.",
+    parameters: {
+      type: 'object',
+      properties: {
+        lesson: {
+          type: 'string',
+          description:
+            'What to do differently, in one sentence. "When they say the desktop, they mean the folder, not the app." Leave out when you are recording a skill instead.',
+        },
+        skillName: {
+          type: 'string',
+          description: 'What they call this way of doing things, short enough to be a title. "Find a video".',
+        },
+        skillWhen: { type: 'string', description: 'When it applies, in their words. "When I ask you to play a song."' },
+        skillSteps: {
+          type: 'string',
+          description: 'What to do, as the steps they described, in order.',
+        },
       },
       required: [],
     },
@@ -258,6 +310,12 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
       type: 'object',
       properties: {
         about: { type: 'string', description: 'What to forget, in the words they used for it.' },
+        scope: {
+          type: 'string',
+          enum: ['about-them', 'skill', 'lesson'],
+          description:
+            "What kind of thing it is. 'about-them' is anything you know about the person, which is the usual case. 'skill' is one of the ways of doing things they taught you. 'lesson' is something you wrote down about your own work.",
+        },
       },
       required: ['about'],
     },

@@ -16,6 +16,7 @@ import {
   type VoiceConversationProviderId,
 } from '@/common/realtime';
 import { createHoldGate } from '@/common/voice/holdToTalkGate';
+import { describeSpokenTurns, worthRemembering, type SpokenTurn } from '@/common/voice/sessionSummary';
 import { claimManualVoiceSession } from '@renderer/hooks/voice/useFoolVoiceSession';
 import { AdaptiveVad, type VadEvent } from '@renderer/services/voice/AdaptiveVad';
 import {
@@ -28,6 +29,7 @@ import {
   markVoiceIntroduced,
   peekVoiceMemory,
   readVoiceMemory,
+  rememberVoiceSession,
 } from '@renderer/services/voice/session/voiceMemoryStore';
 import { peekVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import { LocalVoicePipeline } from '../localPipeline';
@@ -119,6 +121,15 @@ const VAD_TO_PIPELINE: Record<VadEvent, 'speech-started' | 'speech' | 'utterance
 /** How many activities are kept; the notch and the page show the same list. */
 const MAX_ACTIVITIES = 8;
 
+/**
+ * How many finished turns are held for the session summary.
+ *
+ * Only the ends of a conversation are used to describe it, so this exists to
+ * bound the memory of a conversation left running all day rather than to feed
+ * the summary. Generous enough that nothing realistic reaches it.
+ */
+const MAX_REMEMBERED_TURNS = 200;
+
 export type ConversationSnapshot = {
   phase: ConversationPhase;
   userTranscript: string;
@@ -173,6 +184,19 @@ class ConversationRuntime {
 
   /** The installed voices, read once when a conversation opens. */
   private voices: readonly SpokenVoice[] = [];
+
+  /**
+   * What has been said this session, for the line the memory keeps about it.
+   *
+   * Collected here rather than in either transport, because both of them have
+   * one and only one of them was writing it down. The local pipeline keeps a
+   * history to think with and wrote a model-written summary from it; the socket
+   * providers keep their history on the far side of a socket, so a conversation
+   * on OpenAI Realtime or Gemini Live left no trace at all. Finished transcripts
+   * pass through this object whichever transport produced them, so this is the
+   * one place both are visible.
+   */
+  private spoken: SpokenTurn[] = [];
 
   constructor() {
     this.listenForHoldKey();
@@ -367,7 +391,10 @@ class ConversationRuntime {
         // working on" line — and a surface fed only the last delta showed three
         // words of a question and then held them there while it answered.
         this.publish(this.phase === 'idle' ? 'listening' : this.phase, { transcript: heard });
-        if (event.final) this.publishActivities();
+        if (event.final) {
+          this.publishActivities();
+          this.record('user', heard);
+        }
         break;
       }
       case 'assistant-transcript': {
@@ -375,6 +402,7 @@ class ConversationRuntime {
         const next = event.final ? event.text : `${this.snapshot.assistantTranscript}${event.text}`;
         this.emit({ assistantTranscript: next });
         publishVoiceReply(next);
+        if (event.final) this.record('assistant', next);
         break;
       }
       case 'audio':
@@ -629,10 +657,37 @@ class ConversationRuntime {
     }
   };
 
+  /** Keeps one finished turn, bounded so a long conversation is not a leak. */
+  private record(role: SpokenTurn['role'], text: string): void {
+    const line = text.trim();
+    if (line.length === 0) return;
+    this.spoken.push({ role, text: line });
+    if (this.spoken.length > MAX_REMEMBERED_TURNS) this.spoken = this.spoken.slice(-MAX_REMEMBERED_TURNS);
+  }
+
+  /**
+   * Writes the line this conversation leaves behind, whichever way it was held.
+   *
+   * The local pipeline is preferred where it exists, because it has a model on
+   * this machine that can be asked to summarise for nothing. Every other
+   * provider falls back to what was actually said — worse than a written
+   * summary, and enormously better than what it replaced, which was silence.
+   */
+  private rememberThisConversation(): void {
+    if (this.local) {
+      void this.local.rememberConversation();
+      return;
+    }
+    if (!worthRemembering(this.spoken)) return;
+    const summary = describeSpokenTurns(this.spoken);
+    if (summary.length > 0) void rememberVoiceSession(summary);
+  }
+
   stop = (): void => {
     // Before anything is torn down: the summary is written from the history the
     // pipeline is holding, and closing it throws that away.
-    void this.local?.rememberConversation();
+    this.rememberThisConversation();
+    this.spoken = [];
     this.microphone?.stop();
     this.microphone = null;
     this.client?.disconnect();

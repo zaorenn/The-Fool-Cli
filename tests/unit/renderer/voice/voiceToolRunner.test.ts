@@ -5,6 +5,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { EMPTY_VOICE_MEMORY } from '@/common/voice/memory';
+import type { AgentTaskStep } from '@renderer/services/voice/session/runAgentTask';
 import type { ConversationActivity, ToolHost } from '@renderer/pages/voice/runtime/types';
 
 /**
@@ -24,12 +26,23 @@ vi.mock('@renderer/services/voice/session/runAgentTask', () => ({
 
 const rememberedFacts: string[] = [];
 const rememberedNames: string[] = [];
+const rememberedMeanings: string[] = [];
 const forgotten: string[] = [];
+const lessons: string[] = [];
+const skills: { name: string; when: string; steps: string }[] = [];
+const forgottenSkills: string[] = [];
+const forgottenLessons: string[] = [];
 
 vi.mock('@renderer/services/voice/session/voiceMemoryStore', () => ({
+  peekVoiceMemory: () => EMPTY_VOICE_MEMORY,
   rememberVoiceFact: async (text: string) => void rememberedFacts.push(text),
   rememberVoiceAddress: async (name: string) => void rememberedNames.push(name),
+  rememberVoiceMeaning: async (word: string, means: string) => void rememberedMeanings.push(`${word}=${means}`),
   forgetVoiceFact: async (about: string) => void forgotten.push(about),
+  learnVoiceLesson: async (lesson: string) => void lessons.push(lesson),
+  learnVoiceSkill: async (skill: { name: string; when: string; steps: string }) => void skills.push(skill),
+  forgetVoiceSkill: async (name: string) => void forgottenSkills.push(name),
+  forgetVoiceLesson: async (about: string) => void forgottenLessons.push(about),
 }));
 
 vi.mock('@renderer/services/voice/screenSight', () => ({ describeScreen: vi.fn() }));
@@ -57,19 +70,24 @@ const host: ToolHost = {
   startWorkingHeartbeat: () => () => {},
 };
 
-const steps = (): ConversationActivity[] => [...activities.values()].filter((item) => item.id.includes('#'));
+const steps = (): ConversationActivity[] =>
+  [...activities.values()].filter((item) => item.id.includes('#') && !item.id.endsWith('#writing'));
+
+type Reporter = { onProgress?: (step: AgentTaskStep) => void };
+const step = (text: string): AgentTaskStep => ({ kind: 'step', text });
 
 describe('a task handed to the agent', () => {
   beforeEach(() => {
     activities.clear();
+    lessons.length = 0;
     runAgentTask.mockReset();
   });
 
   it('keeps every step it reported, not only the last one', async () => {
-    runAgentTask.mockImplementation(async (request: { onProgress?: (detail: string) => void }) => {
-      request.onProgress?.('opening the browser');
-      request.onProgress?.('typing the search');
-      request.onProgress?.('clicking the third result');
+    runAgentTask.mockImplementation(async (request: Reporter) => {
+      request.onProgress?.(step('opening the browser'));
+      request.onProgress?.(step('typing the search'));
+      request.onProgress?.(step('clicking the third result'));
       return { ok: true, conversationId: 'c1', summary: 'done' };
     });
 
@@ -87,9 +105,9 @@ describe('a task handed to the agent', () => {
   });
 
   it('marks each step done as the next one starts, and the last when it ends', async () => {
-    runAgentTask.mockImplementation(async (request: { onProgress?: (detail: string) => void }) => {
-      request.onProgress?.('opening the browser');
-      request.onProgress?.('typing the search');
+    runAgentTask.mockImplementation(async (request: Reporter) => {
+      request.onProgress?.(step('opening the browser'));
+      request.onProgress?.(step('typing the search'));
       return { ok: true, conversationId: 'c1', summary: 'done' };
     });
 
@@ -103,10 +121,10 @@ describe('a task handed to the agent', () => {
   });
 
   it('drops a step the agent restated, which it does while a tool runs', async () => {
-    runAgentTask.mockImplementation(async (request: { onProgress?: (detail: string) => void }) => {
-      request.onProgress?.('reading the page');
-      request.onProgress?.('reading the page');
-      request.onProgress?.('  reading the page  ');
+    runAgentTask.mockImplementation(async (request: Reporter) => {
+      request.onProgress?.(step('reading the page'));
+      request.onProgress?.(step('reading the page'));
+      request.onProgress?.(step('  reading the page  '));
       return { ok: true, conversationId: 'c1', summary: 'done' };
     });
 
@@ -136,8 +154,8 @@ describe('a task handed to the agent', () => {
   });
 
   it('keeps a step list even when the task failed', async () => {
-    runAgentTask.mockImplementation(async (request: { onProgress?: (detail: string) => void }) => {
-      request.onProgress?.('opening the browser');
+    runAgentTask.mockImplementation(async (request: Reporter) => {
+      request.onProgress?.(step('opening the browser'));
       return { ok: false, reason: 'run-failed', detail: 'no window' };
     });
 
@@ -151,6 +169,69 @@ describe('a task handed to the agent', () => {
     expect(steps().map((item) => item.state)).toEqual(['completed']);
     expect(activities.get('call-1')?.state).toBe('failed');
   });
+
+  /**
+   * The bug this whole distinction exists for. The answer arrives a fragment at
+   * a time, and reported as steps it produced one row per token — the panel
+   * spelling out the reply instead of saying what the agent was doing.
+   */
+  it('does not open a row per fragment of the answer being written', async () => {
+    runAgentTask.mockImplementation(async (request: Reporter) => {
+      request.onProgress?.({ kind: 'writing', text: 'I have' });
+      request.onProgress?.({ kind: 'writing', text: 'I have opened' });
+      request.onProgress?.({ kind: 'writing', text: 'I have opened the page.' });
+      return { ok: true, conversationId: 'c1', summary: 'done' };
+    });
+
+    await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_ask_jester',
+      argumentsJson: JSON.stringify({ request: 'open it' }),
+    });
+
+    expect(steps()).toHaveLength(0);
+    expect(activities.get('call-1#writing')).toMatchObject({
+      detail: 'I have opened the page.',
+      state: 'completed',
+    });
+  });
+
+  it('writes down a failure that will happen again, so it is not learned twice', async () => {
+    runAgentTask.mockResolvedValue({ ok: false, reason: 'agent-unavailable', detail: 'no agent' });
+
+    await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_ask_jester',
+      argumentsJson: JSON.stringify({ request: 'send the email' }),
+    });
+
+    expect(lessons).toHaveLength(1);
+    expect(lessons[0]).toContain('send the email');
+  });
+
+  it('does not write down a failure that says nothing about the request', async () => {
+    runAgentTask.mockResolvedValue({ ok: false, reason: 'cancelled' });
+
+    await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_ask_jester',
+      argumentsJson: JSON.stringify({ request: 'send the email' }),
+    });
+
+    expect(lessons).toEqual([]);
+  });
+
+  it('sends what it knows about the user along with the job', async () => {
+    runAgentTask.mockResolvedValue({ ok: true, conversationId: 'c1', summary: 'done' });
+
+    await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_ask_jester',
+      argumentsJson: JSON.stringify({ request: 'put it on my desktop' }),
+    });
+
+    expect(runAgentTask).toHaveBeenCalledWith(expect.objectContaining({ memory: EMPTY_VOICE_MEMORY }));
+  });
 });
 
 describe('what it is told to remember', () => {
@@ -158,7 +239,12 @@ describe('what it is told to remember', () => {
     activities.clear();
     rememberedFacts.length = 0;
     rememberedNames.length = 0;
+    rememberedMeanings.length = 0;
     forgotten.length = 0;
+    lessons.length = 0;
+    skills.length = 0;
+    forgottenSkills.length = 0;
+    forgottenLessons.length = 0;
   });
 
   it('keeps a name and hands it straight back, so the next sentence can use it', async () => {
@@ -203,5 +289,113 @@ describe('what it is told to remember', () => {
 
     expect(result.ok).toBe(true);
     expect(forgotten).toEqual(['the walnut thing']);
+  });
+
+  it('keeps what one of their own words means, which is what the agent needs to act', async () => {
+    const result = await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_remember',
+      argumentsJson: JSON.stringify({ word: 'my desktop', means: 'C:\\Users\\sarhen\\Desktop' }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(rememberedMeanings).toEqual(['my desktop=C:\\Users\\sarhen\\Desktop']);
+    expect(rememberedFacts).toEqual([]);
+  });
+
+  it('sends a forget to the right document, so a skill is not looked for among the facts', async () => {
+    await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_forget',
+      argumentsJson: JSON.stringify({ about: 'find a video', scope: 'skill' }),
+    });
+    await runVoiceTool(host, {
+      callId: 'call-2',
+      name: 'app_forget',
+      argumentsJson: JSON.stringify({ about: 'the installer thing', scope: 'lesson' }),
+    });
+
+    expect(forgottenSkills).toEqual(['find a video']);
+    expect(forgottenLessons).toEqual(['the installer thing']);
+    expect(forgotten).toEqual([]);
+  });
+});
+
+describe('what it is taught', () => {
+  beforeEach(() => {
+    activities.clear();
+    lessons.length = 0;
+    skills.length = 0;
+  });
+
+  it('writes down a correction as a lesson', async () => {
+    const result = await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_learn',
+      argumentsJson: JSON.stringify({ lesson: 'They mean the folder, not the app.' }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(lessons).toEqual(['They mean the folder, not the app.']);
+  });
+
+  it('keeps a way of doing things they taught, under their own name for it', async () => {
+    await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_learn',
+      argumentsJson: JSON.stringify({
+        skillName: 'Find a video',
+        skillWhen: 'I ask you to play a song',
+        skillSteps: 'search YouTube and open the first result',
+      }),
+    });
+
+    expect(skills).toEqual([
+      { name: 'Find a video', when: 'I ask you to play a song', steps: 'search YouTube and open the first result' },
+    ]);
+  });
+
+  it('refuses a skill with a name and no steps, which would teach nothing', async () => {
+    const result = await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_learn',
+      argumentsJson: JSON.stringify({ skillName: 'Find a video' }),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(skills).toEqual([]);
+  });
+});
+
+describe('searching inside a site', () => {
+  beforeEach(() => {
+    activities.clear();
+    runAgentTask.mockReset();
+  });
+
+  it('goes straight to the results rather than handing it to the agent', async () => {
+    const { ipcBridge } = await import('@/common');
+    const openExternal = vi.mocked(ipcBridge.shell.openExternal.invoke);
+    openExternal.mockClear();
+
+    const result = await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_search',
+      argumentsJson: JSON.stringify({ site: 'youtube', query: 'bohemian rhapsody' }),
+    });
+
+    expect(result).toMatchObject({ ok: true, site: 'youtube' });
+    expect(openExternal).toHaveBeenCalledWith('https://www.youtube.com/results?search_query=bohemian+rhapsody');
+    expect(runAgentTask).not.toHaveBeenCalled();
+  });
+
+  it('refuses a search with nothing to search for', async () => {
+    const result = await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_search',
+      argumentsJson: JSON.stringify({ site: 'youtube', query: '   ' }),
+    });
+
+    expect(result.ok).toBe(false);
   });
 });

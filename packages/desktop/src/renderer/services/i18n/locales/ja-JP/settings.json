@@ -1601,7 +1601,14 @@
     "conversationInterruptible": "ひと言で止められる",
     "conversationInterruptibleHint": "その言葉だけが話の途中で止めます。雑音や「うん」「はい、わかりました」では止まりません。別の質問は話し終わるまで待ちます。",
     "conversationInterruptibleOffHint": "何も割り込みません。話し終えてから、その間に言ったことに答えます。",
-    "conversationInterruptPhrase": "止める言葉"
+    "conversationInterruptPhrase": "止める言葉",
+    "conversationSearched": "{{site}} で「{{query}}」を検索しました",
+    "conversationRememberedMeaning": "「{{word}}」の意味を覚えました",
+    "conversationLearned": "次回のために覚えました",
+    "conversationLearnedSkill": "「{{name}}」を覚えました",
+    "conversationTaskWriting": "答えを書いています",
+    "conversationGroupMicrophone": "マイク",
+    "conversationGroupModel": "モデル"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",
@@ -1629,5 +1636,17 @@
     "cronFailing": "{{count}} scheduled task(s) failing",
     "conversationsNone": "No conversations are currently running.",
     "conversationsRunning": "{{count}} conversation(s) running"
+  },
+  "memory": {
+    "title": "メモリ",
+    "subtitle": "The Fool があなたについて覚えていることと、あなたのために働くなかで学んだこと。どちらのファイルも、会話のたびに、またあなたの代わりに動くエージェントによって読まれます。",
+    "userTab": "user.md",
+    "agentTab": "agent.md",
+    "userHint": "あなたが誰で、どう呼べばよく、あなた自身の言葉が何を指すか。会話ごとの一行も残ります。どの行も自由に直せます。",
+    "agentHint": "うまくいかなかったことから得た教訓と、あなたが口で教えたやり方。ここは自由に編集できます。",
+    "placeholder": "まだ何も覚えていません。知っておいてほしいことを書くか、そのまま話しかけてください。",
+    "unsaved": "未保存の変更があります",
+    "upToDate": "最新です",
+    "revert": "元に戻す"
   }
 }

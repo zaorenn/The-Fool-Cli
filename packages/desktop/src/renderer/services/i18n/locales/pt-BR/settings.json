@@ -1602,7 +1602,14 @@
     "conversationInterruptible": "Uma palavra pode cortá-lo",
     "conversationInterruptibleHint": "Só essa palavra o para no meio da frase. Ruído, \"mhm\" e \"sim, entendi\" não param, e outra pergunta espera ele terminar.",
     "conversationInterruptibleOffHint": "Nada o corta. Ele termina e depois responde o que você disse nesse meio-tempo.",
-    "conversationInterruptPhrase": "Palavra que o para"
+    "conversationInterruptPhrase": "Palavra que o para",
+    "conversationSearched": "Procurei “{{query}}” no {{site}}",
+    "conversationRememberedMeaning": "Anotei o que “{{word}}” significa",
+    "conversationLearned": "Anotado para a próxima vez",
+    "conversationLearnedSkill": "Aprendi “{{name}}”",
+    "conversationTaskWriting": "Escrevendo a resposta",
+    "conversationGroupMicrophone": "Microfone",
+    "conversationGroupModel": "Modelo"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",
@@ -1630,5 +1637,17 @@
     "cronFailing": "{{count}} scheduled task(s) failing",
     "conversationsNone": "No conversations are currently running.",
     "conversationsRunning": "{{count}} conversation(s) running"
+  },
+  "memory": {
+    "title": "Memória",
+    "subtitle": "O que The Fool lembra sobre você e o que aprendeu trabalhando para você. Os dois arquivos são lidos antes de cada conversa e por qualquer agente que aja em seu nome.",
+    "userTab": "user.md",
+    "agentTab": "agent.md",
+    "userHint": "Quem você é, como chamar você, o que suas próprias palavras querem dizer e uma linha sobre cada conversa. Toda linha é sua para corrigir.",
+    "agentHint": "Lições tiradas do que deu errado e os jeitos de fazer as coisas que você ensinou em voz alta. Aqui tudo pode ser editado.",
+    "placeholder": "Nada memorizado ainda. Escreva o que quiser que ele saiba, ou simplesmente comece a falar.",
+    "unsaved": "Alterações não salvas",
+    "upToDate": "Em dia",
+    "revert": "Reverter"
   }
 }

@@ -12,13 +12,14 @@ import { type IExtensionSettingsTab } from '@/common/adapter/ipcBridge';
 import { useExtI18n } from '@/renderer/hooks/system/useExtI18n';
 import { useExtensionSettingsTabs } from '@/renderer/hooks/system/useExtensionSettingsTabs';
 import { Tabs } from '@arco-design/web-react';
-import { Computer, Earth, Info, LinkCloud, Puzzle, Toolkit, Voice } from '@icon-park/react';
+import { Brain, Computer, Earth, Info, LinkCloud, Puzzle, Toolkit, Voice } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AboutModalContent from './contents/AboutModalContent';
 import AgentModalContent from './contents/AgentModalContent';
 import ExtensionSettingsTabContent from './contents/ExtensionSettingsTabContent';
+import MemoryModalContent from './contents/memory';
 import VoiceSettingsContent from './contents/voice/VoiceSettingsContent';
 import ModelModalContent from './contents/ModelModalContent';
 import SystemModalContent from './contents/SystemModalContent';
@@ -56,7 +57,7 @@ const RESIZE_DEBOUNCE_DELAY = 150;
 /**
  * 内置设置标签页类型 / Built-in settings tab type
  */
-export type BuiltinSettingTab = 'model' | 'agent' | 'tools' | 'voice' | 'webui' | 'system' | 'about';
+export type BuiltinSettingTab = 'model' | 'agent' | 'tools' | 'voice' | 'memory' | 'webui' | 'system' | 'about';
 
 /**
  * 设置标签页类型（内置 + 扩展）/ Settings tab type (built-in + extension)
@@ -220,6 +221,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onCancel, defaul
       });
     }
 
+    // Beside the app's own settings rather than inside the voice ones, because
+    // what is remembered is not the voice's: an agent doing a task on the user's
+    // behalf reads the same two documents.
+    builtinItems.push({
+      key: 'memory',
+      label: t('settings.memory.title'),
+      icon: <Brain theme='outline' size='20' fill={iconColors.secondary} />,
+    });
+
     builtinItems.push(
       {
         key: 'system',
@@ -318,6 +328,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onCancel, defaul
         return <ToolsModalContent />;
       case 'voice':
         return <VoiceSettingsContent />;
+      case 'memory':
+        return <MemoryModalContent />;
       case 'webui':
         return <WebuiModalContent />;
       case 'system':

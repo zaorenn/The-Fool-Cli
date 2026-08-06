@@ -1599,7 +1599,14 @@
     "conversationInterruptible": "A word can cut it off",
     "conversationInterruptibleHint": "Only that word stops it mid-sentence. Noise, \"mhm\" and \"yes, I see\" never do, and another question waits until it has finished.",
     "conversationInterruptibleOffHint": "Nothing cuts it off. It finishes, then answers whatever you said meanwhile.",
-    "conversationInterruptPhrase": "Word that stops it"
+    "conversationInterruptPhrase": "Word that stops it",
+    "conversationSearched": "Searched {{site}} for “{{query}}”",
+    "conversationRememberedMeaning": "Noted what “{{word}}” means",
+    "conversationLearned": "Noted for next time",
+    "conversationLearnedSkill": "Learned “{{name}}”",
+    "conversationTaskWriting": "Writing the answer",
+    "conversationGroupMicrophone": "Microphone",
+    "conversationGroupModel": "Model"
   },
   "themeCustomizer": {
     "title": "Customize theme",
@@ -1627,5 +1634,17 @@
     "cronFailing": "{{count}} scheduled task(s) failing",
     "conversationsNone": "No conversations are currently running.",
     "conversationsRunning": "{{count}} conversation(s) running"
+  },
+  "memory": {
+    "title": "Memory",
+    "subtitle": "What The Fool remembers about you, and what it has learned about working for you. Both files are read before every conversation, and by any agent working on your behalf.",
+    "userTab": "user.md",
+    "agentTab": "agent.md",
+    "userHint": "Who you are, what to call you, what your own words mean, and a line about each conversation. Every line is yours to correct.",
+    "agentHint": "Lessons taken from what went wrong, and the ways of doing things you have taught out loud. Edit anything here.",
+    "placeholder": "Nothing remembered yet. Write whatever you want known, or just start talking.",
+    "unsaved": "Unsaved changes",
+    "upToDate": "Up to date",
+    "revert": "Revert"
   }
 }
