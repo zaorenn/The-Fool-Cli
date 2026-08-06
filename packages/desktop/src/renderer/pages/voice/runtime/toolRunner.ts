@@ -159,25 +159,37 @@ export const lookAtScreen = async (question: string): Promise<string> => {
  * arrives. Repeats are dropped: agents restate the same line while a tool runs,
  * and a list of eight identical rows is worse than one.
  *
- * What the agent is *writing* is not a step, and this is where that used to go
- * wrong. The answer arrives a few characters at a time, every fragment differing
- * from the last, so a hundred rows appeared holding a hundred prefixes of the
- * same sentence — the panel spelling out the reply letter by letter instead of
- * saying what was being done. It now has one row of its own, rewritten in place,
- * and it says the last thing written rather than all of it.
+ * What the agent is *writing* is not a step, and this is where it went wrong
+ * twice. The answer arrives a few characters at a time, and reported as steps it
+ * opened a row per fragment: a hundred rows holding a hundred prefixes of one
+ * sentence, on the page and on the notch, which is the panel spelling the reply
+ * out letter by letter instead of saying what was being done.
+ *
+ * Giving it a single row rewritten in place fixed the flood and not the reason
+ * it looked wrong: the row's text still changed on every token, so both surfaces
+ * still showed running letters. Nobody reads a line that is being retyped thirty
+ * times a second — what they read is that something is happening, which one
+ * stable row already says.
+ *
+ * So the row is written when a *sentence* is finished, and not otherwise. A
+ * paragraph of answer moves it three or four times, which is a progress report;
+ * everything in between is the same row, unchanged.
  */
 const trackSteps = (host: ToolHost, callId: string): { note: (step: AgentTaskStep) => void; finish: () => void } => {
   let step = 0;
   let previous = '';
   let writing = false;
+  /** How many finished sentences have already been reported. */
+  let reported = 0;
 
   const writingId = `${callId}#writing`;
 
-  /** The tail of what has been written — a row, not a transcript. */
-  const tail = (text: string): string => {
-    const sentences = text.split(/(?<=[.!?])\s+/).filter((part) => part.trim().length > 0);
-    return (sentences.at(-1) ?? text).trim().slice(0, 160);
-  };
+  /** The finished sentences in what has been written so far. */
+  const sentences = (text: string): string[] =>
+    text
+      .split(/(?<=[.!?…])\s+/)
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0 && /[.!?…]$/.test(part));
 
   return {
     note: (event: AgentTaskStep): void => {
@@ -185,10 +197,16 @@ const trackSteps = (host: ToolHost, callId: string): { note: (step: AgentTaskSte
       if (line.length === 0) return;
 
       if (event.kind === 'writing') {
+        const finished = sentences(line);
+        // The first fragment puts the row up — the user needs to know it is
+        // writing — and after that only a completed sentence moves it.
+        if (writing && finished.length <= reported) return;
+
         writing = true;
+        reported = finished.length;
         host.updateActivity(writingId, {
           label: host.t('settings.voice.conversationTaskWriting'),
-          detail: tail(line),
+          detail: finished.at(-1)?.slice(0, 160) ?? '',
           state: 'running',
         });
         return;

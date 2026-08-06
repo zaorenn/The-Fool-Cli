@@ -196,6 +196,40 @@ describe('a task handed to the agent', () => {
     });
   });
 
+  /**
+   * One row instead of a hundred was only half of it. The row's own text still
+   * changed on every token, so the page and the notch went on showing running
+   * letters — nobody reads a line that is being retyped thirty times a second.
+   */
+  it('moves the writing row on a finished sentence, not on every token', async () => {
+    const writes: string[] = [];
+    const watching: ToolHost = {
+      ...host,
+      updateActivity: (id, patch) => {
+        if (id.endsWith('#writing') && patch.detail !== undefined) writes.push(patch.detail);
+        host.updateActivity(id, patch);
+      },
+    };
+
+    runAgentTask.mockImplementation(async (request: Reporter) => {
+      for (const text of ['I', 'I have', 'I have opened', 'I have opened it.', 'I have opened it. Next']) {
+        request.onProgress?.({ kind: 'writing', text });
+      }
+      request.onProgress?.({ kind: 'writing', text: 'I have opened it. Next I searched.' });
+      return { ok: true, conversationId: 'c1', summary: 'done' };
+    });
+
+    await runVoiceTool(watching, {
+      callId: 'call-1',
+      name: 'app_ask_jester',
+      argumentsJson: JSON.stringify({ request: 'open it' }),
+    });
+
+    // Six fragments in, three writes out: the row going up, and one per
+    // sentence that actually finished.
+    expect(writes).toEqual(['', 'I have opened it.', 'Next I searched.']);
+  });
+
   it('writes down a failure that will happen again, so it is not learned twice', async () => {
     runAgentTask.mockResolvedValue({ ok: false, reason: 'agent-unavailable', detail: 'no agent' });
 
