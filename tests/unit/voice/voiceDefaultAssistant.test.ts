@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_FOOL_VOICE_SETTINGS, VOICE_DEFAULT_ASSISTANT_ID } from '@/common/types/foolVoice';
@@ -62,11 +62,28 @@ describe('the assistant a spoken conversation defaults to', () => {
   });
 
   /**
-   * The instrument the rest of it depends on. A personal assistant that cannot
-   * touch the machine is a chat window with extra steps.
+   * Every skill it names is a skill that exists.
+   *
+   * This assertion replaces one that asserted the opposite of the truth: it
+   * checked for `computer_use`, which is not a skill at all and matches no
+   * directory. It was copied from the butler's list, where it is equally
+   * phantom, and it read as proof the assistant could drive the machine while
+   * doing nothing whatsoever. Control of the computer comes from the
+   * `computer-use` MCP *server*, which is a different system with a different
+   * name — so a green test here meant nothing about it.
+   *
+   * A name that resolves to nothing costs no error and no log line; it is
+   * simply absent from the agent. Checking the directory is the only thing that
+   * catches it.
    */
-  it('is given the computer, since that is what it is for', () => {
-    expect(byId(VOICE_DEFAULT_ASSISTANT_ID)?.enabled_skills).toContain('computer_use');
+  it('names only skills that exist', () => {
+    const skillsDir = path.join(process.cwd(), 'backend/core/crates/fool-app/assets/builtin-skills');
+    const declared = byId(VOICE_DEFAULT_ASSISTANT_ID)?.enabled_skills ?? [];
+
+    expect(declared.length).toBeGreaterThan(0);
+    for (const skill of declared) {
+      expect(existsSync(path.join(skillsDir, skill, 'SKILL.md')), `no such skill: ${skill}`).toBe(true);
+    }
   });
 
   it('sorts ahead of the setup butler, which is the rarer job', () => {
