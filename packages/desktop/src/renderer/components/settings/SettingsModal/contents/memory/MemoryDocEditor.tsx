@@ -48,13 +48,24 @@ const MemoryDocEditor: React.FC<MemoryDocEditorProps> = ({ value, label, hint, o
   const wasDirty = useRef(dirty);
   wasDirty.current = dirty;
 
+  /**
+   * That the version about to arrive is this editor's own save coming back.
+   *
+   * The store tidies what it is given — a trailing newline, a document trimmed
+   * to length — so the text that lands is rarely byte-identical to the text that
+   * was typed. Without this the editor would still read "unsaved changes"
+   * immediately after a successful save, which is the one moment it must not.
+   */
+  const justSaved = useRef(false);
+
   useEffect(() => {
     setBase(value);
     // An untouched editor follows the document, so a name learned out loud
     // appears here as it is said. A touched one keeps what is being typed —
     // taking someone's half-written sentence away is worse than being a moment
     // out of date, and Revert puts the incoming version back within one click.
-    if (!wasDirty.current) setDraft(value);
+    if (!wasDirty.current || justSaved.current) setDraft(value);
+    justSaved.current = false;
   }, [value]);
 
   // Reported here rather than in a toast. A toast that a memory failed to save
@@ -63,9 +74,11 @@ const MemoryDocEditor: React.FC<MemoryDocEditorProps> = ({ value, label, hint, o
   const save = async (): Promise<void> => {
     setSaving(true);
     setFailed(false);
+    justSaved.current = true;
     try {
       await onSave(draft);
     } catch {
+      justSaved.current = false;
       setFailed(true);
     } finally {
       setSaving(false);

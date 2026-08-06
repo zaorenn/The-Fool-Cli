@@ -32,7 +32,10 @@ vi.mock('@renderer/services/voice/session/voiceMemoryStore', () => ({
   },
   writeMemoryDoc: async (which: 'user' | 'agent', text: string) => {
     saved.push({ which, text });
-    stored = { ...stored, [which]: text };
+    // Tidied on the way in, the way the real store does: what comes back is
+    // rarely byte-identical to what was typed.
+    stored = { ...stored, [which]: `${text.trim()}\n` };
+    for (const listener of listeners) listener(stored);
     return stored;
   },
 }));
@@ -104,6 +107,22 @@ describe('the memory settings page', () => {
 
     await waitFor(() => expect(screen.getByText('settings.memory.unsaved')).toBeTruthy());
     expect(userEditor().value).toBe('# About you\n\n- I am halfway through');
+  });
+
+  /**
+   * The store tidies what it is given, so the text that lands is not the text
+   * that was typed. Compared naively, the editor reads "unsaved changes"
+   * immediately after a successful save — the one moment it must not.
+   */
+  it('settles after a save, even though the stored text is not byte-identical', async () => {
+    render(<MemorySettings />);
+    await waitFor(() => expect(userEditor()).toBeTruthy());
+
+    fireEvent.change(userEditor(), { target: { value: '# About you\n\n- I moved to Ankara.' } });
+    fireEvent.click(screen.getByText('common.save'));
+
+    await waitFor(() => expect(screen.getByText('settings.memory.upToDate')).toBeTruthy());
+    expect(userEditor().value).toBe('# About you\n\n- I moved to Ankara.\n');
   });
 
   it('offers no save until something has actually changed', async () => {
