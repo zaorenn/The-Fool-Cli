@@ -13,16 +13,17 @@ import { useFoolVoiceSettings } from '@renderer/hooks/voice/useFoolVoiceSettings
 import TextToSpeechSection from '@renderer/components/settings/SettingsModal/contents/voice/tts/TextToSpeechSection';
 import ConversationSettings from './ConversationSettings';
 import { useRealtimeConversation } from './useRealtimeConversation';
+import VoiceMeter from './VoiceMeter';
 import styles from './VoiceConversationPage.module.css';
 
 /**
  * Voice chat: a conversation with a model that hears and speaks directly.
  *
  * The page is deliberately almost empty. What is on screen while someone is
- * talking is an orb that reacts, the sentence being said, and what the agent is
- * doing about it — everything else is a distraction from an interaction that is
- * not visual. The settings sit beside the start button and disappear the moment
- * the conversation begins.
+ * talking is the level of their own voice, the sentence being said, and what the
+ * agent is doing about it — everything else is a distraction from an interaction
+ * that is not visual. The settings sit beside the start button and disappear the
+ * moment the conversation begins.
  */
 
 const VoiceConversationPage: React.FC = () => {
@@ -36,7 +37,6 @@ const VoiceConversationPage: React.FC = () => {
 
   return (
     <main className={classNames(styles.page, active && styles.active, styles[phase])} data-testid='voice-conversation'>
-      <div className={styles.grid} />
       <div className='relative z-1 mx-auto flex h-full min-h-0 max-w-1440px flex-col px-24px py-20px'>
         <header className='flex flex-wrap items-center justify-between gap-12px'>
           <div className='flex items-center gap-10px'>
@@ -65,31 +65,34 @@ const VoiceConversationPage: React.FC = () => {
         ) : null}
 
         <div className='grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_340px] items-center gap-28px max-[920px]:grid-cols-1 max-[920px]:overflow-auto'>
-          <section className='flex min-w-0 flex-col items-center justify-center py-20px'>
-            <div className={styles.orbStage} aria-label={phaseLabel}>
-              <div className={styles.orbGlow} />
-              <div className={styles.orbRing} />
-              <div className={styles.orbCore} />
-              <div className='relative z-2 flex flex-col items-center gap-5px text-center'>
-                {phase === 'speaking' ? <Voice theme='filled' size={25} /> : <Microphone theme='outline' size={25} />}
-                <span className='text-13px font-600 text-t-primary'>{phaseLabel}</span>
+          <section className='flex min-w-0 flex-col items-center justify-center gap-26px py-20px'>
+            <div className={styles.meterStage}>
+              <div className={styles.telemetry}>
+                <span className={styles.stamp}>{phaseLabel}</span>
+                <span>
+                  {conversation.providerName ? <b>{conversation.providerName}</b> : null}
+                  {conversation.providerName && settings.tts.modelId ? ' · ' : null}
+                  {settings.tts.modelId ? <b>{settings.tts.modelId.replace(/^tts-/, '')}</b> : null}
+                </span>
               </div>
+              <VoiceMeter phase={phase} level={conversation.level} label={phaseLabel} />
+              <div className={styles.rule} />
             </div>
 
             {/* Both sides, not whichever spoke last. Showing only the reply left
                 the user unable to check what was actually heard — which is the
                 first thing you want when an answer looks wrong, and the only way
                 to tell a mis-transcription from a bad answer. */}
-            <div className='flex min-h-72px max-w-620px flex-col items-center gap-6px text-center'>
+            <div className='flex min-h-96px w-full max-w-620px flex-col gap-10px'>
               {conversation.userTranscript ? (
-                <Typography.Text className='block text-13px leading-20px text-t-tertiary' data-testid='voice-heard'>
+                <p className={styles.heard} data-testid='voice-heard'>
                   {t('settings.voice.conversationYouSaid', { text: conversation.userTranscript })}
-                </Typography.Text>
+                </p>
               ) : null}
-              <Typography.Text className='block text-15px leading-24px text-t-secondary'>
+              <p className={styles.said}>
                 {conversation.assistantTranscript ||
                   (conversation.userTranscript ? '' : t('settings.voice.conversationReadyHint'))}
-              </Typography.Text>
+              </p>
             </div>
 
             <div className='mt-14px flex flex-wrap items-center justify-center gap-10px'>

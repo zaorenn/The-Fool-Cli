@@ -186,6 +186,14 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
    * down and rebuilt every time a key moves.
    */
   const holdingRef = useRef(false);
+  /**
+   * The microphone's current level, for whatever is drawing it.
+   *
+   * A ref rather than state: this changes many times a second, and putting it
+   * through React would re-render the whole page for every audio block. The
+   * meter reads it inside its own animation frame instead.
+   */
+  const levelRef = useRef(0);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
 
@@ -643,6 +651,7 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
    */
   const showLevel = useCallback(
     (level: number, speaking: boolean) => {
+      levelRef.current = level;
       if (phaseRef.current !== 'listening' && phaseRef.current !== 'hearing') return;
       const next = speaking ? 'hearing' : 'listening';
       if (next !== phaseRef.current) applyPhase(next);
@@ -830,6 +839,7 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
 
   return {
     phase,
+    level: levelRef,
     error,
     setError,
     providerName,
