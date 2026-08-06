@@ -341,7 +341,17 @@ async fn load_user_mcp_servers(
         let selected = selected_ids
             .map(|ids| ids.iter().any(|id| id == &row.id))
             .unwrap_or(row.enabled);
-        if !selected || row.builtin {
+        // Built-in servers are rows like any other. Excluding them here was one
+        // of three copies of the same mistake: the switch in settings was real
+        // and the effect was not, so `computer-use` — registered, enabled and
+        // installed — reached no agent. `load_user_mcp_servers` in the foolrs
+        // factory dropped its copy first; the conversation builder dropped the
+        // second. This is the third.
+        //
+        // Nothing is switched on by this. An assistant that names its servers
+        // gets those, one that names none gets whatever the user enabled, and a
+        // transport the agent cannot speak is still skipped below.
+        if !selected {
             continue;
         }
         if !row_supported_by_capabilities(&row, capabilities) {
