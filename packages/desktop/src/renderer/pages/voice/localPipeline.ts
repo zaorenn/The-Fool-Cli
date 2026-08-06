@@ -10,6 +10,7 @@ import { synthesisProviderFor, type FoolVoiceSettings, type VoiceModel } from '@
 import { isBackchannel } from '@/common/voice/backchannel';
 import { isHallucinatedTranscript } from '@/common/voice/hallucinations';
 import { applyTranscriptRules } from '@/common/voice/transcriptRules';
+import { peekVoiceMemory, rememberVoiceSession } from '@renderer/services/voice/session/voiceMemoryStore';
 import { findWakePhrase } from '@renderer/services/voice/wakePhrase';
 import { createIncrementalSentenceDetector } from '@renderer/services/voice/narration/incrementalSentences';
 import { sanitizeForSpeech } from '@renderer/services/voice/narration/narrationSanitizer';
@@ -244,6 +245,35 @@ const SPEECH_LOOKAHEAD = 2;
 /** One sentence, synthesised and ready for the speaker. */
 type RenderedSpeech = { pcm16Base64: string; sampleRate: number };
 
+/** Below this a conversation was a question, and is not worth remembering. */
+const MIN_TURNS_WORTH_REMEMBERING = 2;
+
+/**
+ * How long the closing summary may take.
+ *
+ * Short: the user has already ended the conversation and is walking away, and a
+ * memory that arrives a minute later is not worth holding the teardown for. The
+ * fallback covers the timeout.
+ */
+const SUMMARY_TIMEOUT_MS = 20_000;
+
+/** How much of the transcript the summary is written from, newest kept. */
+const SUMMARY_INPUT_LIMIT = 6000;
+
+/**
+ * How the closing line is asked for.
+ *
+ * In English regardless of the language spoken, because it is read back into a
+ * prompt rather than to a person — and stated as a single sentence, because
+ * given room these models write a report with headings.
+ */
+const SESSION_SUMMARY_PROMPT = `Write one or two plain sentences recording what this spoken conversation was about, for your own memory of it.
+
+- Write it in English, whatever language was spoken.
+- Say what they wanted, what was decided, and anything left unfinished.
+- Names, projects and numbers matter; pleasantries do not.
+- No headings, no bullet points, no preamble. Just the sentences.`;
+
 /** The tool list in the dialect the local server speaks. */
 const WIRE_TOOLS = REALTIME_TOOLS.map((tool) => ({
   type: 'function' as const,
@@ -327,6 +357,7 @@ export class LocalVoicePipeline {
           language: realtime.language,
           interfaceLanguage: this.options.interfaceLanguage,
           wakePhrase: this.options.settings.activation.wakePhrase.phrase,
+          memory: peekVoiceMemory(),
         }),
       },
     ];
@@ -371,6 +402,62 @@ export class LocalVoicePipeline {
     this.utterance = [];
     this.queued = null;
     this.history = [];
+  }
+
+  /**
+   * Keeps a line about this conversation for the next one to open with.
+   *
+   * The whole transcript is not worth storing: most of a spoken conversation is
+   * turn-taking, and reading a thousand words of it back into every future
+   * prompt costs more than it is worth. What survives is a sentence or two —
+   * enough for "yesterday you were stuck on the installer" to be sayable.
+   *
+   * The model that held the conversation writes it, because it is already loaded
+   * and already has the context. If that fails, the first thing the user said is
+   * kept instead: a wrong-shaped memory is still better than no memory, and this
+   * runs while the user is walking away from a conversation they have ended.
+   *
+   * Never throws and never blocks the teardown that called it.
+   */
+  async rememberConversation(): Promise<void> {
+    const readiness = this.ready;
+    const spoken = this.history.filter((turn) => turn.role === 'user' || turn.role === 'assistant');
+    const asked = spoken.filter((turn) => turn.role === 'user' && turn.content.trim().length > 0);
+    // One exchange is a question, not a conversation. Remembering "what time is
+    // it" as a session would fill the memory with nothing.
+    if (!readiness || asked.length < MIN_TURNS_WORTH_REMEMBERING) return;
+
+    const fallback = asked[0].content.trim();
+
+    try {
+      const response = await fetch(`${readiness.endpoint}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(SUMMARY_TIMEOUT_MS),
+        body: JSON.stringify({
+          model: readiness.llmModelId,
+          stream: false,
+          temperature: 0.2,
+          max_tokens: 120,
+          messages: [
+            { role: 'system', content: SESSION_SUMMARY_PROMPT },
+            {
+              role: 'user',
+              content: spoken
+                .map((turn) => `${turn.role === 'user' ? 'Them' : 'You'}: ${turn.content.trim()}`)
+                .join('\n')
+                .slice(-SUMMARY_INPUT_LIMIT),
+            },
+          ],
+        }),
+      });
+      if (!response.ok) throw new Error('LOCAL_SUMMARY_FAILED');
+      const body = (await response.json()) as { choices?: { message?: { content?: unknown } }[] };
+      const written = body.choices?.[0]?.message?.content;
+      await rememberVoiceSession(typeof written === 'string' && written.trim().length > 0 ? written : fallback);
+    } catch {
+      await rememberVoiceSession(fallback);
+    }
   }
 
   /**

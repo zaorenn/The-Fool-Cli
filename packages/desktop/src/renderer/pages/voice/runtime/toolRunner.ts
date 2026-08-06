@@ -19,6 +19,11 @@ import {
 } from '@/common/config/themeOverrides';
 import { parseOpenUrls } from '@/common/realtime/openUrls';
 import { runAgentTask } from '@renderer/services/voice/session/runAgentTask';
+import {
+  forgetVoiceFact,
+  rememberVoiceAddress,
+  rememberVoiceFact,
+} from '@renderer/services/voice/session/voiceMemoryStore';
 import { describeScreen } from '@renderer/services/voice/screenSight';
 import { peekVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import { applyThemeOverrides } from '@renderer/utils/theme/applyThemeOverrides';
@@ -260,6 +265,40 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
         state: 'completed',
       });
       return { ok: true, result: outcome.summary };
+    }
+
+    if (invocation.name === 'app_remember') {
+      const fact = text('fact').trim();
+      const callMe = text('callMe').trim();
+      if (fact.length === 0 && callMe.length === 0) {
+        throw new Error(t('settings.voice.conversationActionUnsupported'));
+      }
+
+      // The name first, so that if only one of the two survives a failure it is
+      // the one the very next sentence needs.
+      if (callMe.length > 0) await rememberVoiceAddress(callMe);
+      if (fact.length > 0) await rememberVoiceFact(fact);
+
+      const detail =
+        callMe.length > 0
+          ? t('settings.voice.conversationRememberedName', { name: callMe })
+          : t('settings.voice.conversationRemembered');
+      host.updateActivity(invocation.callId, { detail, state: 'completed' });
+      host.backToListening();
+      // The name goes back as well as the acknowledgement: a model that has just
+      // been told what to call someone should use it in its next sentence, and
+      // handing it back is cheaper than hoping it kept it.
+      return { ok: true, detail, ...(callMe.length > 0 ? { callMe } : {}) };
+    }
+
+    if (invocation.name === 'app_forget') {
+      const about = text('about').trim();
+      if (about.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));
+      await forgetVoiceFact(about);
+      const detail = t('settings.voice.conversationForgot', { about });
+      host.updateActivity(invocation.callId, { detail, state: 'completed' });
+      host.backToListening();
+      return { ok: true, detail };
     }
 
     if (invocation.name === 'app_standby') {

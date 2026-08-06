@@ -32,6 +32,7 @@ class FakePipeline {
   interrupt = vi.fn();
   pushAudio = vi.fn();
   speakAside = vi.fn(async () => {});
+  rememberConversation = vi.fn(async () => {});
 }
 
 vi.mock('@/common', () => ({
@@ -50,6 +51,12 @@ vi.mock('@/common/config/configService', () => ({
 
 vi.mock('@renderer/hooks/voice/useFoolVoiceSession', () => ({
   claimManualVoiceSession: () => () => {},
+}));
+
+vi.mock('@renderer/services/voice/session/voiceMemoryStore', () => ({
+  peekVoiceMemory: () => ({ addressAs: '', facts: [], sessions: [], introduced: true }),
+  readVoiceMemory: async () => ({ addressAs: '', facts: [], sessions: [], introduced: true }),
+  markVoiceIntroduced: async () => {},
 }));
 
 vi.mock('@renderer/services/voice/publishVoiceStage', () => ({

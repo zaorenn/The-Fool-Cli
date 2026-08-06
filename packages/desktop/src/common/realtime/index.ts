@@ -181,6 +181,39 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_remember',
+    description:
+      "Keep something about the person you are talking to, so it is still true in tomorrow's conversation. Use it the moment they tell you what to call them, what they are working on, how they like things done, what machine they are on, or anything else you would be embarrassed to ask twice. Also use it when something you already knew turns out to have changed. Do not ask permission to remember and do not read the memory back — note it in a few words at most and carry on talking.",
+    parameters: {
+      type: 'object',
+      properties: {
+        fact: {
+          type: 'string',
+          description:
+            'One thing about them, written as a short statement you would want to read at the start of the next conversation. "Builds a desktop app called The Fool in the evenings." Leave out if there is nothing but a name to keep.',
+        },
+        callMe: {
+          type: 'string',
+          description:
+            'What they want to be called, exactly as they said it. Set this only when they have said so — a name mentioned in passing is not an instruction to use it.',
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'app_forget',
+    description:
+      'Drop something you were remembering, when they ask you to forget it or when it is simply no longer true. Say in a few words that it is gone.',
+    parameters: {
+      type: 'object',
+      properties: {
+        about: { type: 'string', description: 'What to forget, in the words they used for it.' },
+      },
+      required: ['about'],
+    },
+  },
+  {
     name: 'app_standby',
     description:
       'Go quiet and wait. Call this the moment the user asks you to hold on, wait, stand by, or stop for now. After calling it, say nothing at all until you hear the wake phrase.',

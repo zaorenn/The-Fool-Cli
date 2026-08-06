@@ -23,6 +23,11 @@ import {
   publishVoiceStage,
   publishVoiceStageOff,
 } from '@renderer/services/voice/publishVoiceStage';
+import {
+  markVoiceIntroduced,
+  peekVoiceMemory,
+  readVoiceMemory,
+} from '@renderer/services/voice/session/voiceMemoryStore';
 import { peekVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import { LocalVoicePipeline } from '../localPipeline';
 import { PcmAudioOutput, PcmMicrophone } from '../pcmAudio';
@@ -541,6 +546,7 @@ class ConversationRuntime {
           // The same phrase the pet answers to, so there is one thing to say to
           // this app rather than one per feature.
           wakePhrase: settings.activation.wakePhrase.phrase,
+          memory: peekVoiceMemory(),
         }),
         language: realtime.language,
         tools: REALTIME_TOOLS,
@@ -589,11 +595,20 @@ class ConversationRuntime {
     ipcBridge.foolVoice.conversationActive?.emit({ active: true });
 
     try {
+      // Before the persona is built, because the persona *is* the memory on a
+      // first run: it is what turns "hello, how can I help" into "hello — what
+      // should I call you?".
+      await readVoiceMemory();
+
       const providerId = peekVoiceSettings().realtime.providerId as VoiceConversationProviderId;
       if (providerId === 'local-pipeline') await this.startLocal();
       else await this.startRemote(providerId);
 
       this.enter('listening');
+      // Recorded now rather than when the conversation ends: a session that is
+      // cut short still happened, and being asked your name again every time you
+      // hang up early is worse than missing one follow-up question.
+      void markVoiceIntroduced();
     } catch (startError) {
       const code = startError instanceof Error ? startError.message : String(startError);
       this.stop();
@@ -602,6 +617,9 @@ class ConversationRuntime {
   };
 
   stop = (): void => {
+    // Before anything is torn down: the summary is written from the history the
+    // pipeline is holding, and closing it throws that away.
+    void this.local?.rememberConversation();
     this.microphone?.stop();
     this.microphone = null;
     this.client?.disconnect();

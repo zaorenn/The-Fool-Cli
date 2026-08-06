@@ -22,6 +22,16 @@ vi.mock('@renderer/services/voice/session/runAgentTask', () => ({
   runAgentTask: (request: unknown) => runAgentTask(request),
 }));
 
+const rememberedFacts: string[] = [];
+const rememberedNames: string[] = [];
+const forgotten: string[] = [];
+
+vi.mock('@renderer/services/voice/session/voiceMemoryStore', () => ({
+  rememberVoiceFact: async (text: string) => void rememberedFacts.push(text),
+  rememberVoiceAddress: async (name: string) => void rememberedNames.push(name),
+  forgetVoiceFact: async (about: string) => void forgotten.push(about),
+}));
+
 vi.mock('@renderer/services/voice/screenSight', () => ({ describeScreen: vi.fn() }));
 vi.mock('@renderer/services/voice/voiceSettingsStore', () => ({ peekVoiceSettings: () => ({}) }));
 vi.mock('@renderer/utils/theme/applyThemeOverrides', () => ({ applyThemeOverrides: vi.fn() }));
@@ -125,7 +135,7 @@ describe('a task handed to the agent', () => {
     });
   });
 
-  it('closes the last step even when the task failed', async () => {
+  it('keeps a step list even when the task failed', async () => {
     runAgentTask.mockImplementation(async (request: { onProgress?: (detail: string) => void }) => {
       request.onProgress?.('opening the browser');
       return { ok: false, reason: 'run-failed', detail: 'no window' };
@@ -140,5 +150,58 @@ describe('a task handed to the agent', () => {
     expect(result.ok).toBe(false);
     expect(steps().map((item) => item.state)).toEqual(['completed']);
     expect(activities.get('call-1')?.state).toBe('failed');
+  });
+});
+
+describe('what it is told to remember', () => {
+  beforeEach(() => {
+    activities.clear();
+    rememberedFacts.length = 0;
+    rememberedNames.length = 0;
+    forgotten.length = 0;
+  });
+
+  it('keeps a name and hands it straight back, so the next sentence can use it', async () => {
+    const result = await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_remember',
+      argumentsJson: JSON.stringify({ callMe: 'Serhan' }),
+    });
+
+    expect(rememberedNames).toEqual(['Serhan']);
+    expect(result).toMatchObject({ ok: true, callMe: 'Serhan' });
+  });
+
+  it('keeps a fact and a name from the same call', async () => {
+    await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_remember',
+      argumentsJson: JSON.stringify({ callMe: 'Serhan', fact: 'Builds a desktop app in the evenings.' }),
+    });
+
+    expect(rememberedNames).toEqual(['Serhan']);
+    expect(rememberedFacts).toEqual(['Builds a desktop app in the evenings.']);
+  });
+
+  it('refuses a call with nothing in it rather than storing a blank', async () => {
+    const result = await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_remember',
+      argumentsJson: JSON.stringify({ fact: '   ' }),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(rememberedFacts).toEqual([]);
+  });
+
+  it('forgets what was named', async () => {
+    const result = await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_forget',
+      argumentsJson: JSON.stringify({ about: 'the walnut thing' }),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(forgotten).toEqual(['the walnut thing']);
   });
 });

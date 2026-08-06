@@ -21,6 +21,8 @@
  * language. What language to *speak* is stated separately, at the end.
  */
 
+import { buildMemoryInstructions, type VoiceMemory } from '@/common/voice/memory';
+
 export type PersonaPresetId = 'companion' | 'english-teacher' | 'language-partner' | 'interview-coach' | 'custom';
 
 /**
@@ -136,6 +138,13 @@ export type PersonaInput = {
   interfaceLanguage: string;
   /** The phrase that brings it back from waiting. */
   wakePhrase: string;
+  /**
+   * Who it is talking to, and what has been said before.
+   *
+   * Absent for a caller with no memory to offer — the tests, and any surface
+   * that holds a one-off exchange rather than a continuing relationship.
+   */
+  memory?: VoiceMemory;
 };
 
 /**
@@ -209,6 +218,10 @@ export const buildPersonaInstructions = (input: PersonaInput): string => {
     // be able to talk it into describing a screen it has not looked at.
     TOOL_RULES,
     standbyRule(input.wakePhrase),
+    // Who it is talking to, after the rules and before the language: it is the
+    // most specific thing in the prompt and the thing most worth having read
+    // recently, and on a first run it is the whole opening of the conversation.
+    input.memory ? buildMemoryInstructions(input.memory) : '',
     languageDirective(input.language, input.interfaceLanguage),
   ]
     .filter((section) => section.length > 0)
