@@ -133,6 +133,38 @@ export const lookAtScreen = async (question: string): Promise<string> => {
 };
 
 /**
+ * Turns the agent's running commentary into a list rather than one line.
+ *
+ * A delegated task reports a step at a time — opened the browser, typed the
+ * search, clicked the third result — and all of it used to be written over the
+ * same row, so the notch showed the latest step and no history. Watching an
+ * agent work is the point of that surface: the user cannot see the desktop it is
+ * driving, and one line of it is indistinguishable from a stuck task.
+ *
+ * Each step is its own entry, and the one before it is marked done as the next
+ * arrives. Repeats are dropped: agents restate the same line while a tool runs,
+ * and a list of eight identical rows is worse than one.
+ */
+const trackSteps = (host: ToolHost, callId: string): { note: (detail: string) => void; finish: () => void } => {
+  let step = 0;
+  let previous = '';
+
+  return {
+    note: (detail: string): void => {
+      const line = detail.trim();
+      if (line.length === 0 || line === previous) return;
+      if (step > 0) host.updateActivity(`${callId}#${step}`, { state: 'completed' });
+      step += 1;
+      previous = line;
+      host.updateActivity(`${callId}#${step}`, { label: line, detail: line, state: 'running' });
+    },
+    finish: (): void => {
+      if (step > 0) host.updateActivity(`${callId}#${step}`, { state: 'completed' });
+    },
+  };
+};
+
+/**
  * Runs one tool the model called, and answers with the result.
  *
  * Returns the result rather than sending it, because the two transports deliver
@@ -196,7 +228,11 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
     if (invocation.name === 'app_ask_jester') {
       const request = text('request').trim();
       if (request.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));
-      host.updateActivity(invocation.callId, { detail: t('settings.voice.conversationDelegated'), state: 'running' });
+      host.updateActivity(invocation.callId, {
+        label: request,
+        detail: t('settings.voice.conversationDelegated'),
+        state: 'running',
+      });
       // Back to listening *before* awaiting: the task runs for minutes and the
       // user has to be able to keep talking while it does. This is the whole
       // reason it is not the old navigate-and-prefill.
@@ -205,13 +241,13 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
       // was talking a moment ago reads as a crash — the user asks again, and now
       // the same job is running twice.
       const stopHeartbeat = host.startWorkingHeartbeat();
+      const steps = trackSteps(host, invocation.callId);
       const outcome = await runAgentTask({
         request,
         settings: peekVoiceSettings(),
-        onProgress: (detail) => {
-          if (detail.length > 0) host.updateActivity(invocation.callId, { detail, state: 'running' });
-        },
+        onProgress: steps.note,
       }).finally(stopHeartbeat);
+      steps.finish();
       if (outcome.ok === false) {
         const detail = t(`settings.voice.conversationTaskError.${outcome.reason}`, {
           defaultValue: outcome.detail ?? outcome.reason,

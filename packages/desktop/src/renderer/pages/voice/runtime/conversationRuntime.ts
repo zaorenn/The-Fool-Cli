@@ -249,14 +249,22 @@ class ConversationRuntime {
       : current.map((item) => (item.id === id ? { ...item, ...patch } : item));
 
     this.emit({ activities: next });
-
-    // Onto the notch as well, oldest first — it is read top to bottom, and it
-    // shows this beside the reply so the user can watch the work and hear the
-    // answer at once instead of choosing between them.
-    publishVoiceActivity(
-      [...next].toReversed().map((item) => ({ text: item.detail || item.label, done: item.state !== 'running' }))
-    );
+    this.publishActivities();
   };
+
+  /**
+   * Puts the same list on the notch, oldest first.
+   *
+   * It is read top to bottom, and it sits beside the reply so the user can watch
+   * the work and hear the answer at once rather than choosing between them.
+   */
+  private publishActivities(): void {
+    publishVoiceActivity(
+      [...this.snapshot.activities]
+        .toReversed()
+        .map((item) => ({ text: item.detail || item.label, done: item.state !== 'running' }))
+    );
+  }
 
   // -------------------------------------------------------------------- tools
 
@@ -325,16 +333,33 @@ class ConversationRuntime {
     switch (event.kind) {
       case 'ready':
         break;
-      case 'user-transcript':
+      case 'user-transcript': {
+        const heard = event.final ? event.text : `${this.snapshot.userTranscript}${event.text}`;
         this.emit({
-          userTranscript: event.final ? event.text : `${this.snapshot.userTranscript}${event.text}`,
+          userTranscript: heard,
           // The assistant's last line is cleared only once the user has finished
           // saying something: clearing it on the first partial would blank the
           // screen every time they cleared their throat.
-          ...(event.final ? { assistantTranscript: '' } : {}),
+          //
+          // Finished steps go with it; still-running ones stay. A task handed to
+          // the agent outlives the question that started it — that is the whole
+          // reason it runs in the background — so a new question must not wipe
+          // the only sign that the last one is still being worked on.
+          ...(event.final
+            ? {
+                assistantTranscript: '',
+                activities: this.snapshot.activities.filter((item) => item.state === 'running'),
+              }
+            : {}),
         });
-        this.publish(this.phase === 'idle' ? 'listening' : this.phase, { transcript: event.text });
+        // The whole sentence so far, not the fragment that just arrived. The
+        // notch shows this for the length of the turn — it is the "what am I
+        // working on" line — and a surface fed only the last delta showed three
+        // words of a question and then held them there while it answered.
+        this.publish(this.phase === 'idle' ? 'listening' : this.phase, { transcript: heard });
+        if (event.final) this.publishActivities();
         break;
+      }
       case 'assistant-transcript': {
         if (this.standby || (event.final && event.text.length === 0)) break;
         const next = event.final ? event.text : `${this.snapshot.assistantTranscript}${event.text}`;

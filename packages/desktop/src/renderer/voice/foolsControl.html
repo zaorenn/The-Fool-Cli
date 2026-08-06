@@ -178,7 +178,7 @@
       }
 
       #notch.wide #body {
-        max-height: 190px;
+        max-height: 232px;
         opacity: 1;
       }
 
@@ -214,12 +214,19 @@
         display: none;
       }
 
+      /* The agent's steps, oldest at the top.
+
+         `flex-end` so that when there are more of them than there is room for,
+         what falls off is the beginning and not the end. The list is a record of
+         work still going on, and the line that answers "is it stuck?" is always
+         the last one — clipping the bottom would hide the only one that matters. */
       #activity {
         margin-top: 10px;
         display: flex;
         flex-direction: column;
+        justify-content: flex-end;
         gap: 6px;
-        max-height: 116px;
+        max-height: 132px;
         overflow: hidden;
       }
 
