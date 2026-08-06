@@ -12,6 +12,7 @@ import {
   type NormalizedRealtimeEvent,
   type RealtimeCredential,
   type RealtimeProviderId,
+  type SpokenVoice,
   type VoiceConversationProviderId,
 } from '@/common/realtime';
 import { createHoldGate } from '@/common/voice/holdToTalkGate';
@@ -32,6 +33,7 @@ import { peekVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import { LocalVoicePipeline } from '../localPipeline';
 import { PcmAudioOutput, PcmMicrophone } from '../pcmAudio';
 import { RealtimeVoiceClient } from '../RealtimeVoiceClient';
+import { listSpokenVoices } from './settingsTool';
 import { runVoiceTool } from './toolRunner';
 import type { ConversationActivity, ConversationPhase, ToolHost, Translate } from './types';
 
@@ -168,6 +170,9 @@ class ConversationRuntime {
 
   /** Unsubscribes the desktop-wide talk key, held for the app's lifetime. */
   private releaseHoldKey: (() => void) | null = null;
+
+  /** The installed voices, read once when a conversation opens. */
+  private voices: readonly SpokenVoice[] = [];
 
   constructor() {
     this.listenForHoldKey();
@@ -458,6 +463,7 @@ class ConversationRuntime {
     const pipeline = new LocalVoicePipeline({
       settings,
       interfaceLanguage: this.interfaceLanguage,
+      voices: this.voices,
       onEvent: this.handleEvent,
       // The same tools the socket providers are given, run by the same code. A
       // local conversation that could not look at the screen or do anything on
@@ -547,6 +553,7 @@ class ConversationRuntime {
           // this app rather than one per feature.
           wakePhrase: settings.activation.wakePhrase.phrase,
           memory: peekVoiceMemory(),
+          voices: this.voices,
         }),
         language: realtime.language,
         tools: REALTIME_TOOLS,
@@ -599,6 +606,12 @@ class ConversationRuntime {
       // first run: it is what turns "hello, how can I help" into "hello — what
       // should I call you?".
       await readVoiceMemory();
+      // Read once per conversation rather than per turn: installing a voice is
+      // something the user does in a settings page, not mid-sentence, and asking
+      // the catalog on every turn would put a disk read in the reply path.
+      // An empty list simply means the voice cannot be changed by speaking,
+      // which is better than a conversation that will not start.
+      this.voices = await listSpokenVoices().catch((): readonly SpokenVoice[] => []);
 
       const providerId = peekVoiceSettings().realtime.providerId as VoiceConversationProviderId;
       if (providerId === 'local-pipeline') await this.startLocal();

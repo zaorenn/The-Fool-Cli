@@ -181,6 +181,39 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_settings',
+    description:
+      'Change how the assistant itself behaves, without the user having to leave the conversation and find a settings page. Use it whenever they say what they want changed: a different voice, a male or a female one, faster or slower speech, louder or quieter, what language you answer in, whether they have to hold a key to talk, whether tasks may run without asking, the word that cuts you off, the phrase that wakes you. Say what you changed in a few words. For colours use app_theme instead; for anything outside this app use app_ask_jester.',
+    parameters: {
+      type: 'object',
+      properties: {
+        setting: {
+          type: 'string',
+          enum: [
+            'voice',
+            'speed',
+            'volume',
+            'reply_language',
+            'persona',
+            'hold_to_talk',
+            'unattended',
+            'interrupt_word',
+            'wake_phrase',
+            'thinking_model',
+            'vision_model',
+          ],
+          description: 'Which one to change.',
+        },
+        value: {
+          type: 'string',
+          description:
+            "The new value. For 'voice', an id from the list of installed voices you were given. For 'speed' and 'volume', a number — 1 is normal, 1.3 is faster. For 'reply_language', a language code such as en or tr, or 'auto' to follow whoever is speaking. For 'persona', one of companion, english-teacher, language-partner, interview-coach. For the on/off ones, 'on' or 'off'.",
+        },
+      },
+      required: ['setting', 'value'],
+    },
+  },
+  {
     name: 'app_remember',
     description:
       "Keep something about the person you are talking to, so it is still true in tomorrow's conversation. Use it the moment they tell you what to call them, what they are working on, how they like things done, what machine they are on, or anything else you would be embarrassed to ask twice. Also use it when something you already knew turns out to have changed. Do not ask permission to remember and do not read the memory back — note it in a few words at most and carry on talking.",
@@ -227,6 +260,6 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   },
 ];
 
-export { buildPersonaInstructions, PERSONA_PRESET_IDS, type PersonaPresetId } from './personas';
+export { buildPersonaInstructions, PERSONA_PRESET_IDS, type PersonaPresetId, type SpokenVoice } from './personas';
 export { LOCAL_S2S_ENDPOINT };
 export * from './types';

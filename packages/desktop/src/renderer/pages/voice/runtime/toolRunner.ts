@@ -28,6 +28,7 @@ import { describeScreen } from '@renderer/services/voice/screenSight';
 import { peekVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import { applyThemeOverrides } from '@renderer/utils/theme/applyThemeOverrides';
 import { normalizeEndpoint } from '../localPipeline';
+import { applySpokenSetting } from './settingsTool';
 import type { ToolHost, ToolInvocation } from './types';
 
 /**
@@ -265,6 +266,13 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
         state: 'completed',
       });
       return { ok: true, result: outcome.summary };
+    }
+
+    if (invocation.name === 'app_settings') {
+      const detail = await applySpokenSetting(text('setting'), text('value'), t);
+      host.updateActivity(invocation.callId, { detail, state: 'completed' });
+      host.backToListening();
+      return { ok: true, detail };
     }
 
     if (invocation.name === 'app_remember') {

@@ -1,0 +1,185 @@
+/**
+ * @license
+ * Copyright 2026 The Fool contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_FOOL_VOICE_SETTINGS, type FoolVoiceSettings } from '@/common/types/foolVoice';
+
+/**
+ * The settings panel, reachable out loud.
+ *
+ * The failure this is written against is not a crash: it is an assistant that
+ * agrees to speak in a male voice and then carries on in the one it had.
+ */
+
+let settings: FoolVoiceSettings = structuredClone(DEFAULT_FOOL_VOICE_SETTINGS);
+const written: FoolVoiceSettings[] = [];
+
+const catalog = {
+  models: [
+    {
+      id: 'tts-kokoro',
+      role: 'text-to-speech',
+      providerId: 'local-sherpa',
+      state: { status: 'ready' },
+      displayName: 'Kokoro',
+    },
+    {
+      id: 'tts-not-installed',
+      role: 'text-to-speech',
+      providerId: 'local-sherpa',
+      state: { status: 'not-installed' },
+      displayName: 'Elsewhere',
+    },
+  ],
+  profiles: [
+    {
+      id: 'af_bella',
+      modelId: 'tts-kokoro',
+      kind: 'preset',
+      state: 'ready',
+      displayName: 'Bella (US, female)',
+      languages: ['en'],
+    },
+    {
+      id: 'am_adam',
+      modelId: 'tts-kokoro',
+      kind: 'preset',
+      state: 'ready',
+      displayName: 'Adam (US, male)',
+      languages: ['en'],
+    },
+    {
+      id: 'jarvis',
+      modelId: 'tts-kokoro',
+      kind: 'cloned',
+      state: 'ready',
+      displayName: 'Jarvis',
+      languages: ['en'],
+    },
+    {
+      id: 'ghost',
+      modelId: 'tts-not-installed',
+      kind: 'preset',
+      state: 'ready',
+      displayName: 'Ghost (UK, male)',
+      languages: ['en'],
+    },
+  ],
+};
+
+vi.mock('@/common', () => ({
+  ipcBridge: { foolVoice: { catalog: { invoke: async () => ({ ok: true, data: catalog }) } } },
+}));
+
+vi.mock('@renderer/services/voice/voiceSettingsStore', () => ({
+  peekVoiceSettings: () => settings,
+  writeVoiceSettings: async (next: FoolVoiceSettings) => {
+    settings = next;
+    written.push(next);
+  },
+}));
+
+const { applySpokenSetting, listSpokenVoices } = await import('@renderer/pages/voice/runtime/settingsTool');
+
+const t = (key: string, values?: Record<string, unknown>): string =>
+  values ? `${key}:${Object.values(values).join(',')}` : key;
+
+describe('the voices offered to the model', () => {
+  it('lists only what is installed and ready', async () => {
+    const voices = await listSpokenVoices();
+
+    expect(voices.map((voice) => voice.id)).toEqual(['af_bella', 'am_adam', 'jarvis']);
+  });
+
+  it('carries the catalog name, which is where male and female come from', async () => {
+    const voices = await listSpokenVoices();
+
+    expect(voices.find((voice) => voice.id === 'am_adam')?.label).toBe('Adam (US, male)');
+  });
+
+  it('marks a voice the user cloned themselves', async () => {
+    const voices = await listSpokenVoices();
+
+    expect(voices.find((voice) => voice.id === 'jarvis')?.cloned).toBe(true);
+  });
+});
+
+describe('applySpokenSetting', () => {
+  beforeEach(() => {
+    settings = structuredClone(DEFAULT_FOOL_VOICE_SETTINGS);
+    written.length = 0;
+  });
+
+  it('changes the voice by id, and records the engine that renders it', async () => {
+    await applySpokenSetting('voice', 'am_adam', t);
+
+    expect(settings.tts.profileId).toBe('am_adam');
+    expect(settings.tts.modelId).toBe('tts-kokoro');
+    expect(settings.tts.providerId).toBeTruthy();
+  });
+
+  it('finds a voice by the name the user would say', async () => {
+    await applySpokenSetting('voice', 'Jarvis', t);
+
+    expect(settings.tts.profileId).toBe('jarvis');
+  });
+
+  it('refuses a voice that is not installed rather than pretending', async () => {
+    await expect(applySpokenSetting('voice', 'ghost', t)).rejects.toThrow();
+    expect(written).toHaveLength(0);
+  });
+
+  it('takes a speaking rate, and clamps one that is out of range', async () => {
+    await applySpokenSetting('speed', '1.3', t);
+    expect(settings.tts.speed).toBeCloseTo(1.3);
+
+    await applySpokenSetting('speed', '9', t);
+    expect(settings.tts.speed).toBe(2);
+  });
+
+  it('reads a volume said as a percentage', async () => {
+    await applySpokenSetting('volume', '40%', t);
+
+    expect(settings.playback.volume).toBeCloseTo(0.4);
+  });
+
+  it('switches hold-to-talk on and off from the words for it', async () => {
+    await applySpokenSetting('hold_to_talk', 'on', t);
+    expect(settings.activation.conversationHoldToTalk).toBe(true);
+
+    await applySpokenSetting('hold_to_talk', 'off', t);
+    expect(settings.activation.conversationHoldToTalk).toBe(false);
+  });
+
+  it('understands the words for yes in the language being spoken', async () => {
+    await applySpokenSetting('unattended', 'evet', t);
+
+    expect(settings.session.unattended).toBe(true);
+  });
+
+  it('holds the reply to a language, and lets it follow the speaker again', async () => {
+    await applySpokenSetting('reply_language', 'tr', t);
+    expect(settings.realtime.language).toBe('tr');
+
+    await applySpokenSetting('reply_language', 'auto', t);
+    expect(settings.realtime.language).toBe('auto');
+  });
+
+  it('changes the interrupt word and leaves interrupting switched on', async () => {
+    await applySpokenSetting('interrupt_word', 'dur', t);
+
+    expect(settings.playback.interruptPhrase).toBe('dur');
+    expect(settings.playback.interruptible).toBe(true);
+  });
+
+  it('refuses a persona that does not exist', async () => {
+    await expect(applySpokenSetting('persona', 'pirate', t)).rejects.toThrow();
+  });
+
+  it('refuses a setting it does not have', async () => {
+    await expect(applySpokenSetting('screen_brightness', 'up', t)).rejects.toThrow();
+  });
+});

@@ -5,7 +5,12 @@
  */
 
 import { ipcBridge } from '@/common';
-import { buildPersonaInstructions, REALTIME_TOOLS, type NormalizedRealtimeEvent } from '@/common/realtime';
+import {
+  buildPersonaInstructions,
+  REALTIME_TOOLS,
+  type NormalizedRealtimeEvent,
+  type SpokenVoice,
+} from '@/common/realtime';
 import { synthesisProviderFor, type FoolVoiceSettings, type VoiceModel } from '@/common/types/foolVoice';
 import { isBackchannel } from '@/common/voice/backchannel';
 import { isHallucinatedTranscript } from '@/common/voice/hallucinations';
@@ -35,6 +40,8 @@ export type LocalToolCall = { callId: string; name: string; argumentsJson: strin
 export type LocalPipelineOptions = {
   settings: FoolVoiceSettings;
   interfaceLanguage: string;
+  /** The installed voices, so a spoken request can pick one. Absent in tests. */
+  voices?: readonly SpokenVoice[];
   onEvent: (event: NormalizedRealtimeEvent) => void;
   /**
    * Runs a tool the model called, and answers with the result.
@@ -358,6 +365,7 @@ export class LocalVoicePipeline {
           interfaceLanguage: this.options.interfaceLanguage,
           wakePhrase: this.options.settings.activation.wakePhrase.phrase,
           memory: peekVoiceMemory(),
+          voices: this.options.voices ?? [],
         }),
       },
     ];

@@ -122,6 +122,7 @@ You have no eyes and no hands of your own in this conversation. You get them by 
 - **\`app_ask_jester\` is how you do anything at all on this computer.** Open an application, click, type, search inside a page that is already open, fill a form in, send a message, work with files. It is not a list of things you were given — it is an agent driving the real machine, so anything the user could do sitting at it, ask for in a sentence and it will be attempted. Never tell them you cannot do something on their computer without having asked. Say in a few words that you are on it, keep talking to them meanwhile, and tell them how it went when it comes back.
 - **\`app_open_url\` is a shortcut for one case only: getting a web address open.** "Open YouTube" is a URL and this does it at once, where the agent would take minutes of clicking. Anything *after* the page is open — searching in it, clicking a result, playing the third video — is the agent's job, not this one. If the request is "open YouTube and search for X", the search is what they asked for, so use \`app_ask_jester\` for the whole thing rather than opening the site and stopping there.
 - **The colours are yours to choose.** "Warmer", "a bit deeper", "like the sea", "the green of an old terminal" — turn what they described into an actual colour and set it with \`app_theme\`. Do not offer a list to pick from and do not read hex codes out loud; they said it in words, answer in words. Only change what they named: "the colour" means the accent, not the background. If they like it and say to keep it, save it under whatever they call it, and put it back on when they ask for it by that name.
+- **How you behave is theirs to change out loud.** A different voice, a male or a female one, faster or slower, louder, the language you answer in, whether they hold a key to talk, whether a task may run without asking — all of it is \`app_settings\`, and none of it is worth sending them to a settings page for. Do it and say what you did in a few words. The one thing you never do is guess a voice that is not on the list you were given.
 - **Do the whole request, not the part you have a tool for.** "Look at my screen and search for it on YouTube" is two steps: look first, then act on what you saw. Finishing the first and answering as if you had finished both is the same failure as inventing a screen.
 - **A request with several steps is several calls, in order.** "Find me the best mods for this game, list them, and open each one in my browser" is: ask the agent to find them, tell the user what they are, then open the ones you found — all of them in a single \`app_open_url\` call with the whole list, not one call per page. Do not stop after the first step and wait to be asked again; carry on until the request is finished or a tool tells you it failed.
 - **Never say you have done something unless a tool told you it was done.** Not "I have sent it", not "I opened it", not "done" — none of it, until a tool comes back and says so. Saying it happened when it did not is the most damaging thing you can do here: they will believe their message was sent, and it was not. If you have not called the tool yet, say you are doing it now, and then call it.
@@ -145,6 +146,25 @@ export type PersonaInput = {
    * that holds a one-off exchange rather than a continuing relationship.
    */
   memory?: VoiceMemory;
+  /**
+   * The voices installed on this computer, so it can pick one when asked.
+   *
+   * Listed in the prompt rather than fetched through a tool because "use a male
+   * voice" should be one call and not two, and because these models answer a
+   * closed list far more reliably than they answer an open question about what
+   * exists.
+   */
+  voices?: readonly SpokenVoice[];
+};
+
+/** One installed voice, as the model is shown it. */
+export type SpokenVoice = {
+  /** What to pass back to change to it. */
+  id: string;
+  /** The catalog's own name, which is where "female" and "male" come from. */
+  label: string;
+  /** True for a voice the user cloned themselves. */
+  cloned: boolean;
 };
 
 /**
@@ -205,6 +225,25 @@ const languageDirective = (language: string, interfaceLanguage: string): string 
  * persona next; the user's own additions after that so they can override the
  * preset; language last so it is the most recent thing read.
  */
+/**
+ * What the app can be told to sound like, as a list to choose from.
+ *
+ * The catalog's own names carry the thing people actually ask for — "Bella (US,
+ * female)", "Adam (US, male)" — so "give me a male voice" is answerable from
+ * this alone, without a table of genders anywhere in the code. Cloned voices are
+ * marked because they are the user's own and get asked for by name.
+ */
+const voicesSection = (voices: readonly SpokenVoice[]): string => {
+  if (voices.length === 0) return '';
+  const line = (voice: SpokenVoice): string =>
+    `- \`${voice.id}\` — ${voice.label}${voice.cloned ? ' (a voice they cloned themselves)' : ''}`;
+  return [
+    '# The voices installed on this computer',
+    'These are the only ones you can speak with. To change, call `app_settings` with `setting` `voice` and the id below — never a name that is not on this list.',
+    ...voices.map(line),
+  ].join('\n');
+};
+
 export const buildPersonaInstructions = (input: PersonaInput): string => {
   const custom = input.customInstructions.trim();
   const body = input.presetId === 'custom' ? custom : PRESET_BODIES[input.presetId];
@@ -217,6 +256,7 @@ export const buildPersonaInstructions = (input: PersonaInput): string => {
     // After the persona and the user's own additions, because no persona should
     // be able to talk it into describing a screen it has not looked at.
     TOOL_RULES,
+    voicesSection(input.voices ?? []),
     standbyRule(input.wakePhrase),
     // Who it is talking to, after the rules and before the language: it is the
     // most specific thing in the prompt and the thing most worth having read
