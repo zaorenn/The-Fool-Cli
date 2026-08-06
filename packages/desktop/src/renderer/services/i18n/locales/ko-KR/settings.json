@@ -1463,7 +1463,8 @@
       "persona.companion": "The Fool",
       "persona.english-teacher": "영어 선생님",
       "persona.language-partner": "언어 파트너",
-      "persona.interview-coach": "면접 코치"
+      "persona.interview-coach": "면접 코치",
+      "layout": "레이아웃"
     },
     "conversationSettingPersona": "다음 대화부터 {{name}}(으)로 바뀝니다",
     "conversationSettingSpeed": "말하기 속도를 {{value}}배로 바꿨어요",
@@ -1608,7 +1609,9 @@
     "conversationLearnedSkill": "“{{name}}”을(를) 배웠습니다",
     "conversationTaskWriting": "답을 쓰는 중",
     "conversationGroupMicrophone": "마이크",
-    "conversationGroupModel": "모델"
+    "conversationGroupModel": "모델",
+    "conversationSetup": "설정",
+    "conversationSettingLayout": "{{name}}(으)로 바꿨습니다"
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",
@@ -1648,5 +1651,54 @@
     "unsaved": "저장하지 않은 변경 사항",
     "upToDate": "최신 상태",
     "revert": "되돌리기"
+  },
+  "layout": {
+    "title": "레이아웃",
+    "subtitle": "테마는 앱 전체의 색을 정하고, 레이아웃은 창 하나의 모양을 정합니다. 색은 그대로 두고 음성 페이지만 세로 열에서 다이얼로 바꿀 수 있습니다.",
+    "surface": "창",
+    "surfaceName": {
+      "voice": "음성 대화"
+    },
+    "wearing": "현재",
+    "presetName": {
+      "instrument": "계기",
+      "hud": "HUD"
+    },
+    "option": {
+      "shell": "구성",
+      "meter": "소리",
+      "panel": "설정",
+      "motion": "움직임",
+      "density": "밀도"
+    },
+    "value": {
+      "shell": {
+        "instrument": "단일 열",
+        "hud": "다이얼"
+      },
+      "meter": {
+        "bars": "직선 미터",
+        "ring": "링"
+      },
+      "panel": {
+        "inline": "대화 옆에",
+        "drawer": "서랍에"
+      },
+      "motion": {
+        "full": "상태마다 다른 움직임",
+        "calm": "값을 나타내는 것만",
+        "none": "정지"
+      },
+      "density": {
+        "comfortable": "여유롭게",
+        "compact": "촘촘하게"
+      }
+    },
+    "save": "내 것으로 저장",
+    "saveHint": "이름을 지으면 이 설정을 저장하고 바로 적용합니다.",
+    "editHint": "위 항목을 바꾼 뒤 직접 지은 이름으로 저장하세요.",
+    "namePlaceholder": "이름",
+    "untitled": "내 레이아웃",
+    "yours": "내가 만든 것"
   }
 }

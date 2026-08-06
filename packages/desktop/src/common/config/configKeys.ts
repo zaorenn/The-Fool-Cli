@@ -1,5 +1,6 @@
 import type { ICssTheme } from '@/common/config/storage';
 import type { Theme } from '@/common/theme/types';
+import type { LayoutPresetLibrary, SurfaceLayoutSelection } from '@/common/config/surfaceLayouts';
 import type { ThemeOverrides, ThemePalettes } from '@/common/config/themeOverrides';
 
 export type ConfigKeyMap = {
@@ -13,6 +14,16 @@ export type ConfigKeyMap = {
   'ui.themeOverrides': ThemeOverrides | undefined;
   /** Palettes the user asked to keep, recalled out loud by their own name. */
   'ui.themePalettes': ThemePalettes | undefined;
+  /**
+   * What shape each window is wearing, which is a separate question from colour.
+   *
+   * A theme decides what the app looks like everywhere; this decides what one
+   * surface is laid out like, so someone can keep their colours and still change
+   * the voice page from a column into a dial.
+   */
+  'ui.surfaceLayouts': SurfaceLayoutSelection | undefined;
+  /** Layouts the user built and named, recalled the same way a palette is. */
+  'ui.layoutPresets': LayoutPresetLibrary | undefined;
   /** The chat that spoken turns go to, until the user asks for a new one. */
   'voice.boundConversationId': string | undefined;
   /**

@@ -1464,7 +1464,8 @@
       "persona.companion": "The Fool",
       "persona.english-teacher": "Professor de inglês",
       "persona.language-partner": "Parceiro de idioma",
-      "persona.interview-coach": "Treinador de entrevistas"
+      "persona.interview-coach": "Treinador de entrevistas",
+      "layout": "layout"
     },
     "conversationSettingPersona": "{{name}} a partir da próxima conversa",
     "conversationSettingSpeed": "Falando a {{value}}×",
@@ -1609,7 +1610,9 @@
     "conversationLearnedSkill": "Aprendi “{{name}}”",
     "conversationTaskWriting": "Escrevendo a resposta",
     "conversationGroupMicrophone": "Microfone",
-    "conversationGroupModel": "Modelo"
+    "conversationGroupModel": "Modelo",
+    "conversationSetup": "Configurar",
+    "conversationSettingLayout": "Mudei para “{{name}}”"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",
@@ -1649,5 +1652,54 @@
     "unsaved": "Alterações não salvas",
     "upToDate": "Em dia",
     "revert": "Reverter"
+  },
+  "layout": {
+    "title": "Layout",
+    "subtitle": "Um tema decide a cor do aplicativo inteiro. O layout decide o formato de uma janela — você mantém suas cores e ainda assim muda a página de voz de uma coluna para um mostrador.",
+    "surface": "Janela",
+    "surfaceName": {
+      "voice": "Conversa por voz"
+    },
+    "wearing": "Atual",
+    "presetName": {
+      "instrument": "Instrumento",
+      "hud": "HUD"
+    },
+    "option": {
+      "shell": "Composição",
+      "meter": "Som",
+      "panel": "Configurações",
+      "motion": "Movimento",
+      "density": "Densidade"
+    },
+    "value": {
+      "shell": {
+        "instrument": "Coluna",
+        "hud": "Mostrador"
+      },
+      "meter": {
+        "bars": "Medidor reto",
+        "ring": "Anel"
+      },
+      "panel": {
+        "inline": "Ao lado da conversa",
+        "drawer": "Numa gaveta"
+      },
+      "motion": {
+        "full": "Um movimento por estado",
+        "calm": "Só o que mostra um valor",
+        "none": "Parado"
+      },
+      "density": {
+        "comfortable": "Folgado",
+        "compact": "Compacto"
+      }
+    },
+    "save": "Salvar como meu",
+    "saveHint": "Dê um nome para guardar estas configurações e aplicá-las.",
+    "editHint": "Mude algo acima e salve com um nome seu.",
+    "namePlaceholder": "Como chamar",
+    "untitled": "meu layout",
+    "yours": "Os seus"
   }
 }

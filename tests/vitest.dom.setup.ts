@@ -79,6 +79,31 @@ global.cancelAnimationFrame = (id: number) => {
 Element.prototype.scrollTo = () => {};
 Element.prototype.scrollIntoView = () => {};
 
+/*
+ * Mock matchMedia, which jsdom does not implement at all.
+ *
+ * Anything that asks whether the user wants less movement calls this before it
+ * draws its first frame, so without it the component does not render at all —
+ * and the failure reads as a broken component rather than as a missing browser
+ * API. Answers "no" to everything, which is the right default: a test asserting
+ * reduced-motion behaviour should say so itself rather than inherit it.
+ */
+if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  });
+}
+
 // Mock localStorage (not always available in jsdom)
 if (typeof globalThis.localStorage === 'undefined' || typeof globalThis.localStorage?.clear !== 'function') {
   const store = new Map<string, string>();

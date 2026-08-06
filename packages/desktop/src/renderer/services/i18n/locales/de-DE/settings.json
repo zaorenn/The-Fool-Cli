@@ -1461,7 +1461,8 @@
       "persona.companion": "The Fool",
       "persona.english-teacher": "Englischlehrer",
       "persona.language-partner": "Sprachpartner",
-      "persona.interview-coach": "Interview-Coach"
+      "persona.interview-coach": "Interview-Coach",
+      "layout": "Layout"
     },
     "conversationSettingPersona": "{{name}} ab dem nächsten Gespräch",
     "conversationSettingSpeed": "Sprechtempo {{value}}×",
@@ -1606,7 +1607,9 @@
     "conversationLearnedSkill": "„{{name}}“ gelernt",
     "conversationTaskWriting": "Schreibt die Antwort",
     "conversationGroupMicrophone": "Mikrofon",
-    "conversationGroupModel": "Modell"
+    "conversationGroupModel": "Modell",
+    "conversationSetup": "Einrichten",
+    "conversationSettingLayout": "Auf „{{name}}“ umgestellt"
   },
   "themeCustomizer": {
     "title": "Design anpassen",
@@ -1646,5 +1649,54 @@
     "unsaved": "Nicht gespeicherte Änderungen",
     "upToDate": "Aktuell",
     "revert": "Zurücksetzen"
+  },
+  "layout": {
+    "title": "Layout",
+    "subtitle": "Ein Theme bestimmt, welche Farben die App überall hat. Das Layout bestimmt die Form eines einzelnen Fensters — du kannst deine Farben behalten und die Sprachseite trotzdem von einer Spalte in ein Zifferblatt verwandeln.",
+    "surface": "Fenster",
+    "surfaceName": {
+      "voice": "Sprachchat"
+    },
+    "wearing": "Aktuell",
+    "presetName": {
+      "instrument": "Instrument",
+      "hud": "HUD"
+    },
+    "option": {
+      "shell": "Aufbau",
+      "meter": "Ton",
+      "panel": "Einstellungen",
+      "motion": "Bewegung",
+      "density": "Dichte"
+    },
+    "value": {
+      "shell": {
+        "instrument": "Spalte",
+        "hud": "Zifferblatt"
+      },
+      "meter": {
+        "bars": "Gerade Anzeige",
+        "ring": "Ring"
+      },
+      "panel": {
+        "inline": "Neben dem Gespräch",
+        "drawer": "In einer Schublade"
+      },
+      "motion": {
+        "full": "Eigene Bewegung je Zustand",
+        "calm": "Nur was einen Wert zeigt",
+        "none": "Still"
+      },
+      "density": {
+        "comfortable": "Großzügig",
+        "compact": "Kompakt"
+      }
+    },
+    "save": "Als meins speichern",
+    "saveHint": "Gib ihm einen Namen, dann werden diese Einstellungen gespeichert und angewendet.",
+    "editHint": "Ändere oben etwas und speichere es unter deinem eigenen Namen.",
+    "namePlaceholder": "Wie soll es heißen",
+    "untitled": "mein Layout",
+    "yours": "Deine"
   }
 }

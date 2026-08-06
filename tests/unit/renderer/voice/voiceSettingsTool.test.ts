@@ -82,6 +82,22 @@ vi.mock('@renderer/services/voice/voiceSettingsStore', () => ({
   },
 }));
 
+/** What shape each window is wearing, which a spoken request can change. */
+const worn: string[] = [];
+
+vi.mock('@renderer/hooks/system/useSurfaceLayout', () => ({
+  peekLayoutPresets: () => ({
+    'my quiet one': {
+      id: 'my quiet one',
+      name: 'My quiet one',
+      surface: 'voice',
+      builtin: false,
+      options: { shell: 'hud', meter: 'ring', panel: 'drawer', motion: 'calm', density: 'comfortable' },
+    },
+  }),
+  wearLayout: async (_surface: string, layoutId: string) => void worn.push(layoutId),
+}));
+
 const { applySpokenSetting, listSpokenVoices } = await import('@renderer/pages/voice/runtime/settingsTool');
 
 const t = (key: string, values?: Record<string, unknown>): string =>
@@ -181,5 +197,38 @@ describe('applySpokenSetting', () => {
 
   it('refuses a setting it does not have', async () => {
     await expect(applySpokenSetting('screen_brightness', 'up', t)).rejects.toThrow();
+  });
+});
+
+/**
+ * The shape of the page, changed by saying so.
+ *
+ * The user is looking at the screen while they ask, so this is the one setting
+ * whose result they can check instantly — which cuts both ways: a request that
+ * quietly does nothing is obvious, and has to be reported rather than swallowed.
+ */
+describe('changing the layout out loud', () => {
+  beforeEach(() => {
+    worn.length = 0;
+  });
+
+  it('takes a built-in by name', async () => {
+    await applySpokenSetting('layout', 'HUD', t);
+    expect(worn).toEqual(['hud']);
+  });
+
+  it('takes one the user built and named themselves', async () => {
+    await applySpokenSetting('layout', 'my quiet one', t);
+    expect(worn).toEqual(['my quiet one']);
+  });
+
+  it('takes part of a name, because that is how people refer to their own things', async () => {
+    await applySpokenSetting('layout', 'quiet', t);
+    expect(worn).toEqual(['my quiet one']);
+  });
+
+  it('refuses a layout that does not exist rather than changing nothing in silence', async () => {
+    await expect(applySpokenSetting('layout', 'spaceship', t)).rejects.toThrow();
+    expect(worn).toEqual([]);
   });
 });

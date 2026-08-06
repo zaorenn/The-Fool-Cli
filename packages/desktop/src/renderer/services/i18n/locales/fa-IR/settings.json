@@ -1461,7 +1461,8 @@
       "persona.companion": "The Fool",
       "persona.english-teacher": "معلم انگلیسی",
       "persona.language-partner": "همراه زبانی",
-      "persona.interview-coach": "مربی مصاحبه"
+      "persona.interview-coach": "مربی مصاحبه",
+      "layout": "چیدمان"
     },
     "conversationSettingPersona": "از گفتگوی بعدی: {{name}}",
     "conversationSettingSpeed": "سرعت گفتار {{value}}×",
@@ -1606,7 +1607,9 @@
     "conversationLearnedSkill": "«{{name}}» یاد گرفته شد",
     "conversationTaskWriting": "در حال نوشتن پاسخ",
     "conversationGroupMicrophone": "میکروفون",
-    "conversationGroupModel": "مدل"
+    "conversationGroupModel": "مدل",
+    "conversationSetup": "تنظیم",
+    "conversationSettingLayout": "به «{{name}}» تغییر کرد"
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",
@@ -1646,5 +1649,54 @@
     "unsaved": "تغییرات ذخیره‌نشده",
     "upToDate": "به‌روز",
     "revert": "بازگرداندن"
+  },
+  "layout": {
+    "title": "چیدمان",
+    "subtitle": "پوسته تعیین می‌کند رنگ کل برنامه چه باشد. چیدمان تعیین می‌کند یک پنجره چه شکلی باشد — می‌توانید رنگ‌هایتان را نگه دارید و صفحهٔ صدا را از یک ستون به یک صفحهٔ مدرج تبدیل کنید.",
+    "surface": "پنجره",
+    "surfaceName": {
+      "voice": "گفت‌وگوی صوتی"
+    },
+    "wearing": "اکنون",
+    "presetName": {
+      "instrument": "ابزار",
+      "hud": "HUD"
+    },
+    "option": {
+      "shell": "ترکیب‌بندی",
+      "meter": "صدا",
+      "panel": "تنظیمات",
+      "motion": "حرکت",
+      "density": "تراکم"
+    },
+    "value": {
+      "shell": {
+        "instrument": "ستونی",
+        "hud": "صفحهٔ مدرج"
+      },
+      "meter": {
+        "bars": "نوار مستقیم",
+        "ring": "حلقه"
+      },
+      "panel": {
+        "inline": "کنار گفت‌وگو",
+        "drawer": "در کشو"
+      },
+      "motion": {
+        "full": "برای هر حالت یک حرکت",
+        "calm": "فقط آنچه مقداری را نشان می‌دهد",
+        "none": "بی‌حرکت"
+      },
+      "density": {
+        "comfortable": "راحت",
+        "compact": "فشرده"
+      }
+    },
+    "save": "ذخیره به نام خودم",
+    "saveHint": "نامی بگذارید تا این تنظیمات ذخیره و اعمال شود.",
+    "editHint": "بالا را تغییر دهید و با نام خودتان ذخیره کنید.",
+    "namePlaceholder": "چه نامی بگذاریم",
+    "untitled": "چیدمان من",
+    "yours": "مال شما"
   }
 }

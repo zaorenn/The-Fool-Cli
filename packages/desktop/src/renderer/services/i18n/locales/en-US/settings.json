@@ -1461,7 +1461,8 @@
       "persona.companion": "The Fool",
       "persona.english-teacher": "English teacher",
       "persona.language-partner": "Language partner",
-      "persona.interview-coach": "Interview coach"
+      "persona.interview-coach": "Interview coach",
+      "layout": "layout"
     },
     "conversationSettingPersona": "{{name}} from the next conversation on",
     "conversationSettingSpeed": "Speaking at {{value}}×",
@@ -1606,7 +1607,9 @@
     "conversationLearnedSkill": "Learned “{{name}}”",
     "conversationTaskWriting": "Writing the answer",
     "conversationGroupMicrophone": "Microphone",
-    "conversationGroupModel": "Model"
+    "conversationGroupModel": "Model",
+    "conversationSetup": "Set up",
+    "conversationSettingLayout": "Switched to {{name}}"
   },
   "themeCustomizer": {
     "title": "Customize theme",
@@ -1646,5 +1649,54 @@
     "unsaved": "Unsaved changes",
     "upToDate": "Up to date",
     "revert": "Revert"
+  },
+  "layout": {
+    "title": "Layout",
+    "subtitle": "A theme decides what the app is coloured like everywhere. This decides what one window is shaped like — so you can keep your colours and still change the voice page from a column into a dial.",
+    "surface": "Window",
+    "surfaceName": {
+      "voice": "Voice chat"
+    },
+    "wearing": "Wearing",
+    "presetName": {
+      "instrument": "Instrument",
+      "hud": "HUD"
+    },
+    "option": {
+      "shell": "Composition",
+      "meter": "Sound",
+      "panel": "Settings",
+      "motion": "Movement",
+      "density": "Density"
+    },
+    "value": {
+      "shell": {
+        "instrument": "Column",
+        "hud": "Dial"
+      },
+      "meter": {
+        "bars": "Straight meter",
+        "ring": "Ring"
+      },
+      "panel": {
+        "inline": "Beside the conversation",
+        "drawer": "In a drawer"
+      },
+      "motion": {
+        "full": "A motion per state",
+        "calm": "Only what reports a value",
+        "none": "Still"
+      },
+      "density": {
+        "comfortable": "Comfortable",
+        "compact": "Compact"
+      }
+    },
+    "save": "Save as mine",
+    "saveHint": "Give it a name to keep these settings and put them on.",
+    "editHint": "Change anything above, then save it under a name of your own.",
+    "namePlaceholder": "What to call it",
+    "untitled": "my layout",
+    "yours": "Yours"
   }
 }

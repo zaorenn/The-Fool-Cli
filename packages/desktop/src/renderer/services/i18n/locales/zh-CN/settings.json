@@ -1462,7 +1462,8 @@
       "persona.companion": "The Fool",
       "persona.english-teacher": "英语老师",
       "persona.language-partner": "语伴",
-      "persona.interview-coach": "面试教练"
+      "persona.interview-coach": "面试教练",
+      "layout": "布局"
     },
     "conversationSettingPersona": "下次对话起改为{{name}}",
     "conversationSettingSpeed": "语速改为 {{value}} 倍",
@@ -1607,7 +1608,9 @@
     "conversationLearnedSkill": "已学会“{{name}}”",
     "conversationTaskWriting": "正在写回答",
     "conversationGroupMicrophone": "麦克风",
-    "conversationGroupModel": "模型"
+    "conversationGroupModel": "模型",
+    "conversationSetup": "设置",
+    "conversationSettingLayout": "已切换到{{name}}"
   },
   "themeCustomizer": {
     "title": "自定义主题",
@@ -1647,5 +1650,54 @@
     "unsaved": "有未保存的修改",
     "upToDate": "已是最新",
     "revert": "还原"
+  },
+  "layout": {
+    "title": "布局",
+    "subtitle": "主题决定整个应用的配色，布局决定某一个窗口的形状——你可以保留配色，同时把语音页从一列改成表盘。",
+    "surface": "窗口",
+    "surfaceName": {
+      "voice": "语音聊天"
+    },
+    "wearing": "当前",
+    "presetName": {
+      "instrument": "仪表",
+      "hud": "HUD"
+    },
+    "option": {
+      "shell": "构图",
+      "meter": "声音",
+      "panel": "设置",
+      "motion": "动效",
+      "density": "密度"
+    },
+    "value": {
+      "shell": {
+        "instrument": "单列",
+        "hud": "表盘"
+      },
+      "meter": {
+        "bars": "直条",
+        "ring": "环形"
+      },
+      "panel": {
+        "inline": "在对话旁边",
+        "drawer": "收进抽屉"
+      },
+      "motion": {
+        "full": "每种状态各有动效",
+        "calm": "只保留反映数值的动效",
+        "none": "静止"
+      },
+      "density": {
+        "comfortable": "宽松",
+        "compact": "紧凑"
+      }
+    },
+    "save": "存为我的布局",
+    "saveHint": "起个名字即可保存并应用这些设置。",
+    "editHint": "改动上面的选项，再用你自己的名字保存。",
+    "namePlaceholder": "取个名字",
+    "untitled": "我的布局",
+    "yours": "你的布局"
   }
 }

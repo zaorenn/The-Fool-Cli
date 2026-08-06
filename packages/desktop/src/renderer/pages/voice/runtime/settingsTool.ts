@@ -5,8 +5,10 @@
  */
 
 import { ipcBridge } from '@/common';
+import { findLayoutByName } from '@/common/config/surfaceLayouts';
 import { synthesisProviderFor, type FoolVoiceSettings, type VoiceProfile } from '@/common/types/foolVoice';
 import type { SpokenVoice } from '@/common/realtime/personas';
+import { peekLayoutPresets, wearLayout } from '@renderer/hooks/system/useSurfaceLayout';
 import { peekVoiceSettings, writeVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import type { Translate } from './types';
 
@@ -37,6 +39,7 @@ export const SPOKEN_SETTINGS = [
   'wake_phrase',
   'thinking_model',
   'vision_model',
+  'layout',
 ] as const;
 
 export type SpokenSetting = (typeof SPOKEN_SETTINGS)[number];
@@ -286,6 +289,22 @@ export const applySpokenSetting = async (setting: string, value: string, t: Tran
       if (said.length === 0) bad();
       await save({ ...settings, realtime: { ...settings.realtime, visionModel: said } });
       return t('settings.voice.conversationSettingVisionModel', { name: said });
+    }
+
+    /**
+     * The shape of the page they are looking at, changed by saying so.
+     *
+     * Matched loosely against the built-ins and against anything they have
+     * saved, because a layout is referred to by whatever they called it — "put
+     * the heads-up one on" is the request, not an id. A name that matches
+     * nothing is refused by name rather than silently ignored: the user is
+     * looking at the screen and would otherwise watch nothing happen.
+     */
+    case 'layout': {
+      const found = said.length === 0 ? null : findLayoutByName('voice', said, peekLayoutPresets());
+      if (!found) return bad();
+      await wearLayout('voice', found.id);
+      return t('settings.voice.conversationSettingLayout', { name: found.name });
     }
 
     default:

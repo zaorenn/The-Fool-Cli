@@ -1463,7 +1463,8 @@
       "persona.companion": "The Fool",
       "persona.english-teacher": "英語老師",
       "persona.language-partner": "語伴",
-      "persona.interview-coach": "面試教練"
+      "persona.interview-coach": "面試教練",
+      "layout": "版面"
     },
     "conversationSettingPersona": "下次對話起改為{{name}}",
     "conversationSettingSpeed": "語速改為 {{value}} 倍",
@@ -1608,7 +1609,9 @@
     "conversationLearnedSkill": "已學會「{{name}}」",
     "conversationTaskWriting": "正在寫回答",
     "conversationGroupMicrophone": "麥克風",
-    "conversationGroupModel": "模型"
+    "conversationGroupModel": "模型",
+    "conversationSetup": "設定",
+    "conversationSettingLayout": "已切換到{{name}}"
   },
   "themeCustomizer": {
     "title": "自訂主題",
@@ -1648,5 +1651,54 @@
     "unsaved": "有未儲存的修改",
     "upToDate": "已是最新",
     "revert": "還原"
+  },
+  "layout": {
+    "title": "版面",
+    "subtitle": "主題決定整個應用的配色，版面決定某一個視窗的形狀——你可以保留配色，同時把語音頁從一欄改成錶盤。",
+    "surface": "視窗",
+    "surfaceName": {
+      "voice": "語音聊天"
+    },
+    "wearing": "目前",
+    "presetName": {
+      "instrument": "儀錶",
+      "hud": "HUD"
+    },
+    "option": {
+      "shell": "構圖",
+      "meter": "聲音",
+      "panel": "設定",
+      "motion": "動態",
+      "density": "密度"
+    },
+    "value": {
+      "shell": {
+        "instrument": "單欄",
+        "hud": "錶盤"
+      },
+      "meter": {
+        "bars": "直條",
+        "ring": "環形"
+      },
+      "panel": {
+        "inline": "在對話旁邊",
+        "drawer": "收進抽屜"
+      },
+      "motion": {
+        "full": "每種狀態各有動態",
+        "calm": "只保留反映數值的動態",
+        "none": "靜止"
+      },
+      "density": {
+        "comfortable": "寬鬆",
+        "compact": "緊湊"
+      }
+    },
+    "save": "存為我的版面",
+    "saveHint": "取個名字即可儲存並套用這些設定。",
+    "editHint": "改動上面的選項，再用你自己的名字儲存。",
+    "namePlaceholder": "取個名字",
+    "untitled": "我的版面",
+    "yours": "你的版面"
   }
 }

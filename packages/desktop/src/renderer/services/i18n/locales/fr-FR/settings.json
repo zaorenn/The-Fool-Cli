@@ -1461,7 +1461,8 @@
       "persona.companion": "The Fool",
       "persona.english-teacher": "Professeur d'anglais",
       "persona.language-partner": "Partenaire linguistique",
-      "persona.interview-coach": "Coach d'entretien"
+      "persona.interview-coach": "Coach d'entretien",
+      "layout": "disposition"
     },
     "conversationSettingPersona": "{{name}} à partir de la prochaine conversation",
     "conversationSettingSpeed": "Débit à {{value}}×",
@@ -1606,7 +1607,9 @@
     "conversationLearnedSkill": "« {{name}} » appris",
     "conversationTaskWriting": "Rédige la réponse",
     "conversationGroupMicrophone": "Microphone",
-    "conversationGroupModel": "Modèle"
+    "conversationGroupModel": "Modèle",
+    "conversationSetup": "Réglages",
+    "conversationSettingLayout": "Passé à « {{name}} »"
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",
@@ -1646,5 +1649,54 @@
     "unsaved": "Modifications non enregistrées",
     "upToDate": "À jour",
     "revert": "Rétablir"
+  },
+  "layout": {
+    "title": "Disposition",
+    "subtitle": "Un thème décide des couleurs de toute l’application. La disposition décide de la forme d’une fenêtre — vous gardez vos couleurs et transformez quand même la page vocale d’une colonne en cadran.",
+    "surface": "Fenêtre",
+    "surfaceName": {
+      "voice": "Conversation vocale"
+    },
+    "wearing": "Actuelle",
+    "presetName": {
+      "instrument": "Instrument",
+      "hud": "HUD"
+    },
+    "option": {
+      "shell": "Composition",
+      "meter": "Son",
+      "panel": "Réglages",
+      "motion": "Mouvement",
+      "density": "Densité"
+    },
+    "value": {
+      "shell": {
+        "instrument": "Colonne",
+        "hud": "Cadran"
+      },
+      "meter": {
+        "bars": "Indicateur droit",
+        "ring": "Anneau"
+      },
+      "panel": {
+        "inline": "À côté de la conversation",
+        "drawer": "Dans un tiroir"
+      },
+      "motion": {
+        "full": "Un mouvement par état",
+        "calm": "Seulement ce qui indique une valeur",
+        "none": "Immobile"
+      },
+      "density": {
+        "comfortable": "Aérée",
+        "compact": "Compacte"
+      }
+    },
+    "save": "Enregistrer comme la mienne",
+    "saveHint": "Donnez-lui un nom pour conserver ces réglages et les appliquer.",
+    "editHint": "Modifiez ce qui précède, puis enregistrez sous un nom à vous.",
+    "namePlaceholder": "Comment l’appeler",
+    "untitled": "ma disposition",
+    "yours": "Les vôtres"
   }
 }

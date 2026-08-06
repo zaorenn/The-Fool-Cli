@@ -1463,7 +1463,8 @@
       "persona.companion": "The Fool",
       "persona.english-teacher": "英語の先生",
       "persona.language-partner": "会話パートナー",
-      "persona.interview-coach": "面接コーチ"
+      "persona.interview-coach": "面接コーチ",
+      "layout": "レイアウト"
     },
     "conversationSettingPersona": "次の会話から{{name}}になります",
     "conversationSettingSpeed": "話す速さを {{value}} 倍にしました",
@@ -1608,7 +1609,9 @@
     "conversationLearnedSkill": "「{{name}}」を覚えました",
     "conversationTaskWriting": "答えを書いています",
     "conversationGroupMicrophone": "マイク",
-    "conversationGroupModel": "モデル"
+    "conversationGroupModel": "モデル",
+    "conversationSetup": "設定",
+    "conversationSettingLayout": "{{name}}に切り替えました"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",
@@ -1648,5 +1651,54 @@
     "unsaved": "未保存の変更があります",
     "upToDate": "最新です",
     "revert": "元に戻す"
+  },
+  "layout": {
+    "title": "レイアウト",
+    "subtitle": "テーマはアプリ全体の色を決め、レイアウトはひとつのウィンドウの形を決めます。色はそのままに、音声ページを一列からダイヤルに変えられます。",
+    "surface": "ウィンドウ",
+    "surfaceName": {
+      "voice": "音声チャット"
+    },
+    "wearing": "現在",
+    "presetName": {
+      "instrument": "計器",
+      "hud": "HUD"
+    },
+    "option": {
+      "shell": "構成",
+      "meter": "音",
+      "panel": "設定",
+      "motion": "動き",
+      "density": "密度"
+    },
+    "value": {
+      "shell": {
+        "instrument": "一列",
+        "hud": "ダイヤル"
+      },
+      "meter": {
+        "bars": "直線メーター",
+        "ring": "リング"
+      },
+      "panel": {
+        "inline": "会話の横に",
+        "drawer": "引き出しに"
+      },
+      "motion": {
+        "full": "状態ごとの動き",
+        "calm": "値を示すものだけ",
+        "none": "静止"
+      },
+      "density": {
+        "comfortable": "ゆったり",
+        "compact": "コンパクト"
+      }
+    },
+    "save": "自分のものとして保存",
+    "saveHint": "名前を付ければ、この設定を保存してそのまま適用します。",
+    "editHint": "上を変えてから、自分の名前で保存してください。",
+    "namePlaceholder": "名前",
+    "untitled": "わたしのレイアウト",
+    "yours": "あなたのもの"
   }
 }

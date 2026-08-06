@@ -1461,7 +1461,8 @@
       "persona.companion": "The Fool",
       "persona.english-teacher": "Profesor de inglés",
       "persona.language-partner": "Compañero de idioma",
-      "persona.interview-coach": "Entrenador de entrevistas"
+      "persona.interview-coach": "Entrenador de entrevistas",
+      "layout": "disposición"
     },
     "conversationSettingPersona": "{{name}} a partir de la próxima conversación",
     "conversationSettingSpeed": "Hablando a {{value}}×",
@@ -1606,7 +1607,9 @@
     "conversationLearnedSkill": "Aprendí «{{name}}»",
     "conversationTaskWriting": "Escribiendo la respuesta",
     "conversationGroupMicrophone": "Micrófono",
-    "conversationGroupModel": "Modelo"
+    "conversationGroupModel": "Modelo",
+    "conversationSetup": "Ajustes",
+    "conversationSettingLayout": "Cambiado a «{{name}}»"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",
@@ -1646,5 +1649,54 @@
     "unsaved": "Cambios sin guardar",
     "upToDate": "Al día",
     "revert": "Deshacer"
+  },
+  "layout": {
+    "title": "Disposición",
+    "subtitle": "Un tema decide de qué color es toda la aplicación. La disposición decide la forma de una ventana: puedes conservar tus colores y aun así cambiar la página de voz de una columna a un dial.",
+    "surface": "Ventana",
+    "surfaceName": {
+      "voice": "Conversación por voz"
+    },
+    "wearing": "Actual",
+    "presetName": {
+      "instrument": "Instrumento",
+      "hud": "HUD"
+    },
+    "option": {
+      "shell": "Composición",
+      "meter": "Sonido",
+      "panel": "Ajustes",
+      "motion": "Movimiento",
+      "density": "Densidad"
+    },
+    "value": {
+      "shell": {
+        "instrument": "Columna",
+        "hud": "Dial"
+      },
+      "meter": {
+        "bars": "Medidor recto",
+        "ring": "Anillo"
+      },
+      "panel": {
+        "inline": "Junto a la conversación",
+        "drawer": "En un cajón"
+      },
+      "motion": {
+        "full": "Un movimiento por estado",
+        "calm": "Solo lo que indica un valor",
+        "none": "Quieto"
+      },
+      "density": {
+        "comfortable": "Holgada",
+        "compact": "Compacta"
+      }
+    },
+    "save": "Guardar como mía",
+    "saveHint": "Ponle un nombre para conservar estos ajustes y aplicarlos.",
+    "editHint": "Cambia algo de arriba y guárdalo con un nombre tuyo.",
+    "namePlaceholder": "Cómo llamarla",
+    "untitled": "mi disposición",
+    "yours": "Las tuyas"
   }
 }

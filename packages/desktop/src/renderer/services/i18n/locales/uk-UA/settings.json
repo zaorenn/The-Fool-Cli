@@ -1462,7 +1462,8 @@
       "persona.companion": "The Fool",
       "persona.english-teacher": "Учитель англійської",
       "persona.language-partner": "Мовний партнер",
-      "persona.interview-coach": "Тренер зі співбесід"
+      "persona.interview-coach": "Тренер зі співбесід",
+      "layout": "компонування"
     },
     "conversationSettingPersona": "{{name}} з наступної розмови",
     "conversationSettingSpeed": "Швидкість мовлення {{value}}×",
@@ -1607,7 +1608,9 @@
     "conversationLearnedSkill": "Вивчив «{{name}}»",
     "conversationTaskWriting": "Пише відповідь",
     "conversationGroupMicrophone": "Мікрофон",
-    "conversationGroupModel": "Модель"
+    "conversationGroupModel": "Модель",
+    "conversationSetup": "Налаштування",
+    "conversationSettingLayout": "Перемкнув на «{{name}}»"
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",
@@ -1647,5 +1650,54 @@
     "unsaved": "Є незбережені зміни",
     "upToDate": "Усе збережено",
     "revert": "Повернути"
+  },
+  "layout": {
+    "title": "Компонування",
+    "subtitle": "Тема вирішує, якого кольору застосунок усюди. Компонування — якої форми одне вікно: можна лишити кольори й перетворити голосову сторінку з колонки на циферблат.",
+    "surface": "Вікно",
+    "surfaceName": {
+      "voice": "Голосовий чат"
+    },
+    "wearing": "Зараз",
+    "presetName": {
+      "instrument": "Прилад",
+      "hud": "HUD"
+    },
+    "option": {
+      "shell": "Композиція",
+      "meter": "Звук",
+      "panel": "Налаштування",
+      "motion": "Рух",
+      "density": "Щільність"
+    },
+    "value": {
+      "shell": {
+        "instrument": "Колонка",
+        "hud": "Циферблат"
+      },
+      "meter": {
+        "bars": "Прямий індикатор",
+        "ring": "Кільце"
+      },
+      "panel": {
+        "inline": "Поруч із розмовою",
+        "drawer": "У висувній панелі"
+      },
+      "motion": {
+        "full": "Свій рух для кожного стану",
+        "calm": "Лише те, що показує величину",
+        "none": "Без руху"
+      },
+      "density": {
+        "comfortable": "Вільно",
+        "compact": "Щільно"
+      }
+    },
+    "save": "Зберегти як свою",
+    "saveHint": "Дайте назву — ці налаштування збережуться й застосуються.",
+    "editHint": "Змініть щось вище і збережіть під власною назвою.",
+    "namePlaceholder": "Як назвати",
+    "untitled": "моє компонування",
+    "yours": "Ваші"
   }
 }

@@ -216,7 +216,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_settings',
     description:
-      'Change how the assistant itself behaves, without the user having to leave the conversation and find a settings page. Use it whenever they say what they want changed: a different voice, a male or a female one, faster or slower speech, louder or quieter, what language you answer in, whether they have to hold a key to talk, whether tasks may run without asking, the word that cuts you off, the phrase that wakes you. Say what you changed in a few words. For colours use app_theme instead; for anything outside this app use app_ask_jester.',
+      'Change how the assistant itself behaves, without the user having to leave the conversation and find a settings page. Use it whenever they say what they want changed: a different voice, a male or a female one, faster or slower speech, louder or quieter, what language you answer in, whether they have to hold a key to talk, whether tasks may run without asking, the word that cuts you off, the phrase that wakes you, and the layout of the page they are looking at. Say what you changed in a few words. For colours use app_theme instead; for anything outside this app use app_ask_jester.',
     parameters: {
       type: 'object',
       properties: {
@@ -234,13 +234,14 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
             'wake_phrase',
             'thinking_model',
             'vision_model',
+            'layout',
           ],
           description: 'Which one to change.',
         },
         value: {
           type: 'string',
           description:
-            "The new value. For 'voice', an id from the list of installed voices you were given. For 'speed' and 'volume', a number — 1 is normal, 1.3 is faster. For 'reply_language', a language code such as en or tr, or 'auto' to follow whoever is speaking. For 'persona', one of companion, english-teacher, language-partner, interview-coach. For the on/off ones, 'on' or 'off'.",
+            "The new value. For 'voice', an id from the list of installed voices you were given. For 'speed' and 'volume', a number — 1 is normal, 1.3 is faster. For 'reply_language', a language code such as en or tr, or 'auto' to follow whoever is speaking. For 'persona', one of companion, english-teacher, language-partner, interview-coach. For 'layout', the name of a layout — 'instrument' or 'hud' ship with the app, and the user may have saved others under their own names. For the on/off ones, 'on' or 'off'.",
         },
       },
       required: ['setting', 'value'],

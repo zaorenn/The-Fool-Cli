@@ -1461,7 +1461,8 @@
       "persona.companion": "The Fool",
       "persona.english-teacher": "Учитель английского",
       "persona.language-partner": "Языковой партнёр",
-      "persona.interview-coach": "Тренер по собеседованиям"
+      "persona.interview-coach": "Тренер по собеседованиям",
+      "layout": "компоновка"
     },
     "conversationSettingPersona": "{{name}} со следующего разговора",
     "conversationSettingSpeed": "Скорость речи {{value}}×",
@@ -1606,7 +1607,9 @@
     "conversationLearnedSkill": "Выучил «{{name}}»",
     "conversationTaskWriting": "Пишет ответ",
     "conversationGroupMicrophone": "Микрофон",
-    "conversationGroupModel": "Модель"
+    "conversationGroupModel": "Модель",
+    "conversationSetup": "Настройка",
+    "conversationSettingLayout": "Переключил на «{{name}}»"
   },
   "themeCustomizer": {
     "title": "Настроить тему",
@@ -1646,5 +1649,54 @@
     "unsaved": "Есть несохранённые изменения",
     "upToDate": "Всё сохранено",
     "revert": "Вернуть"
+  },
+  "layout": {
+    "title": "Компоновка",
+    "subtitle": "Тема решает, каким цветом приложение везде. Компоновка — какой формы одно окно: можно оставить цвета и превратить голосовую страницу из колонки в циферблат.",
+    "surface": "Окно",
+    "surfaceName": {
+      "voice": "Голосовой чат"
+    },
+    "wearing": "Сейчас",
+    "presetName": {
+      "instrument": "Прибор",
+      "hud": "HUD"
+    },
+    "option": {
+      "shell": "Композиция",
+      "meter": "Звук",
+      "panel": "Настройки",
+      "motion": "Движение",
+      "density": "Плотность"
+    },
+    "value": {
+      "shell": {
+        "instrument": "Колонка",
+        "hud": "Циферблат"
+      },
+      "meter": {
+        "bars": "Прямой индикатор",
+        "ring": "Кольцо"
+      },
+      "panel": {
+        "inline": "Рядом с разговором",
+        "drawer": "В выдвижной панели"
+      },
+      "motion": {
+        "full": "Своё движение для каждого состояния",
+        "calm": "Только то, что показывает величину",
+        "none": "Без движения"
+      },
+      "density": {
+        "comfortable": "Свободно",
+        "compact": "Плотно"
+      }
+    },
+    "save": "Сохранить как свою",
+    "saveHint": "Дайте имя — эти настройки сохранятся и применятся.",
+    "editHint": "Измените что-нибудь выше и сохраните под своим именем.",
+    "namePlaceholder": "Как назвать",
+    "untitled": "моя компоновка",
+    "yours": "Ваши"
   }
 }

@@ -1461,7 +1461,8 @@
       "persona.companion": "The Fool",
       "persona.english-teacher": "İngilizce öğretmeni",
       "persona.language-partner": "Dil arkadaşı",
-      "persona.interview-coach": "Mülakat koçu"
+      "persona.interview-coach": "Mülakat koçu",
+      "layout": "yerleşim"
     },
     "conversationSettingPersona": "Bir sonraki sohbetten itibaren {{name}}",
     "conversationSettingSpeed": "Konuşma hızı {{value}}×",
@@ -1606,7 +1607,9 @@
     "conversationLearnedSkill": "“{{name}}” öğrenildi",
     "conversationTaskWriting": "Cevabı yazıyor",
     "conversationGroupMicrophone": "Mikrofon",
-    "conversationGroupModel": "Model"
+    "conversationGroupModel": "Model",
+    "conversationSetup": "Ayarlar",
+    "conversationSettingLayout": "{{name}} yerleşimine geçildi"
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",
@@ -1646,5 +1649,54 @@
     "unsaved": "Kaydedilmemiş değişiklikler",
     "upToDate": "Güncel",
     "revert": "Geri al"
+  },
+  "layout": {
+    "title": "Yerleşim",
+    "subtitle": "Tema uygulamanın her yerde nasıl renklendiğine karar verir. Bu ise tek bir pencerenin nasıl şekillendiğine — yani renklerini koruyup sesli sohbet sayfasını sütundan kadrana çevirebilirsin.",
+    "surface": "Pencere",
+    "surfaceName": {
+      "voice": "Sesli sohbet"
+    },
+    "wearing": "Şu an",
+    "presetName": {
+      "instrument": "Gösterge",
+      "hud": "HUD"
+    },
+    "option": {
+      "shell": "Düzen",
+      "meter": "Ses",
+      "panel": "Ayarlar",
+      "motion": "Hareket",
+      "density": "Yoğunluk"
+    },
+    "value": {
+      "shell": {
+        "instrument": "Sütun",
+        "hud": "Kadran"
+      },
+      "meter": {
+        "bars": "Düz ölçer",
+        "ring": "Halka"
+      },
+      "panel": {
+        "inline": "Sohbetin yanında",
+        "drawer": "Çekmecede"
+      },
+      "motion": {
+        "full": "Her durum için ayrı hareket",
+        "calm": "Yalnızca bir değeri gösterenler",
+        "none": "Sabit"
+      },
+      "density": {
+        "comfortable": "Rahat",
+        "compact": "Sıkışık"
+      }
+    },
+    "save": "Benimki olarak kaydet",
+    "saveHint": "Bu ayarları saklamak ve uygulamak için bir ad ver.",
+    "editHint": "Yukarıdakileri değiştir, sonra kendi verdiğin bir adla kaydet.",
+    "namePlaceholder": "Adı ne olsun",
+    "untitled": "yerleşimim",
+    "yours": "Seninkiler"
   }
 }
