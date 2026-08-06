@@ -2417,6 +2417,7 @@ export type I18nKey =
   | 'settings.voice.conversationModel'
   | 'settings.voice.conversationOauthNotice'
   | 'settings.voice.conversationOpened'
+  | 'settings.voice.conversationOpenedMany'
   | 'settings.voice.conversationPersona'
   | 'settings.voice.conversationPersonaName.companion'
   | 'settings.voice.conversationPersonaName.custom'

@@ -1408,6 +1408,7 @@
     "conversationThemeChanged": "Theme tone changed to {{tone}}.",
     "conversationDelegated": "Je le fais sur ton ordinateur…",
     "conversationOpened": "Ouverture de {{url}}",
+    "conversationOpenedMany": "Ouverture de {{count}} pages",
     "conversationHoldToTalk": "Maintenir une touche pour parler",
     "conversationHoldToTalkOnHint": "Ctrl droite enfoncée ouvre le micro ; il est fermé le reste du temps, donc rien que vous n’avez pas dit n’est entendu.",
     "conversationHoldToTalkOffHint": "Écoute permanente. Une frappe ou un ventilateur peut encore passer pour une phrase.",

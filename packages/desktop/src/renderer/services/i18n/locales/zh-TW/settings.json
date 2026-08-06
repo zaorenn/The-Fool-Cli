@@ -1410,6 +1410,7 @@
     "conversationThemeChanged": "Theme tone changed to {{tone}}.",
     "conversationDelegated": "正在你的電腦上執行…",
     "conversationOpened": "正在開啟 {{url}}",
+    "conversationOpenedMany": "正在開啟 {{count}} 個頁面",
     "conversationHoldToTalk": "按住按鍵說話",
     "conversationHoldToTalkOnHint": "按住右 Ctrl 時麥克風才開啟，其餘時間關閉，因此不會聽到你沒說過的話。",
     "conversationHoldToTalkOffHint": "持續聆聽。鍵盤聲或風扇聲仍可能被當成一句話。",

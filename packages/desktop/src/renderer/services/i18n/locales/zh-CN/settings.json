@@ -1409,6 +1409,7 @@
     "conversationThemeChanged": "Theme tone changed to {{tone}}.",
     "conversationDelegated": "正在你的电脑上执行…",
     "conversationOpened": "正在打开 {{url}}",
+    "conversationOpenedMany": "正在打开 {{count}} 个页面",
     "conversationHoldToTalk": "按住按键说话",
     "conversationHoldToTalkOnHint": "按住右 Ctrl 时麦克风才开启，其余时间关闭，因此不会听到你没说过的话。",
     "conversationHoldToTalkOffHint": "持续聆听。键盘声或风扇声仍可能被当作一句话。",

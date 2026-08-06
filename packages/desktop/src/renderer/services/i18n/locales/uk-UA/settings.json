@@ -1409,6 +1409,7 @@
     "conversationThemeChanged": "Theme tone changed to {{tone}}.",
     "conversationDelegated": "Виконую на вашому комп’ютері…",
     "conversationOpened": "Відкриваю {{url}}",
+    "conversationOpenedMany": "Відкриваю {{count}} сторінок",
     "conversationHoldToTalk": "Говорити, утримуючи клавішу",
     "conversationHoldToTalkOnHint": "Поки затиснуто правий Ctrl, мікрофон відкритий; решту часу закритий, тож несказане не буде почуте.",
     "conversationHoldToTalkOffHint": "Слухає постійно. Клацання клавіші чи шум вентилятора ще можуть бути прийняті за фразу.",

@@ -1408,6 +1408,7 @@
     "conversationThemeChanged": "Tema tonu {{tone}} olarak değiştirildi.",
     "conversationDelegated": "Bilgisayarında yapıyor…",
     "conversationOpened": "{{url}} açılıyor",
+    "conversationOpenedMany": "{{count}} sayfa açılıyor",
     "conversationHoldToTalk": "Konuşmak için tuşa bas",
     "conversationHoldToTalkOnHint": "Sağ Ctrl basılıyken mikrofon açık; geri kalan zamanda kapalı, yani söylemediğin hiçbir şey duyulmaz.",
     "conversationHoldToTalkOffHint": "Sürekli dinliyor. Klavye sesi ya da fan hâlâ cümle sanılıp yanıtlanabilir.",

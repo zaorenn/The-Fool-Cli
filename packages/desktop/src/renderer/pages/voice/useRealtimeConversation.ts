@@ -19,6 +19,7 @@ import {
   type VoiceConversationProviderId,
 } from '@/common/realtime';
 import type { FoolVoiceSettings } from '@/common/types/foolVoice';
+import { parseOpenUrls } from '@/common/realtime/openUrls';
 import { createHoldGate } from '@/common/voice/holdToTalkGate';
 import { claimManualVoiceSession } from '@renderer/hooks/voice/useFoolVoiceSession';
 import { runAgentTask } from '@renderer/services/voice/session/runAgentTask';
@@ -304,18 +305,27 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
         }
 
         if (event.name === 'app_open_url') {
-          const url = typeof args.url === 'string' ? args.url.trim() : '';
-          // Only the two web schemes reach the shell. `openExternal` will hand
-          // anything to whatever the system has registered for it, and a model
-          // is allowed to put any string in this argument.
-          if (!/^https?:\/\//i.test(url)) throw new Error(t('settings.voice.conversationActionUnsupported'));
-          await ipcBridge.shell.openExternal.invoke(url);
+          // `urls` is the schema; `url` is what a small local model sends anyway.
+          // Both are read, and only web addresses survive — see `parseOpenUrls`.
+          const urls = parseOpenUrls(args.urls ?? args.url);
+          if (urls.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));
+
+          // In order and one at a time. "Open each of those in turn" is a
+          // sequence the user asked for, and the browser stacks tabs in the
+          // order it is handed them.
+          for (const url of urls) await ipcBridge.shell.openExternal.invoke(url);
+
           updateActivity(event.callId, {
-            detail: t('settings.voice.conversationOpened', { url }),
+            detail:
+              urls.length === 1
+                ? t('settings.voice.conversationOpened', { url: urls[0] })
+                : t('settings.voice.conversationOpenedMany', { count: urls.length }),
             state: 'completed',
           });
           backToListening();
-          return { ok: true };
+          // The count goes back so the model can say how many opened rather than
+          // guessing, and notice when its list was longer than what was allowed.
+          return { ok: true, opened: urls.length };
         }
 
         if (event.name === 'app_ask_jester') {

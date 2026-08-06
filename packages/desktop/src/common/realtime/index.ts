@@ -138,17 +138,18 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_open_url',
     description:
-      "Open a web page in the user's own default browser, in a new tab of the browser they already have open. Use this only when getting the address open is the whole request — 'open YouTube', 'bring up the weather'. Anything that has to happen after the page loads (searching in it, clicking a result, playing something) is app_ask_jester's job, so send the whole request there instead of opening the site and stopping. Say what you are opening in a few words; do not read the address out.",
+      "Open one or more web pages in the user's own default browser, each in a new tab of the browser they already have open. Pass every address you want open in a single call — 'open each of those in my browser' is one call with the whole list, not one call per page. Use this only when getting the addresses open is the whole request; anything that has to happen after a page loads (searching in it, clicking a result, playing something) is app_ask_jester's job. Say how many you are opening and what they are, in a few words; do not read the addresses out.",
     parameters: {
       type: 'object',
       properties: {
-        url: {
-          type: 'string',
+        urls: {
+          type: 'array',
+          items: { type: 'string' },
           description:
-            'The full address, including https://. For a song or video, a YouTube search URL such as https://www.youtube.com/results?search_query=… with the query percent-encoded.',
+            'Full addresses, including https://, in the order they should open. For a song or video, a YouTube search URL such as https://www.youtube.com/results?search_query=… with the query percent-encoded.',
         },
       },
-      required: ['url'],
+      required: ['urls'],
     },
   },
   {

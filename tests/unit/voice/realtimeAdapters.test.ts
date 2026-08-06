@@ -187,11 +187,14 @@ describe('realtime tool schemas', () => {
    * user's own browser does at once, and it failed outright whenever the agent
    * was unavailable.
    */
-  it('offers opening a page as a tool of its own, taking a URL', () => {
+  it('offers opening pages as a tool of its own, taking a list of them', () => {
     const open = REALTIME_TOOLS.find((tool) => tool.name === 'app_open_url');
 
-    expect(open?.parameters.required).toEqual(['url']);
-    expect(open?.parameters.properties).toHaveProperty('url');
+    // A list, not one address: "open each of those in my browser" is one call
+    // with the whole list, and one call per page is a pause in the conversation
+    // for every tab.
+    expect(open?.parameters.required).toEqual(['urls']);
+    expect(open?.parameters.properties).toHaveProperty('urls');
     // The description is what decides whether the model reaches for this or for
     // the agent, so the distinction has to be stated in it.
     expect(open?.description).toMatch(/browser/i);

@@ -1408,6 +1408,7 @@
     "conversationThemeChanged": "Theme tone changed to {{tone}}.",
     "conversationDelegated": "Doing it on your computer…",
     "conversationOpened": "Opening {{url}}",
+    "conversationOpenedMany": "Opening {{count}} pages",
     "conversationHoldToTalk": "Hold a key to talk",
     "conversationHoldToTalkOnHint": "Right Ctrl held opens the microphone; it is shut the rest of the time, so nothing you did not say can be heard.",
     "conversationHoldToTalkOffHint": "Always listening. A keystroke or a fan can still be heard as a sentence and answered.",

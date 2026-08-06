@@ -1410,6 +1410,7 @@
     "conversationThemeChanged": "Theme tone changed to {{tone}}.",
     "conversationDelegated": "あなたのパソコンで実行中…",
     "conversationOpened": "{{url}} を開いています",
+    "conversationOpenedMany": "{{count}} 件のページを開いています",
     "conversationHoldToTalk": "キーを押している間だけ話す",
     "conversationHoldToTalkOnHint": "右Ctrlを押している間だけマイクが開きます。それ以外は閉じているので、言っていないものは拾われません。",
     "conversationHoldToTalkOffHint": "常に聞いています。キーの音やファンの音が文として拾われることがあります。",

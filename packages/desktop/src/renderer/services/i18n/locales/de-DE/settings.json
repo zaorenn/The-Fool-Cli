@@ -1408,6 +1408,7 @@
     "conversationThemeChanged": "Theme tone changed to {{tone}}.",
     "conversationDelegated": "Erledige das auf deinem Rechner…",
     "conversationOpened": "{{url}} wird geöffnet",
+    "conversationOpenedMany": "{{count}} Seiten werden geöffnet",
     "conversationHoldToTalk": "Zum Sprechen Taste halten",
     "conversationHoldToTalkOnHint": "Bei gedrückter rechter Strg-Taste ist das Mikrofon offen, sonst geschlossen — nichts Ungesagtes wird gehört.",
     "conversationHoldToTalkOffHint": "Hört durchgehend zu. Ein Tastenanschlag oder ein Lüfter kann weiterhin als Satz verstanden werden.",
