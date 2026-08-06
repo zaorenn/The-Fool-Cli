@@ -1409,6 +1409,7 @@
     "conversationActionRunning": "Working on it…",
     "conversationThemeChanged": "Theme tone changed to {{tone}}.",
     "conversationDelegated": "컴퓨터에서 처리하고 있어요…",
+    "conversationStillWorking": "아직 진행 중입니다.",
     "conversationOpened": "{{url}} 여는 중",
     "conversationOpenedMany": "{{count}}개 페이지 여는 중",
     "conversationUnattended": "묻지 않고 실행",

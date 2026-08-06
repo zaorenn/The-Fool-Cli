@@ -1407,6 +1407,7 @@
     "conversationActionRunning": "Working on it…",
     "conversationThemeChanged": "Theme tone changed to {{tone}}.",
     "conversationDelegated": "روی رایانه‌ات انجامش می‌دهم…",
+    "conversationStillWorking": "هنوز مشغولم.",
     "conversationOpened": "در حال باز کردن {{url}}",
     "conversationOpenedMany": "در حال باز کردن {{count}} صفحه",
     "conversationUnattended": "بدون پرسیدن انجام بده",

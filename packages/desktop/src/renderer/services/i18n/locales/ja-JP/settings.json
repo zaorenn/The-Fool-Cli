@@ -1409,6 +1409,7 @@
     "conversationActionRunning": "Working on it…",
     "conversationThemeChanged": "Theme tone changed to {{tone}}.",
     "conversationDelegated": "あなたのパソコンで実行中…",
+    "conversationStillWorking": "まだ作業中です。",
     "conversationOpened": "{{url}} を開いています",
     "conversationOpenedMany": "{{count}} 件のページを開いています",
     "conversationUnattended": "確認せずに実行",

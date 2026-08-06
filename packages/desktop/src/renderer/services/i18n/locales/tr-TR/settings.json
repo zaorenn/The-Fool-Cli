@@ -1407,6 +1407,7 @@
     "conversationActionRunning": "Üzerinde çalışıyor…",
     "conversationThemeChanged": "Tema tonu {{tone}} olarak değiştirildi.",
     "conversationDelegated": "Bilgisayarında yapıyor…",
+    "conversationStillWorking": "Hâlâ üzerinde çalışıyorum.",
     "conversationOpened": "{{url}} açılıyor",
     "conversationOpenedMany": "{{count}} sayfa açılıyor",
     "conversationUnattended": "Sormadan yapsın",

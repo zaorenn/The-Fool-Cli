@@ -145,11 +145,47 @@ export type PersonaInput = {
  * language is offered as the opening guess and the model is told to switch the
  * moment it hears otherwise.
  */
+/**
+ * The languages this app offers, by their own name.
+ *
+ * The setting stores a code, and a code is what used to reach the model: the
+ * instruction read "Speak en". Models mostly cope, and "mostly" is the problem —
+ * the failure is silent and indistinguishable from the setting being ignored. A
+ * language named in English is unambiguous to anything that will read this.
+ */
+const LANGUAGE_NAMES: Readonly<Record<string, string>> = {
+  en: 'English',
+  tr: 'Turkish',
+  de: 'German',
+  fr: 'French',
+  es: 'Spanish',
+  pt: 'Portuguese',
+  ru: 'Russian',
+  uk: 'Ukrainian',
+  ja: 'Japanese',
+  ko: 'Korean',
+  zh: 'Chinese',
+  fa: 'Persian',
+};
+
+/** The language's name, or the code itself when it is one we do not name. */
+const languageName = (code: string): string => LANGUAGE_NAMES[code.toLowerCase().split('-')[0]] ?? code;
+
 const languageDirective = (language: string, interfaceLanguage: string): string => {
   if (language !== 'auto') {
-    return `# Language\nSpeak ${language}, and keep speaking it even if you are addressed in another language — unless you are asked to switch.`;
+    // Understanding and answering are separated on purpose. Choosing a language
+    // is a choice about the *reply*; it is not a claim that nothing else will be
+    // said to it. Read as both — which "keep speaking it even if you are
+    // addressed in another language" invites — a Turkish question with English
+    // selected got a confused half-answer rather than an English one.
+    return [
+      '# Language',
+      'Understand every language you are addressed in. The person may speak to you in any of them, and you are expected to follow what they mean without remarking on it.',
+      `Answer only in ${languageName(language)}. Every reply, every time, whatever language the question arrived in, and even if they change language mid-conversation.`,
+      'The one exception is being asked, in words, to answer in something else.',
+    ].join('\n');
   }
-  return `# Language\nSpeak whatever language the person speaks to you in, and switch the moment they do. Start in ${interfaceLanguage} until you have heard them.`;
+  return `# Language\nSpeak whatever language the person speaks to you in, and switch the moment they do. Start in ${languageName(interfaceLanguage)} until you have heard them.`;
 };
 
 /**

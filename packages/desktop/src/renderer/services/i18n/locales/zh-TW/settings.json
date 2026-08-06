@@ -1409,6 +1409,7 @@
     "conversationActionRunning": "Working on it…",
     "conversationThemeChanged": "Theme tone changed to {{tone}}.",
     "conversationDelegated": "正在你的電腦上執行…",
+    "conversationStillWorking": "還在處理中。",
     "conversationOpened": "正在開啟 {{url}}",
     "conversationOpenedMany": "正在開啟 {{count}} 個頁面",
     "conversationUnattended": "不詢問直接執行",

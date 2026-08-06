@@ -1408,6 +1408,7 @@
     "conversationActionRunning": "Working on it…",
     "conversationThemeChanged": "Theme tone changed to {{tone}}.",
     "conversationDelegated": "Виконую на вашому комп’ютері…",
+    "conversationStillWorking": "Ще працюю.",
     "conversationOpened": "Відкриваю {{url}}",
     "conversationOpenedMany": "Відкриваю {{count}} сторінок",
     "conversationUnattended": "Діяти без запитань",

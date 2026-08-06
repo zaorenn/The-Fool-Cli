@@ -50,12 +50,36 @@ describe('persona instructions', () => {
   it('offers the interface language as the opening guess when following the speaker', () => {
     const instructions = buildPersonaInstructions({ ...base, presetId: 'companion', interfaceLanguage: 'tr-TR' });
     expect(instructions).toContain('switch the moment they do');
-    expect(instructions).toContain('tr-TR');
+    // Named, not coded: the instruction used to read "Start in tr-TR".
+    expect(instructions).toContain('Start in Turkish');
   });
 
-  it('holds a chosen language against being talked to in another one', () => {
+  /**
+   * Choosing a language is a choice about the reply, not a claim about what
+   * will be said to it.
+   *
+   * The instruction read "Speak en, and keep speaking it even if you are
+   * addressed in another language", which is two problems at once. It named a
+   * code rather than a language, and it read as though hearing another language
+   * were an exception to tolerate rather than the ordinary case — so a Turkish
+   * question with English selected produced a confused half-answer instead of
+   * an English one.
+   */
+  it('understands any language and still answers in the chosen one', () => {
     const instructions = buildPersonaInstructions({ ...base, presetId: 'companion', language: 'en' });
-    expect(instructions).toContain('Speak en, and keep speaking it');
+
+    expect(instructions).toContain('Understand every language you are addressed in');
+    expect(instructions).toContain('Answer only in English');
+    expect(instructions).not.toContain('Speak en');
+  });
+
+  it('names the language rather than passing its code through', () => {
+    expect(buildPersonaInstructions({ ...base, presetId: 'companion', language: 'tr' })).toContain(
+      'Answer only in Turkish'
+    );
+    // An unknown code is passed through rather than dropped: a wrong-looking
+    // instruction is recoverable, a missing one is silent.
+    expect(buildPersonaInstructions({ ...base, presetId: 'companion', language: 'xx' })).toContain('Answer only in xx');
   });
 });
 

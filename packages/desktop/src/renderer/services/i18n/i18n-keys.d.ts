@@ -2456,6 +2456,7 @@ export type I18nKey =
   | 'settings.voice.conversationStandbyOff'
   | 'settings.voice.conversationStandbyOn'
   | 'settings.voice.conversationStart'
+  | 'settings.voice.conversationStillWorking'
   | 'settings.voice.conversationStop'
   | 'settings.voice.conversationTaskDone'
   | 'settings.voice.conversationTaskError.agent-unavailable'

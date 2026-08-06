@@ -103,6 +103,18 @@ const NOTCH_STAGE = {
   standby: 'listening',
 } as const;
 
+/**
+ * How long a task may run silently before the voice says it is still working.
+ *
+ * Long enough that a quick job simply finishes — an assistant announcing work it
+ * has already done is worse than one that says nothing — and short enough that
+ * the silence never reads as a crash.
+ */
+const HEARTBEAT_FIRST_MS = 12_000;
+
+/** And how often after that. Sparse: this is reassurance, not narration. */
+const HEARTBEAT_EVERY_MS = 25_000;
+
 /** Level below which the microphone is treated as quiet, for the `hearing` state. */
 const SPEECH_LEVEL = 0.06;
 
@@ -257,6 +269,43 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
   }, []);
 
   /**
+   * Says "still on it" now and then, while a long task runs.
+   *
+   * Spoken only into an actual silence: not while the user is talking, not over
+   * an answer, and never twice on top of itself. The first one waits, because a
+   * task that finishes quickly should just finish — an assistant that announces
+   * it is working on something it has already done is worse than one that says
+   * nothing.
+   *
+   * Returns the way to stop it, which the caller must always run: a heartbeat
+   * that outlives its task talks about work nobody is doing.
+   */
+  const startWorkingHeartbeat = useCallback((): (() => void) => {
+    let stopped = false;
+
+    const beat = (): void => {
+      if (stopped) return;
+      // Only into a gap. `listening` is the one phase where nothing is being
+      // said and nothing is being heard.
+      if (phaseRef.current === 'listening' && !standbyRef.current) {
+        void localRef.current?.speakAside(t('settings.voice.conversationStillWorking'));
+      }
+    };
+
+    const first = window.setTimeout(() => {
+      beat();
+      repeat = window.setInterval(beat, HEARTBEAT_EVERY_MS);
+    }, HEARTBEAT_FIRST_MS);
+    let repeat: number | null = null;
+
+    return () => {
+      stopped = true;
+      window.clearTimeout(first);
+      if (repeat !== null) window.clearInterval(repeat);
+    };
+  }, [t]);
+
+  /**
    * Runs one tool the model called, and answers with the result.
    *
    * Returns the result rather than sending it, because the two providers deliver
@@ -336,13 +385,17 @@ export const useRealtimeConversation = (settings: FoolVoiceSettings) => {
           // the user has to be able to keep talking while it does. This is the
           // whole reason it is not the old navigate-and-prefill.
           backToListening();
+          // Something to hear while it works. Minutes of silence from a voice
+          // that was talking a moment ago reads as a crash — the user asks
+          // again, and now the same job is running twice.
+          const stopHeartbeat = startWorkingHeartbeat();
           const outcome = await runAgentTask({
             request,
             settings: settingsRef.current,
             onProgress: (detail) => {
               if (detail.length > 0) updateActivity(event.callId, { detail, state: 'running' });
             },
-          });
+          }).finally(stopHeartbeat);
           if (outcome.ok === false) {
             const detail = t(`settings.voice.conversationTaskError.${outcome.reason}`, {
               defaultValue: outcome.detail ?? outcome.reason,

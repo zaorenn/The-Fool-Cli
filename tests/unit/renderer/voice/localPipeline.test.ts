@@ -983,4 +983,52 @@ describe('LocalVoicePipeline while it is talking', () => {
     // worth exactly one sentence of cover and no more.
     expect(synthesizeInvoke.mock.calls.length).toBeLessThanOrEqual(2);
   });
+
+  /**
+   * Something to hear while a long task runs — but only into an actual silence.
+   *
+   * A task handed to the agent takes minutes, and for all of them the user heard
+   * nothing. Silence from something that was talking a moment ago reads as a
+   * crash, so they ask again and the same job runs twice. An aside spoken over
+   * an answer, though, is worse than the silence it was meant to fill.
+   */
+  it('says an aside when nothing else is being said', async () => {
+    readyCatalog();
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline, speakNext } = await start(events, ['Bir.']);
+
+    const spoken = pipeline.speakAside('Hala uzerinde calisiyorum.');
+    await settleLong();
+    speakNext();
+    await spoken;
+
+    expect(synthesizeInvoke.mock.calls.map((call) => call[0].payload.text)).toContain('Hala uzerinde calisiyorum.');
+  });
+
+  it('stays quiet while a turn is in flight', async () => {
+    readyCatalog();
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline } = await start(events, ['Bir. ', 'Iki.']);
+    await ask(pipeline);
+
+    const before = synthesizeInvoke.mock.calls.length;
+    await pipeline.speakAside('Hala uzerinde calisiyorum.');
+
+    expect(synthesizeInvoke.mock.calls.length).toBe(before);
+  });
+
+  it('adds nothing to the conversation, since it is the app talking and not the assistant', async () => {
+    readyCatalog();
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline, speakNext } = await start(events, ['Bir.']);
+
+    const spoken = pipeline.speakAside('Hala uzerinde calisiyorum.');
+    await settleLong();
+    speakNext();
+    await spoken;
+
+    // No transcript for it: the user did not say it and the assistant did not
+    // answer it, so it belongs in neither side of the conversation.
+    expect(events.some((event) => event.kind === 'assistant-transcript')).toBe(false);
+  });
 });

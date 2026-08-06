@@ -374,6 +374,34 @@ export class LocalVoicePipeline {
   }
 
   /**
+   * Says one line that is not part of the conversation.
+   *
+   * A task handed to the agent runs for minutes, and for all of them the user
+   * heard nothing. Silence from something that was talking a moment ago reads as
+   * a crash, so they ask again, and now two copies of the job are running.
+   *
+   * Deliberately outside the turn: nothing is added to the history, because this
+   * is the app talking about the work rather than the assistant answering. And
+   * deliberately refused while a real turn is in flight — an aside spoken over
+   * an answer, or over the user, is worse than the silence it was meant to fill.
+   */
+  async speakAside(text: string): Promise<void> {
+    const readiness = this.ready;
+    const line = text.trim();
+    if (!readiness || line.length === 0) return;
+    if (this.closed || this.inFlight !== null || this.draining) return;
+
+    const voice = this.voice ?? this.resolveVoice(readiness);
+    const controller = new AbortController();
+    try {
+      this.emitSpeech(await this.render(line, voice, controller));
+    } catch {
+      // An aside that cannot be rendered is not worth reporting: it was filling
+      // a silence, and failing to fill it leaves exactly the silence.
+    }
+  }
+
+  /**
    * Works out what was said, and only then what it means for the reply.
    *
    * Deciding from the audio is what broke this: a loud frame is a cough, a chair,

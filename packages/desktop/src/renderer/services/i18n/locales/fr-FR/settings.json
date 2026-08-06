@@ -1407,6 +1407,7 @@
     "conversationActionRunning": "Working on it…",
     "conversationThemeChanged": "Theme tone changed to {{tone}}.",
     "conversationDelegated": "Je le fais sur ton ordinateur…",
+    "conversationStillWorking": "J’y suis toujours.",
     "conversationOpened": "Ouverture de {{url}}",
     "conversationOpenedMany": "Ouverture de {{count}} pages",
     "conversationUnattended": "Agir sans demander",
