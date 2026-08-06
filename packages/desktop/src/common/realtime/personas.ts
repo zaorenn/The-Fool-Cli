@@ -22,6 +22,7 @@
  */
 
 import { buildMemoryInstructions, type VoiceMemory } from '@/common/voice/memory';
+import { APP_KNOWLEDGE, APP_KNOWLEDGE_RULES } from './appKnowledge';
 
 export type PersonaPresetId = 'companion' | 'english-teacher' | 'language-partner' | 'interview-coach' | 'custom';
 
@@ -258,6 +259,11 @@ export const buildPersonaInstructions = (input: PersonaInput): string => {
     // After the persona and the user's own additions, because no persona should
     // be able to talk it into describing a screen it has not looked at.
     TOOL_RULES,
+    // What the app it lives in actually is. After the tool rules because most
+    // questions about the app are answered by doing the thing rather than by
+    // describing where it is, and that instruction should be read first.
+    APP_KNOWLEDGE,
+    APP_KNOWLEDGE_RULES,
     voicesSection(input.voices ?? []),
     standbyRule(input.wakePhrase),
     // Who it is talking to, after the rules and before the language: it is the

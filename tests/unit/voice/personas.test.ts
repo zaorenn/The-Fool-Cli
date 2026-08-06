@@ -207,3 +207,36 @@ describe('what it admits it cannot do', () => {
     expect(instructions).toContain('do not dress it up as success');
   });
 });
+
+describe('what it knows about the app it lives in', () => {
+  const built = buildPersonaInstructions({
+    presetId: 'companion',
+    customInstructions: '',
+    language: 'en',
+    interfaceLanguage: 'en-US',
+    wakePhrase: 'hey fool',
+  });
+
+  it('knows the app by name and knows it is part of it', () => {
+    expect(built).toContain('The Fool');
+    expect(built).toContain('desktop application');
+  });
+
+  it('knows where the things a user asks about actually live', () => {
+    for (const page of ['Model Services', 'Tools (MCP)', 'Voice', 'Appearance', 'Web Interface', 'Scheduled']) {
+      expect(built, page).toContain(page);
+    }
+  });
+
+  it('is told to do the thing rather than describe the page for it', () => {
+    expect(built).toContain('do it instead of explaining it');
+  });
+
+  it('is told to admit not knowing, because a wrong menu sends them looking', () => {
+    expect(built).toContain('If you do not know, say so');
+  });
+
+  it('does not recite the app when asked what it can do', () => {
+    expect(built).toContain('never answer "what can you do" with an inventory');
+  });
+});
