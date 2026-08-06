@@ -95,6 +95,15 @@ files:
   - 'node_modules/better-sqlite3/vendor/**'
   - 'node_modules/bcrypt/vendor/**'
   - 'node_modules/node-pty/vendor/**'
+  # Native build leftovers. `node-gyp` leaves its whole MSVC working directory
+  # behind — .vcxproj, .tlog, .recipe, .iobj, .lib — and only the .node is
+  # loaded at runtime. Shipping the rest cost 36 MB an installer and carried the
+  # build machine's absolute paths, and therefore its user name, into a public
+  # download. Keep the binary, drop the workings.
+  - '!**/node_modules/better-sqlite3/build/**'
+  - 'node_modules/better-sqlite3/build/Release/*.node'
+  - '!**/node_modules/*/build/Release/obj/**'
+  - '!**/node_modules/**/*.{vcxproj,vcxproj.filters,tlog,recipe,iobj,ipdb,ilk,exp,lastbuildstate}'
   # Exclude vite source maps
   - '!**/*.map'
   # Exclude syntax highlighter languages (keep common ones)
