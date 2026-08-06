@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useRef, type RefObject } from 'react';
-import type { ConversationPhase } from './useRealtimeConversation';
+import type { ConversationPhase } from './runtime/types';
 import styles from './VoiceConversationPage.module.css';
 
 /**

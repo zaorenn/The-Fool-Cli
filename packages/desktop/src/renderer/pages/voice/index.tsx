@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useFoolVoiceSettings } from '@renderer/hooks/voice/useFoolVoiceSettings';
 import TextToSpeechSection from '@renderer/components/settings/SettingsModal/contents/voice/tts/TextToSpeechSection';
 import ConversationSettings from './ConversationSettings';
-import { useRealtimeConversation } from './useRealtimeConversation';
+import { useConversation } from './runtime/useConversation';
 import VoiceMeter from './VoiceMeter';
 import styles from './VoiceConversationPage.module.css';
 
@@ -24,12 +24,17 @@ import styles from './VoiceConversationPage.module.css';
  * agent is doing about it — everything else is a distraction from an interaction
  * that is not visual. The settings sit beside the start button and disappear the
  * moment the conversation begins.
+ *
+ * It is a view and nothing more. The conversation lives in a module-level
+ * runtime, so leaving this tab — to read the chat the assistant just opened, to
+ * approve something, to watch the work happen — does not end it, and coming back
+ * shows whatever it has been doing meanwhile.
  */
 
 const VoiceConversationPage: React.FC = () => {
   const { t } = useTranslation();
   const { settings, update } = useFoolVoiceSettings();
-  const conversation = useRealtimeConversation(settings);
+  const conversation = useConversation();
   const { phase, error, activities } = conversation;
 
   const active = phase !== 'idle';
