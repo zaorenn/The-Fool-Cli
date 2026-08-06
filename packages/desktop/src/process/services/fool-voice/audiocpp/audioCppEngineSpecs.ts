@@ -8,6 +8,7 @@ import {
   AUDIOCPP_CHATTERBOX_MODEL_ID,
   AUDIOCPP_QWEN3_MODEL_ID,
   AUDIOCPP_POCKET_MODEL_ID,
+  AUDIOCPP_SUPERTONIC_MODEL_ID,
   type VoiceParams,
   type VoiceParamSpec,
   type VoiceParamValue,
@@ -230,6 +231,87 @@ const QWEN3_SPEAKERS = [
   { id: 'qwen3-sohee', speaker: 'Sohee', displayName: 'Sohee — warm, rich emotion', languages: ['ko'] },
 ] as const;
 
+/**
+ * Supertonic has exactly one knob that was proved to do anything.
+ *
+ * The engine is non-deterministic — the same request rendered three times here
+ * produced three different files, differing in length by up to ten percent — so
+ * "the output changed" is not evidence a parameter was read. `speaking_rate` is
+ * kept because its effect is far outside that noise and in the right direction:
+ * 1.5 gave 250 KB and 0.7 gave 537 KB against a 326 KB baseline.
+ *
+ * `pitch_shift` and `energy_scale` are deliberately absent. Both were tried, and
+ * both produced a file indistinguishable from what a knob named
+ * `nonsense_knob` produced — which is the failure this whole file is written
+ * around: the server accepts an option it does not know without complaining and
+ * returns default audio, so an unproved parameter is a slider that does nothing
+ * and says nothing.
+ */
+const SUPERTONIC_PARAMS: readonly VoiceParamSpec[] = [
+  { name: 'speaking_rate', type: 'number', min: 0.5, max: 2, step: 0.05, default: 1 },
+];
+
+/**
+ * Supertonic's ten voice styles, five of each.
+ *
+ * Named `M1`–`M5` and `F1`–`F5` upstream, which is what the request's `voice`
+ * field has to carry — verified against a running server: `M1` and `F1` render
+ * different audio, and a name that is not on this list is refused with
+ * `500 missing asset resource: voice_style_<name>`. The display names say male
+ * and female because that is what people ask for out loud, and because the
+ * weights carry nothing else to distinguish them by.
+ *
+ * The languages are the model's own list, which is thirty-two of them; the
+ * per-voice list is left at the ones the app has translations for, so the
+ * picker's language filter has something meaningful to filter on.
+ */
+const SUPERTONIC_LANGUAGES = [
+  'en',
+  'tr',
+  'de',
+  'fr',
+  'es',
+  'pt',
+  'ru',
+  'uk',
+  'ja',
+  'ko',
+  'ar',
+  'bg',
+  'cs',
+  'da',
+  'el',
+  'et',
+  'fi',
+  'hi',
+  'hr',
+  'hu',
+  'id',
+  'it',
+  'lt',
+  'lv',
+  'nl',
+  'pl',
+  'ro',
+  'sk',
+  'sl',
+  'sv',
+  'vi',
+] as const;
+
+const SUPERTONIC_SPEAKERS = [
+  { id: 'supertonic-m1', speaker: 'M1', displayName: 'Reader 1 (male)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-m2', speaker: 'M2', displayName: 'Reader 2 (male)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-m3', speaker: 'M3', displayName: 'Reader 3 (male)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-m4', speaker: 'M4', displayName: 'Reader 4 (male)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-m5', speaker: 'M5', displayName: 'Reader 5 (male)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-f1', speaker: 'F1', displayName: 'Reader 6 (female)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-f2', speaker: 'F2', displayName: 'Reader 7 (female)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-f3', speaker: 'F3', displayName: 'Reader 8 (female)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-f4', speaker: 'F4', displayName: 'Reader 9 (female)', languages: SUPERTONIC_LANGUAGES },
+  { id: 'supertonic-f5', speaker: 'F5', displayName: 'Reader 10 (female)', languages: SUPERTONIC_LANGUAGES },
+] as const;
+
 export const AUDIOCPP_MODEL_SPECS: readonly AudioCppModelSpec[] = [
   {
     modelId: AUDIOCPP_POCKET_MODEL_ID,
@@ -267,6 +349,30 @@ export const AUDIOCPP_MODEL_SPECS: readonly AudioCppModelSpec[] = [
     // this flag controls. Sending it there would land under a key it never reads.
     usesReferenceText: false,
     params: POCKET_PARAMS,
+  },
+  {
+    modelId: AUDIOCPP_SUPERTONIC_MODEL_ID,
+    serverModelId: 'supertonic',
+    family: 'supertonic',
+    task: 'tts',
+    mode: 'offline',
+    /**
+     * `orig`, and it has to be.
+     *
+     * The repository offers `q8_0`, `f16` and `orig` for this model and only the
+     * last one loads in release-0.5: `q8_0` is refused outright with "Supertonic
+     * unsupported weight dtype: q8_0", and `f16` gets further and then dies
+     * inside ggml on a dtype assertion — on CUDA *and* on the processor. Both
+     * were tried here before this line was written. It costs 454 MB instead of
+     * 256, which for the fastest voice in the catalog is not a trade worth
+     * thinking about.
+     */
+    weightsFile: 'supertonic-3-orig.gguf',
+    languages: SUPERTONIC_LANGUAGES,
+    requiresVoiceReference: false,
+    usesReferenceText: false,
+    presetSpeakers: SUPERTONIC_SPEAKERS,
+    params: SUPERTONIC_PARAMS,
   },
   {
     modelId: AUDIOCPP_CHATTERBOX_MODEL_ID,

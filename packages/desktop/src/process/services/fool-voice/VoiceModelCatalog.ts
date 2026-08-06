@@ -2,6 +2,7 @@ import {
   AUDIOCPP_CHATTERBOX_MODEL_ID,
   AUDIOCPP_QWEN3_MODEL_ID,
   AUDIOCPP_POCKET_MODEL_ID,
+  AUDIOCPP_SUPERTONIC_MODEL_ID,
   type VoiceEngineBackend,
   type VoiceModel,
   type VoiceProfile,
@@ -185,6 +186,33 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
     paramSpecs: getAudioCppModelSpec(AUDIOCPP_POCKET_MODEL_ID)?.params,
   },
   {
+    id: AUDIOCPP_SUPERTONIC_MODEL_ID,
+    providerId: 'local-audiocpp',
+    // The fastest voice in this catalog by a wide margin, and the only one that
+    // is both fast and multilingual. Measured here against a warm server on a
+    // 4070 Ti Super: 0.06 s to 0.26 s a sentence, which is between sixteen and
+    // seventy-six times faster than the audio plays, in 575 MiB of graphics
+    // memory. The engines it sits beside cost 0.43 s (Pocket), 0.87 s
+    // (Chatterbox) and 0.5-0.9 s (Qwen3), the last two of which also want
+    // gigabytes of card.
+    //
+    // Its Turkish was round-tripped rather than assumed: rendered and then
+    // transcribed back, "Merhaba, bugün hava çok güzel ve seninle konuşmak
+    // istiyorum" came back word for word with every diacritic intact. Pocket
+    // returns a recognisable mangling of the same sentence and MOSS-Nano
+    // returns English.
+    displayName: 'Supertonic 3 (Fastest, 30+ languages, male and female)',
+    languages: getAudioCppModelSpec(AUDIOCPP_SUPERTONIC_MODEL_ID)?.languages ?? ['en'],
+    role: 'text-to-speech',
+    distribution: 'managed',
+    state: { status: 'not-installed' },
+    downloadBytes: null,
+    installedBytes: null,
+    audioOutput: { container: 'wav', encoding: 'pcm16le', channels: 1 },
+    profileIds: (getAudioCppModelSpec(AUDIOCPP_SUPERTONIC_MODEL_ID)?.presetSpeakers ?? []).map((speaker) => speaker.id),
+    paramSpecs: getAudioCppModelSpec(AUDIOCPP_SUPERTONIC_MODEL_ID)?.params,
+  },
+  {
     id: AUDIOCPP_CHATTERBOX_MODEL_ID,
     providerId: 'local-audiocpp',
     // Measured here on both, warm, same sentence and seed: about 80 s on the
@@ -239,22 +267,31 @@ export const FOOL_VOICE_MODELS: readonly VoiceModel[] = [
  * `speakerId` is the value passed to the synthesiser; the ids are stable so a
  * stored preference survives catalog reordering.
  */
-export const FOOL_VOICE_PRESET_PROFILES: readonly VoiceProfile[] = [
-  ...(getAudioCppModelSpec(AUDIOCPP_QWEN3_MODEL_ID)?.presetSpeakers ?? []).map(
+/**
+ * The profiles an audio.cpp model with its own cast contributes.
+ *
+ * Every one of these engines addresses a voice by name rather than by index, so
+ * `speakerId` is a placeholder the audio.cpp path never reads — the request
+ * carries `Ryan` or `M1`.
+ */
+const audioCppPresetProfiles = (modelId: string): readonly VoiceProfile[] =>
+  (getAudioCppModelSpec(modelId)?.presetSpeakers ?? []).map(
     (speaker): VoiceProfile => ({
       id: speaker.id,
       providerId: 'local-audiocpp',
-      modelId: AUDIOCPP_QWEN3_MODEL_ID,
+      modelId,
       kind: 'preset',
       state: 'ready',
       displayName: speaker.displayName,
       languages: speaker.languages,
-      // Addressed by name rather than by index — the request carries `Ryan`,
-      // not a number — so this is a placeholder the audio.cpp path never reads.
       speakerId: 0,
       deletable: false,
     })
-  ),
+  );
+
+export const FOOL_VOICE_PRESET_PROFILES: readonly VoiceProfile[] = [
+  ...audioCppPresetProfiles(AUDIOCPP_SUPERTONIC_MODEL_ID),
+  ...audioCppPresetProfiles(AUDIOCPP_QWEN3_MODEL_ID),
   ...PIPER_LIBRITTS_VOICES.map(
     (voice): VoiceProfile => ({
       id: voice.id,
@@ -638,6 +675,23 @@ export const AUDIOCPP_CATALOG_ENTRIES: Record<string, AudioCppCatalogEntry> = {
   // Face API rather than estimated — a two-gigabyte download with a wrong total
   // is a progress bar that stalls at 103%, and a wrong checksum is a download
   // that always fails validation.
+  // A quarter of Chatterbox and a sixth of Qwen3, and faster than both. The
+  // checksum and the size are the LFS object's own, read from the API and
+  // confirmed against the file this machine actually downloaded.
+  [AUDIOCPP_SUPERTONIC_MODEL_ID]: {
+    modelId: AUDIOCPP_SUPERTONIC_MODEL_ID,
+    engineId: AUDIOCPP_ENGINE.engineId,
+    files: [
+      {
+        url: `${HUGGINGFACE_GGUF}/Supertonic-3-GGUF/supertonic-3-orig.gguf`,
+        sha256: 'af814486a0bc9513fb36afabd9b1155ad14fb2c36a107ac6ffe62ea9adafb662',
+        bytes: 454072836,
+        destination: 'supertonic-3-orig.gguf',
+      },
+    ],
+    expectedFiles: ['supertonic-3-orig.gguf'],
+    archiveBytes: 454072836,
+  },
   [AUDIOCPP_CHATTERBOX_MODEL_ID]: {
     modelId: AUDIOCPP_CHATTERBOX_MODEL_ID,
     engineId: AUDIOCPP_ENGINE.engineId,

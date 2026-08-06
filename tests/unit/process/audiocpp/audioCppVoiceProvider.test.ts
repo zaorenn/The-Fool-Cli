@@ -232,7 +232,9 @@ describe('AudioCppVoiceProvider', () => {
 
     await provider.synthesize('tts-audiocpp-pocket', 'cloned:jarvis', 'en', 1, 'Three.', undefined, undefined, 'cuda');
     expect(spawnedWith.map((spawn) => spawn.backend)).toEqual(['cpu', 'cuda']);
-    // Pocket runs anywhere; the two that do not are left out of the CPU config.
-    expect(spawnedWith[0].modelIds).toEqual(['pocket']);
+    // Pocket and Supertonic run anywhere — Supertonic renders a four-second
+    // sentence in 0.9 s on this machine's processor — so both are in the CPU
+    // config and the two that need a card are left out of it.
+    expect(spawnedWith[0].modelIds).toEqual(['pocket', 'supertonic']);
   });
 });

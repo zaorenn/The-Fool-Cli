@@ -530,6 +530,14 @@ Writing these by hand replaces the whole structure and loses whatever else it he
 `voice.boundConversationId`, `voice.summaryModelId`,
 `migration.providersMigrated_v1`, `migration.assistantsMigrated_v1`.
 
+`fool.voice.memory` belongs here too, and for a stronger reason than the rest:
+it holds what the spoken assistant has been told about the user — their name,
+what they asked to be called, things they said about themselves, and a line
+about each recent conversation. It is written during a conversation by the
+assistant itself, at the user's word. Read it if you are asked to show or clear
+what is remembered; never write it to make the assistant believe something the
+user did not say.
+
 Deprecated and migrated away from — read only, to understand an old install:
 `theme`, `colorScheme`, `customCss`, `css.themes`, `css.activeThemeId`.
 

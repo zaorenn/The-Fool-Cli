@@ -5,6 +5,7 @@ import {
   engineArchiveBytes,
 } from '../../../packages/desktop/src/process/services/fool-voice/VoiceModelCatalog';
 import { getEngineSpec } from '../../../packages/desktop/src/process/services/fool-voice/voiceEngineSpecs';
+import { AUDIOCPP_SUPERTONIC_MODEL_ID } from '../../../packages/desktop/src/common/types/foolVoice';
 
 describe('VoiceModelCatalog', () => {
   it('exposes one entry per catalog id with no duplicates', () => {
@@ -26,21 +27,43 @@ describe('VoiceModelCatalog', () => {
   });
 
   /**
-   * Supertonic is gone, and this is the test that says so on purpose.
+   * The sherpa Supertonic is gone, and this is the test that says so on purpose.
    *
    * It was the only Turkish voice besides Piper, and `sherpa-onnx-node` has no
    * Supertonic loader — so it downloaded, reported ready, could be selected, and
    * then said nothing, because the throw happens inside playback where the
    * failure is swallowed. An offered voice that cannot speak is worse than one
    * that is absent: it reads as the whole feature being broken.
+   *
+   * Supertonic itself is back, under audio.cpp, which does have a loader for it —
+   * proved by running the weights rather than by reading a family list. That is
+   * the distinction this test now draws: the model is welcome, the engine that
+   * could not play it is not.
    */
   it('offers no voice it has no engine to speak with', () => {
     const models = VoiceModelCatalog.getModels();
     expect(models.find((model) => model.id === 'tts-supertonic-3-int8-2026-05-11')).toBeUndefined();
     expect(VoiceModelCatalog.getManagedEntry('tts-supertonic-3-int8-2026-05-11')).toBeUndefined();
     expect(
-      VoiceModelCatalog.getPresetProfiles().filter((profile) => profile.id.startsWith('supertonic-'))
+      VoiceModelCatalog.getPresetProfiles().filter(
+        (profile) => profile.id.startsWith('supertonic-') && profile.providerId === 'local-sherpa'
+      )
     ).toHaveLength(0);
+  });
+
+  it('offers the audio.cpp Supertonic, with a cast and an engine that loads it', () => {
+    const model = VoiceModelCatalog.getModels().find((entry) => entry.id === AUDIOCPP_SUPERTONIC_MODEL_ID);
+
+    expect(model?.role).toBe('text-to-speech');
+    expect(model?.languages).toContain('tr');
+    expect(VoiceModelCatalog.getAudioCppEntry(AUDIOCPP_SUPERTONIC_MODEL_ID)?.expectedFiles).toEqual([
+      'supertonic-3-orig.gguf',
+    ]);
+    expect(
+      VoiceModelCatalog.getPresetProfiles().filter(
+        (profile) => profile.modelId === AUDIOCPP_SUPERTONIC_MODEL_ID && profile.state === 'ready'
+      )
+    ).toHaveLength(10);
   });
 
   it('has an engine behind every voice it offers', () => {

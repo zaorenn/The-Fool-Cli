@@ -595,6 +595,7 @@ export const CLONING_MODEL_ID = 'tts-pocket-int8-2026-01-26';
 export const AUDIOCPP_POCKET_MODEL_ID = 'tts-audiocpp-pocket';
 export const AUDIOCPP_CHATTERBOX_MODEL_ID = 'tts-audiocpp-chatterbox';
 export const AUDIOCPP_QWEN3_MODEL_ID = 'tts-audiocpp-qwen3-customvoice';
+export const AUDIOCPP_SUPERTONIC_MODEL_ID = 'tts-audiocpp-supertonic-3';
 
 /**
  * Every engine that can speak in a voice it was not trained on.

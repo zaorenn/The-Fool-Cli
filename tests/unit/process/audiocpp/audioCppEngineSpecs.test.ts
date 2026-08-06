@@ -19,17 +19,29 @@ import {
   AUDIOCPP_CHATTERBOX_MODEL_ID,
   AUDIOCPP_POCKET_MODEL_ID,
   AUDIOCPP_QWEN3_MODEL_ID,
+  AUDIOCPP_SUPERTONIC_MODEL_ID,
 } from '@/common/types/foolVoice';
 
 const POCKET = AUDIOCPP_POCKET_MODEL_ID;
+const SUPERTONIC = AUDIOCPP_SUPERTONIC_MODEL_ID;
 const CHATTERBOX = AUDIOCPP_CHATTERBOX_MODEL_ID;
 const QWEN3 = AUDIOCPP_QWEN3_MODEL_ID;
 
 /**
- * Three engines, and which one is here for which reason is the whole point.
+ * Four engines, and which one is here for which reason is the whole point.
  *
  * Pocket runs anywhere and is what a conversation falls back to: 0.43 s a
  * sentence warm, 1.20 s cold, on a processor.
+ *
+ * Supertonic is the fastest of them and the cheapest, and it is here because it
+ * is the only one that is both. Measured against a warm server on a 4070 Ti
+ * Super: 0.06 s to 0.26 s a sentence, sixteen to seventy-six times faster than
+ * the audio plays, in 575 MiB of graphics memory. On the processor it still
+ * renders a four-second sentence in 0.92 s, so it declares no `requiresBackend`.
+ * Its Turkish was round-tripped rather than assumed — rendered and transcribed
+ * back, the sentence returns word for word with its diacritics — which no other
+ * engine here manages. Ten voices, five male and five female, addressed by name
+ * in the `voice` field like Qwen3's cast.
  *
  * The other two were withdrawn once for being slow, and are back because that
  * was measured on the wrong processor. Warm, same sentence and seed, on this
@@ -54,7 +66,7 @@ const QWEN3 = AUDIOCPP_QWEN3_MODEL_ID;
  */
 describe('audio.cpp model specs', () => {
   it('describes every shipped model and nothing else', () => {
-    expect(AUDIOCPP_MODEL_SPECS.map((spec) => spec.modelId)).toEqual([POCKET, CHATTERBOX, QWEN3]);
+    expect(AUDIOCPP_MODEL_SPECS.map((spec) => spec.modelId)).toEqual([POCKET, SUPERTONIC, CHATTERBOX, QWEN3]);
     expect(isAudioCppModel(POCKET)).toBe(true);
     expect(isAudioCppModel('tts-audiocpp-indextts2')).toBe(false);
     expect(isAudioCppModel('tts-piper-en-libritts-r')).toBe(false);
@@ -296,5 +308,61 @@ describe('the language a request carries', () => {
     // talker refuses the language outright.
     expect(getAudioCppModelSpec(CHATTERBOX)?.languages).not.toContain('tr');
     expect(getAudioCppModelSpec(QWEN3)?.languages).not.toContain('tr');
+  });
+});
+
+/**
+ * Supertonic, and the three things about it that were measured rather than read.
+ *
+ * The weights build, because two of the three published ones do not load at all
+ * in release-0.5. The voice names, because a name that is not one of the ten is
+ * refused by the server with a 500. And the single parameter, because this
+ * engine is non-deterministic — three identical requests produced three
+ * different files — so "the output changed" proves nothing on its own.
+ */
+describe('Supertonic', () => {
+  const spec = getAudioCppModelSpec(AUDIOCPP_SUPERTONIC_MODEL_ID);
+
+  it('asks for the only weights build that loads', () => {
+    // `q8_0` is refused outright and `f16` dies on a ggml dtype assertion, on
+    // the card and on the processor alike. Both were tried before this landed.
+    expect(spec?.weightsFile).toBe('supertonic-3-orig.gguf');
+  });
+
+  it('runs without a graphics card, unlike the two engines beside it', () => {
+    expect(spec?.requiresBackend).toBeUndefined();
+  });
+
+  it('offers five male and five female voices, named as the server names them', () => {
+    const speakers = spec?.presetSpeakers ?? [];
+    expect(speakers.map((voice) => voice.speaker)).toEqual([
+      'M1',
+      'M2',
+      'M3',
+      'M4',
+      'M5',
+      'F1',
+      'F2',
+      'F3',
+      'F4',
+      'F5',
+    ]);
+    expect(speakers.filter((voice) => voice.displayName.includes('female'))).toHaveLength(5);
+  });
+
+  it('sends the style name in the voice field, the way Qwen3 sends a cast name', () => {
+    expect(presetSpeakerNameFor(AUDIOCPP_SUPERTONIC_MODEL_ID, 'supertonic-f3')).toBe('F3');
+  });
+
+  it('speaks Turkish, which is why it is here and not only because it is fast', () => {
+    expect(spec?.languages).toContain('tr');
+  });
+
+  it('passes a language code through untouched, because this family reads one', () => {
+    expect(wireLanguageFor(AUDIOCPP_SUPERTONIC_MODEL_ID, 'tr')).toBe('tr');
+  });
+
+  it('exposes only the knob that was proved to do something', () => {
+    expect(spec?.params.map((param) => param.name)).toEqual(['speaking_rate']);
   });
 });
