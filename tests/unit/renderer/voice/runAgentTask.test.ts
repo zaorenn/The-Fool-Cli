@@ -24,6 +24,7 @@ type Listener<T> = (event: T) => void;
 
 const assistantsList = vi.fn();
 const listProviders = vi.fn();
+const listServers = vi.fn();
 const conversationCreate = vi.fn();
 const ensureRuntime = vi.fn();
 const sendMessage = vi.fn();
@@ -35,6 +36,7 @@ const turnListeners: Listener<Record<string, unknown>>[] = [];
 vi.mock('@/common', () => ({
   ipcBridge: {
     assistants: { list: { invoke: () => assistantsList() } },
+    mcpService: { listServers: { invoke: () => listServers() } },
     mode: { listProviders: { invoke: () => listProviders() } },
     conversation: {
       create: { invoke: (request: unknown) => conversationCreate(request) },
@@ -98,6 +100,10 @@ const settle = async (): Promise<void> => {
 beforeEach(() => {
   assistantsList.mockReset().mockResolvedValue([ASSISTANT]);
   listProviders.mockReset().mockResolvedValue([{ id: 'lmstudio', platform: 'openai', models: ['qwen/qwen3-14b'] }]);
+  listServers.mockReset().mockResolvedValue([
+    { id: 'mcp-computer-use', name: 'computer-use', enabled: true },
+    { id: 'mcp-browser', name: 'fool-browser', enabled: false },
+  ]);
   conversationCreate.mockReset().mockResolvedValue({ id: 'conv-1' });
   ensureRuntime.mockReset().mockResolvedValue(undefined);
   sendMessage.mockReset().mockResolvedValue({ msg_id: 'm1', turn_id: 't1' });
@@ -146,7 +152,7 @@ describe('runAgentTask', () => {
       expect.objectContaining({
         assistant: expect.objectContaining({
           id: 'fool-assistant',
-          conversation_overrides: { model: 'qwen/qwen3-14b' },
+          conversation_overrides: { model: 'qwen/qwen3-14b', mcp_ids: ['mcp-computer-use'] },
         }),
       })
     );
@@ -259,6 +265,52 @@ describe('runAgentTask', () => {
 
     expect(sendMessage).toHaveBeenCalled();
     stream({ conversation_id: 'conv-1', type: 'finish', data: '' });
+    await expect(running).resolves.toMatchObject({ ok: true });
+  });
+
+  /**
+   * The tools the task runs with.
+   *
+   * A built-in assistant materialises with `mcps: auto` and no remembered
+   * selection, which resolves to nothing — so a spoken task ran with no MCP
+   * servers at all, and the agent reported itself as unable to browse and
+   * "limited to local file operations". It was: it had no screen, no mouse and
+   * no keyboard. The assistant's own default cannot carry this, because setting
+   * `defaults.mcps` on a built-in is refused outright.
+   */
+  it('runs with the servers the user switched on, and only those', async () => {
+    const running = runAgentTask({ request: 'Ekrana bak.', settings: settingsWith() });
+    await settle();
+    stream({ conversation_id: 'conv-1', type: 'finish', data: '' });
+    await running;
+
+    const params = conversationCreate.mock.calls[0][0] as {
+      assistant: { conversation_overrides: { mcp_ids?: string[] } };
+    };
+    expect(params.assistant.conversation_overrides.mcp_ids).toEqual(['mcp-computer-use']);
+  });
+
+  it('leaves the conversation alone when nothing is switched on', async () => {
+    listServers.mockResolvedValue([{ id: 'mcp-browser', name: 'fool-browser', enabled: false }]);
+
+    const running = runAgentTask({ request: 'Bir şey yap.', settings: settingsWith() });
+    await settle();
+    stream({ conversation_id: 'conv-1', type: 'finish', data: '' });
+    await running;
+
+    const params = conversationCreate.mock.calls[0][0] as {
+      assistant: { conversation_overrides: Record<string, unknown> };
+    };
+    expect(params.assistant.conversation_overrides).not.toHaveProperty('mcp_ids');
+  });
+
+  it('still runs the task when the server list cannot be read', async () => {
+    listServers.mockRejectedValue(new Error('backend down'));
+
+    const running = runAgentTask({ request: 'Bir şey yap.', settings: settingsWith() });
+    await settle();
+    stream({ conversation_id: 'conv-1', type: 'finish', data: '' });
+
     await expect(running).resolves.toMatchObject({ ok: true });
   });
 });

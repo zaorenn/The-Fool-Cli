@@ -6,7 +6,7 @@
 
 import i18next from 'i18next';
 import { ipcBridge } from '@/common';
-import type { IProvider } from '@/common/config/storage';
+import type { IMcpServer, IProvider } from '@/common/config/storage';
 import type { ChatFileRef } from '@/common/types/chatFile';
 import { chatFileRefPath } from '@/common/types/chatFile';
 import { isFoolrsAssistant, type Assistant } from '@/common/types/agent/assistantTypes';
@@ -93,6 +93,24 @@ const summarise = (content: unknown): string => {
   return '';
 };
 
+/**
+ * The MCP servers the user has switched on.
+ *
+ * `enabled` on a server means "checked by default in a new conversation", which
+ * is exactly what a spoken task is — it just never had anyone to check the box.
+ * Read fresh each time rather than cached: a server switched on while the app
+ * is running should reach the next thing asked of it.
+ *
+ * An empty list on failure, which leaves the conversation on whatever it would
+ * have had. A task that runs with fewer tools is worse than one that runs; a
+ * task that does not run because the server list could not be read is worse
+ * than both.
+ */
+const enabledMcpServerIds = async (): Promise<string[]> => {
+  const servers = await ipcBridge.mcpService.listServers.invoke().catch((): IMcpServer[] => []);
+  return (servers ?? []).filter((server) => server.enabled).map((server) => server.id);
+};
+
 /** Creates the chat this task runs in, on the agent voice settings pin. */
 const openTaskConversation = async (
   request: AgentTaskRequest
@@ -123,6 +141,7 @@ const openTaskConversation = async (
   // `startVoiceConversation` for the same reasoning at length.
   const overrideModelId = model?.use_model ?? (modelId.length > 0 ? modelId : undefined);
   const files = request.files ?? [];
+  const mcpIds = await enabledMcpServerIds();
 
   try {
     const conversation = await ipcBridge.conversation.create.invoke({
@@ -131,7 +150,21 @@ const openTaskConversation = async (
       assistant: {
         id: assistant.id,
         locale: i18next.language || 'en-US',
-        conversation_overrides: { model: overrideModelId },
+        conversation_overrides: {
+          model: overrideModelId,
+          // Without this the task runs with no MCP servers at all. A built-in
+          // assistant materialises with `mcps: auto` and no remembered
+          // selection, which resolves to an empty list — so asked to search a
+          // page it had just opened, the agent answered that it "cannot browse
+          // external websites" and was "limited to local file operations". It
+          // was: it had no screen, no mouse and no keyboard.
+          //
+          // The assistant's own default cannot carry this. Setting
+          // `defaults.mcps` on a built-in is refused outright — that field
+          // belongs to the manifest, not to callers. The per-conversation
+          // override is the layer that is ours to set, and it outranks both.
+          ...(mcpIds.length > 0 ? { mcp_ids: mcpIds } : {}),
+        },
       },
       extra: { workspace: '', custom_workspace: false, default_files: files.map(chatFileRefPath) },
     });
