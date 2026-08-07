@@ -9,6 +9,7 @@ import { isElectronDesktop, resolveExtensionAssetUrl } from '@/renderer/utils/pl
 import { type IExtensionSettingsTab } from '@/common/adapter/ipcBridge';
 import { useExtensionSettingsTabs } from '@/renderer/hooks/system/useExtensionSettingsTabs';
 import {
+  Brain,
   Cat,
   Communication,
   Computer,
@@ -78,6 +79,12 @@ export function getBuiltinSettingsNavItems(isDesktop: boolean, t: TranslateFn): 
       icon: <Voice theme='outline' size='16' />,
       path: 'voice',
     },
+    memory: {
+      id: 'memory',
+      label: t('settings.memory.title', { defaultValue: 'Memory' }),
+      icon: <Brain theme='outline' size='16' />,
+      path: 'memory',
+    },
     appearance: {
       id: 'appearance',
       label: t('settings.appearancePanel'),
@@ -95,7 +102,19 @@ export function getBuiltinSettingsNavItems(isDesktop: boolean, t: TranslateFn): 
     about: { id: 'about', label: t('settings.about'), icon: <Info theme='outline' size='16' />, path: 'about' },
   };
 
-  return BUILTIN_TAB_IDS.map((id) => builtinMap[id]);
+  /**
+   * Every id, and nothing that is not one.
+   *
+   * `BUILTIN_TAB_IDS` is the order and this map is the content, so a tab added
+   * to one and not the other puts an `undefined` in this list. The caller reads
+   * `.label` off each item, which means the whole settings page throws and stops
+   * opening — a new tab in the sidebar takes the entire surface down with it,
+   * and the symptom says nothing about the cause.
+   *
+   * Dropping the gap is not the fix on its own; the guard is the test beside
+   * this asserting the two lists agree.
+   */
+  return BUILTIN_TAB_IDS.map((id) => builtinMap[id]).filter((item): item is NavItem => item !== undefined);
 }
 
 const SettingsPageWrapper: React.FC<SettingsPageWrapperProps> = ({ children, className, contentClassName }) => {
