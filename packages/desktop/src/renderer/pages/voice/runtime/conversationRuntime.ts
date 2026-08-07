@@ -184,6 +184,9 @@ class ConversationRuntime {
   /** Unsubscribes the desktop-wide talk key, held for the app's lifetime. */
   private releaseHoldKey: (() => void) | null = null;
 
+  /** And the request to open a conversation, which the same key makes. */
+  private releaseStartKey: (() => void) | null = null;
+
   /** The installed voices, read once when a conversation opens. */
   private voices: readonly SpokenVoice[] = [];
 
@@ -202,6 +205,7 @@ class ConversationRuntime {
 
   constructor() {
     this.listenForHoldKey();
+    this.listenForStartRequest();
   }
 
   // ---------------------------------------------------------------- subscribe
@@ -749,6 +753,26 @@ class ConversationRuntime {
    * to be correct the moment one starts, and a key already down when the
    * conversation opens would otherwise never be seen going up.
    */
+  /**
+   * The talk key, pressed when there is no conversation.
+   *
+   * The key used to open a dictation turn at the notch when nothing was
+   * running, which is not what anybody presses it for now that there is a real
+   * conversation to have. The decision is made in the main process — see
+   * `holdToTalkActions` — and this is where it lands, because the page owns the
+   * microphone and the provider and nothing in the main process can open one.
+   *
+   * Held for the app's lifetime alongside the key itself, so the press works
+   * from the desktop or from inside another application. `start` is a no-op
+   * unless the runtime is idle, so a second press during a conversation cannot
+   * open a second one.
+   */
+  private listenForStartRequest(): void {
+    const emitter = ipcBridge.foolVoice?.startConversation;
+    if (typeof emitter?.on !== 'function') return;
+    this.releaseStartKey = emitter.on(() => void this.start());
+  }
+
   private listenForHoldKey(): void {
     const emitter = ipcBridge.foolVoice?.holdToTalk;
     if (typeof emitter?.on !== 'function') return;

@@ -173,6 +173,11 @@ const startHoldToTalk = (): void => {
           case 'toggle-turn':
             ipcBridge.foolVoice.pushToTalk.emit();
             break;
+          case 'start-conversation':
+            // Answered by the page, which owns the microphone and the provider.
+            // Nothing here can open a conversation on its own.
+            ipcBridge.foolVoice.startConversation.emit();
+            break;
           case 'interrupt-speech':
             ipcBridge.foolVoice.interruptSpeech.emit();
             break;

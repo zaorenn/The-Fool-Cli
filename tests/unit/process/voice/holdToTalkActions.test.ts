@@ -15,14 +15,19 @@ import { HoldToTalk } from '@process/voice/holdToTalk';
  * shipped, and it is invisible from any single effect.
  */
 describe('voiceActionsFor', () => {
-  it('opens a turn when the key goes down', () => {
-    expect(voiceActionsFor({ kind: 'start' }, 'off')).toEqual([{ kind: 'toggle-turn' }]);
+  it('starts a conversation when the key goes down', () => {
+    expect(voiceActionsFor({ kind: 'start' }, 'off')).toEqual([{ kind: 'start-conversation' }]);
   });
 
-  it('closes it on commit and on either cancel', () => {
-    expect(voiceActionsFor({ kind: 'commit', heldMs: 900 }, 'listening')).toEqual([{ kind: 'toggle-turn' }]);
-    expect(voiceActionsFor({ kind: 'cancel', reason: 'combination' }, 'listening')).toEqual([{ kind: 'toggle-turn' }]);
-    expect(voiceActionsFor({ kind: 'cancel', reason: 'too-short' }, 'listening')).toEqual([{ kind: 'toggle-turn' }]);
+  /**
+   * The toggle these used to balance is gone. A conversation is not opened by a
+   * press and closed by the release — somebody who pressed the key to start
+   * talking has not finished talking when they let go of it.
+   */
+  it('does nothing on commit or on either cancel, because there is no toggle left', () => {
+    expect(voiceActionsFor({ kind: 'commit', heldMs: 900 }, 'listening')).toEqual([]);
+    expect(voiceActionsFor({ kind: 'cancel', reason: 'combination' }, 'listening')).toEqual([]);
+    expect(voiceActionsFor({ kind: 'cancel', reason: 'too-short' }, 'listening')).toEqual([]);
   });
 
   it('interrupts instead of opening a turn while a reply is being spoken', () => {
@@ -30,11 +35,15 @@ describe('voiceActionsFor', () => {
   });
 
   /** The regression: a capture that did not close the turn its own press opened. */
-  it('closes the turn the second press opened before capturing', () => {
-    expect(voiceActionsFor({ kind: 'capture-region' }, 'listening')).toEqual([
-      { kind: 'toggle-turn' },
-      { kind: 'capture-region' },
-    ]);
+  /**
+   * No balancing close any more. That toggle existed because the press
+   * beginning this gesture had opened a dictation turn; a press now starts a
+   * conversation instead, and closing a turn nobody opened would invert the
+   * next gesture — the same fault it was written to prevent, reached from the
+   * other side.
+   */
+  it('captures without closing a turn nobody opened', () => {
+    expect(voiceActionsFor({ kind: 'capture-region' }, 'listening')).toEqual([{ kind: 'capture-region' }]);
   });
 });
 
@@ -71,14 +80,13 @@ describe('a whole gesture leaves the microphone closed', () => {
     expect(toggles(effects) % 2).toBe(0);
   });
 
-  it('balances for a double tap that captures a region', () => {
+  it('opens no dictation turn at all during a double tap', () => {
     const hold = new HoldToTalk({ minimumHoldMs: 180, doubleTapWindowMs: 400 });
     const effects = [hold.press(1000), hold.release(1050), hold.press(1150), hold.release(1200)];
 
-    // Four presses and releases: two opens from the presses, and the closes
-    // have to match — including the one on the release that reports the capture.
-    expect(toggles(effects)).toBe(4);
-    expect(toggles(effects) % 2).toBe(0);
+    // The toggle this used to count is gone: a press starts a conversation and
+    // a release does nothing, so there is no microphone left open to balance.
+    expect(toggles(effects)).toBe(0);
   });
 
   it('captures exactly once for a double tap', () => {
@@ -175,8 +183,57 @@ describe('stopping wake listening with the V combination', () => {
       expect(voiceActionsFor({ kind: 'start' }, 'speaking', true)).toEqual([]);
     });
 
-    it('goes back to driving the notch once the conversation is closed', () => {
-      expect(voiceActionsFor({ kind: 'start' }, 'off', false)).toEqual([{ kind: 'toggle-turn' }]);
+    it('can start a new one once the conversation is closed', () => {
+      expect(voiceActionsFor({ kind: 'start' }, 'off', false)).toEqual([{ kind: 'start-conversation' }]);
     });
+  });
+});
+
+/**
+ * What the key is for, once there is a conversation to have.
+ *
+ * The key was built when the only thing it could open was a dictation turn: a
+ * one-shot transcribe-think-speak loop drawn in the notch. There is now a real
+ * spoken conversation, and pressing the key from the desktop to dictate one
+ * sentence at the notch is not what anybody reaches for — they want to talk to
+ * it. So a plain press with nothing running starts the conversation, and once it
+ * is running the key is its microphone and nothing else.
+ *
+ * The other gestures the key carries are untouched. Answering the notch's
+ * permission request with a digit and grabbing a region with a double tap are
+ * different gestures, not different meanings for the same press, and taking them
+ * away would remove shipped features nothing here asked to remove.
+ */
+describe('the key with no conversation running', () => {
+  it('starts the conversation rather than opening a dictation turn', () => {
+    expect(voiceActionsFor({ kind: 'start' }, 'off')).toEqual([{ kind: 'start-conversation' }]);
+  });
+
+  it('does not also close something, because a conversation is not a toggle', () => {
+    const actions = voiceActionsFor({ kind: 'commit', heldMs: 900 }, 'off');
+    expect(actions).not.toContainEqual({ kind: 'toggle-turn' });
+  });
+
+  it('still interrupts a reply rather than starting a second conversation', () => {
+    expect(voiceActionsFor({ kind: 'start' }, 'speaking')).toEqual([{ kind: 'interrupt-speech' }]);
+  });
+
+  it('still answers the notch with a digit', () => {
+    expect(voiceActionsFor({ kind: 'choose-option', index: 1 }, 'off')).toEqual([{ kind: 'choose-option', index: 1 }]);
+  });
+
+  it('still grabs a region on a double tap', () => {
+    expect(voiceActionsFor({ kind: 'capture-region' }, 'off')).toContainEqual({ kind: 'capture-region' });
+  });
+});
+
+describe('the key once a conversation is running', () => {
+  it('is left to the conversation, which reads it directly', () => {
+    expect(voiceActionsFor({ kind: 'start' }, 'listening', true)).toEqual([]);
+    expect(voiceActionsFor({ kind: 'commit', heldMs: 900 }, 'listening', true)).toEqual([]);
+  });
+
+  it('does not start a second one', () => {
+    expect(voiceActionsFor({ kind: 'start' }, 'off', true)).not.toContainEqual({ kind: 'start-conversation' });
   });
 });

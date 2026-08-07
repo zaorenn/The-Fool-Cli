@@ -311,6 +311,16 @@ export const foolVoice = {
    * way to answer and the app has one way to resolve, not two.
    */
   permissionChoice: bridge.buildEmitter<{ index: number }>('fool.voice.permission-choice'),
+  /**
+   * Open a spoken conversation, because the talk key was pressed and there is
+   * not one.
+   *
+   * Its own channel rather than the push-to-talk toggle: that opens a dictation
+   * turn at the notch, and a press meaning "talk to me" is a different request
+   * with a different answer. Not a toggle either — a conversation ends by being
+   * asked to, not by a key being released.
+   */
+  startConversation: bridge.buildEmitter<void>('fool.voice.start-conversation'),
 };
 
 // ---------------------------------------------------------------------------

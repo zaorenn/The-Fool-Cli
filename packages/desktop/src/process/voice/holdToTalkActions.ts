@@ -29,7 +29,15 @@ export type VoiceAction =
   /** Answer the permission request the notch is showing. Zero-based. */
   | { kind: 'choose-option'; index: number }
   /** Switch always-on wake listening off. */
-  | { kind: 'stop-wake-listening' };
+  | { kind: 'stop-wake-listening' }
+  /**
+   * Open a spoken conversation, because there is not one.
+   *
+   * Not a toggle. A conversation is ended by asking it to stop, not by letting
+   * go of a key — somebody who pressed the key to start talking has not
+   * finished talking when they release it.
+   */
+  | { kind: 'start-conversation' };
 
 /**
  * The actions an effect calls for, in order.
@@ -66,8 +74,13 @@ export function voiceActionsFor(
   // is still open, and closing it is not optional: without this the microphone
   // stays live after every capture and the next press closes it instead of
   // opening one.
+  // No balancing close any more. That `toggle-turn` existed because the press
+  // that began this gesture had opened a dictation turn; a press now starts a
+  // conversation instead, and closing a turn nobody opened would invert the
+  // next gesture — the exact fault it was written to prevent, arrived at from
+  // the other side.
   if (effect.kind === 'capture-region') {
-    return [{ kind: 'toggle-turn' }, { kind: 'capture-region' }];
+    return [{ kind: 'capture-region' }];
   }
 
   // A digit answering a request is not part of a turn at all: no press opened
@@ -86,6 +99,17 @@ export function voiceActionsFor(
     return [{ kind: 'stop-wake-listening' }];
   }
 
-  // `start` opens the turn; `commit` and both cancels close the one it opened.
-  return [{ kind: 'toggle-turn' }];
+  // Nothing running: the press is a request to talk to it.
+  //
+  // The key was built when the only thing it could open was a dictation turn —
+  // a one-shot transcribe-think-speak loop drawn in the notch. There is now a
+  // real conversation, and pressing a key from the desktop to dictate a single
+  // sentence at the notch is not what anybody reaches for; they want to talk.
+  //
+  // Only the press. `commit` and the cancels are the other half of a toggle that
+  // no longer exists here, and answering them would end the conversation the
+  // press just opened — which is the whole of "let go of the key and it stops",
+  // and is not how a conversation ends.
+  if (effect.kind === 'start') return [{ kind: 'start-conversation' }];
+  return [];
 }
