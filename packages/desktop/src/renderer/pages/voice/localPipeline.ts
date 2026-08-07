@@ -381,6 +381,15 @@ export class LocalVoicePipeline {
   /** The watchdog for the turn in flight, and the turn it is watching. */
   private stall: ReturnType<typeof setTimeout> | null = null;
 
+  /**
+   * Which turn the speaker currently belongs to.
+   *
+   * So a loop that was abandoned mid-sentence cannot tidy up after a newer one.
+   * Its cleanup empties the render queue and lowers the busy flag, and doing
+   * that to somebody else's turn takes the voice off the next answer.
+   */
+  private drainOwner: AbortController | null = null;
+
   constructor(options: LocalPipelineOptions) {
     this.options = options;
   }
@@ -662,6 +671,16 @@ export class LocalVoicePipeline {
     this.speaking = false;
     this.pending = [];
     this.voice = null;
+
+    // The speaker as well as the turn. A synthesis request that never returns
+    // leaves the loop that speaks the queue waiting, and that loop holds the
+    // flag every later reply has to pass — so the next answer would arrive as
+    // text with no voice, which reads as having gone mute rather than as an
+    // error. Reclaimed here; the abandoned loop knows not to tidy up after us.
+    this.draining = false;
+    this.drainOwner = null;
+    for (const outstanding of this.renders) outstanding.catch((): null => null);
+    this.renders = [];
 
     this.options.onEvent({ kind: 'error', message: 'LOCAL_TURN_STALLED' });
     this.options.onEvent({ kind: 'phase', phase: 'listening' });
@@ -993,6 +1012,7 @@ export class LocalVoicePipeline {
   private async drain(voice: SpeakingVoice, controller: AbortController): Promise<void> {
     if (this.draining) return;
     this.draining = true;
+    this.drainOwner = controller;
     try {
       while (!controller.signal.aborted && !this.closed) {
         this.pumpRenders(voice, controller);
@@ -1018,12 +1038,19 @@ export class LocalVoicePipeline {
         });
       }
     } finally {
-      this.draining = false;
-      // Whatever was still being rendered when this ended is now unwanted, and
-      // an unawaited rejection from an abandoned turn must not surface as an
-      // unhandled one.
-      for (const outstanding of this.renders) outstanding.catch((): null => null);
-      this.renders = [];
+      // Only if the speaker is still this turn's. A loop abandoned mid-sentence
+      // can unblock long after the watchdog handed the speaker to a newer turn,
+      // and lowering the flag or emptying the queue then would take the voice
+      // off an answer that is in the middle of being said.
+      if (this.drainOwner === controller) {
+        this.draining = false;
+        this.drainOwner = null;
+        // Whatever was still being rendered when this ended is now unwanted, and
+        // an unawaited rejection from an abandoned turn must not surface as an
+        // unhandled one.
+        for (const outstanding of this.renders) outstanding.catch((): null => null);
+        this.renders = [];
+      }
     }
   }
 

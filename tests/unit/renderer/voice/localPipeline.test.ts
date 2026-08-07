@@ -1365,3 +1365,82 @@ describe('a turn that stalls', () => {
     }
   });
 });
+
+/**
+ * A stall while the speaker is mid-sentence.
+ *
+ * The nastier shape of the same failure. Abandoning the turn is not enough on
+ * its own: the loop that speaks the queue is guarded by a flag, and that flag is
+ * only lowered when the loop finishes. A loop waiting on a synthesis request
+ * that never returns keeps the flag raised, and the *next* answer then arrives
+ * as text with no voice — which reads as the assistant having gone mute rather
+ * than as anything having gone wrong.
+ *
+ * So the watchdog reclaims the speaker too, and the abandoned loop is not
+ * allowed to tidy up state that has since been handed to someone else.
+ */
+describe('a stall while it is speaking', () => {
+  const readyCatalog = () => catalogInvoke.mockResolvedValue(okCatalog([STT_MODEL, TTS_MODEL]));
+
+  const say = (pipeline: LocalVoicePipeline, sample: number): void => {
+    pipeline.pushAudio(toBase64(pcmOf([sample])), 'speech-started');
+    pipeline.pushAudio('', 'utterance-ended');
+  };
+
+  const drain = async (): Promise<void> => {
+    for (let round = 0; round < 12; round += 1) await settle();
+  };
+
+  it('still speaks the next answer, even though the last one never finished saying', async () => {
+    vi.useFakeTimers();
+    try {
+      readyCatalog();
+      let spoken = 0;
+      transcribeInvoke.mockImplementation(async () => ({ ok: true, data: { text: `soru ${++spoken}` } }));
+
+      // The first synthesis request never returns. The second and later ones do.
+      let renders = 0;
+      synthesizeInvoke.mockImplementation(async () => {
+        if (++renders === 1) return new Promise(() => undefined);
+        return {
+          ok: true,
+          data: { audio: { dataBase64: pcm16ToWavBase64(pcmOf([1]), 22050), sampleRateHz: 22050 } },
+        };
+      });
+
+      const events: NormalizedRealtimeEvent[] = [];
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (url: string) => {
+          if (String(url).endsWith('/models')) {
+            return { ok: true, json: async () => ({ data: [{ id: 'google/gemma-4-e4b' }] }) } as unknown as Response;
+          }
+          return { ok: true, body: sseBody(['Tamam. ']) } as unknown as Response;
+        })
+      );
+
+      const pipeline = new LocalVoicePipeline({
+        settings: settingsWith({ model: 'google/gemma-4-e4b' }),
+        interfaceLanguage: 'tr',
+        onEvent: (event) => events.push(event),
+      });
+      await pipeline.connect();
+
+      say(pipeline, 1);
+      await drain();
+      await vi.advanceTimersByTimeAsync(TURN_STALL_MS + 1000);
+      await drain();
+
+      events.length = 0;
+      say(pipeline, 2);
+      await drain();
+      await vi.advanceTimersByTimeAsync(1000);
+      await drain();
+
+      // Text without voice is the failure being pinned here.
+      expect(events.some((event) => event.kind === 'audio')).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
