@@ -61,7 +61,26 @@ export interface ElectronBridgeAPI {
   prepareSkillFolder?: (name: string) => Promise<string>;
   /** Writes the assistant's first draft beside the frames, and nowhere else. */
   writeSkillDraft?: (folder: string, body: string) => Promise<boolean>;
+  /**
+   * A workspace's own page, served over loopback with the bridge injected.
+   *
+   * One at a time; a second call replaces the first. Refuses anything outside
+   * the workspace-apps folder, and anything whose entry file is not there.
+   */
+  serveWorkspaceApp?: (folder: string, entry: string) => Promise<ServedWorkspaceApp>;
+  stopWorkspaceApp?: () => Promise<void>;
+  prepareWorkspaceApp?: (folder: string) => Promise<string>;
+  /** The app's text files, for putting one into a workspace file. */
+  readWorkspaceApp?: (folder: string) => Promise<Record<string, string>>;
+  /** Writes one out of a file somebody sent, each path confined to the folder. */
+  writeWorkspaceApp?: (folder: string, files: Record<string, string>) => Promise<number>;
+  removeWorkspaceApp?: (folder: string) => Promise<void>;
 }
+
+/** What {@link ElectronBridgeAPI.serveWorkspaceApp} answers with. */
+export type ServedWorkspaceApp =
+  | { ok: true; url: string; root: string }
+  | { ok: false; reason: 'not-a-folder' | 'no-entry' | 'failed' };
 
 /** What {@link ElectronBridgeAPI.servePreview} answers with. */
 export type PreviewResult = { ok: true; url: string } | { ok: false; reason: 'no-entry' | 'not-a-folder' | 'failed' };

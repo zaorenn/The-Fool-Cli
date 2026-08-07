@@ -102,6 +102,9 @@ export const captureWorkspace = (name: string, description: string): Workspace =
       modelId: settings.session.modelId,
     },
     skills: [],
+    // Kept from whatever is in force: someone naming the arrangement they are
+    // already using expects the page they are looking at to come with it.
+    app: peekActiveWorkspace().app,
     updatedAt: new Date().toISOString(),
   };
 };

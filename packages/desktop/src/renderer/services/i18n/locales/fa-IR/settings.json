@@ -1617,7 +1617,12 @@
     "conversationSkillCancelled": "آن ضبط را دور ریختم",
     "conversationSkillIncomplete": "برای ساختن مهارت به یک نام و مراحل نیاز دارم",
     "conversationSkillUnnamed": "یک مهارت تازه",
-    "conversationSettingWorkspace": "به «{{name}}» تغییر کرد"
+    "conversationSettingWorkspace": "به «{{name}}» تغییر کرد",
+    "conversationWorkspaceBuilding": "در حال ساخت",
+    "conversationWorkspaceBuilt": "«{{name}}» آماده است — الان داخل آن هستید",
+    "conversationWorkspaceNoPage": "ساخت تمام شد اما صفحه‌ای نوشته نشد، چیزی برای نشان دادن نیست",
+    "conversationWorkspaceIncomplete": "برای ساختن به یک نام و اینکه چه کاری بکند نیاز دارم",
+    "conversationWorkspaceUnknown": "فضای کاری‌ای به نام «{{name}}» ندارم"
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",
@@ -1749,7 +1754,14 @@
     "imported": "«{{name}}» آماده است",
     "importError": {
       "not-a-workspace": "این فایل یک فضای کاری نیست",
-      "unreadable": "این فایل خوانده نشد"
+      "unreadable": "این فایل خوانده نشد",
+      "no-app": "صفحهٔ آن فضای کاری در فایل نبود"
+    },
+    "appReload": "بارگذاری دوباره",
+    "appError": {
+      "not-a-folder": "صفحهٔ این فضای کاری پیدا نشد",
+      "no-entry": "این فضای کاری صفحه‌ای برای باز کردن ندارد",
+      "failed": "صفحهٔ این فضای کاری اجرا نشد"
     }
   }
 }

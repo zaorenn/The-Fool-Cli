@@ -350,6 +350,28 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_workspace',
+    description:
+      'Build the user a small app of their own, and move them into it. Use this when they describe a thing they want rather than a task they want done — "make me something that turns a YouTube link into guitar tab", "I want a panel that watches my builds", "build me a place to draft posts". It writes a real page, gives it the agent as its back end, keeps it in a workspace under a name, and switches to it, so it is there tomorrow and can be sent to somebody. It runs for a few minutes while you keep talking, so say briefly that you are on it and tell them what it does when it comes back. Use \'use\' to move them into one they already have. For a one-off thing to look at rather than keep, app_build_app is lighter.',
+    parameters: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['build', 'use'],
+          description: "'build' makes a new one, 'use' switches to one they already have.",
+        },
+        name: { type: 'string', description: 'What to call it, in their words. "Guitar tab".' },
+        wanted: {
+          type: 'string',
+          description:
+            'What it should do, in their own words and in as much detail as they gave — what goes in, what comes out, what it should show. This is the whole brief, so do not shorten it.',
+        },
+      },
+      required: ['action', 'name'],
+    },
+  },
+  {
     name: 'app_standby',
     description:
       'Go quiet and wait. Call this the moment the user asks you to hold on, wait, stand by, or stop for now. After calling it, say nothing at all until you hear the wake phrase.',

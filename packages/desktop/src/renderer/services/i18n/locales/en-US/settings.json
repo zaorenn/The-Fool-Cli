@@ -1617,7 +1617,12 @@
     "conversationSkillCancelled": "Forgot that recording",
     "conversationSkillIncomplete": "I need a name and the steps before I can make that a skill",
     "conversationSkillUnnamed": "A new skill",
-    "conversationSettingWorkspace": "Switched to {{name}}"
+    "conversationSettingWorkspace": "Switched to {{name}}",
+    "conversationWorkspaceBuilding": "Building it",
+    "conversationWorkspaceBuilt": "“{{name}}” is ready — you’re in it now",
+    "conversationWorkspaceNoPage": "The build finished without writing a page, so there is nothing to show",
+    "conversationWorkspaceIncomplete": "I need a name and what it should do before I can build it",
+    "conversationWorkspaceUnknown": "I have no workspace called “{{name}}”"
   },
   "themeCustomizer": {
     "title": "Customize theme",
@@ -1749,7 +1754,14 @@
     "imported": "“{{name}}” is ready",
     "importError": {
       "not-a-workspace": "That file is not a workspace",
-      "unreadable": "That file could not be read"
+      "unreadable": "That file could not be read",
+      "no-app": "That workspace’s page was not in the file"
+    },
+    "appReload": "Reload",
+    "appError": {
+      "not-a-folder": "This workspace’s page is missing",
+      "no-entry": "This workspace has no page to open",
+      "failed": "Could not start this workspace’s page"
     }
   }
 }

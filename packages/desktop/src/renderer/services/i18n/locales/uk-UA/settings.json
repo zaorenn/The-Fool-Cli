@@ -1618,7 +1618,12 @@
     "conversationSkillCancelled": "Забув цей запис",
     "conversationSkillIncomplete": "Щоб зробити навичку, потрібні назва та кроки",
     "conversationSkillUnnamed": "Нова навичка",
-    "conversationSettingWorkspace": "Перемкнув на «{{name}}»"
+    "conversationSettingWorkspace": "Перемкнув на «{{name}}»",
+    "conversationWorkspaceBuilding": "Збираю",
+    "conversationWorkspaceBuilt": "«{{name}}» готово — ви вже в ньому",
+    "conversationWorkspaceNoPage": "Збирання завершилося, але сторінку не записано, показувати нічого",
+    "conversationWorkspaceIncomplete": "Щоб зібрати, потрібні назва і що воно має робити",
+    "conversationWorkspaceUnknown": "У мене немає робочого простору «{{name}}»"
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",
@@ -1750,7 +1755,14 @@
     "imported": "«{{name}}» готово",
     "importError": {
       "not-a-workspace": "Цей файл не робочий простір",
-      "unreadable": "Не вдалося прочитати файл"
+      "unreadable": "Не вдалося прочитати файл",
+      "no-app": "Сторінки цього робочого простору у файлі не було"
+    },
+    "appReload": "Оновити",
+    "appError": {
+      "not-a-folder": "Сторінка цього робочого простору зникла",
+      "no-entry": "У цьому робочому просторі нема чого відкривати",
+      "failed": "Не вдалося запустити сторінку цього робочого простору"
     }
   }
 }

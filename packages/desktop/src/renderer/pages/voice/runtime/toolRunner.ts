@@ -38,6 +38,7 @@ import { normalizeEndpoint } from '../localPipeline';
 import { buildAndPreview } from './buildTool';
 import { applySpokenSetting } from './settingsTool';
 import { runSkillTool } from './skillTool';
+import { runWorkspaceTool } from './workspaceTool';
 import type { ToolHost, ToolInvocation } from './types';
 
 /**
@@ -441,6 +442,16 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
         name: text('name'),
         what: text('what'),
         steps: text('steps'),
+      });
+    }
+
+    if (invocation.name === 'app_workspace') {
+      // The largest thing a sentence can ask for: a page of its own, built and
+      // put in a workspace the user is then moved into.
+      return runWorkspaceTool(host, invocation.callId, {
+        action: text('action') || 'build',
+        name: text('name'),
+        wanted: text('wanted'),
       });
     }
 

@@ -16,6 +16,7 @@ import { initFoolVoiceBridge, type FoolVoiceBridgeHandlers } from './foolVoiceBr
 import { initScreenCaptureBridge } from '@process/voice/screenCaptureBridge';
 import { initPreviewBridge } from '@process/preview/previewBridge';
 import { initSkillRecorderBridge } from '@process/voice/skillRecorderBridge';
+import { initWorkspaceAppBridge } from '@process/workspace/workspaceAppBridge';
 
 export type BridgeDependencies = {
   foolVoice?: Partial<FoolVoiceBridgeHandlers>;
@@ -34,6 +35,7 @@ export function initAllBridges(deps: BridgeDependencies = {}): void {
   initScreenCaptureBridge();
   initPreviewBridge();
   initSkillRecorderBridge();
+  initWorkspaceAppBridge();
 }
 
 export {

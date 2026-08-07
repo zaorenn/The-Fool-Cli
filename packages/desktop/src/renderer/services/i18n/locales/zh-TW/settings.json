@@ -1619,7 +1619,12 @@
     "conversationSkillCancelled": "已丟棄那段錄製",
     "conversationSkillIncomplete": "要做成技能，我需要一個名字和步驟",
     "conversationSkillUnnamed": "新技能",
-    "conversationSettingWorkspace": "已切換到{{name}}"
+    "conversationSettingWorkspace": "已切換到{{name}}",
+    "conversationWorkspaceBuilding": "正在建置",
+    "conversationWorkspaceBuilt": "「{{name}}」已就緒——你現在就在裡面",
+    "conversationWorkspaceNoPage": "建置結束了卻沒有寫出頁面，沒有可展示的內容",
+    "conversationWorkspaceIncomplete": "要建置的話，我需要一個名字和它該做什麼",
+    "conversationWorkspaceUnknown": "沒有叫「{{name}}」的工作區"
   },
   "themeCustomizer": {
     "title": "自訂主題",
@@ -1751,7 +1756,14 @@
     "imported": "「{{name}}」已就緒",
     "importError": {
       "not-a-workspace": "這個檔案不是工作區",
-      "unreadable": "無法讀取這個檔案"
+      "unreadable": "無法讀取這個檔案",
+      "no-app": "檔案裡沒有那個工作區的頁面"
+    },
+    "appReload": "重新載入",
+    "appError": {
+      "not-a-folder": "這個工作區的頁面不見了",
+      "no-entry": "這個工作區沒有可開啟的頁面",
+      "failed": "無法啟動這個工作區的頁面"
     }
   }
 }

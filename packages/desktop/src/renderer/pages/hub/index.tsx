@@ -16,6 +16,7 @@ import {
   type Workspace,
 } from '@/common/config/workspaces';
 import { useWorkspaces } from '@renderer/hooks/config/useWorkspaces';
+import WorkspaceAppPanel from './WorkspaceAppPanel';
 import WorkspaceCard from './WorkspaceCard';
 import styles from './FoolsHub.module.css';
 
@@ -67,9 +68,17 @@ const FoolsHubPage: React.FC = () => {
     }
   };
 
-  /** Hands a workspace over as a file, which is the whole of sharing one. */
-  const share = (workspace: Workspace): void => {
-    const blob = new Blob([exportWorkspace(workspace)], { type: 'application/json' });
+  /**
+   * Hands a workspace over as a file, with its page inside it.
+   *
+   * The app's files travel in the same file rather than being fetched
+   * afterwards: a workspace that arrives and then cannot find its own page does
+   * not work, and the person who received it has nothing to go and get.
+   */
+  const share = async (workspace: Workspace): Promise<void> => {
+    const files = workspace.app ? ((await window.electronAPI?.readWorkspaceApp?.(workspace.app.folder)) ?? {}) : {};
+
+    const blob = new Blob([exportWorkspace(workspace, files)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -91,6 +100,19 @@ const FoolsHubPage: React.FC = () => {
       Message.error(t(`hub.importError.${result.reason}`));
       return;
     }
+
+    // The page goes to disk before the workspace claims to have one. The other
+    // order gives the user a workspace that switches to an empty panel, which
+    // looks like the app being broken rather than like an import that failed.
+    const app = result.workspace.app;
+    if (app) {
+      const written = (await window.electronAPI?.writeWorkspaceApp?.(app.folder, result.files)) ?? 0;
+      if (written === 0) {
+        Message.error(t('hub.importError.no-app'));
+        return;
+      }
+    }
+
     await save(result.workspace);
     Message.success(t('hub.imported', { name: result.workspace.name }));
   };
@@ -104,6 +126,11 @@ const FoolsHubPage: React.FC = () => {
         <Typography.Text className={styles.lede}>{t('hub.subtitle')}</Typography.Text>
       </header>
 
+      {/* The workspace's own page, when it has one. Above the list rather than
+          below it: this is the thing the user came to use, and the list is how
+          they got here. */}
+      {active.app ? <WorkspaceAppPanel app={active.app} workspaceId={active.id} /> : null}
+
       <section className={styles.grid}>
         {workspaces.map((workspace) => (
           <WorkspaceCard
@@ -111,7 +138,7 @@ const FoolsHubPage: React.FC = () => {
             workspace={workspace}
             active={workspace.id === active.id}
             onEnter={() => void enter(workspace)}
-            onExport={() => share(workspace)}
+            onExport={() => void share(workspace)}
             onDelete={() => void remove(workspace.id)}
           />
         ))}

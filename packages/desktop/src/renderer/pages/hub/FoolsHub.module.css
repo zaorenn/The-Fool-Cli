@@ -140,3 +140,48 @@
     transition: none;
   }
 }
+
+/* ── a workspace's own page ────────────────────────────────────────────────── */
+
+/*
+ * The app itself, running inside The Fool.
+ *
+ * Given the room rather than boxed into a card: this is the workspace, not a
+ * preview of it, and something built to be used needs the space of a page.
+ */
+.appPanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+  border: 1px solid var(--color-border-2);
+  border-radius: var(--fool-radius, 12px);
+  overflow: hidden;
+  background: var(--color-bg-2);
+}
+
+.appHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px 8px 14px;
+  border-bottom: 1px solid var(--color-border-2);
+  flex: none;
+}
+
+.appFrame {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  background: var(--color-bg-1);
+  min-height: 380px;
+}
+
+.appError {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}

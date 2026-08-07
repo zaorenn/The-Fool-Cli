@@ -1619,7 +1619,12 @@
     "conversationSkillCancelled": "その記録は破棄しました",
     "conversationSkillIncomplete": "スキルにするには名前と手順が必要です",
     "conversationSkillUnnamed": "新しいスキル",
-    "conversationSettingWorkspace": "{{name}}に切り替えました"
+    "conversationSettingWorkspace": "{{name}}に切り替えました",
+    "conversationWorkspaceBuilding": "作っています",
+    "conversationWorkspaceBuilt": "「{{name}}」ができました——今そこにいます",
+    "conversationWorkspaceNoPage": "ビルドは終わりましたがページが書かれず、表示するものがありません",
+    "conversationWorkspaceIncomplete": "作るには名前と、何をするものかが必要です",
+    "conversationWorkspaceUnknown": "「{{name}}」というワークスペースはありません"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",
@@ -1751,7 +1756,14 @@
     "imported": "「{{name}}」の準備ができました",
     "importError": {
       "not-a-workspace": "このファイルはワークスペースではありません",
-      "unreadable": "このファイルを読めませんでした"
+      "unreadable": "このファイルを読めませんでした",
+      "no-app": "そのワークスペースのページがファイルに入っていませんでした"
+    },
+    "appReload": "再読み込み",
+    "appError": {
+      "not-a-folder": "このワークスペースのページが見つかりません",
+      "no-entry": "このワークスペースには開けるページがありません",
+      "failed": "このワークスペースのページを起動できませんでした"
     }
   }
 }

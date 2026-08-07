@@ -1617,7 +1617,12 @@
     "conversationSkillCancelled": "Aufnahme verworfen",
     "conversationSkillIncomplete": "Für einen Skill brauche ich einen Namen und die Schritte",
     "conversationSkillUnnamed": "Ein neuer Skill",
-    "conversationSettingWorkspace": "Auf „{{name}}“ umgestellt"
+    "conversationSettingWorkspace": "Auf „{{name}}“ umgestellt",
+    "conversationWorkspaceBuilding": "Wird gebaut",
+    "conversationWorkspaceBuilt": "„{{name}}“ ist fertig — du bist jetzt drin",
+    "conversationWorkspaceNoPage": "Der Bau ist fertig, aber es wurde keine Seite geschrieben, also gibt es nichts zu zeigen",
+    "conversationWorkspaceIncomplete": "Zum Bauen brauche ich einen Namen und was es tun soll",
+    "conversationWorkspaceUnknown": "Ich habe keinen Workspace namens „{{name}}“"
   },
   "themeCustomizer": {
     "title": "Design anpassen",
@@ -1749,7 +1754,14 @@
     "imported": "„{{name}}“ ist bereit",
     "importError": {
       "not-a-workspace": "Diese Datei ist kein Workspace",
-      "unreadable": "Diese Datei konnte nicht gelesen werden"
+      "unreadable": "Diese Datei konnte nicht gelesen werden",
+      "no-app": "Die Seite dieses Workspace war nicht in der Datei"
+    },
+    "appReload": "Neu laden",
+    "appError": {
+      "not-a-folder": "Die Seite dieses Workspace fehlt",
+      "no-entry": "Dieser Workspace hat keine Seite zum Öffnen",
+      "failed": "Die Seite dieses Workspace ließ sich nicht starten"
     }
   }
 }

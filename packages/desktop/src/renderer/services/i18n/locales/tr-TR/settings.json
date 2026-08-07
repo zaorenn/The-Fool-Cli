@@ -1617,7 +1617,12 @@
     "conversationSkillCancelled": "O kaydı unuttum",
     "conversationSkillIncomplete": "Skill yapabilmem için bir ad ve adımlar lazım",
     "conversationSkillUnnamed": "Yeni bir skill",
-    "conversationSettingWorkspace": "{{name}} workspace’ine geçildi"
+    "conversationSettingWorkspace": "{{name}} workspace’ine geçildi",
+    "conversationWorkspaceBuilding": "Oluşturuluyor",
+    "conversationWorkspaceBuilt": "“{{name}}” hazır — şimdi içindesin",
+    "conversationWorkspaceNoPage": "Derleme bitti ama bir sayfa yazılmadı, gösterecek bir şey yok",
+    "conversationWorkspaceIncomplete": "Oluşturabilmem için bir ad ve ne yapacağı lazım",
+    "conversationWorkspaceUnknown": "“{{name}}” adında bir workspace yok"
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",
@@ -1749,7 +1754,14 @@
     "imported": "“{{name}}” hazır",
     "importError": {
       "not-a-workspace": "Bu dosya bir workspace değil",
-      "unreadable": "Bu dosya okunamadı"
+      "unreadable": "Bu dosya okunamadı",
+      "no-app": "O workspace’in sayfası dosyanın içinde yoktu"
+    },
+    "appReload": "Yenile",
+    "appError": {
+      "not-a-folder": "Bu workspace’in sayfası yok",
+      "no-entry": "Bu workspace’te açılacak bir sayfa yok",
+      "failed": "Bu workspace’in sayfası başlatılamadı"
     }
   }
 }

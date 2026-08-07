@@ -183,6 +183,51 @@ describe('sharing one', () => {
     expect(result.ok === true && result.workspace.builtin).toBe(false);
   });
 
+  /**
+   * A workspace that arrives and then cannot find its own page does not work,
+   * and the person who received it has nothing to go and get. So the app's
+   * files travel inside the same file.
+   */
+  it('carries the app’s files, and hands them back on the way in', () => {
+    const withApp = made({ app: { folder: 'guitar', title: 'Guitar', entry: 'index.html', requiresSkills: [] } });
+    const files = { 'index.html': '<h1>tab</h1>', 'app.js': 'fool.ask("go")' };
+
+    const result = importWorkspace(exportWorkspace(withApp, files));
+
+    expect(result.ok === true && result.files).toEqual(files);
+    expect(result.ok === true && result.workspace.app?.folder).toBe('guitar');
+  });
+
+  it('says nothing about files when the workspace has no page', () => {
+    expect(exportWorkspace(made())).not.toContain('"files"');
+    expect(importWorkspace(exportWorkspace(made()))).toMatchObject({ ok: true, files: {} });
+  });
+
+  /**
+   * The names in that object came from another person's machine. A `..` in one
+   * is the difference between an app and an arbitrary file write.
+   */
+  it('drops a file whose name could point outside the app’s folder', () => {
+    const smuggled = exportWorkspace(made(), {
+      'index.html': 'ok',
+      '../../evil.html': 'no',
+      '/etc/passwd': 'no',
+      'C:/Windows/x.html': 'no',
+    });
+
+    const result = importWorkspace(smuggled);
+
+    expect(result.ok === true && Object.keys(result.files)).toEqual(['index.html']);
+  });
+
+  it('drops a file that is not text of a kind a page is made of', () => {
+    const result = importWorkspace(
+      exportWorkspace(made(), { 'index.html': 'ok', 'setup.exe': 'MZ', 'run.sh': 'rm -rf' })
+    );
+
+    expect(result.ok === true && Object.keys(result.files)).toEqual(['index.html']);
+  });
+
   it('names the file after the workspace, safely', () => {
     expect(workspaceFileName(made({ name: 'Gitar Tabı!' }))).toBe('gitar-tabı.foolspace.json');
     expect(workspaceFileName(made({ name: '   ' }))).toBe('workspace.foolspace.json');

@@ -27,6 +27,7 @@
  */
 
 import { DEFAULT_LAYOUT_ID, SURFACE_IDS, type SurfaceId } from './surfaceLayouts';
+import { sanitizeWorkspaceApp, type WorkspaceApp } from './workspaceApp';
 
 /** How a workspace is stored, and what an exported file contains. */
 export type Workspace = {
@@ -55,6 +56,15 @@ export type Workspace = {
   };
   /** Skills switched on here, by name. */
   skills: string[];
+  /**
+   * A page of its own, or none.
+   *
+   * This is what turns a workspace from a set of settings into a thing: a panel
+   * that does one job, written from a spoken description, running inside the
+   * app. Static, and reaching everything else through The Fool — see
+   * {@link WorkspaceApp} for why it is not allowed a back end of its own.
+   */
+  app: WorkspaceApp | null;
   /** When it was last written, so a card can be ordered by recency. */
   updatedAt: string;
 };
@@ -100,6 +110,7 @@ export const defaultWorkspace = (): Workspace => ({
   voice: { personaPresetId: 'companion', instructions: '', language: 'auto' },
   agent: { assistantId: '', providerId: '', modelId: '' },
   skills: [],
+  app: null,
   updatedAt: new Date(0).toISOString(),
 });
 
@@ -156,6 +167,7 @@ export const sanitizeWorkspace = (value: unknown, fallbackId = ''): Workspace | 
           return cleaned.length > 0 ? [cleaned] : [];
         })
       : [],
+    app: sanitizeWorkspaceApp(record.app),
     updatedAt:
       typeof record.updatedAt === 'string' && !Number.isNaN(Date.parse(record.updatedAt))
         ? record.updatedAt
@@ -225,6 +237,15 @@ export type WorkspaceFile = {
   kind: typeof WORKSPACE_FILE_KIND;
   version: number;
   workspace: Workspace;
+  /**
+   * The app's own files, by relative path.
+   *
+   * Carried inside the file rather than fetched afterwards, because a workspace
+   * that arrives and then cannot find its own page is a workspace that does not
+   * work — and the person who received it has nothing to go and get. Text only
+   * and bounded: this is meant to be small enough to send in a message.
+   */
+  files?: Record<string, string>;
 };
 
 /**
@@ -234,12 +255,49 @@ export type WorkspaceFile = {
  * is not a workspace" rather than quietly building a broken one out of whatever
  * JSON it was handed.
  */
-export const exportWorkspace = (workspace: Workspace): string =>
-  `${JSON.stringify({ kind: WORKSPACE_FILE_KIND, version: WORKSPACE_FILE_VERSION, workspace }, null, 2)}\n`;
+export const exportWorkspace = (workspace: Workspace, files: Record<string, string> = {}): string =>
+  `${JSON.stringify(
+    {
+      kind: WORKSPACE_FILE_KIND,
+      version: WORKSPACE_FILE_VERSION,
+      workspace,
+      ...(Object.keys(files).length > 0 ? { files } : {}),
+    },
+    null,
+    2
+  )}\n`;
 
 export type WorkspaceImport =
-  | { ok: true; workspace: Workspace }
+  | { ok: true; workspace: Workspace; files: Record<string, string> }
   | { ok: false; reason: 'not-a-workspace' | 'unreadable' };
+
+/** File names an imported workspace may carry. Text only, and nothing executable. */
+const APP_FILE = /\.(html|css|js|mjs|json|svg|txt|md)$/i;
+
+/**
+ * The app's files, as far as a file from another person can be trusted.
+ *
+ * Names are checked here and again by the writer that puts them on disk. Two
+ * checks on the same thing is not belt and braces — the cost of missing it once
+ * is a file written wherever the sender chose, and the two live far enough apart
+ * that neither can assume the other ran.
+ */
+const safeFiles = (value: unknown): Record<string, string> => {
+  if (typeof value !== 'object' || value === null) return {};
+
+  const files: Record<string, string> = {};
+  for (const [name, contents] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof contents !== 'string') continue;
+
+    const cleaned = name.replaceAll('\\', '/').trim();
+    if (cleaned.length === 0 || cleaned.startsWith('/') || /^[a-z]+:/i.test(cleaned)) continue;
+    if (cleaned.split('/').includes('..')) continue;
+    if (!APP_FILE.test(cleaned)) continue;
+
+    files[cleaned] = contents;
+  }
+  return files;
+};
 
 /**
  * Reads a file somebody was sent.
@@ -266,14 +324,17 @@ export const importWorkspace = (contents: string): WorkspaceImport => {
 
   // An imported copy of the shipped one is a copy, not a replacement: the
   // default is the app's and nothing arriving from outside may overwrite it.
+  const files = safeFiles(file.files);
+
   if (workspace.id === DEFAULT_WORKSPACE_ID) {
     return {
       ok: true,
       workspace: { ...workspace, id: 'default-copy', name: `${workspace.name} (copy)`, builtin: false },
+      files,
     };
   }
 
-  return { ok: true, workspace };
+  return { ok: true, workspace, files };
 };
 
 /** A file name for a workspace, safe on every filesystem. */

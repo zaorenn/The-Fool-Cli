@@ -1617,7 +1617,12 @@
     "conversationSkillCancelled": "He descartado esa grabación",
     "conversationSkillIncomplete": "Necesito un nombre y los pasos para convertirlo en habilidad",
     "conversationSkillUnnamed": "Una habilidad nueva",
-    "conversationSettingWorkspace": "Cambiado a «{{name}}»"
+    "conversationSettingWorkspace": "Cambiado a «{{name}}»",
+    "conversationWorkspaceBuilding": "Construyéndolo",
+    "conversationWorkspaceBuilt": "«{{name}}» está listo: ya estás dentro",
+    "conversationWorkspaceNoPage": "La construcción terminó sin escribir una página, así que no hay nada que mostrar",
+    "conversationWorkspaceIncomplete": "Para construirlo necesito un nombre y qué debe hacer",
+    "conversationWorkspaceUnknown": "No tengo ningún espacio de trabajo llamado «{{name}}»"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",
@@ -1749,7 +1754,14 @@
     "imported": "«{{name}}» está listo",
     "importError": {
       "not-a-workspace": "Ese archivo no es un espacio de trabajo",
-      "unreadable": "No se pudo leer ese archivo"
+      "unreadable": "No se pudo leer ese archivo",
+      "no-app": "La página de ese espacio de trabajo no venía en el archivo"
+    },
+    "appReload": "Recargar",
+    "appError": {
+      "not-a-folder": "Falta la página de este espacio de trabajo",
+      "no-entry": "Este espacio de trabajo no tiene página que abrir",
+      "failed": "No se pudo iniciar la página de este espacio de trabajo"
     }
   }
 }

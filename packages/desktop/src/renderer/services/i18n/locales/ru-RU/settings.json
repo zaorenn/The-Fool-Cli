@@ -1617,7 +1617,12 @@
     "conversationSkillCancelled": "Забыл эту запись",
     "conversationSkillIncomplete": "Чтобы сделать навык, нужны название и шаги",
     "conversationSkillUnnamed": "Новый навык",
-    "conversationSettingWorkspace": "Переключил на «{{name}}»"
+    "conversationSettingWorkspace": "Переключил на «{{name}}»",
+    "conversationWorkspaceBuilding": "Собираю",
+    "conversationWorkspaceBuilt": "«{{name}}» готово — вы уже в нём",
+    "conversationWorkspaceNoPage": "Сборка закончилась, но страницу не записали, показывать нечего",
+    "conversationWorkspaceIncomplete": "Чтобы собрать, нужны название и что оно должно делать",
+    "conversationWorkspaceUnknown": "У меня нет рабочего пространства «{{name}}»"
   },
   "themeCustomizer": {
     "title": "Настроить тему",
@@ -1749,7 +1754,14 @@
     "imported": "«{{name}}» готово",
     "importError": {
       "not-a-workspace": "Этот файл не рабочее пространство",
-      "unreadable": "Не удалось прочитать файл"
+      "unreadable": "Не удалось прочитать файл",
+      "no-app": "Страницы этого рабочего пространства в файле не было"
+    },
+    "appReload": "Обновить",
+    "appError": {
+      "not-a-folder": "Страница этого рабочего пространства пропала",
+      "no-entry": "В этом рабочем пространстве нечего открывать",
+      "failed": "Не удалось запустить страницу этого рабочего пространства"
     }
   }
 }

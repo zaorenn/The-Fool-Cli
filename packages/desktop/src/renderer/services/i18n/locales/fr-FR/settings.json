@@ -1617,7 +1617,12 @@
     "conversationSkillCancelled": "Enregistrement oublié",
     "conversationSkillIncomplete": "Il me faut un nom et les étapes pour en faire une compétence",
     "conversationSkillUnnamed": "Une nouvelle compétence",
-    "conversationSettingWorkspace": "Passé à « {{name}} »"
+    "conversationSettingWorkspace": "Passé à « {{name}} »",
+    "conversationWorkspaceBuilding": "Je le construis",
+    "conversationWorkspaceBuilt": "« {{name}} » est prêt — vous y êtes",
+    "conversationWorkspaceNoPage": "La construction s’est terminée sans écrire de page, il n’y a rien à montrer",
+    "conversationWorkspaceIncomplete": "Pour construire, il me faut un nom et ce qu’il doit faire",
+    "conversationWorkspaceUnknown": "Je n’ai pas d’espace de travail nommé « {{name}} »"
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",
@@ -1749,7 +1754,14 @@
     "imported": "« {{name}} » est prêt",
     "importError": {
       "not-a-workspace": "Ce fichier n’est pas un espace de travail",
-      "unreadable": "Ce fichier n’a pas pu être lu"
+      "unreadable": "Ce fichier n’a pas pu être lu",
+      "no-app": "La page de cet espace de travail n’était pas dans le fichier"
+    },
+    "appReload": "Recharger",
+    "appError": {
+      "not-a-folder": "La page de cet espace de travail a disparu",
+      "no-entry": "Cet espace de travail n’a pas de page à ouvrir",
+      "failed": "Impossible de démarrer la page de cet espace de travail"
     }
   }
 }
