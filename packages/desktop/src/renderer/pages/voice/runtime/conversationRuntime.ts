@@ -31,7 +31,7 @@ import {
   readVoiceMemory,
   rememberVoiceSession,
 } from '@renderer/services/voice/session/voiceMemoryStore';
-import { peekVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
+import { peekVoiceSettings, subscribeVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import { LocalVoicePipeline } from '../localPipeline';
 import { PcmAudioOutput, PcmMicrophone } from '../pcmAudio';
 import { RealtimeVoiceClient } from '../RealtimeVoiceClient';
@@ -161,6 +161,8 @@ class ConversationRuntime {
   private client: RealtimeVoiceClient | null = null;
   /** Set instead of `client` when the conversation is assembled locally. */
   private local: LocalVoicePipeline | null = null;
+  /** Ends the subscription that keeps a running conversation's settings current. */
+  private releaseSettings: (() => void) | null = null;
   private microphone: PcmMicrophone | null = null;
   private output: PcmAudioOutput | null = null;
   /** Held for the length of the conversation, so nothing else opens capture. */
@@ -500,6 +502,16 @@ class ConversationRuntime {
     });
     await pipeline.connect();
     this.local = pipeline;
+
+    // Anything changed from here on reaches the conversation that is already
+    // running. The pipeline was handed one copy of the settings above and would
+    // otherwise keep it for the whole session, so "switch to a male voice" —
+    // heard, written down and confirmed out loud — took effect only after a
+    // restart. Both routes arrive here: the settings page and the spoken
+    // commands write to the same store.
+    this.releaseSettings?.();
+    this.releaseSettings = subscribeVoiceSettings((next) => pipeline.updateSettings(next));
+
     this.emit({ providerName: this.t('settings.voice.conversationProviderName.local-pipeline') });
 
     this.openOutput(LOCAL_OUTPUT_FALLBACK_RATE);
@@ -692,6 +704,8 @@ class ConversationRuntime {
     this.microphone = null;
     this.client?.disconnect();
     this.client = null;
+    this.releaseSettings?.();
+    this.releaseSettings = null;
     this.local?.close();
     this.local = null;
     this.output?.close();

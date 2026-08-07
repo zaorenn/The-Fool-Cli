@@ -24,6 +24,7 @@ vi.mock('@/common', () => ({
 
 const {
   LocalVoicePipeline,
+  SILENT_REPLY_MS,
   TURN_STALL_MS,
   checkLocalReadiness,
   listLocalModels,
@@ -1439,6 +1440,215 @@ describe('a stall while it is speaking', () => {
 
       // Text without voice is the failure being pinned here.
       expect(events.some((event) => event.kind === 'audio')).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+/**
+ * Changing the voice while the conversation is open.
+ *
+ * The reported failure: "switch to a male voice" is accepted, the setting is
+ * written, and the next sentence comes back in the old voice anyway — it only
+ * takes effect after the conversation is restarted. The pipeline took a copy of
+ * the settings when it was built and never looked again, so every request it
+ * made for the rest of the session named the voice that was current when the
+ * session started.
+ *
+ * It matters beyond the voice: speed, volume and the reply language are all
+ * changed the same way and were all equally stuck.
+ */
+describe('a setting changed while the conversation is open', () => {
+  const readyCatalog = () => catalogInvoke.mockResolvedValue(okCatalog([STT_MODEL, TTS_MODEL]));
+
+  const speaks = () =>
+    synthesizeInvoke.mockImplementation(async () => ({
+      ok: true,
+      data: { audio: { dataBase64: pcm16ToWavBase64(pcmOf([1]), 22050), sampleRateHz: 22050 } },
+    }));
+
+  const openWith = async (events: NormalizedRealtimeEvent[]) => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (String(url).endsWith('/models')) {
+        return { ok: true, json: async () => ({ data: [{ id: 'google/gemma-4-e4b' }] }) } as unknown as Response;
+      }
+      return { ok: true, body: sseBody(['Tamam. ']) } as unknown as Response;
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pipeline = new LocalVoicePipeline({
+      settings: settingsWith({ model: 'google/gemma-4-e4b' }),
+      interfaceLanguage: 'tr',
+      onEvent: (event: NormalizedRealtimeEvent) => void events.push(event),
+    });
+    await pipeline.connect();
+    return pipeline;
+  };
+
+  const speak = async (pipeline: LocalVoicePipeline, text: string) => {
+    transcribeInvoke.mockResolvedValue({ ok: true, data: { text } });
+    pipeline.pushAudio(toBase64(pcmOf([1, 2])), 'speech-started');
+    pipeline.pushAudio(toBase64(pcmOf([1, 2])), 'utterance-ended');
+    await settle();
+  };
+
+  it('uses the voice that is current now, not the one it started with', async () => {
+    readyCatalog();
+    speaks();
+    const events: NormalizedRealtimeEvent[] = [];
+    const pipeline = await openWith(events);
+
+    await speak(pipeline, 'merhaba');
+    const before = synthesizeInvoke.mock.calls.at(-1)?.[0].payload.profileId;
+    expect(before).toBe('cloned:jarvis');
+
+    // What "switch to a male voice" amounts to: the stored settings change.
+    pipeline.updateSettings({
+      ...settingsWith({ model: 'google/gemma-4-e4b' }),
+      tts: { ...settingsWith().tts, modelId: TTS_MODEL.id, profileId: 'piper:male' },
+    });
+
+    await speak(pipeline, 'tekrar söyle');
+    expect(synthesizeInvoke.mock.calls.at(-1)?.[0].payload.profileId).toBe('piper:male');
+
+    pipeline.close();
+  });
+
+  it('carries the speed with it, because the same instruction changes that too', async () => {
+    readyCatalog();
+    speaks();
+    const events: NormalizedRealtimeEvent[] = [];
+    const pipeline = await openWith(events);
+
+    const next = settingsWith({ model: 'google/gemma-4-e4b' });
+    pipeline.updateSettings({ ...next, tts: { ...next.tts, speed: 1.4 } });
+
+    await speak(pipeline, 'merhaba');
+    expect(synthesizeInvoke.mock.calls.at(-1)?.[0].payload.speed).toBe(1.4);
+
+    pipeline.close();
+  });
+});
+
+/**
+ * A model that thinks and never speaks.
+ *
+ * The watchdog above bounds a *connection* that has gone dead: nothing arriving
+ * for forty-five seconds ends the turn. It does not bound a *reply*, and those
+ * are different failures. Several local models — the default one here among
+ * them — write their whole deliberation into `reasoning_content`, which this
+ * pipeline deliberately never reads aloud. So bytes keep arriving, the watchdog
+ * keeps being reset by them, and the user watches an assistant produce nothing
+ * at all with no ceiling and no explanation. That is exactly what "the tokens
+ * stopped and it froze" looks like from the outside.
+ *
+ * Reasoning for a few seconds is normal and must not be punished. Reasoning past
+ * a hard bound without a single visible character is a turn that is not going to
+ * produce one.
+ */
+describe('a model that streams nothing but its own thinking', () => {
+  const readyCatalog = () => catalogInvoke.mockResolvedValue(okCatalog([STT_MODEL, TTS_MODEL]));
+
+  const speaks = () =>
+    synthesizeInvoke.mockImplementation(async () => ({
+      ok: true,
+      data: { audio: { dataBase64: pcm16ToWavBase64(pcmOf([1]), 22050), sampleRateHz: 22050 } },
+    }));
+
+  /** A stream that keeps sending reasoning frames and never any content. */
+  const thinkingForever = (): ReadableStream<Uint8Array> => {
+    const encoder = new TextEncoder();
+    return new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { reasoning_content: 'hmm ' } }] })}\n\n`)
+        );
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      },
+    });
+  };
+
+  const openThinking = async (events: NormalizedRealtimeEvent[], sent: string[]) => {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (String(url).endsWith('/models')) {
+        return { ok: true, json: async () => ({ data: [{ id: 'google/gemma-4-e4b' }] }) } as unknown as Response;
+      }
+      const body = JSON.parse(String(init?.body ?? '{}')) as { messages?: { role: string; content: string }[] };
+      const last = body.messages?.at(-1);
+      if (last?.role === 'user') sent.push(last.content);
+      return { ok: true, body: thinkingForever() } as unknown as Response;
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pipeline = new LocalVoicePipeline({
+      settings: settingsWith({ model: 'google/gemma-4-e4b' }),
+      interfaceLanguage: 'tr',
+      onEvent: (event: NormalizedRealtimeEvent) => void events.push(event),
+    });
+    await pipeline.connect();
+    return pipeline;
+  };
+
+  const say = (pipeline: LocalVoicePipeline, sample: number): void => {
+    pipeline.pushAudio(toBase64(pcmOf([sample])), 'speech-started');
+    pipeline.pushAudio('', 'utterance-ended');
+  };
+
+  const drain = async (): Promise<void> => {
+    for (let round = 0; round < 12; round += 1) await settle();
+  };
+
+  it('gives up once it is clear no answer is coming, rather than never', async () => {
+    vi.useFakeTimers();
+    try {
+      readyCatalog();
+      speaks();
+      let asked = 0;
+      transcribeInvoke.mockImplementation(async () => ({ ok: true, data: { text: `soru ${++asked}` } }));
+
+      const events: NormalizedRealtimeEvent[] = [];
+      const sent: string[] = [];
+      const pipeline = await openThinking(events, sent);
+
+      say(pipeline, 1);
+      await drain();
+
+      // Past the point where a reply that was ever going to start would have.
+      await vi.advanceTimersByTimeAsync(SILENT_REPLY_MS + 2000);
+      await drain();
+
+      say(pipeline, 2);
+      await drain();
+
+      // The session survives it: the next question is actually sent.
+      expect(sent).toContain('soru 2');
+      expect(events.some((event) => event.kind === 'phase' && event.phase === 'listening')).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not punish a model that thinks for a few seconds first', async () => {
+    vi.useFakeTimers();
+    try {
+      readyCatalog();
+      speaks();
+      transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'merhaba' } });
+
+      const events: NormalizedRealtimeEvent[] = [];
+      const sent: string[] = [];
+      const pipeline = await openThinking(events, sent);
+
+      say(pipeline, 1);
+      await drain();
+      await vi.advanceTimersByTimeAsync(5000);
+      await drain();
+
+      // Still going: five seconds of deliberation is a model working, not a
+      // model stuck, and cutting it off there would be the worse bug.
+      expect(events.some((event) => event.kind === 'error')).toBe(false);
+      pipeline.close();
     } finally {
       vi.useRealTimers();
     }

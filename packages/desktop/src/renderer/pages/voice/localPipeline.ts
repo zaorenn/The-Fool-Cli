@@ -278,6 +278,24 @@ const MAX_WAITING = 8;
  */
 export const TURN_STALL_MS = 45_000;
 
+/**
+ * How long a reply may stream without producing a single visible character.
+ *
+ * A second clock, because "the connection is alive" and "the reply is going
+ * anywhere" are different questions and only the first was being asked. Several
+ * local models — the default one here among them — write their whole
+ * deliberation into `reasoning_content`, which is never read aloud. Every one of
+ * those frames is a byte from the server, so the watchdog above was reset by
+ * them for as long as the model cared to keep going, while the person waiting
+ * saw nothing at all and had no way to tell a model thinking from a model stuck.
+ *
+ * Deliberately much longer than the other one. Thinking for a few seconds before
+ * the first word is normal and cutting it off would be the worse bug; two
+ * minutes of it without a single character is a turn that is not going to
+ * produce one.
+ */
+export const SILENT_REPLY_MS = 120_000;
+
 /** One sentence, synthesised and ready for the speaker. */
 type RenderedSpeech = { pcm16Base64: string; sampleRate: number };
 
@@ -331,7 +349,13 @@ type SpeakingVoice = {
 };
 
 export class LocalVoicePipeline {
-  private readonly options: LocalPipelineOptions;
+  /**
+   * Not readonly: the settings inside it are replaced when they change.
+   *
+   * Everything else in here is fixed for the life of the pipeline — see
+   * {@link updateSettings} for why the settings are not.
+   */
+  private options: LocalPipelineOptions;
   private history: Turn[] = [];
   private ready: Extract<LocalReadiness, { ok: true }> | null = null;
   /** Aborts a reply the user has genuinely taken the floor from. */
@@ -382,6 +406,16 @@ export class LocalVoicePipeline {
   private stall: ReturnType<typeof setTimeout> | null = null;
 
   /**
+   * The bound on a reply that is streaming but showing nothing.
+   *
+   * Separate from `stall` because it answers a different question and is never
+   * restarted by traffic: it is armed once when the turn begins and cleared by
+   * the first visible character. Restarting it on bytes would make it the same
+   * watchdog again, which is the bug it exists for.
+   */
+  private silence: ReturnType<typeof setTimeout> | null = null;
+
+  /**
    * Which turn the speaker currently belongs to.
    *
    * So a loop that was abandoned mid-sentence cannot tidy up after a newer one.
@@ -392,6 +426,27 @@ export class LocalVoicePipeline {
 
   constructor(options: LocalPipelineOptions) {
     this.options = options;
+  }
+
+  /**
+   * The settings, changed while the conversation is open.
+   *
+   * Everything the assistant can be told to change about itself out loud — which
+   * voice reads the reply, how fast, how loud, what language it answers in — is
+   * a setting, and this pipeline took one copy of them when it was built and
+   * never looked again. So "switch to a male voice" was heard, written down,
+   * confirmed out loud, and then ignored for the rest of the session: every
+   * later request still named whichever voice happened to be current when the
+   * conversation started. From where the user sits that is the assistant
+   * agreeing to something and not doing it, which is worse than refusing.
+   *
+   * Replaced whole rather than merged. These come from the store, which has
+   * already done the merging; merging again here would let a stale field in this
+   * copy win over the newer one beside it.
+   */
+  updateSettings(next: FoolVoiceSettings): void {
+    if (this.closed) return;
+    this.options = { ...this.options, settings: next };
   }
 
   /** The rate the microphone must capture at for the transcriber. */
@@ -642,8 +697,27 @@ export class LocalVoicePipeline {
     this.stall = setTimeout(() => this.abandonStalledTurn(controller), TURN_STALL_MS);
   }
 
+  /**
+   * Starts the clock on a reply that has yet to show anything.
+   *
+   * Armed once per turn and never restarted, so deliberation that goes on for
+   * ever is bounded even while the connection stays perfectly healthy.
+   */
+  private watchForSilentReply(controller: AbortController): void {
+    if (this.silence !== null) clearTimeout(this.silence);
+    this.silence = setTimeout(() => this.abandonStalledTurn(controller), SILENT_REPLY_MS);
+  }
+
+  /** The reply said something. Whatever it does now, it is not a silent one. */
+  private markVisibleReply(): void {
+    if (this.silence === null) return;
+    clearTimeout(this.silence);
+    this.silence = null;
+  }
+
   /** Stops watching, whatever the turn's outcome was. */
   private clearStall(): void {
+    this.markVisibleReply();
     if (this.stall === null) return;
     clearTimeout(this.stall);
     this.stall = null;
@@ -664,6 +738,7 @@ export class LocalVoicePipeline {
    */
   private abandonStalledTurn(controller: AbortController): void {
     this.stall = null;
+    this.markVisibleReply();
     if (this.closed || this.inFlight !== controller) return;
 
     controller.abort();
@@ -705,6 +780,10 @@ export class LocalVoicePipeline {
     // From here the turn is on the clock. Every turn ends — this is what makes
     // that true even when the thing it is waiting on never answers.
     this.markProgress(controller);
+    // And on a second clock, for the case where it answers steadily and says
+    // nothing: bytes reset the one above, so only this one catches a model that
+    // deliberates for ever.
+    this.watchForSilentReply(controller);
 
     try {
       this.options.onEvent({ kind: 'phase', phase: 'thinking' });
@@ -881,6 +960,9 @@ export class LocalVoicePipeline {
         if (frame.text.length === 0) continue;
 
         written += frame.text;
+        // Something was actually said. From here the ordinary stall watchdog is
+        // the right one: this reply is going somewhere.
+        this.markVisibleReply();
         this.options.onEvent({ kind: 'assistant-transcript', text: frame.text, final: false });
 
         // Queued rather than spoken here, and *not* awaited: generation must not
