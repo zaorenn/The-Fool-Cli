@@ -16,6 +16,7 @@ import {
   type Workspace,
 } from '@/common/config/workspaces';
 import { useWorkspaces } from '@renderer/hooks/config/useWorkspaces';
+import { fetchMissingSkills, missingSkills } from './fetchMissingSkills';
 import WorkspaceAppPanel from './WorkspaceAppPanel';
 import WorkspaceCard from './WorkspaceCard';
 import styles from './FoolsHub.module.css';
@@ -43,6 +44,8 @@ const FoolsHubPage: React.FC = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [busy, setBusy] = useState(false);
+  /** Skills being fetched for a workspace that has just arrived. */
+  const [fetching, setFetching] = useState<string[]>([]);
   const fileInput = useRef<HTMLInputElement | null>(null);
 
   /**
@@ -115,6 +118,26 @@ const FoolsHubPage: React.FC = () => {
 
     await save(result.workspace);
     Message.success(t('hub.imported', { name: result.workspace.name }));
+
+    // The second half of an import. A workspace carries its own page, so nothing
+    // about the app can arrive incomplete — but the skills its page calls live
+    // in the library rather than in the file, and without this it opens, looks
+    // correct, and fails the first time somebody presses the button.
+    const missing = await missingSkills(result.workspace);
+    if (missing.length === 0) return;
+
+    setFetching(missing);
+    try {
+      const fetched = await fetchMissingSkills(result.workspace, missing);
+      if (fetched.ok === false || fetched.installed.length < missing.length) {
+        const left = fetched.ok ? missing.filter((skill) => !fetched.installed.includes(skill)) : missing;
+        Message.warning(t('hub.skillsMissing', { names: left.join(', ') }));
+        return;
+      }
+      Message.success(t('hub.skillsInstalled', { names: fetched.installed.join(', ') }));
+    } finally {
+      setFetching([]);
+    }
   };
 
   return (
@@ -143,6 +166,14 @@ const FoolsHubPage: React.FC = () => {
           />
         ))}
       </section>
+
+      {fetching.length > 0 ? (
+        <div className={styles.fetching} data-testid='workspace-fetching'>
+          <Typography.Text className='text-12px text-t-secondary'>
+            {t('hub.skillsFetching', { names: fetching.join(', ') })}
+          </Typography.Text>
+        </div>
+      ) : null}
 
       <section className={styles.maker}>
         <div className='grid gap-4px'>

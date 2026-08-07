@@ -1764,6 +1764,9 @@
       "not-a-folder": "這個工作區的頁面不見了",
       "no-entry": "這個工作區沒有可開啟的頁面",
       "failed": "無法啟動這個工作區的頁面"
-    }
+    },
+    "skillsFetching": "正在取得它需要的：{{names}}",
+    "skillsInstalled": "已安裝 {{names}}",
+    "skillsMissing": "找不到 {{names}}——工作區能開啟，但用到它們的部分暫時不能用"
   }
 }

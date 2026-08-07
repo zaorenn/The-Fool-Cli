@@ -1762,6 +1762,9 @@
       "not-a-folder": "La page de cet espace de travail a disparu",
       "no-entry": "Cet espace de travail n’a pas de page à ouvrir",
       "failed": "Impossible de démarrer la page de cet espace de travail"
-    }
+    },
+    "skillsFetching": "Je récupère ce qu’il faut : {{names}}",
+    "skillsInstalled": "{{names}} installé",
+    "skillsMissing": "Introuvable : {{names}} — l’espace s’ouvrira, mais les parties qui s’en servent ne marcheront pas encore"
   }
 }

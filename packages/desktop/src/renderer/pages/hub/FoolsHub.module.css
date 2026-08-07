@@ -185,3 +185,20 @@
   padding: 24px;
   text-align: center;
 }
+
+/*
+ * What an import is still fetching.
+ *
+ * Shown rather than left to a spinner nobody can interpret: this runs for a
+ * minute or two, and "installing the skills it needs" is the difference between
+ * waiting and assuming it has hung.
+ */
+.fetching {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border-2);
+  border-radius: var(--fool-radius, 12px);
+  background: var(--color-fill-1, var(--color-bg-2));
+}

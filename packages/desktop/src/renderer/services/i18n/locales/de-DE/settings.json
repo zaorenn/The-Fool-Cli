@@ -1762,6 +1762,9 @@
       "not-a-folder": "Die Seite dieses Workspace fehlt",
       "no-entry": "Dieser Workspace hat keine Seite zum Öffnen",
       "failed": "Die Seite dieses Workspace ließ sich nicht starten"
-    }
+    },
+    "skillsFetching": "Hole, was gebraucht wird: {{names}}",
+    "skillsInstalled": "{{names}} installiert",
+    "skillsMissing": "{{names}} nicht gefunden — der Workspace öffnet sich, aber die Teile, die sie brauchen, laufen noch nicht"
   }
 }

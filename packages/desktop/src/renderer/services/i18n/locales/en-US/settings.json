@@ -1762,6 +1762,9 @@
       "not-a-folder": "This workspace’s page is missing",
       "no-entry": "This workspace has no page to open",
       "failed": "Could not start this workspace’s page"
-    }
+    },
+    "skillsFetching": "Getting what it needs: {{names}}",
+    "skillsInstalled": "Installed {{names}}",
+    "skillsMissing": "Could not find {{names}} — the workspace will open, but the parts that use them will not work yet"
   }
 }

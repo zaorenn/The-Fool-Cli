@@ -1763,6 +1763,9 @@
       "not-a-folder": "这个工作区的页面不见了",
       "no-entry": "这个工作区没有可打开的页面",
       "failed": "无法启动这个工作区的页面"
-    }
+    },
+    "skillsFetching": "正在获取它需要的：{{names}}",
+    "skillsInstalled": "已安装 {{names}}",
+    "skillsMissing": "找不到 {{names}}——工作区能打开，但用到它们的部分暂时不能用"
   }
 }

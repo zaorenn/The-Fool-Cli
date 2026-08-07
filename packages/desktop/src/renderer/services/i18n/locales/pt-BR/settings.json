@@ -1765,6 +1765,9 @@
       "not-a-folder": "A página deste espaço de trabalho sumiu",
       "no-entry": "Este espaço de trabalho não tem página para abrir",
       "failed": "Não foi possível iniciar a página deste espaço de trabalho"
-    }
+    },
+    "skillsFetching": "Buscando o que ele precisa: {{names}}",
+    "skillsInstalled": "{{names}} instalado",
+    "skillsMissing": "Não encontrei {{names}} — o espaço vai abrir, mas as partes que usam isso ainda não vão funcionar"
   }
 }

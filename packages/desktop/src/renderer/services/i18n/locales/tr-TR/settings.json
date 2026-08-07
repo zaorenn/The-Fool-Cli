@@ -1762,6 +1762,9 @@
       "not-a-folder": "Bu workspace’in sayfası yok",
       "no-entry": "Bu workspace’te açılacak bir sayfa yok",
       "failed": "Bu workspace’in sayfası başlatılamadı"
-    }
+    },
+    "skillsFetching": "İhtiyaç duyduğu şeyler alınıyor: {{names}}",
+    "skillsInstalled": "{{names}} kuruldu",
+    "skillsMissing": "{{names}} bulunamadı — workspace açılacak ama onları kullanan kısımlar henüz çalışmayacak"
   }
 }
