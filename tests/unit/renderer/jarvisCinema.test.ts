@@ -36,6 +36,51 @@ const selectors = (): string[] => {
     .filter((selector) => !/^\d|^from$|^to$/.test(selector));
 };
 
+const PALETTE_PATH = path.resolve(
+  __dirname,
+  '../../../packages/desktop/src/renderer/pages/settings/AppearanceSettings/presets/jarvis.css'
+);
+const palette = readFileSync(PALETTE_PATH, 'utf-8').replace(/\/\*[\s\S]*?\*\//g, '');
+
+/**
+ * Selectors the cinema stylesheet animates, and the properties it animates on
+ * them. The palette may not declare any of these, on any selector that could
+ * match the same element — see the test below for why.
+ */
+const ANIMATED = [
+  { selector: '.arco-btn-primary', properties: ['box-shadow'] },
+  { selector: '.app-titlebar', properties: ['background-position', 'background'] },
+  { selector: "[data-active='true']", properties: ['box-shadow'] },
+];
+
+/** The declarations the palette makes inside a rule whose selector contains `needle`. */
+const paletteDeclarationsFor = (needle: string): string[] =>
+  palette
+    .split('}')
+    .filter((block) => block.split('{')[0].includes(needle))
+    .flatMap((block) => (block.split('{')[1] ?? '').split(';'))
+    .map((declaration) => declaration.split(':')[0].trim())
+    .filter(Boolean);
+
+describe('the JARVIS palette and its motion', () => {
+  it('leaves every animated property alone, because an important value would win', () => {
+    // The palette's stylesheet has `!important` appended to every declaration
+    // before it is injected, and an important declaration beats an animation
+    // outright — it is above animations in the cascade. So a resting value
+    // written in the palette does not merely coexist with the animation, it
+    // silently kills it: the button never breathes, the light never runs, the
+    // edge never charges, and the CSS all still looks correct.
+    const collisions = ANIMATED.flatMap(({ selector, properties }) => {
+      const declared = paletteDeclarationsFor(selector);
+      return properties
+        .filter((property) => declared.includes(property))
+        .map((property) => `${selector} { ${property} }`);
+    });
+
+    expect(collisions).toEqual([]);
+  });
+});
+
 describe('the JARVIS cinema stylesheet', () => {
   it('scopes every rule to the palette, so no other theme ever wears it', () => {
     const unscoped = selectors().filter((selector) =>

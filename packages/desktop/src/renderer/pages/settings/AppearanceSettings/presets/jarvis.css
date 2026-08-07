@@ -154,18 +154,14 @@ body,
   background-size: 48px 48px;
 }
 
-/* The accent is a light source, so it is allowed to spill. Only here. */
-.arco-btn-primary {
-  box-shadow:
-    0 0 0 1px rgba(72, 213, 255, 0.35),
-    0 0 18px -6px rgba(72, 213, 255, 0.55);
-}
-
-.arco-btn-primary:hover {
-  box-shadow:
-    0 0 0 1px rgba(72, 213, 255, 0.6),
-    0 0 24px -4px rgba(72, 213, 255, 0.7);
-}
+/*
+ * The accent is a light source, so it is allowed to spill — but that glow is in
+ * `styles/jarvis-cinema.css`, not here, because it breathes and this file cannot
+ * hold an animation. Every declaration here is rewritten to `!important` before
+ * injection, and an important declaration beats an animation outright. Written
+ * here, the resting value would pin the button and the breathing would never be
+ * seen — and it would look perfectly correct in the source.
+ */
 
 /* Focus is the other thing worth lighting: on a display this dark, an outline in
    a neutral colour is not findable. */
@@ -174,9 +170,13 @@ body,
   outline-offset: 2px;
 }
 
-/* The title bar reads as the top edge of the display rather than as a bar. */
+/* The title bar reads as the top edge of the display rather than as a bar.
+   `background-image` rather than the `background` shorthand on purpose: the
+   shorthand would also pin `background-position`, and pinned with the
+   `!important` this file acquires it would stop the light that runs along this
+   edge before it moved a pixel. */
 .app-titlebar {
-  background: linear-gradient(180deg, rgba(72, 213, 255, 0.05), transparent);
+  background-image: linear-gradient(180deg, rgba(72, 213, 255, 0.05), transparent);
   border-bottom: 1px solid rgba(72, 213, 255, 0.16);
 }
 
@@ -186,11 +186,13 @@ body,
   border-right: 1px solid rgba(72, 213, 255, 0.14);
 }
 
-/* What is selected is lit from its leading edge, the way a live channel is. */
+/* What is selected is lit from its leading edge, the way a live channel is.
+   The edge itself is in the cinema stylesheet, where it can charge on
+   selection; an important value here would hold it at full from the first
+   frame. */
 .chat-history__item[data-active='true'],
 .settings-sider__item[data-active='true'] {
-  background: linear-gradient(90deg, rgba(72, 213, 255, 0.14), transparent 70%);
-  box-shadow: inset 2px 0 0 #48d5ff;
+  background-image: linear-gradient(90deg, rgba(72, 213, 255, 0.14), transparent 70%);
 }
 
 /* A message is a readout. The user's own is the one with the lit edge, because

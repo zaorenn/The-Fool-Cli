@@ -230,8 +230,25 @@ html[data-theme-id='jarvis'] body::after {
   }
 }
 
+/* The resting glow is here rather than in the palette for the reason the whole
+   file is here: the palette's declarations are important, and an important
+   value would hold the button at one brightness and the breathing would never
+   be seen. Which means this rule also has to supply the look when the motion is
+   switched off — see the two stops at the bottom. */
 html[data-theme-id='jarvis'] .arco-btn-primary:not(:hover):not(:disabled) {
+  box-shadow:
+    0 0 0 1px rgba(72, 213, 255, 0.35),
+    0 0 18px -6px rgba(72, 213, 255, 0.55);
   animation: jarvis-reactor 4.5s ease-in-out infinite;
+}
+
+/* The hand on it is a stronger signal than the supply, so hovering takes the
+   glow off its cycle and holds it bright. Here rather than in the palette so
+   that the whole of this one effect is in one file. */
+html[data-theme-id='jarvis'] .arco-btn-primary:hover:not(:disabled) {
+  box-shadow:
+    0 0 0 1px rgba(72, 213, 255, 0.6),
+    0 0 24px -4px rgba(72, 213, 255, 0.7);
 }
 
 /* ---------------------------------------------------------------------------
@@ -285,6 +302,7 @@ html[data-theme-id='jarvis'] .app-titlebar {
 
 html[data-theme-id='jarvis'] .chat-history__item[data-active='true'],
 html[data-theme-id='jarvis'] .settings-sider__item[data-active='true'] {
+  box-shadow: inset 2px 0 0 #48d5ff;
   animation: jarvis-charge 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
@@ -315,6 +333,10 @@ html[data-theme-id='jarvis'] .settings-sider__item[data-active='true'] {
   html[data-theme-id='jarvis'] .settings-sider__item[data-active='true'] {
     animation: none !important;
   }
+
+  html[data-theme-id='jarvis'] .app-titlebar {
+    background-image: linear-gradient(180deg, rgba(72, 213, 255, 0.05), transparent) !important;
+  }
 }
 
 html[data-fool-frame-motion='none'][data-theme-id='jarvis']::after,
@@ -329,6 +351,14 @@ html[data-fool-frame-motion='none'][data-theme-id='jarvis'] .app-titlebar,
 html[data-fool-frame-motion='none'][data-theme-id='jarvis'] .chat-history__item[data-active='true'],
 html[data-fool-frame-motion='none'][data-theme-id='jarvis'] .settings-sider__item[data-active='true'] {
   animation: none !important;
+}
+
+/* The running light is a background layer, not a transform, so stopping its
+   animation would leave it parked at the left edge as a permanent bright bar.
+   Wherever it stops it has to be taken away, not held still. */
+html[data-fool-frame-motion='none'][data-theme-id='jarvis'] .app-titlebar,
+html[data-fool-frame-motion='calm'][data-theme-id='jarvis'] .app-titlebar {
+  background-image: linear-gradient(180deg, rgba(72, 213, 255, 0.05), transparent) !important;
 }
 
 /* Calm: the loops stop, the one-shots stay. */
