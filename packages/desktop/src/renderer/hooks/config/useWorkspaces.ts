@@ -130,10 +130,19 @@ export const deleteWorkspace = async (id: string): Promise<boolean> => {
   if (wanted === DEFAULT_WORKSPACE_ID) return false;
 
   const library = peekWorkspaces();
-  if (!library[wanted]) return false;
+  const going = library[wanted];
+  if (!going) return false;
 
   const { [wanted]: _removed, ...rest } = library;
   await configService.set(WORKSPACES_CONFIG_KEY, rest);
+
+  // The page goes with the workspace. Left behind, it is a folder nothing points
+  // at and nothing will ever clean up. Not fatal if it fails: a workspace gone
+  // from the list is gone as far as the user is concerned, and refusing to
+  // finish over a locked folder would leave it half-deleted instead.
+  if (going.app) {
+    await Promise.resolve(window.electronAPI?.removeWorkspaceApp?.(going.app.folder)).catch((): undefined => undefined);
+  }
 
   // Leaving someone in a workspace that no longer exists would resolve back to
   // the default on the next read; doing it now means the app moves while they
