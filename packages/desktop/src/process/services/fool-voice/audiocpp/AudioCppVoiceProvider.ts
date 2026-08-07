@@ -9,13 +9,7 @@ import type { VoiceEngineBackend, VoiceParams, VoiceSynthesizedWav } from '../..
 import { ClonedVoiceStore, parseClonedProfileId } from '../ClonedVoiceStore';
 import { AudioCppClient, type AudioCppSpeechRequest, type AudioCppSpeechResult } from './AudioCppClient';
 import { AudioCppRuntime, type AudioCppRuntimeOptions, type AudioCppServerModel } from './AudioCppRuntime';
-import {
-  AUDIOCPP_MODEL_SPECS,
-  getAudioCppModelSpec,
-  presetSpeakerNameFor,
-  wireLanguageFor,
-  wireParamsFor,
-} from './audioCppEngineSpecs';
+import { getAudioCppModelSpec, presetSpeakerNameFor, wireLanguageFor, wireParamsFor } from './audioCppEngineSpecs';
 
 /**
  * The `local-audiocpp` provider.
@@ -123,33 +117,48 @@ export class AudioCppVoiceProvider {
     return (await this.deps.installation.modelReady(modelId, backend)) ? 'ready' : 'unavailable';
   }
 
-  /** Every installed audio.cpp model, as the server config wants to see them. */
-  private async installedServerModels(backend: VoiceEngineBackend): Promise<AudioCppServerModel[]> {
-    const models: AudioCppServerModel[] = [];
-    for (const spec of AUDIOCPP_MODEL_SPECS) {
-      // A model that will not run on this processor is left out of the config
-      // rather than loaded and refused: the server loads every entry it is
-      // given, and a two-gigabyte one costs a minute to load and reject.
-      if (spec.requiresBackend && spec.requiresBackend !== backend) continue;
-      if (!(await this.deps.installation.modelReady(spec.modelId, backend))) continue;
-      models.push({
+  /**
+   * The one model being spoken with, as the server config wants to see it.
+   *
+   * This used to hand over every installed model. The server loads every entry
+   * it is given and holds those weights for its whole life, so every voice
+   * anyone had ever downloaded sat in memory at once — on a graphics card,
+   * gigabytes of it belonging to models nothing was using. Qwen3 was the
+   * visible case: once loaded it stayed until the app was closed, and choosing
+   * a different voice did not release it, because the config had not changed.
+   *
+   * One entry instead. The model is part of the runtime signature below, so
+   * changing voice replaces the child process and the old weights go with it.
+   * That costs a load on the first sentence after a switch, which is the right
+   * trade against holding memory for a voice nobody chose.
+   */
+  private async serverModelsFor(modelId: string, backend: VoiceEngineBackend): Promise<AudioCppServerModel[]> {
+    const spec = getAudioCppModelSpec(modelId);
+    if (!spec) return [];
+    // A model that will not run on this processor is left out of the config
+    // rather than loaded and refused: a two-gigabyte one costs a minute to
+    // load and then reject.
+    if (spec.requiresBackend && spec.requiresBackend !== backend) return [];
+    if (!(await this.deps.installation.modelReady(spec.modelId, backend))) return [];
+
+    return [
+      {
         id: spec.serverModelId,
         family: spec.family,
         path: this.deps.installation.modelDir(spec.modelId),
         task: spec.task,
         mode: spec.mode,
-      });
-    }
-    return models;
+      },
+    ];
   }
 
-  /** Starts the server, replacing one that was configured for a different model set. */
-  private async ensureRuntime(backend: VoiceEngineBackend): Promise<{ baseUrl: string }> {
+  /** Starts the server, replacing one that was configured for a different model. */
+  private async ensureRuntime(modelId: string, backend: VoiceEngineBackend): Promise<{ baseUrl: string }> {
     const binaryPath = await this.deps.installation.engineBinaryPath(backend);
     if (binaryPath === null) throw new Error(`the audio.cpp ${backend} engine is not installed`);
 
-    const models = await this.installedServerModels(backend);
-    if (models.length === 0) throw new Error('no audio.cpp model is installed');
+    const models = await this.serverModelsFor(modelId, backend);
+    if (models.length === 0) throw new Error(`the audio.cpp model ${modelId} is not installed`);
 
     // The processor is part of the signature, so switching it replaces the
     // child rather than leaving a CPU server answering CUDA requests: a server
@@ -210,7 +219,7 @@ export class AudioCppVoiceProvider {
       throw new Error(`${modelId} speaks by cloning and needs a reference recording; profile "${profileId}" has none`);
     }
 
-    const { baseUrl } = await this.ensureRuntime(backend);
+    const { baseUrl } = await this.ensureRuntime(modelId, backend);
     if (signal?.aborted) throw new Error('cancelled');
 
     const request: AudioCppSpeechRequest = {

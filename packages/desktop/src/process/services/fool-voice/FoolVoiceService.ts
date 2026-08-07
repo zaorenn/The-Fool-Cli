@@ -96,6 +96,13 @@ export class FoolVoiceService {
     const controller = new AbortController();
     this.activeOperations.set(operationId, controller);
     try {
+      // Speaking through anything else means the audio.cpp server is holding
+      // weights for a voice nobody is using — gigabytes of graphics memory, in
+      // Qwen3's case, and it held them until the app was closed. Switching away
+      // is the moment to let that go. A no-op once the child is down, so the
+      // sentences after the first cost nothing.
+      if (providerId !== 'local-audiocpp') await this.audioCppProvider.shutdown();
+
       if (providerId === 'local-sherpa') {
         return await this.sherpaProvider.synthesize(modelId, profileId, language, speed, text, controller.signal);
       } else if (providerId === 'local-audiocpp') {

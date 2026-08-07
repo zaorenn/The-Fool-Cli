@@ -35,6 +35,8 @@ const wavOf = (sampleRateHz: number): Uint8Array => {
 let workspace = '';
 let sent: AudioCppSpeechRequest[] = [];
 let spawnedWith: { binaryPath: string; backend: string; modelIds: string[] }[] = [];
+/** Teardowns of a spawned server, which is how the last model's weights are let go. */
+let shutdowns = 0;
 
 const providerFor = (clonedVoices: readonly { id: string; text: string }[] = []) => {
   const clonedDir = path.join(workspace, 'cloned');
@@ -73,7 +75,9 @@ const providerFor = (clonedVoices: readonly { id: string; text: string }[] = [])
       });
       return {
         ensureRunning: async () => ({ baseUrl: 'http://127.0.0.1:1' }),
-        shutdown: async () => undefined,
+        shutdown: async () => {
+          shutdowns += 1;
+        },
       };
     },
     createClient: () => ({
@@ -89,6 +93,7 @@ beforeEach(() => {
   workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'audiocpp-provider-'));
   sent = [];
   spawnedWith = [];
+  shutdowns = 0;
 });
 
 afterEach(() => {
@@ -214,9 +219,10 @@ describe('AudioCppVoiceProvider', () => {
     expect(spawnedWith).toHaveLength(1);
     expect(spawnedWith[0].backend).toBe('cuda');
     expect(spawnedWith[0].binaryPath).toContain(path.join('cuda', 'audiocpp_server.exe'));
-    // Every audio.cpp model, because on CUDA none of them is excluded.
-    expect(spawnedWith[0].modelIds).toContain('qwen3-tts');
-    expect(spawnedWith[0].modelIds).toContain('chatterbox');
+    // One entry, not every installed model. The server loads everything it is
+    // given and holds it for the whole life of the process, so a config listing
+    // the library put gigabytes of unused weights on the graphics card.
+    expect(spawnedWith[0].modelIds).toEqual(['qwen3-tts']);
   });
 
   /**
@@ -232,9 +238,28 @@ describe('AudioCppVoiceProvider', () => {
 
     await provider.synthesize('tts-audiocpp-pocket', 'cloned:jarvis', 'en', 1, 'Three.', undefined, undefined, 'cuda');
     expect(spawnedWith.map((spawn) => spawn.backend)).toEqual(['cpu', 'cuda']);
-    // Pocket and Supertonic run anywhere — Supertonic renders a four-second
-    // sentence in 0.9 s on this machine's processor — so both are in the CPU
-    // config and the two that need a card are left out of it.
-    expect(spawnedWith[0].modelIds).toEqual(['pocket', 'supertonic']);
+  });
+
+  /**
+   * The reason the config carries one model: letting the last one go.
+   *
+   * Qwen3 stayed resident until the app was closed. Choosing another voice did
+   * not change the config, so it did not replace the child holding its weights,
+   * so a card kept gigabytes for a voice nobody had selected. The model is part
+   * of the runtime signature now, which is what turns a switch into a teardown.
+   */
+  it('replaces the server when the voice changes, so the last model is let go', async () => {
+    const provider = providerFor([{ id: 'jarvis', text: 'Reference clip.' }]);
+    await provider.synthesize(AUDIOCPP_QWEN3_MODEL_ID, 'qwen3-ryan', 'en', 1, 'One.', undefined, undefined, 'cuda');
+    await provider.synthesize(AUDIOCPP_QWEN3_MODEL_ID, 'qwen3-ryan', 'en', 1, 'Two.', undefined, undefined, 'cuda');
+    // The same voice twice restarts nothing: the cost is paid on a real change,
+    // not on every sentence.
+    expect(spawnedWith).toHaveLength(1);
+    expect(shutdowns).toBe(0);
+
+    await provider.synthesize('tts-audiocpp-pocket', 'cloned:jarvis', 'en', 1, 'Three.', undefined, undefined, 'cuda');
+
+    expect(spawnedWith.map((spawn) => spawn.modelIds)).toEqual([['qwen3-tts'], ['pocket']]);
+    expect(shutdowns).toBe(1);
   });
 });
