@@ -43,6 +43,13 @@ function tokensToCss(tokens?: Record<string, string>): string | null {
 /** Apply a resolved theme to a document. Used by every app-chrome surface. */
 export function applyTheme(theme: Theme, root: Document = document): void {
   root.documentElement.setAttribute('data-theme', theme.appearance);
+  // Which palette, not just whether it is a dark one. A theme's own stylesheet
+  // has every property rewritten to `!important` before it is injected, which
+  // silently voids any `@keyframes` inside it — a declaration marked important
+  // in a keyframe is ignored. So a palette that wants motion has to keep it in
+  // an ordinary stylesheet, and an ordinary stylesheet needs something on the
+  // document to say which palette is being worn.
+  root.documentElement.setAttribute('data-theme-id', theme.id);
   root.body?.setAttribute('arco-theme', theme.appearance);
   upsertStyle(TOKENS_STYLE_ID, tokensToCss(theme.tokens), root);
   // Stripped before it is processed, because processing is what adds the

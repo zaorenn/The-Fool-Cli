@@ -47,6 +47,10 @@ import '@renderer/styles/layout.css';
 // The rules the layout editor's choices select. After layout.css deliberately:
 // a chosen shape is meant to win over the shape the app ships with.
 import '@renderer/styles/surface-shapes.css';
+// JARVIS's motion, which cannot live in the palette file: a theme's stylesheet
+// is rewritten to all-`!important` before injection, and that voids keyframes.
+// Inert under every other palette — every rule is scoped to `data-theme-id`.
+import '@renderer/styles/jarvis-cinema.css';
 
 const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 18, strokeWidth = 4 }) => (
   <svg

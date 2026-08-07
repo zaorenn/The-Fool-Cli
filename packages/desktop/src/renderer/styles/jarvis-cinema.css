@@ -1,0 +1,346 @@
+/**
+ * JARVIS, moving.
+ *
+ * The palette in `presets/jarvis.css` draws a projected display. This makes it
+ * a *running* one. A display that is switched on is never perfectly still: it
+ * drifts, it refreshes, it breathes at its light source. That is the whole
+ * brief — not "animate the app", but "make it read as powered".
+ *
+ * Why this is not in the palette file: a theme's stylesheet has `!important`
+ * appended to every declaration before it is injected, and `!important` inside
+ * a `@keyframes` block makes the browser ignore that declaration outright. Any
+ * keyframes written there would be silently empty. So the motion lives here, in
+ * an ordinary stylesheet, scoped by the `data-theme-id` the theme applier sets.
+ *
+ * Four rules the whole file obeys:
+ *
+ *  1. Nothing here is on the path between the reader and a word. Every ambient
+ *     layer is `pointer-events: none` and none of them sit above text at an
+ *     opacity you could read through.
+ *  2. Everything ambient is composited — `transform` and `opacity` — so a slow
+ *     loop costs nothing per frame. Where a background position is animated it
+ *     is over a strip a few pixels tall, not the window.
+ *  3. Every loop is slower than attention. The fastest ambient cycle is six
+ *     seconds; most are twenty or forty. Something that repeats at the speed of
+ *     reading is a distraction, and this has to survive an eight-hour day.
+ *  4. It all stops when asked. `prefers-reduced-motion`, and the app's own
+ *     movement dial on the frame, each switch the whole file off. `calm` keeps
+ *     the one-shot arrival and drops everything that repeats — a display that
+ *     resolves once is not the same imposition as one that pulses forever.
+ */
+
+/* ---------------------------------------------------------------------------
+ * The boot
+ *
+ * Plays once, when the palette is first worn — which is on launch if it is the
+ * saved one, and at the moment of switching if it is chosen. That second case
+ * is the point: choosing JARVIS should look like turning something on.
+ * ------------------------------------------------------------------------ */
+
+@keyframes jarvis-boot-sweep {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -100%, 0);
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 100%, 0);
+  }
+}
+
+@keyframes jarvis-boot-resolve {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes jarvis-brackets-draw {
+  0% {
+    opacity: 0;
+    background-size:
+      0 1px,
+      1px 0,
+      0 1px,
+      1px 0,
+      0 1px,
+      1px 0,
+      0 1px,
+      1px 0;
+  }
+  100% {
+    opacity: 1;
+    background-size:
+      var(--jarvis-bracket) 1px,
+      1px var(--jarvis-bracket),
+      var(--jarvis-bracket) 1px,
+      1px var(--jarvis-bracket),
+      var(--jarvis-bracket) 1px,
+      1px var(--jarvis-bracket),
+      var(--jarvis-bracket) 1px,
+      1px var(--jarvis-bracket);
+  }
+}
+
+/* A single bar of light crossing the window, top to bottom, once. The display
+   coming up to voltage. */
+html[data-theme-id='jarvis']::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(72, 213, 255, 0.05) 42%,
+    rgba(72, 213, 255, 0.22) 50%,
+    rgba(72, 213, 255, 0.05) 58%,
+    transparent 100%
+  );
+  animation: jarvis-boot-sweep 1.15s cubic-bezier(0.22, 0.7, 0.2, 1) both;
+}
+
+/* ---------------------------------------------------------------------------
+ * The grid, drifting
+ *
+ * The palette already draws it at 3%. Here it resolves on arrival and then
+ * moves one tile every forty seconds — far too slow to watch, and exactly
+ * enough that the background is not a printed texture. The layer is inset by a
+ * tile so the travel never uncovers an edge.
+ * ------------------------------------------------------------------------ */
+
+@keyframes jarvis-grid-drift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(48px, 48px, 0);
+  }
+}
+
+html[data-theme-id='jarvis'] #root::before {
+  inset: -48px !important;
+  animation:
+    jarvis-boot-resolve 1.4s ease-out both,
+    jarvis-grid-drift 40s linear infinite;
+}
+
+/* ---------------------------------------------------------------------------
+ * The refresh
+ *
+ * A soft band travelling down the window every nine seconds. Held at 3.5% and
+ * a couple of hundred pixels tall, so it reads as the display refreshing rather
+ * than as a stripe going past — the difference between the two is entirely
+ * whether you notice it while reading.
+ * ------------------------------------------------------------------------ */
+
+@keyframes jarvis-scan {
+  0% {
+    transform: translate3d(0, -30vh, 0);
+  }
+  100% {
+    transform: translate3d(0, 130vh, 0);
+  }
+}
+
+html[data-theme-id='jarvis'] body::before {
+  content: '';
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 22vh;
+  z-index: 2147482000;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(72, 213, 255, 0.035), transparent);
+  animation: jarvis-scan 9s linear infinite;
+}
+
+/* ---------------------------------------------------------------------------
+ * The housing
+ *
+ * Corner brackets and a vignette: the two things that say "you are looking
+ * through something" without drawing a frame around the app. The brackets draw
+ * themselves in on arrival and then hold — they are structure, not motion.
+ * ------------------------------------------------------------------------ */
+
+html[data-theme-id='jarvis'] body::after {
+  --jarvis-bracket: 26px;
+  --jarvis-edge: rgba(72, 213, 255, 0.34);
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2147482001;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--jarvis-edge), var(--jarvis-edge)), linear-gradient(var(--jarvis-edge), var(--jarvis-edge)),
+    linear-gradient(var(--jarvis-edge), var(--jarvis-edge)), linear-gradient(var(--jarvis-edge), var(--jarvis-edge)),
+    linear-gradient(var(--jarvis-edge), var(--jarvis-edge)), linear-gradient(var(--jarvis-edge), var(--jarvis-edge)),
+    linear-gradient(var(--jarvis-edge), var(--jarvis-edge)), linear-gradient(var(--jarvis-edge), var(--jarvis-edge)),
+    radial-gradient(120% 100% at 50% 50%, transparent 55%, rgba(2, 5, 9, 0.55) 100%);
+  background-repeat: no-repeat;
+  background-position:
+    14px 14px,
+    14px 14px,
+    right 14px top 14px,
+    right 14px top 14px,
+    14px calc(100% - 14px),
+    left 14px bottom 14px,
+    right 14px calc(100% - 14px),
+    right 14px bottom 14px,
+    0 0;
+  background-size:
+    var(--jarvis-bracket) 1px,
+    1px var(--jarvis-bracket),
+    var(--jarvis-bracket) 1px,
+    1px var(--jarvis-bracket),
+    var(--jarvis-bracket) 1px,
+    1px var(--jarvis-bracket),
+    var(--jarvis-bracket) 1px,
+    1px var(--jarvis-bracket),
+    100% 100%;
+  animation: jarvis-brackets-draw 0.9s 0.35s cubic-bezier(0.22, 0.7, 0.2, 1) both;
+}
+
+/* ---------------------------------------------------------------------------
+ * The light source
+ *
+ * One thing in the app glows, and it is the accent. Letting it breathe is what
+ * separates an arc reactor from a blue button — a light that is on flickers at
+ * its supply, it does not sit at a constant value.
+ * ------------------------------------------------------------------------ */
+
+@keyframes jarvis-reactor {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(72, 213, 255, 0.35),
+      0 0 18px -6px rgba(72, 213, 255, 0.55);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(72, 213, 255, 0.5),
+      0 0 26px -6px rgba(72, 213, 255, 0.8);
+  }
+}
+
+html[data-theme-id='jarvis'] .arco-btn-primary:not(:hover):not(:disabled) {
+  animation: jarvis-reactor 4.5s ease-in-out infinite;
+}
+
+/* ---------------------------------------------------------------------------
+ * The top edge
+ *
+ * A point of light running along the underside of the title bar, once every six
+ * seconds, spending most of that cycle offscreen. It is the single most
+ * film-like thing in here and also the smallest: a strip one pixel tall.
+ * ------------------------------------------------------------------------ */
+
+@keyframes jarvis-edge-run {
+  0%,
+  55% {
+    background-position:
+      -40% bottom,
+      0 0;
+  }
+  100% {
+    background-position:
+      140% bottom,
+      0 0;
+  }
+}
+
+html[data-theme-id='jarvis'] .app-titlebar {
+  background-image:
+    linear-gradient(90deg, transparent, rgba(72, 213, 255, 0.75), transparent),
+    linear-gradient(180deg, rgba(72, 213, 255, 0.05), transparent) !important;
+  background-repeat: no-repeat !important;
+  background-size:
+    32% 1px,
+    100% 100% !important;
+  animation: jarvis-edge-run 6s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+/* ---------------------------------------------------------------------------
+ * What is selected
+ *
+ * The lit leading edge in the palette is static. Charging it on selection is
+ * the app answering — the same beat as an instrument acknowledging an input.
+ * ------------------------------------------------------------------------ */
+
+@keyframes jarvis-charge {
+  0% {
+    box-shadow: inset 0 0 0 #48d5ff;
+  }
+  100% {
+    box-shadow: inset 2px 0 0 #48d5ff;
+  }
+}
+
+html[data-theme-id='jarvis'] .chat-history__item[data-active='true'],
+html[data-theme-id='jarvis'] .settings-sider__item[data-active='true'] {
+  animation: jarvis-charge 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* ---------------------------------------------------------------------------
+ * Standing down
+ *
+ * Two switches, and either one is enough.
+ *
+ * `prefers-reduced-motion` is the operating system's answer and outranks
+ * everything, including a palette whose entire idea is that it moves. The
+ * frame's own movement dial is the app's answer: `none` is the same silence,
+ * `calm` keeps the arrival — a thing that resolves once and then holds still —
+ * and drops every loop. The structure stays either way, because the brackets,
+ * the grid and the vignette are the look rather than the motion.
+ * ------------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme-id='jarvis']::after,
+  html[data-theme-id='jarvis'] body::before {
+    display: none;
+  }
+
+  html[data-theme-id='jarvis'] #root::before,
+  html[data-theme-id='jarvis'] body::after,
+  html[data-theme-id='jarvis'] .arco-btn-primary:not(:hover):not(:disabled),
+  html[data-theme-id='jarvis'] .app-titlebar,
+  html[data-theme-id='jarvis'] .chat-history__item[data-active='true'],
+  html[data-theme-id='jarvis'] .settings-sider__item[data-active='true'] {
+    animation: none !important;
+  }
+}
+
+html[data-fool-frame-motion='none'][data-theme-id='jarvis']::after,
+html[data-fool-frame-motion='none'][data-theme-id='jarvis'] body::before {
+  display: none;
+}
+
+html[data-fool-frame-motion='none'][data-theme-id='jarvis'] #root::before,
+html[data-fool-frame-motion='none'][data-theme-id='jarvis'] body::after,
+html[data-fool-frame-motion='none'][data-theme-id='jarvis'] .arco-btn-primary:not(:hover):not(:disabled),
+html[data-fool-frame-motion='none'][data-theme-id='jarvis'] .app-titlebar,
+html[data-fool-frame-motion='none'][data-theme-id='jarvis'] .chat-history__item[data-active='true'],
+html[data-fool-frame-motion='none'][data-theme-id='jarvis'] .settings-sider__item[data-active='true'] {
+  animation: none !important;
+}
+
+/* Calm: the loops stop, the one-shots stay. */
+html[data-fool-frame-motion='calm'][data-theme-id='jarvis'] body::before {
+  display: none;
+}
+
+html[data-fool-frame-motion='calm'][data-theme-id='jarvis'] #root::before {
+  animation: jarvis-boot-resolve 1.4s ease-out both !important;
+}
+
+html[data-fool-frame-motion='calm'][data-theme-id='jarvis'] .arco-btn-primary:not(:hover):not(:disabled),
+html[data-fool-frame-motion='calm'][data-theme-id='jarvis'] .app-titlebar {
+  animation: none !important;
+}

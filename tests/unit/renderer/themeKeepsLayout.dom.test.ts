@@ -53,6 +53,17 @@ describe('applying a theme', () => {
     expect(tokens).toBeGreaterThan(decoration);
   });
 
+  it('says which palette is worn, not only whether it is a dark one', () => {
+    // A palette that wants motion cannot keep its keyframes in its own
+    // stylesheet — every declaration in there is rewritten to `!important`
+    // before injection, and an important declaration inside a keyframe is
+    // ignored. So the motion lives in an ordinary stylesheet, and that
+    // stylesheet has nothing to scope itself by without this.
+    applyTheme(jarvisish());
+
+    expect(document.documentElement.getAttribute('data-theme-id')).toBe('test-theme');
+  });
+
   it('leaves a built movement still playing afterwards', () => {
     const motions = sanitizeMotions([
       { target: 'message', move: 'rise', durationMs: 240, distancePx: 12, easing: 'smooth' },
