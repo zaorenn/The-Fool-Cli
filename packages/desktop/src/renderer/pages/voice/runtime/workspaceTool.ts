@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { sanitizeAddons, type WorkspaceAddon } from '@/common/config/workspaceAddon';
 import { appFolderName, WORKSPACE_APP_BRIDGE } from '@/common/config/workspaceApp';
 import { findWorkspaceByName, normalizeWorkspaceName } from '@/common/config/workspaces';
 import { captureWorkspace, enterWorkspace, peekWorkspaces, saveWorkspace } from '@renderer/hooks/config/useWorkspaces';
@@ -60,9 +61,27 @@ const briefFor = (name: string, wanted: string, folder: string): string =>
     'await fool.recall(k)     // read it back',
     '```',
     '',
-    '`fool.ask` is the whole back end. Fetching a page, reading a file, transcribing audio, calling',
-    'a model, driving an application — describe the job in a sentence and it is done by the agent,',
-    "with the user's own models and keys. Write the prompt as you would say it to a capable person.",
+    '`fool.ask` is most of the back end. Fetching a page, reading a file, calling a model, driving an',
+    "application — describe the job in a sentence and the agent does it, with the user's own models",
+    'and keys. Write the prompt as you would say it to a capable person.',
+    '',
+    '### When asking is not enough',
+    '',
+    'Some things an agent cannot do by thinking harder — pitch detection, audio decoding, anything that',
+    'needs a real library. For those the workspace declares an **addon**: an MCP server the user installs',
+    'once. The page calls it directly and gets an answer in a second:',
+    '',
+    '```js',
+    "const notes = await fool.call('transcribe_audio', { path });",
+    '```',
+    '',
+    'If this app needs one, say so at the end of your reply in exactly this form, on its own line, and',
+    'name a package that really exists — an invented one wastes their time and their trust:',
+    '',
+    'ADDON: <name> | <npx or uvx package and args> | <tool names, comma separated> | <what it does>',
+    '',
+    'Only when it is genuinely needed. An addon asks the user to install something and run a command,',
+    'which is a real thing to ask; most apps should need none.',
     '',
     '## What it must never do',
     '',
@@ -83,6 +102,39 @@ const briefFor = (name: string, wanted: string, folder: string): string =>
     '',
     `Write at most ${MAX_APP_FILES} files. When it is done, say in one sentence what it does and what to press first.`,
   ].join('\n');
+
+/**
+ * The addons the agent said the page needs, out of what it wrote back.
+ *
+ * A line rather than a tool call, because the agent building this is a separate
+ * process reporting through a summary — there is no structured channel back. So
+ * the format is stated in the brief and parsed strictly here: anything that does
+ * not match is not an addon, and a malformed line is dropped rather than guessed
+ * at. Nothing is installed from this either way; it is a declaration the user is
+ * asked about later.
+ */
+const declaredAddons = (summary: string): WorkspaceAddon[] => {
+  const declared = summary
+    .split('\n')
+    .filter((line) => line.trim().toUpperCase().startsWith('ADDON:'))
+    .map((line) => {
+      const [name, command, tools, purpose] = line
+        .slice(line.indexOf(':') + 1)
+        .split('|')
+        .map((part) => part.trim());
+
+      const [head, ...args] = (command ?? '').split(/\s+/).filter((part) => part.length > 0);
+      return {
+        name,
+        command: head,
+        args,
+        tools: (tools ?? '').split(',').map((tool) => tool.trim()),
+        purpose,
+      };
+    });
+
+  return sanitizeAddons(declared);
+};
 
 /**
  * Builds a workspace around a page, and moves the user into it.
@@ -160,6 +212,10 @@ export const runWorkspaceTool = async (
     ...captureWorkspace(name, wanted),
     id: normalizeWorkspaceName(name),
     app: { folder, title: name, entry: 'index.html', requiresSkills: [] },
+    // Declared, not installed. What the page needs is recorded on the workspace
+    // so it travels with it; whether anything is actually installed is the
+    // user's decision, asked separately.
+    addons: declaredAddons(outcome.summary),
   });
   if (!saved) {
     const error = t('settings.voice.conversationWorkspaceIncomplete');
