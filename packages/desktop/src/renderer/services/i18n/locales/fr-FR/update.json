@@ -57,5 +57,9 @@
   "releaseLog": "Journal de version",
   "cancel": "Annuler",
   "minimize": "Minimiser",
-  "restoreUpdateNotification": "Restaurer la progression de la mise à jour"
+  "restoreUpdateNotification": "Restaurer la progression de la mise à jour",
+  "whatsNew": {
+    "title": "Nouveautés de la version {{version}}",
+    "dismiss": "J'ai compris"
+  }
 }

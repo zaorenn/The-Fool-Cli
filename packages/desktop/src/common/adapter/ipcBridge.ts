@@ -125,6 +125,7 @@ import type {
   UpdateDownloadRequest,
   UpdateDownloadResult,
 } from '../update/updateTypes';
+import type { ReleaseNotesResult } from '../update/releaseNotes';
 import type { AgentMetadata } from '@/renderer/utils/model/agentTypes';
 import type { Theme } from '@/common/theme/types';
 import type { AttachFolderRequest, ProjectDetailDto, ProjectEntryDto } from '@/common/types/project';
@@ -768,6 +769,13 @@ export const update = {
   download: bridge.buildProvider<IBridgeResponse<UpdateDownloadResult>, UpdateDownloadRequest>('update.download'),
   cancelDownload: bridge.buildProvider<IBridgeResponse, UpdateDownloadCancelRequest>('update.download.cancel'),
   downloadProgress: bridge.buildEmitter<UpdateDownloadProgressEvent>('update.download.progress'),
+  /**
+   * What changed between the version last seen and the one now running, read
+   * from the changelog shipped inside the app. Offline on purpose: an update
+   * that installed without a window still has to be able to say what it did,
+   * on a machine that may not be online when it next starts.
+   */
+  releaseNotes: bridge.buildProvider<IBridgeResponse<ReleaseNotesResult>, { since?: string }>('update.release-notes'),
 };
 
 export const autoUpdate = {

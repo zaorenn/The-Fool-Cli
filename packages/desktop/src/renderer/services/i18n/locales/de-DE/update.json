@@ -57,5 +57,9 @@
   "releaseLog": "Release-Log",
   "cancel": "Abbrechen",
   "minimize": "Minimieren",
-  "restoreUpdateNotification": "Update-Fortschritt wiederherstellen"
+  "restoreUpdateNotification": "Update-Fortschritt wiederherstellen",
+  "whatsNew": {
+    "title": "Neu in {{version}}",
+    "dismiss": "Alles klar"
+  }
 }

@@ -57,5 +57,9 @@
   "releaseLog": "Журнал змін",
   "cancel": "Скасувати",
   "minimize": "Згорнути",
-  "restoreUpdateNotification": "Відновити прогрес оновлення"
+  "restoreUpdateNotification": "Відновити прогрес оновлення",
+  "whatsNew": {
+    "title": "Що нового у {{version}}",
+    "dismiss": "Зрозуміло"
+  }
 }

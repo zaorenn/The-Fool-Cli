@@ -30,21 +30,21 @@ It also fixed a real defect: applying a theme moved its stylesheet to the end of
 
 ### Voice
 
-| Commit | What |
-|---|---|
-| `04e7d7176`, `2d0a4a98e` | A stalled turn no longer takes the conversation with it |
-| `cbc0a122a` | A QR code a phone can actually reach |
-| `ad12b3734` | A spoken setting change reaches the conversation it was said in; plus a second clock for a reply that streams and never speaks |
-| `8a6dff569` | A rule the user sets is obeyed, and only kept when they say to remember it |
-| `612a5187b` | Skills it can do itself, taught out loud |
-| `32f764c39` | Those skills listed in Settings → Memory, where they can be withdrawn |
-| `1d0c8a27e` | The talk key opens a conversation instead of a dictation turn |
-| `03a551166` | Hand it a file by dropping one on the window |
-| `426c17c03` | Updates install silently and the app comes back up |
+| Commit                   | What                                                                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `04e7d7176`, `2d0a4a98e` | A stalled turn no longer takes the conversation with it                                                                        |
+| `cbc0a122a`              | A QR code a phone can actually reach                                                                                           |
+| `ad12b3734`              | A spoken setting change reaches the conversation it was said in; plus a second clock for a reply that streams and never speaks |
+| `8a6dff569`              | A rule the user sets is obeyed, and only kept when they say to remember it                                                     |
+| `612a5187b`              | Skills it can do itself, taught out loud                                                                                       |
+| `32f764c39`              | Those skills listed in Settings → Memory, where they can be withdrawn                                                          |
+| `1d0c8a27e`              | The talk key opens a conversation instead of a dictation turn                                                                  |
+| `03a551166`              | Hand it a file by dropping one on the window                                                                                   |
+| `426c17c03`              | Updates install silently and the app comes back up                                                                             |
 
 Three of these are worth understanding rather than just knowing about:
 
-**The freeze was not what it looked like.** A 45-second watchdog existed, but it asked whether the *connection* was alive, not whether the *reply* was going anywhere. Local models write their deliberation into `reasoning_content`, which is deliberately never read aloud — every one of those frames reset the watchdog. A model that deliberated forever wedged the conversation with no ceiling and nothing on screen. `SILENT_REPLY_MS` is a second clock, armed once per turn and cleared by the first visible character. It is deliberately *not* reset by traffic; resetting it would make it the same watchdog again.
+**The freeze was not what it looked like.** A 45-second watchdog existed, but it asked whether the _connection_ was alive, not whether the _reply_ was going anywhere. Local models write their deliberation into `reasoning_content`, which is deliberately never read aloud — every one of those frames reset the watchdog. A model that deliberated forever wedged the conversation with no ceiling and nothing on screen. `SILENT_REPLY_MS` is a second clock, armed once per turn and cleared by the first visible character. It is deliberately _not_ reset by traffic; resetting it would make it the same watchdog again.
 
 **Memory was not being obeyed because of position.** The language setting is written into the prompt as "answer only in Turkish, every reply, every time". A rule the user set arrived earlier in the text and simply lost. Rules now come last, under their own heading, stated as overriding everything above. Session rules (not written down) and remembered rules are presented identically — the difference is how long they live, not how firmly they are said.
 
@@ -57,7 +57,7 @@ Three of these are worth understanding rather than just knowing about:
 ### Asked for and not started
 
 - **PDF by voice** — summarise, translate, and fill a form by asking for each value in conversation. `pdfjs-dist@5.5.207` is already installed, so reading needs no new dependency. **Writing a filled form does** — `pdf-lib` or similar — and adding a dependency is a decision for the user, not something to slip in.
-- **Changelog pop-up after an update.** The silent install landed without it, so updates are currently quiet in both senses: they install without a window *and* without telling anyone what changed. This is half a feature and should be finished before the next release goes out.
+- **Changelog pop-up after an update.** The silent install landed without it, so updates are currently quiet in both senses: they install without a window _and_ without telling anyone what changed. This is half a feature and should be finished before the next release goes out.
 - **JARVIS, cinematic.** The user asked for the Hub's JARVIS preset to feel like it came out of the film — heavily animated, Figma-like — as the last thing before release. The palette and the four layouts are in place; the cinematic pass is not.
 
 ### Asked for earlier, still open
@@ -69,7 +69,7 @@ Three of these are worth understanding rather than just knowing about:
 
 ### Dropped by the user
 
-Interactive pop-ups and an app-owned media player. Worth recording *why*, because it will come up again: a controllable player (pause, seek, remaining time) and "play without stealing focus" are both impossible with the default browser — the app cannot see or drive another browser's tabs. The only design that satisfies them is app-owned playback. The user chose the default browser and dropped the pop-ups instead.
+Interactive pop-ups and an app-owned media player. Worth recording _why_, because it will come up again: a controllable player (pause, seek, remaining time) and "play without stealing focus" are both impossible with the default browser — the app cannot see or drive another browser's tabs. The only design that satisfies them is app-owned playback. The user chose the default browser and dropped the pop-ups instead.
 
 Also deferred by the user: the visual, Figma-like layout editor.
 

@@ -51,5 +51,9 @@
   "releaseLog": "گزارش انتشار",
   "cancel": "لغو",
   "minimize": "کوچک کردن",
-  "restoreUpdateNotification": "بازگرداندن پیشرفت به‌روزرسانی"
+  "restoreUpdateNotification": "بازگرداندن پیشرفت به‌روزرسانی",
+  "whatsNew": {
+    "title": "تازه‌های نسخهٔ {{version}}",
+    "dismiss": "متوجه شدم"
+  }
 }

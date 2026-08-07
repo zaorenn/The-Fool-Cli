@@ -57,5 +57,9 @@
   "releaseLog": "릴리스 로그",
   "cancel": "취소",
   "minimize": "최소화",
-  "restoreUpdateNotification": "업데이트 진행 상황 복원"
+  "restoreUpdateNotification": "업데이트 진행 상황 복원",
+  "whatsNew": {
+    "title": "{{version}}의 새로운 기능",
+    "dismiss": "확인"
+  }
 }

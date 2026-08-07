@@ -57,5 +57,9 @@
   "releaseLog": "Registro de versões",
   "cancel": "Cancelar",
   "minimize": "Minimizar",
-  "restoreUpdateNotification": "Restaurar progresso da atualização"
+  "restoreUpdateNotification": "Restaurar progresso da atualização",
+  "whatsNew": {
+    "title": "Novidades da versão {{version}}",
+    "dismiss": "Entendi"
+  }
 }

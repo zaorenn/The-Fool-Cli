@@ -57,5 +57,9 @@
   "releaseLog": "Release Log",
   "cancel": "Cancel",
   "minimize": "Minimize",
-  "restoreUpdateNotification": "Restore update progress"
+  "restoreUpdateNotification": "Restore update progress",
+  "whatsNew": {
+    "title": "What's new in {{version}}",
+    "dismiss": "Got it"
+  }
 }

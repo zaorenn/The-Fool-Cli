@@ -51,5 +51,9 @@
   "cancel": "Cancelar",
   "minimize": "Minimizar",
   "restoreUpdateNotification": "Restaurar progreso de actualización",
-  "preparingInstall": "Preparing..."
+  "preparingInstall": "Preparing...",
+  "whatsNew": {
+    "title": "Novedades de {{version}}",
+    "dismiss": "Entendido"
+  }
 }

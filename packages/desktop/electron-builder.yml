@@ -134,6 +134,11 @@ extraResources:
     to: LICENSE
   - from: NOTICE
     to: NOTICE
+  # Read on the first launch after an update, to say what changed. Shipped
+  # rather than fetched: the update installs without a window now, and the
+  # machine it comes back up on may not be online.
+  - from: CHANGELOG.md
+    to: CHANGELOG.md
 win:
   target:
     - nsis

@@ -55,6 +55,10 @@ export interface IConfigStorageRefer {
   'system.autoPreviewOfficeFiles'?: boolean;
   // Whether The Jester has already been handed the first-launch setup
   'system.firstRunGreeted'?: boolean;
+  // The app version whose changes have already been shown. Absent means this
+  // copy has never recorded one, which is treated as a fresh install rather
+  // than as "show everything ever released".
+  'system.lastSeenVersion'?: string;
   // Skills Market: whether the external skills market source is enabled
   'skillsMarket.enabled'?: boolean;
   /**

@@ -3155,7 +3155,9 @@ export type I18nKey =
   | 'update.restoreUpdateNotification'
   | 'update.showInFolder'
   | 'update.upToDateTitle'
-  | 'update.viewRelease';
+  | 'update.viewRelease'
+  | 'update.whatsNew.dismiss'
+  | 'update.whatsNew.title';
 
 export type I18nModule =
   | 'common'

@@ -17,6 +17,8 @@ import type {
   GitHubReleaseAsset,
   InstallerLastFailureMarker,
 } from '@/common/update/updateTypes';
+import type { ReleaseNotesResult } from '@/common/update/releaseNotes';
+import { parseChangelog, selectReleaseNotes } from '@/common/update/releaseNotes';
 import { uuid } from '@/common/utils';
 import { app } from 'electron';
 import log from 'electron-log';
@@ -534,6 +536,23 @@ const startDownloadInBackground = async (
 };
 
 /**
+ * Where the shipped changelog is, packaged and unpackaged.
+ *
+ * `extraResources` puts it beside the app in the installed tree; a source
+ * checkout has it at the repository root, four directories above this file once
+ * bundled into `out/main`. Both are tried because a dev run and an installed
+ * copy both need to be able to show what changed.
+ */
+const resolveChangelogPath = (): string | null => {
+  const candidates = [
+    path.join(process.resourcesPath ?? '', 'CHANGELOG.md'),
+    path.join(app.getAppPath(), 'CHANGELOG.md'),
+    path.join(app.getAppPath(), '..', '..', 'CHANGELOG.md'),
+  ];
+  return candidates.find((candidate) => candidate && fs.existsSync(candidate)) ?? null;
+};
+
+/**
  * Create a status broadcast callback that sends updates via ipcBridge.autoUpdate.status.emit.
  * This is a pure emitter: it does not bind to any specific window.
  * The ipcBridge channel broadcasts to all renderer listeners, so no window guard is needed here.
@@ -556,6 +575,31 @@ export function initUpdateBridge(): void {
         };
       } catch (err: unknown) {
         return { success: false, data: null, msg: err instanceof Error ? err.message : String(err) };
+      }
+    }
+  );
+
+  ipcBridge.update.releaseNotes.provider(
+    async (params): Promise<{ success: boolean; data?: ReleaseNotesResult; msg?: string }> => {
+      const currentVersion = app.getVersion();
+      try {
+        const changelogPath = resolveChangelogPath();
+        if (!changelogPath) {
+          log.warn('[update] No CHANGELOG.md found; release notes unavailable');
+          return { success: true, data: { currentVersion, entries: [] } };
+        }
+
+        const entries = selectReleaseNotes(parseChangelog(await fs.promises.readFile(changelogPath, 'utf-8')), {
+          since: params?.since,
+          upTo: currentVersion,
+        });
+        return { success: true, data: { currentVersion, entries } };
+      } catch (err: unknown) {
+        // Not being able to read the changelog is not a reason to interrupt
+        // someone's launch, so this answers with nothing rather than an error
+        // the renderer would have to decide what to do about.
+        log.warn('[update] Failed to read release notes:', err);
+        return { success: true, data: { currentVersion, entries: [] } };
       }
     }
   );

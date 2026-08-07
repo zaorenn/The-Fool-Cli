@@ -57,5 +57,9 @@
   "releaseLog": "更新日志",
   "cancel": "取消",
   "minimize": "最小化",
-  "restoreUpdateNotification": "恢复更新进度"
+  "restoreUpdateNotification": "恢复更新进度",
+  "whatsNew": {
+    "title": "{{version}} 有哪些更新",
+    "dismiss": "知道了"
+  }
 }

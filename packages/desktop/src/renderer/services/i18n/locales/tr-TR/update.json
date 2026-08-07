@@ -57,5 +57,9 @@
   "releaseLog": "Sürüm günlüğü",
   "cancel": "İptal",
   "minimize": "Küçült",
-  "restoreUpdateNotification": "Güncelleme ilerlemesini geri yükle"
+  "restoreUpdateNotification": "Güncelleme ilerlemesini geri yükle",
+  "whatsNew": {
+    "title": "{{version}} sürümünde neler değişti",
+    "dismiss": "Anladım"
+  }
 }

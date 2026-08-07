@@ -110,6 +110,7 @@ import {
   getRuntimeComponentInstallationDescription,
   showInstallationIntegrityModal,
 } from './components/layout/InstallationIntegrityDialog';
+import WhatsNewModal from './components/settings/WhatsNewModal';
 
 // Patch Korean locale with missing properties from English locale
 const koKRComplete = {
@@ -272,7 +273,13 @@ const AppProviders: React.FC<PropsWithChildren> = ({ children }) =>
           React.createElement(
             FeedbackProvider,
             null,
-            React.createElement(React.Fragment, null, React.createElement(RuntimeFailureDialogs, null), children)
+            React.createElement(
+              React.Fragment,
+              null,
+              React.createElement(RuntimeFailureDialogs, null),
+              React.createElement(WhatsNewModal, null),
+              children
+            )
           )
         )
       )
