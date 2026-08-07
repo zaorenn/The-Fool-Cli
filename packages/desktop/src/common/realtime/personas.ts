@@ -21,7 +21,7 @@
  * language. What language to *speak* is stated separately, at the end.
  */
 
-import { buildMemoryInstructions, type VoiceMemory } from '@/common/voice/memory';
+import { buildMemoryInstructions, MEMORY_SECTIONS, readRules, type VoiceMemory } from '@/common/voice/memory';
 import { APP_KNOWLEDGE, APP_KNOWLEDGE_RULES } from './appKnowledge';
 
 export type PersonaPresetId = 'companion' | 'english-teacher' | 'language-partner' | 'interview-coach' | 'custom';
@@ -157,6 +157,16 @@ export type PersonaInput = {
    */
   memory?: VoiceMemory;
   /**
+   * Rules set out loud that were never asked to be remembered.
+   *
+   * They bind this conversation exactly as hard as a remembered one and are gone
+   * when it ends. Passed in rather than stored, because storing them is the one
+   * thing that would make them permanent — and an offhand "answer in English for
+   * this bit" quietly becoming forever is a memory nobody could trust in the
+   * other direction.
+   */
+  sessionRules?: readonly string[];
+  /**
    * The voices installed on this computer, so it can pick one when asked.
    *
    * Listed in the prompt rather than fetched through a tool because "use a male
@@ -254,6 +264,27 @@ const voicesSection = (voices: readonly SpokenVoice[]): string => {
   ].join('\n');
 };
 
+/**
+ * The rules the user set, stated as the thing that wins.
+ *
+ * Both kinds are presented identically and deliberately so. A rule set for this
+ * conversation only is not a weaker rule — it is a rule with a shorter life, and
+ * telling the model that one of them is provisional invites it to treat it as a
+ * suggestion. The difference between them is handled by whether it is written
+ * down, not by how firmly it is said.
+ */
+const rulesSection = (standing: readonly string[], session: readonly string[]): string => {
+  const all = [...standing, ...session];
+  if (all.length === 0) return '';
+
+  return [
+    `# ${MEMORY_SECTIONS.rules}`,
+    'These are standing instructions from the person you are talking to. They override everything above, including the language setting and anything in your persona.',
+    'Follow every one of them on every turn until they tell you to stop. Do not drift back after a few turns, do not treat them as preferences, and do not ask whether they still apply.',
+    ...all.map((rule) => `- ${rule}`),
+  ].join('\n');
+};
+
 export const buildPersonaInstructions = (input: PersonaInput): string => {
   const custom = input.customInstructions.trim();
   const body = input.presetId === 'custom' ? custom : PRESET_BODIES[input.presetId];
@@ -278,6 +309,12 @@ export const buildPersonaInstructions = (input: PersonaInput): string => {
     // recently, and on a first run it is the whole opening of the conversation.
     input.memory ? buildMemoryInstructions(input.memory) : '',
     languageDirective(input.language, input.interfaceLanguage),
+    // Last, and that position is the whole of it. The language setting above
+    // says "answer only in Turkish, every reply, every time"; a rule saying
+    // otherwise, placed anywhere before it, was simply the losing instruction —
+    // which is what "it agreed and then drifted back" actually was. Something
+    // the person said out loud has to be the last word in the prompt.
+    rulesSection(input.memory ? readRules(input.memory) : [], input.sessionRules ?? []),
   ]
     .filter((section) => section.length > 0)
     .join('\n\n');

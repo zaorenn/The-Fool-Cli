@@ -18,6 +18,8 @@ import {
   sanitizeVoiceMemory,
   type TaughtSkill,
   type VoiceMemory,
+  forgetRule,
+  rememberRule,
 } from '@/common/voice/memory';
 import { getClientBusinessSetting, setClientBusinessSetting } from '@renderer/services/clientBusinessSettings';
 
@@ -106,6 +108,14 @@ export const rememberVoiceFact = (text: string): Promise<VoiceMemory> =>
 
 export const rememberVoiceMeaning = (word: string, means: string): Promise<VoiceMemory> =>
   updateVoiceMemory((memory) => rememberMeaning(memory, word, means));
+
+/** Keeps a standing instruction, which outlives the conversation it was set in. */
+export const rememberVoiceRule = (rule: string): Promise<VoiceMemory> =>
+  updateVoiceMemory((memory) => rememberRule(memory, rule));
+
+/** Withdraws one. Harmless when the rule was only ever a session rule. */
+export const forgetVoiceRule = (about: string): Promise<VoiceMemory> =>
+  updateVoiceMemory((memory) => forgetRule(memory, about));
 
 export const forgetVoiceFact = (about: string): Promise<VoiceMemory> =>
   updateVoiceMemory((memory) => forgetFact(memory, about));

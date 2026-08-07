@@ -402,6 +402,9 @@ export class LocalVoicePipeline {
    */
   private waiting: string[] = [];
 
+  /** Rules set out loud this conversation, never written to the memory. */
+  private sessionRules: string[] = [];
+
   /** The watchdog for the turn in flight, and the turn it is watching. */
   private stall: ReturnType<typeof setTimeout> | null = null;
 
@@ -459,22 +462,69 @@ export class LocalVoicePipeline {
     if (readiness.ok === false) throw new Error(`LOCAL_${readiness.reason.toUpperCase().replaceAll('-', '_')}`);
     this.ready = readiness;
 
-    const realtime = this.options.settings.realtime;
-    this.history = [
-      {
-        role: 'system',
-        content: buildPersonaInstructions({
-          presetId: realtime.personaPresetId,
-          customInstructions: realtime.customInstructions,
-          language: realtime.language,
-          interfaceLanguage: this.options.interfaceLanguage,
-          wakePhrase: this.options.settings.activation.wakePhrase.phrase,
-          memory: peekVoiceMemory(),
-          voices: this.options.voices ?? [],
-        }),
-      },
-    ];
+    this.history = [{ role: 'system', content: this.systemPrompt() }];
     this.options.onEvent({ kind: 'ready' });
+  }
+
+  /**
+   * The system prompt as it stands right now.
+   *
+   * A function rather than a value because two of its inputs change while the
+   * conversation is open: the memory, and the rules set out loud during it. It
+   * used to be built once at `connect`, which meant a rule the user set was
+   * written down and then not read again until the next conversation — from
+   * their side, agreeing and then ignoring it.
+   */
+  private systemPrompt(): string {
+    const realtime = this.options.settings.realtime;
+    return buildPersonaInstructions({
+      presetId: realtime.personaPresetId,
+      customInstructions: realtime.customInstructions,
+      language: realtime.language,
+      interfaceLanguage: this.options.interfaceLanguage,
+      wakePhrase: this.options.settings.activation.wakePhrase.phrase,
+      memory: peekVoiceMemory(),
+      voices: this.options.voices ?? [],
+      sessionRules: this.sessionRules,
+    });
+  }
+
+  /**
+   * A rule that binds this conversation and is not written down.
+   *
+   * "Answer in English for now" is a real instruction and has to be obeyed as
+   * firmly as a remembered one — it simply dies when the conversation does.
+   * Keeping it here rather than in the memory is the whole of that difference,
+   * and it is what stops an offhand aside from silently becoming permanent.
+   */
+  addSessionRule(rule: string): void {
+    const line = rule.trim();
+    if (line.length === 0 || this.closed) return;
+    if (this.sessionRules.some((kept) => kept.toLowerCase() === line.toLowerCase())) return;
+
+    this.sessionRules.push(line);
+    this.refreshSystemPrompt();
+  }
+
+  /** Withdraws one, by naming enough of it to be unambiguous. */
+  dropSessionRule(about: string): void {
+    const wanted = about.trim().toLowerCase();
+    if (wanted.length === 0) return;
+
+    this.sessionRules = this.sessionRules.filter((rule) => !rule.toLowerCase().includes(wanted));
+    this.refreshSystemPrompt();
+  }
+
+  /**
+   * Rewrites the standing instructions at the head of the history.
+   *
+   * In place, so the conversation so far is kept: a rule set halfway through is
+   * a change to how the assistant behaves, not a reason to forget what was
+   * being talked about.
+   */
+  private refreshSystemPrompt(): void {
+    if (this.history.length === 0) return;
+    this.history[0] = { role: 'system', content: this.systemPrompt() };
   }
 
   /**
@@ -516,6 +566,9 @@ export class LocalVoicePipeline {
     this.utterance = [];
     this.waiting = [];
     this.history = [];
+    // Gone with the conversation they were set in. That is what made them
+    // session rules rather than remembered ones.
+    this.sessionRules = [];
   }
 
   /**

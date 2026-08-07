@@ -305,6 +305,32 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_rule',
+    description:
+      "Take a standing instruction about how to behave, as opposed to a fact about them. 'Answer me in English even when I speak Turkish', 'never read addresses out', 'always ask before you run anything' — anything they tell you to keep doing or stop doing. This is different from app_remember: that keeps what is true about them, this keeps what they have told you to do, and you must then actually do it on every single turn until they say otherwise. Set `remember` only when they asked you to remember it — 'remember to', 'from now on', 'always', 'never again'. Without that the rule holds for this conversation and is gone when it ends, which is what they meant by 'for now' or 'just this once'. Say in a few words that you have it, and whether it is for now or for good.",
+    parameters: {
+      type: 'object',
+      properties: {
+        rule: {
+          type: 'string',
+          description:
+            'The instruction, written as something to do rather than as a report of what they said. "Answer in English, whatever language I am speaking."',
+        },
+        remember: {
+          type: 'boolean',
+          description:
+            'True only when they asked for it to be kept beyond this conversation. When in doubt leave it false: a rule that turns out to be permanent is one sentence away, and one that was never meant to be is something they have to discover and undo.',
+        },
+        stop: {
+          type: 'string',
+          description:
+            'Name a rule to withdraw instead of setting one — enough of it to be unambiguous. "answering in English". Use it when they say to stop, to forget it, or that the opposite is now true.',
+        },
+      },
+      required: [],
+    },
+  },
+  {
     name: 'app_forget',
     description:
       'Drop something you were remembering, when they ask you to forget it or when it is simply no longer true. Say in a few words that it is gone.',

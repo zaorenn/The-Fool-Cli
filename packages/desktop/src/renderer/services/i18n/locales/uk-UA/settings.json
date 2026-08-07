@@ -1628,7 +1628,10 @@
     "conversationWorkspaceBuilt": "«{{name}}» готово — ви вже в ньому",
     "conversationWorkspaceNoPage": "Збирання завершилося, але сторінку не записано, показувати нічого",
     "conversationWorkspaceIncomplete": "Щоб зібрати, потрібні назва і що воно має робити",
-    "conversationWorkspaceUnknown": "У мене немає робочого простору «{{name}}»"
+    "conversationWorkspaceUnknown": "У мене немає робочого простору «{{name}}»",
+    "conversationRuleKept": "Запам'ятав назавжди: {{rule}}",
+    "conversationRuleForNow": "Запам'ятав на цю розмову: {{rule}}",
+    "conversationRuleDropped": "Це правило знято."
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",

@@ -1627,7 +1627,10 @@
     "conversationWorkspaceBuilt": "«{{name}}» آماده است — الان داخل آن هستید",
     "conversationWorkspaceNoPage": "ساخت تمام شد اما صفحه‌ای نوشته نشد، چیزی برای نشان دادن نیست",
     "conversationWorkspaceIncomplete": "برای ساختن به یک نام و اینکه چه کاری بکند نیاز دارم",
-    "conversationWorkspaceUnknown": "فضای کاری‌ای به نام «{{name}}» ندارم"
+    "conversationWorkspaceUnknown": "فضای کاری‌ای به نام «{{name}}» ندارم",
+    "conversationRuleKept": "برای همیشه یادداشت شد: {{rule}}",
+    "conversationRuleForNow": "برای همین گفتگو یادداشت شد: {{rule}}",
+    "conversationRuleDropped": "آن قاعده برداشته شد."
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",

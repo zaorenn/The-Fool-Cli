@@ -1627,7 +1627,10 @@
     "conversationWorkspaceBuilt": "“{{name}}” is ready — you’re in it now",
     "conversationWorkspaceNoPage": "The build finished without writing a page, so there is nothing to show",
     "conversationWorkspaceIncomplete": "I need a name and what it should do before I can build it",
-    "conversationWorkspaceUnknown": "I have no workspace called “{{name}}”"
+    "conversationWorkspaceUnknown": "I have no workspace called “{{name}}”",
+    "conversationRuleKept": "Noted for good: {{rule}}",
+    "conversationRuleForNow": "Noted for this conversation: {{rule}}",
+    "conversationRuleDropped": "Dropped that rule."
   },
   "themeCustomizer": {
     "title": "Customize theme",

@@ -1628,7 +1628,10 @@
     "conversationWorkspaceBuilt": "“{{name}}”已就绪——你现在就在里面",
     "conversationWorkspaceNoPage": "构建结束了却没有写出页面，没有可展示的内容",
     "conversationWorkspaceIncomplete": "要构建的话，我需要一个名字和它该做什么",
-    "conversationWorkspaceUnknown": "没有叫“{{name}}”的工作区"
+    "conversationWorkspaceUnknown": "没有叫“{{name}}”的工作区",
+    "conversationRuleKept": "已长期记下：{{rule}}",
+    "conversationRuleForNow": "仅本次对话记下：{{rule}}",
+    "conversationRuleDropped": "已取消该规则。"
   },
   "themeCustomizer": {
     "title": "自定义主题",

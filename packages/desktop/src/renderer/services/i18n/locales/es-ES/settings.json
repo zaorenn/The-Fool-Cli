@@ -1627,7 +1627,10 @@
     "conversationWorkspaceBuilt": "«{{name}}» está listo: ya estás dentro",
     "conversationWorkspaceNoPage": "La construcción terminó sin escribir una página, así que no hay nada que mostrar",
     "conversationWorkspaceIncomplete": "Para construirlo necesito un nombre y qué debe hacer",
-    "conversationWorkspaceUnknown": "No tengo ningún espacio de trabajo llamado «{{name}}»"
+    "conversationWorkspaceUnknown": "No tengo ningún espacio de trabajo llamado «{{name}}»",
+    "conversationRuleKept": "Anotado para siempre: {{rule}}",
+    "conversationRuleForNow": "Anotado para esta conversación: {{rule}}",
+    "conversationRuleDropped": "Regla retirada."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

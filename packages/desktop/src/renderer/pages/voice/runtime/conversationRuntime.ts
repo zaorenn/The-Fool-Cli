@@ -345,6 +345,11 @@ class ConversationRuntime {
         this.standby = waiting;
         if (waiting) this.enter('standby');
       },
+      // Only the local pipeline holds a conversation whose prompt this app
+      // owns; a socket provider keeps its own on the far side. A rule set in one
+      // of those is kept the same way, it simply cannot be re-asserted mid-call.
+      setSessionRule: (rule: string) => this.local?.addSessionRule(rule),
+      dropSessionRule: (about: string) => this.local?.dropSessionRule(about),
       startWorkingHeartbeat: this.startWorkingHeartbeat,
     };
   }

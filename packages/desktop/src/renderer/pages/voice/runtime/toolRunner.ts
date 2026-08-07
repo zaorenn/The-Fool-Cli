@@ -30,6 +30,8 @@ import {
   rememberVoiceAddress,
   rememberVoiceFact,
   rememberVoiceMeaning,
+  forgetVoiceRule,
+  rememberVoiceRule,
 } from '@renderer/services/voice/session/voiceMemoryStore';
 import { describeScreen } from '@renderer/services/voice/screenSight';
 import { peekVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
@@ -245,6 +247,10 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
   try {
     const args = JSON.parse(invocation.argumentsJson || '{}') as Record<string, unknown>;
     const text = (key: string): string => (typeof args[key] === 'string' ? (args[key] as string) : '');
+    // Models send booleans as booleans and as the words for them, about equally
+    // often. Both are the same intent and refusing one would refuse the request.
+    const flag = (key: string): boolean =>
+      args[key] === true || (typeof args[key] === 'string' && /^(true|yes)$/i.test(args[key] as string));
 
     if (invocation.name === 'app_theme') {
       const detail = await applyThemeAction(t, text('action'), text('target') || 'accent', text('color'), text('name'));
@@ -411,6 +417,39 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
       const detail = teaching
         ? t('settings.voice.conversationLearnedSkill', { name })
         : t('settings.voice.conversationLearned');
+      host.updateActivity(invocation.callId, { detail, state: 'completed' });
+      host.backToListening();
+      return { ok: true, detail };
+    }
+
+    if (invocation.name === 'app_rule') {
+      const stop = text('stop').trim();
+      const rule = text('rule').trim();
+      if (stop.length === 0 && rule.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));
+
+      if (stop.length > 0) {
+        // Withdrawn from both places, because the user does not know which of
+        // them it went into and should not have to. Saying "stop answering in
+        // English" has to work whether it was for the session or for good.
+        host.dropSessionRule(stop);
+        await forgetVoiceRule(stop);
+
+        const detail = t('settings.voice.conversationRuleDropped');
+        host.updateActivity(invocation.callId, { detail, state: 'completed' });
+        host.backToListening();
+        return { ok: true, detail };
+      }
+
+      const keep = flag('remember');
+      // The default is the narrower one. A rule that turns out to be permanent
+      // is one sentence away; one that was never meant to be is something the
+      // user has to notice and then undo.
+      if (keep) await rememberVoiceRule(rule);
+      else host.setSessionRule(rule);
+
+      const detail = keep
+        ? t('settings.voice.conversationRuleKept', { rule })
+        : t('settings.voice.conversationRuleForNow', { rule });
       host.updateActivity(invocation.callId, { detail, state: 'completed' });
       host.backToListening();
       return { ok: true, detail };

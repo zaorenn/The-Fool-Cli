@@ -1627,7 +1627,10 @@
     "conversationWorkspaceBuilt": "„{{name}}“ ist fertig — du bist jetzt drin",
     "conversationWorkspaceNoPage": "Der Bau ist fertig, aber es wurde keine Seite geschrieben, also gibt es nichts zu zeigen",
     "conversationWorkspaceIncomplete": "Zum Bauen brauche ich einen Namen und was es tun soll",
-    "conversationWorkspaceUnknown": "Ich habe keinen Workspace namens „{{name}}“"
+    "conversationWorkspaceUnknown": "Ich habe keinen Workspace namens „{{name}}“",
+    "conversationRuleKept": "Dauerhaft notiert: {{rule}}",
+    "conversationRuleForNow": "Für dieses Gespräch notiert: {{rule}}",
+    "conversationRuleDropped": "Regel aufgehoben."
   },
   "themeCustomizer": {
     "title": "Design anpassen",

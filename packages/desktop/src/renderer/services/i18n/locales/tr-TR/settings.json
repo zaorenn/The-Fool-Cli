@@ -1627,7 +1627,10 @@
     "conversationWorkspaceBuilt": "“{{name}}” hazır — şimdi içindesin",
     "conversationWorkspaceNoPage": "Derleme bitti ama bir sayfa yazılmadı, gösterecek bir şey yok",
     "conversationWorkspaceIncomplete": "Oluşturabilmem için bir ad ve ne yapacağı lazım",
-    "conversationWorkspaceUnknown": "“{{name}}” adında bir workspace yok"
+    "conversationWorkspaceUnknown": "“{{name}}” adında bir workspace yok",
+    "conversationRuleKept": "Kalıcı olarak not ettim: {{rule}}",
+    "conversationRuleForNow": "Bu sohbet için not ettim: {{rule}}",
+    "conversationRuleDropped": "O kuralı bıraktım."
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

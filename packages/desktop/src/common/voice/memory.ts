@@ -74,12 +74,14 @@ export const MEMORY_SECTIONS = {
   facts: 'What I know about you',
   meanings: 'What your words mean',
   sessions: 'What we have talked about',
+  rules: 'Rules you set for me',
   lessons: 'Lessons I have learned',
   skills: 'Skills you taught me',
 } as const;
 
 /** How many bullets a section carries before the oldest start falling off. */
 const SECTION_LIMITS = {
+  rules: 30,
   facts: 60,
   meanings: 40,
   sessions: 12,
@@ -92,6 +94,8 @@ This is what I remember about you. Edit it freely — I read it before every
 conversation, and so does any agent that works on your behalf.
 
 ## ${MEMORY_SECTIONS.address}
+
+## ${MEMORY_SECTIONS.rules}
 
 ## ${MEMORY_SECTIONS.facts}
 
@@ -219,6 +223,57 @@ export const rememberMeaning = (memory: VoiceMemory, word: string, means: string
 /** Drops what the user asked to be forgotten, matched loosely on the words in it. */
 export const forgetFact = (memory: VoiceMemory, about: string): VoiceMemory =>
   editUser(memory, (doc) => removeMatchingLines(doc, about));
+
+/**
+ * Keeps a standing instruction — something to obey, not something to know.
+ *
+ * Deliberately its own section rather than another fact. "I live in Istanbul" is
+ * a fact, and nothing goes wrong if it is read loosely. "Answer me in English
+ * even when I speak Turkish" is an instruction, and reading that loosely means
+ * ignoring it — which is exactly what was reported: agreed to, then drifted away
+ * from a few turns later. Kept apart so the prompt can present it as binding
+ * instead of as background colour.
+ *
+ * Only what the user asked to be remembered reaches here. A rule said in passing
+ * binds the conversation it was said in and dies with it; making every offhand
+ * "in English for this bit" permanent would be a memory nobody could trust in
+ * the other direction.
+ */
+export const rememberRule = (memory: VoiceMemory, rule: string): VoiceMemory => {
+  const line = memoryLine(rule);
+  if (line.length === 0) return memory;
+  // The same rule said twice is one rule. Compared without case or trailing
+  // punctuation because it arrives from speech, where neither is stable.
+  const already = readRules(memory).some((kept) => sameRule(kept, line));
+  if (already) return memory;
+
+  return editUser(memory, (doc) => appendToSection(doc, MEMORY_SECTIONS.rules, line, SECTION_LIMITS.rules));
+};
+
+/** Every standing instruction, in the order they were set. */
+export const readRules = (memory: VoiceMemory): string[] => readSection(memory.user, MEMORY_SECTIONS.rules);
+
+/**
+ * Drops a rule by naming any part of it, which is how one is countermanded.
+ *
+ * The same line matching `forgetFact` uses, because a rule is withdrawn the way
+ * it was set: out loud, in the user's own words, naming enough of it to be
+ * unambiguous. "Stop answering in English" has to find the rule about English.
+ */
+export const forgetRule = (memory: VoiceMemory, about: string): VoiceMemory => {
+  const wanted = memoryLine(about);
+  if (wanted.length === 0) return memory;
+  return editUser(memory, (doc) => removeMatchingLines(doc, wanted));
+};
+
+const sameRule = (left: string, right: string): boolean => normalizeRule(left) === normalizeRule(right);
+
+const normalizeRule = (rule: string): string =>
+  rule
+    .toLowerCase()
+    .replaceAll(/[.!?,;:]+$/g, '')
+    .replaceAll(/\s+/g, ' ')
+    .trim();
 
 /**
  * Keeps what one conversation came to.

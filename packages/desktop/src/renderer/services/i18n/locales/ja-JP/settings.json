@@ -1629,7 +1629,10 @@
     "conversationWorkspaceBuilt": "「{{name}}」ができました——今そこにいます",
     "conversationWorkspaceNoPage": "ビルドは終わりましたがページが書かれず、表示するものがありません",
     "conversationWorkspaceIncomplete": "作るには名前と、何をするものかが必要です",
-    "conversationWorkspaceUnknown": "「{{name}}」というワークスペースはありません"
+    "conversationWorkspaceUnknown": "「{{name}}」というワークスペースはありません",
+    "conversationRuleKept": "今後も守ります：{{rule}}",
+    "conversationRuleForNow": "この会話のあいだ守ります：{{rule}}",
+    "conversationRuleDropped": "そのルールはやめました。"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",

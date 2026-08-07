@@ -56,6 +56,16 @@ export type ToolHost = {
    * its task talks about work nobody is doing.
    */
   startWorkingHeartbeat: () => () => void;
+  /**
+   * Binds a rule to this conversation without writing it down.
+   *
+   * Separate from the memory on purpose: a rule the user asked to be remembered
+   * goes to the memory and outlives the conversation, and one they did not binds
+   * only here. Both are obeyed equally hard while they last.
+   */
+  setSessionRule: (rule: string) => void;
+  /** Withdraws a session rule by naming enough of it. */
+  dropSessionRule: (about: string) => void;
 };
 
 /** One tool call, in the shape both transports normalise to. */
