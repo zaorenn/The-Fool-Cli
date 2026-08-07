@@ -1637,7 +1637,10 @@
     "conversationSkillUnknown": "I have not been taught {{name}}.",
     "conversationSkillRefused": "I could not save that one — the address or the path was not something I can open.",
     "conversationHolding": "Got it — {{name}}.",
-    "conversationCannotHold": "I can only take a file while a local conversation is running."
+    "conversationCannotHold": "I can only take a file while a local conversation is running.",
+    "conversationSkillNeedsTarget": "I have the name but not the address — find it first, then save it.",
+    "conversationFinding": "Looking it up…",
+    "conversationFoundNothing": "Nothing found"
   },
   "themeCustomizer": {
     "title": "Customize theme",

@@ -126,6 +126,7 @@ import type {
   UpdateDownloadResult,
 } from '../update/updateTypes';
 import type { ReleaseNotesResult } from '../update/releaseNotes';
+import type { FoundVideo } from '../voice/videoSearch';
 import type { AgentMetadata } from '@/renderer/utils/model/agentTypes';
 import type { Theme } from '@/common/theme/types';
 import type { AttachFolderRequest, ProjectDetailDto, ProjectEntryDto } from '@/common/types/project';
@@ -745,6 +746,15 @@ export const application = {
   setStartOnBoot: bridge.buildProvider<IBridgeResponse<IStartOnBootStatus>, { enabled: boolean }>(
     'app.set-start-on-boot'
   ),
+  /**
+   * A title turned into an address that plays, without opening anything.
+   *
+   * The spoken assistant can read a song's name off the screen and still have
+   * no address for it, because the address bar is usually behind our own
+   * window. `null` means the search did not resolve — never a guessed address,
+   * since the caller offers this to the user as "is this the one?".
+   */
+  findVideo: bridge.buildProvider<IBridgeResponse<FoundVideo | null>, { query: string }>('app.find-video'),
   getGpuStatus: bridge.buildProvider<IBridgeResponse<IGpuStatus>, void>('app.get-gpu-status'),
   setGpuOverride: bridge.buildProvider<IBridgeResponse<IGpuStatus>, { override: IGpuOverride | null }>(
     'app.set-gpu-override'

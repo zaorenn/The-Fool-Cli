@@ -1637,7 +1637,10 @@
     "conversationSkillUnknown": "On ne m'a pas appris {{name}}.",
     "conversationSkillRefused": "Je n'ai pas pu l'enregistrer — l'adresse ou le chemin n'est pas quelque chose que je peux ouvrir.",
     "conversationHolding": "Bien reçu — {{name}}.",
-    "conversationCannotHold": "Je ne peux prendre un fichier que pendant une conversation locale."
+    "conversationCannotHold": "Je ne peux prendre un fichier que pendant une conversation locale.",
+    "conversationSkillNeedsTarget": "J'ai le nom mais pas l'adresse — trouve-la d'abord, puis enregistre.",
+    "conversationFinding": "Recherche…",
+    "conversationFoundNothing": "Rien trouvé"
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

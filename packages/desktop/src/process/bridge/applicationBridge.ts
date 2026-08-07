@@ -14,6 +14,7 @@ import { getGpuStatus, setGpuUserOverride } from '@process/utils/gpuRecovery';
 import { initApplicationBridgeCore } from './applicationBridgeCore';
 import type { IStartOnBootStatus } from '@/common/adapter/ipcBridge';
 import { restartApplication } from './restartApplication';
+import { parseFirstVideo, youtubeSearchUrl } from '@/common/voice/videoSearch';
 
 let mainWindowRef: BrowserWindow | null = null;
 
@@ -168,6 +169,44 @@ export function initApplicationBridge(): void {
       console.debug(...args);
     } else {
       console.info(...args);
+    }
+  });
+
+  /**
+   * Resolve a title to an address that plays.
+   *
+   * Here rather than in the window because a renderer's cross-origin `fetch` is
+   * answered but not readable, and because this is a plain read: no key,
+   * nothing opened, nothing stored. What comes back is offered to the user for
+   * confirmation before any skill is saved from it.
+   */
+  ipcBridge.application.findVideo.provider(async ({ query }) => {
+    const term = query?.trim();
+    if (!term) return { success: true, data: null };
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+    try {
+      const response = await fetch(youtubeSearchUrl(term), {
+        signal: controller.signal,
+        headers: {
+          // Without a browser's own headers the results page comes back as the
+          // consent wall, which has no results in it to read.
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
+      });
+      if (!response.ok) return { success: true, data: null };
+      return { success: true, data: parseFirstVideo(await response.text()) };
+    } catch (error) {
+      // Answered as "nothing found" rather than as a failure: the assistant's
+      // next sentence is either "I found X" or "I could not find it", and from
+      // where the user sits a network error is the second of those.
+      console.warn('[ApplicationBridge] Video lookup failed:', error);
+      return { success: true, data: null };
+    } finally {
+      clearTimeout(timeout);
     }
   });
 

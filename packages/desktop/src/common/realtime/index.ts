@@ -378,7 +378,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_skill_teach',
     description:
-      'Learn to do one thing yourself, so that next time you simply do it instead of handing it to the agent. Use it whenever they show you or tell you something they will want again: a song they call their favourite, an application they want opened by a name of their own, a page they keep going back to. If you do not already know the address or the path, find it out first — ask them to bring the address on screen and tell you when it is there, then look at the screen — because a skill saved without the right target is a skill that fails silently later. Say in a few words that you have it and what to say to use it.',
+      'Learn to do one thing yourself, so that next time you simply do it instead of handing it to the agent. Use it whenever they show you or tell you something they will want again: a song they call their favourite, an application they want opened by a name of their own, a page they keep going back to. This tool saves; it does not find. Hold the address or the path already when you call it, because a skill saved without the right target fails silently later, long after anyone is watching. If you do not have one, do not call this yet: for anything on the web call app_find_video with the title, tell them which result you found and wait for them to agree, then call this with that address. Say in a few words that you have it and what to say to use it.',
     parameters: {
       type: 'object',
       properties: {
@@ -399,6 +399,21 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
         },
       },
       required: ['name', 'when'],
+    },
+  },
+  {
+    name: 'app_find_video',
+    description:
+      'Find the real address of a video or song from its name, without opening anything. Use it whenever you can see or have been told what something is but not where it is — which is almost always, because their address bar is usually behind this window. Looking at the screen gives you a title, not an address, and an address you assemble from a title does not exist. Comes back with the first result and its own title. Say what you found and ask whether that is the one before you save it as a skill or open it; if nothing comes back, say so and ask them for the address.',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'The name to search for — the title as they said it, or as you read it off the screen.',
+        },
+      },
+      required: ['query'],
     },
   },
   {

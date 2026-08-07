@@ -1637,7 +1637,10 @@
     "conversationSkillUnknown": "{{name}} wurde mir nicht beigebracht.",
     "conversationSkillRefused": "Das konnte ich nicht speichern — die Adresse oder der Pfad ist nichts, was ich öffnen kann.",
     "conversationHolding": "Habe ich — {{name}}.",
-    "conversationCannotHold": "Eine Datei kann ich nur annehmen, solange ein lokales Gespräch läuft."
+    "conversationCannotHold": "Eine Datei kann ich nur annehmen, solange ein lokales Gespräch läuft.",
+    "conversationSkillNeedsTarget": "Der Name ist da, die Adresse nicht — erst suchen, dann speichern.",
+    "conversationFinding": "Wird gesucht…",
+    "conversationFoundNothing": "Nichts gefunden"
   },
   "themeCustomizer": {
     "title": "Design anpassen",

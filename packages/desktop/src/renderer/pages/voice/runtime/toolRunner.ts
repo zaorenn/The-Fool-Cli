@@ -434,8 +434,16 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
       const when = text('when').trim();
       const url = text('url').trim();
       const path = text('path').trim();
-      if (name.length === 0 || when.length === 0 || (url.length === 0 && path.length === 0)) {
+      if (name.length === 0 || when.length === 0) {
         throw new Error(t('settings.voice.conversationActionUnsupported'));
+      }
+      // The schema does not demand a target, because the model usually has the
+      // name and the trigger a turn before it has an address. Answering that
+      // case with the generic "not something the voice can do" taught it the
+      // tool itself was broken and it gave up — so this names the missing part
+      // and the way to get it.
+      if (url.length === 0 && path.length === 0) {
+        throw new Error(t('settings.voice.conversationSkillNeedsTarget'));
       }
 
       const action = url.length > 0 ? ({ kind: 'open-url', url } as const) : ({ kind: 'open-path', path } as const);
@@ -449,6 +457,26 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
       host.updateActivity(invocation.callId, { detail, state: 'completed' });
       host.backToListening();
       return { ok: true, detail };
+    }
+
+    if (invocation.name === 'app_find_video') {
+      const query = text('query').trim();
+      if (query.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));
+
+      host.updateActivity(invocation.callId, { detail: t('settings.voice.conversationFinding'), state: 'running' });
+      const answer = await ipcBridge.application.findVideo.invoke({ query });
+      const found = answer.success ? answer.data : null;
+
+      host.updateActivity(invocation.callId, {
+        detail: found ? found.title || found.url : t('settings.voice.conversationFoundNothing'),
+        state: 'completed',
+      });
+      host.backToListening();
+      // Nothing is opened and nothing is saved. The model's next turn is meant
+      // to be a question — "is this the one?" — so what goes back is the title
+      // to read out and the address to keep for the answer.
+      if (!found) return { ok: true, found: false };
+      return { ok: true, found: true, url: found.url, title: found.title };
     }
 
     if (invocation.name === 'app_skill_do') {

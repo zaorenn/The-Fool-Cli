@@ -1638,7 +1638,10 @@
     "conversationSkillUnknown": "还没人教过我{{name}}。",
     "conversationSkillRefused": "这个没能保存——那个地址或路径我打不开。",
     "conversationHolding": "收到——{{name}}。",
-    "conversationCannotHold": "只有在本地对话进行时我才能接收文件。"
+    "conversationCannotHold": "只有在本地对话进行时我才能接收文件。",
+    "conversationSkillNeedsTarget": "有名称但没有地址 —— 先找到地址再保存。",
+    "conversationFinding": "正在查找…",
+    "conversationFoundNothing": "没有找到"
   },
   "themeCustomizer": {
     "title": "自定义主题",

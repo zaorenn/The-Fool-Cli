@@ -1637,7 +1637,10 @@
     "conversationSkillUnknown": "Меня не учили «{{name}}».",
     "conversationSkillRefused": "Не смог это сохранить — адрес или путь я открыть не могу.",
     "conversationHolding": "Принял — {{name}}.",
-    "conversationCannotHold": "Файл я могу принять только во время локального разговора."
+    "conversationCannotHold": "Файл я могу принять только во время локального разговора.",
+    "conversationSkillNeedsTarget": "Название есть, а адреса нет — сначала найдите его, потом сохраняйте.",
+    "conversationFinding": "Ищу…",
+    "conversationFoundNothing": "Ничего не найдено"
   },
   "themeCustomizer": {
     "title": "Настроить тему",
