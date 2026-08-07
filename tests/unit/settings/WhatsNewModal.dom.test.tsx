@@ -46,10 +46,16 @@ const answerWith = (currentVersion: string, entries: ReleaseNoteEntry[]) => {
   mocks.releaseNotesMock.mockResolvedValue({ success: true, data: { currentVersion, entries } });
 };
 
-/** What this copy of the app has on disk before the modal looks. */
-const storedState = ({ lastSeen, greeted }: { lastSeen?: string; greeted?: boolean }) => {
+/**
+ * What this copy of the app has on disk before the modal looks.
+ *
+ * `ranBefore` stands for the saved window bounds: the main process writes them
+ * when the window is moved or closed, so any prior session leaves a record and
+ * a first launch on a machine leaves none.
+ */
+const storedState = ({ lastSeen, ranBefore }: { lastSeen?: string; ranBefore?: boolean }) => {
   mocks.configGetMock.mockImplementation((key: string) =>
-    Promise.resolve(key === 'system.lastSeenVersion' ? lastSeen : greeted)
+    Promise.resolve(key === 'system.lastSeenVersion' ? lastSeen : ranBefore ? { width: 1200, height: 800 } : undefined)
   );
 };
 
@@ -59,8 +65,8 @@ describe('decideWhatsNew', () => {
   });
 
   it('speaks on the very update that adds it, to somebody who was already here', () => {
-    // Nothing recorded, but this copy has been through first-run setup — so it
-    // is an existing install arriving from a build older than this feature.
+    // Nothing recorded, but this installation has run before — so it is an
+    // existing copy arriving from a build older than this feature.
     // Answering "record" here would make a feature whose whole job is to say
     // what changed ship silent on the one update that introduces it.
     expect(decideWhatsNew(undefined, '2.4.0', ENTRIES, true)).toBe('show');
@@ -90,7 +96,7 @@ describe('WhatsNewModal', () => {
   });
 
   it('shows what changed after an update, and remembers it once dismissed', async () => {
-    storedState({ lastSeen: '2.3.9', greeted: true });
+    storedState({ lastSeen: '2.3.9', ranBefore: true });
     answerWith('2.4.0', ENTRIES);
 
     render(<WhatsNewModal />);
@@ -118,7 +124,7 @@ describe('WhatsNewModal', () => {
   });
 
   it('speaks to an existing install arriving from a build that never recorded one', async () => {
-    storedState({ greeted: true });
+    storedState({ ranBefore: true });
     answerWith('2.4.0', ENTRIES);
 
     render(<WhatsNewModal />);
@@ -128,7 +134,7 @@ describe('WhatsNewModal', () => {
   });
 
   it('says nothing when the app has not changed version', async () => {
-    storedState({ lastSeen: '2.4.0', greeted: true });
+    storedState({ lastSeen: '2.4.0', ranBefore: true });
     answerWith('2.4.0', []);
 
     render(<WhatsNewModal />);
@@ -139,7 +145,7 @@ describe('WhatsNewModal', () => {
   });
 
   it('does not interrupt a launch when the notes cannot be read', async () => {
-    storedState({ lastSeen: '2.3.9', greeted: true });
+    storedState({ lastSeen: '2.3.9', ranBefore: true });
     mocks.releaseNotesMock.mockRejectedValue(new Error('bridge is not there'));
 
     render(<WhatsNewModal />);

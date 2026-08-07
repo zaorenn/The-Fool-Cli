@@ -27,7 +27,7 @@ export const decideWhatsNew = (
   lastSeenVersion: string | undefined,
   currentVersion: string,
   entries: ReleaseNoteEntry[],
-  /** Whether this copy has been through first-run setup — see below. */
+  /** Whether this installation has run before — see below. */
   returning: boolean
 ): 'show' | 'record' | 'nothing' => {
   // Nothing recorded happens two ways, and they want opposite answers. A fresh
@@ -35,10 +35,6 @@ export const decideWhatsNew = (
   // a build older than this feature has missed exactly what this release
   // changed, and telling them nothing is how a "say what changed" feature ships
   // silent on the one update that introduces it.
-  //
-  // First-run setup tells the two apart, because it is completed deliberately
-  // rather than on startup — a fresh install has not been through it yet at the
-  // moment this runs, and every existing install has.
   if (!lastSeenVersion) return returning && entries.length > 0 ? 'show' : 'record';
   if (lastSeenVersion === currentVersion) return 'nothing';
   // The version moved but there is nothing to read — a downgrade, or a
@@ -85,7 +81,13 @@ const WhatsNewModal: React.FC = () => {
 
     const run = async () => {
       const lastSeenVersion = await ConfigStorage.get('system.lastSeenVersion');
-      const returning = Boolean(await ConfigStorage.get('system.firstRunGreeted'));
+      // Proof this installation ran before the build that started recording a
+      // version: the main process writes the window's size and position when it
+      // is moved or closed, so any real prior session leaves one and a machine
+      // opening the app for the first time has none. Deliberately not the
+      // first-run flag, which is only ever set in memory and so is `undefined`
+      // on every launch, including the ten-thousandth.
+      const returning = Boolean(await ConfigStorage.get('window.bounds'));
       const response = await ipcBridge.update.releaseNotes.invoke({ since: lastSeenVersion });
       if (cancelled || !response.success || !response.data) return;
 
