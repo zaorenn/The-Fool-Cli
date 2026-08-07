@@ -1611,7 +1611,13 @@
     "conversationGroupMicrophone": "マイク",
     "conversationGroupModel": "モデル",
     "conversationSetup": "設定",
-    "conversationSettingLayout": "{{name}}に切り替えました"
+    "conversationSettingLayout": "{{name}}に切り替えました",
+    "conversationSkillRecording": "見ています——どうぞ",
+    "conversationSkillWriting": "スキルとして書いています",
+    "conversationSkillInstalled": "「{{name}}」をスキルに追加しました",
+    "conversationSkillCancelled": "その記録は破棄しました",
+    "conversationSkillIncomplete": "スキルにするには名前と手順が必要です",
+    "conversationSkillUnnamed": "新しいスキル"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",

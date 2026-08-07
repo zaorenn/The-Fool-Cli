@@ -1609,7 +1609,13 @@
     "conversationGroupMicrophone": "Microphone",
     "conversationGroupModel": "Modèle",
     "conversationSetup": "Réglages",
-    "conversationSettingLayout": "Passé à « {{name}} »"
+    "conversationSettingLayout": "Passé à « {{name}} »",
+    "conversationSkillRecording": "Je regarde — montrez-moi",
+    "conversationSkillWriting": "Je le rédige comme compétence",
+    "conversationSkillInstalled": "« {{name}} » est maintenant dans vos compétences",
+    "conversationSkillCancelled": "Enregistrement oublié",
+    "conversationSkillIncomplete": "Il me faut un nom et les étapes pour en faire une compétence",
+    "conversationSkillUnnamed": "Une nouvelle compétence"
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

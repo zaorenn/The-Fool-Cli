@@ -1612,7 +1612,13 @@
     "conversationGroupMicrophone": "Microfone",
     "conversationGroupModel": "Modelo",
     "conversationSetup": "Configurar",
-    "conversationSettingLayout": "Mudei para “{{name}}”"
+    "conversationSettingLayout": "Mudei para “{{name}}”",
+    "conversationSkillRecording": "Estou olhando — pode mostrar",
+    "conversationSkillWriting": "Escrevendo isso como habilidade",
+    "conversationSkillInstalled": "“{{name}}” já está nas suas habilidades",
+    "conversationSkillCancelled": "Descartei essa gravação",
+    "conversationSkillIncomplete": "Preciso de um nome e dos passos para virar habilidade",
+    "conversationSkillUnnamed": "Uma nova habilidade"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

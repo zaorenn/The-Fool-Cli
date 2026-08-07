@@ -37,6 +37,7 @@ import { applyThemeOverrides } from '@renderer/utils/theme/applyThemeOverrides';
 import { normalizeEndpoint } from '../localPipeline';
 import { buildAndPreview } from './buildTool';
 import { applySpokenSetting } from './settingsTool';
+import { runSkillTool } from './skillTool';
 import type { ToolHost, ToolInvocation } from './types';
 
 /**
@@ -430,6 +431,17 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
       host.updateActivity(invocation.callId, { detail, state: 'completed' });
       host.backToListening();
       return { ok: true, detail };
+    }
+
+    if (invocation.name === 'app_skill') {
+      // Being shown how to do something, and turning it into a real skill in the
+      // library rather than a note the spoken assistant follows.
+      return runSkillTool(host, invocation.callId, {
+        action: text('action') || 'write',
+        name: text('name'),
+        what: text('what'),
+        steps: text('steps'),
+      });
     }
 
     if (invocation.name === 'app_standby') {

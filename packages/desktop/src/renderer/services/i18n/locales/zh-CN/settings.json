@@ -1610,7 +1610,13 @@
     "conversationGroupMicrophone": "麦克风",
     "conversationGroupModel": "模型",
     "conversationSetup": "设置",
-    "conversationSettingLayout": "已切换到{{name}}"
+    "conversationSettingLayout": "已切换到{{name}}",
+    "conversationSkillRecording": "正在看着——你演示吧",
+    "conversationSkillWriting": "正在写成技能",
+    "conversationSkillInstalled": "“{{name}}”已加入你的技能",
+    "conversationSkillCancelled": "已丢弃那段录制",
+    "conversationSkillIncomplete": "要做成技能，我需要一个名字和步骤",
+    "conversationSkillUnnamed": "新技能"
   },
   "themeCustomizer": {
     "title": "自定义主题",

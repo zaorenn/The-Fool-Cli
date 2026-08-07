@@ -52,6 +52,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   previewWorkspaceRoot: () => ipcRenderer.invoke('preview:workspace-root'),
   servePreview: (directory: string) => ipcRenderer.invoke('preview:serve', directory),
   stopPreview: () => ipcRenderer.invoke('preview:stop'),
+  // Being shown how to do something, and writing it up as a skill
+  startSkillRecording: (name: string) => ipcRenderer.invoke('skill:record-start', name),
+  stopSkillRecording: () => ipcRenderer.invoke('skill:record-stop'),
+  cancelSkillRecording: () => ipcRenderer.invoke('skill:record-cancel'),
+  prepareSkillFolder: (name: string) => ipcRenderer.invoke('skill:prepare-folder', name),
+  writeSkillDraft: (folder: string, body: string) => ipcRenderer.invoke('skill:write-draft', folder, body),
   // Feedback: forward diagnostics logs to the main process console
   logFeedbackEvent: (payload: { details?: unknown; level: 'info' | 'warn' | 'error'; message: string }) =>
     ipcRenderer.send('feedback:renderer-log', payload),

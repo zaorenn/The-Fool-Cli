@@ -1609,7 +1609,13 @@
     "conversationGroupMicrophone": "میکروفون",
     "conversationGroupModel": "مدل",
     "conversationSetup": "تنظیم",
-    "conversationSettingLayout": "به «{{name}}» تغییر کرد"
+    "conversationSettingLayout": "به «{{name}}» تغییر کرد",
+    "conversationSkillRecording": "دارم نگاه می‌کنم — نشانم بده",
+    "conversationSkillWriting": "دارم به‌صورت مهارت می‌نویسم",
+    "conversationSkillInstalled": "«{{name}}» حالا در مهارت‌های شماست",
+    "conversationSkillCancelled": "آن ضبط را دور ریختم",
+    "conversationSkillIncomplete": "برای ساختن مهارت به یک نام و مراحل نیاز دارم",
+    "conversationSkillUnnamed": "یک مهارت تازه"
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",

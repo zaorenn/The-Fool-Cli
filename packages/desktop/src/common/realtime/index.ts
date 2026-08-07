@@ -322,6 +322,33 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_skill',
+    description:
+      "Turn something the user has taught you into a real, installed skill — a folder in their skill library that every agent can use, not a note only you follow. Two ways in. If they can explain it, use `write` with what it is for and how they do it. If it involves a screen — 'let me show you', 'watch what I do' — use `record` first, say you are watching, then be quiet and let them work; use `write` when they say they are done, describing what they showed in your own words. Reach for this when they say to learn how to do something or to make it a skill. For a rule you simply follow yourself, `app_learn` is enough and costs nothing.",
+    parameters: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['record', 'write', 'cancel'],
+          description:
+            "'record' starts watching their screen so a demonstration is captured, 'write' finishes and installs the skill — stopping any recording first — and 'cancel' throws a recording away without keeping anything.",
+        },
+        name: { type: 'string', description: 'What they call it, in their words. "Send an invoice".' },
+        what: {
+          type: 'string',
+          description:
+            'What it is for, in one sentence, written as when to reach for it: "When the user asks to send an invoice to a client." This is the only thing that decides whether the skill is ever used, so it matters more than the name.',
+        },
+        steps: {
+          type: 'string',
+          description: 'How they do it, in order, in their own words. Keep what they said rather than improving on it.',
+        },
+      },
+      required: ['action'],
+    },
+  },
+  {
     name: 'app_standby',
     description:
       'Go quiet and wait. Call this the moment the user asks you to hold on, wait, stand by, or stop for now. After calling it, say nothing at all until you hear the wake phrase.',

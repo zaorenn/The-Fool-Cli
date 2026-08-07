@@ -1609,7 +1609,13 @@
     "conversationGroupMicrophone": "Mikrofon",
     "conversationGroupModel": "Model",
     "conversationSetup": "Ayarlar",
-    "conversationSettingLayout": "{{name}} yerleşimine geçildi"
+    "conversationSettingLayout": "{{name}} yerleşimine geçildi",
+    "conversationSkillRecording": "İzliyorum — göster bakalım",
+    "conversationSkillWriting": "Skill olarak yazıyor",
+    "conversationSkillInstalled": "“{{name}}” artık skill’lerinde",
+    "conversationSkillCancelled": "O kaydı unuttum",
+    "conversationSkillIncomplete": "Skill yapabilmem için bir ad ve adımlar lazım",
+    "conversationSkillUnnamed": "Yeni bir skill"
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

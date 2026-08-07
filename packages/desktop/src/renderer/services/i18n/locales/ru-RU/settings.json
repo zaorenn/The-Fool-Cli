@@ -1609,7 +1609,13 @@
     "conversationGroupMicrophone": "Микрофон",
     "conversationGroupModel": "Модель",
     "conversationSetup": "Настройка",
-    "conversationSettingLayout": "Переключил на «{{name}}»"
+    "conversationSettingLayout": "Переключил на «{{name}}»",
+    "conversationSkillRecording": "Смотрю — показывайте",
+    "conversationSkillWriting": "Записываю это как навык",
+    "conversationSkillInstalled": "«{{name}}» теперь среди ваших навыков",
+    "conversationSkillCancelled": "Забыл эту запись",
+    "conversationSkillIncomplete": "Чтобы сделать навык, нужны название и шаги",
+    "conversationSkillUnnamed": "Новый навык"
   },
   "themeCustomizer": {
     "title": "Настроить тему",

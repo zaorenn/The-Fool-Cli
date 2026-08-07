@@ -1609,7 +1609,13 @@
     "conversationGroupMicrophone": "Microphone",
     "conversationGroupModel": "Model",
     "conversationSetup": "Set up",
-    "conversationSettingLayout": "Switched to {{name}}"
+    "conversationSettingLayout": "Switched to {{name}}",
+    "conversationSkillRecording": "Watching — go ahead and show me",
+    "conversationSkillWriting": "Writing it up as a skill",
+    "conversationSkillInstalled": "“{{name}}” is in your skills now",
+    "conversationSkillCancelled": "Forgot that recording",
+    "conversationSkillIncomplete": "I need a name and the steps before I can make that a skill",
+    "conversationSkillUnnamed": "A new skill"
   },
   "themeCustomizer": {
     "title": "Customize theme",

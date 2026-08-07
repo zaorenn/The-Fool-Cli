@@ -1610,7 +1610,13 @@
     "conversationGroupMicrophone": "Мікрофон",
     "conversationGroupModel": "Модель",
     "conversationSetup": "Налаштування",
-    "conversationSettingLayout": "Перемкнув на «{{name}}»"
+    "conversationSettingLayout": "Перемкнув на «{{name}}»",
+    "conversationSkillRecording": "Дивлюся — показуйте",
+    "conversationSkillWriting": "Записую це як навичку",
+    "conversationSkillInstalled": "«{{name}}» тепер серед ваших навичок",
+    "conversationSkillCancelled": "Забув цей запис",
+    "conversationSkillIncomplete": "Щоб зробити навичку, потрібні назва та кроки",
+    "conversationSkillUnnamed": "Нова навичка"
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",

@@ -47,10 +47,33 @@ export interface ElectronBridgeAPI {
    */
   servePreview?: (directory: string) => Promise<PreviewResult>;
   stopPreview?: () => Promise<void>;
+  /**
+   * Watches the user demonstrate something, so it can be written up as a skill.
+   *
+   * A frame every couple of seconds into a folder of its own, never on a timer
+   * nobody asked for: it starts when the user says "let me show you", and stops
+   * on their word or on its own after six minutes.
+   */
+  startSkillRecording?: (name: string) => Promise<string>;
+  stopSkillRecording?: () => Promise<SkillRecordingResult | null>;
+  cancelSkillRecording?: () => Promise<void>;
+  /** A folder for a skill that was described rather than demonstrated. */
+  prepareSkillFolder?: (name: string) => Promise<string>;
+  /** Writes the assistant's first draft beside the frames, and nowhere else. */
+  writeSkillDraft?: (folder: string, body: string) => Promise<boolean>;
 }
 
 /** What {@link ElectronBridgeAPI.servePreview} answers with. */
 export type PreviewResult = { ok: true; url: string } | { ok: false; reason: 'no-entry' | 'not-a-folder' | 'failed' };
+
+/** What a finished demonstration leaves behind. */
+export type SkillRecordingResult = {
+  folder: string;
+  frames: { file: string; at: number }[];
+  seconds: number;
+  /** True when it stopped itself rather than being stopped. */
+  timedOut: boolean;
+};
 
 export type BackendStartupFailureReason =
   | 'backend_incompatible_runtime'

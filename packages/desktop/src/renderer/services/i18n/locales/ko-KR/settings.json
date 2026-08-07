@@ -1611,7 +1611,13 @@
     "conversationGroupMicrophone": "마이크",
     "conversationGroupModel": "모델",
     "conversationSetup": "설정",
-    "conversationSettingLayout": "{{name}}(으)로 바꿨습니다"
+    "conversationSettingLayout": "{{name}}(으)로 바꿨습니다",
+    "conversationSkillRecording": "보고 있습니다 — 보여주세요",
+    "conversationSkillWriting": "스킬로 정리하는 중",
+    "conversationSkillInstalled": "“{{name}}”을(를) 스킬에 추가했습니다",
+    "conversationSkillCancelled": "그 기록은 지웠습니다",
+    "conversationSkillIncomplete": "스킬로 만들려면 이름과 단계가 필요합니다",
+    "conversationSkillUnnamed": "새 스킬"
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",

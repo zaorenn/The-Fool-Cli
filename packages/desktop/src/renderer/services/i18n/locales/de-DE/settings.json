@@ -1609,7 +1609,13 @@
     "conversationGroupMicrophone": "Mikrofon",
     "conversationGroupModel": "Modell",
     "conversationSetup": "Einrichten",
-    "conversationSettingLayout": "Auf „{{name}}“ umgestellt"
+    "conversationSettingLayout": "Auf „{{name}}“ umgestellt",
+    "conversationSkillRecording": "Ich schaue zu — zeig es mir",
+    "conversationSkillWriting": "Wird als Skill aufgeschrieben",
+    "conversationSkillInstalled": "„{{name}}“ ist jetzt bei deinen Skills",
+    "conversationSkillCancelled": "Aufnahme verworfen",
+    "conversationSkillIncomplete": "Für einen Skill brauche ich einen Namen und die Schritte",
+    "conversationSkillUnnamed": "Ein neuer Skill"
   },
   "themeCustomizer": {
     "title": "Design anpassen",
