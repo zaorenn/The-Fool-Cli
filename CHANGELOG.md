@@ -2,6 +2,22 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.3.3
+
+### Features
+
+- Every window can be shaped, not only the Voice Assistant. The chat window, Fool's Hub and the app frame each have their own layout now, with their own presets and their own axes — a level meter is not a question the Hub has an opinion about, so it is not offered one. Every window's default reproduces what the app already drew, so an update rearranges nobody's screen.
+- Movements can be built without writing CSS. Choose what moves, how it arrives and how fast; watch it play on a real element, then add it. Movements are saved with the layout and arrive when it is worn. Anyone who has told their computer they want less motion gets none of them, whatever the layout says.
+- JARVIS ships as a second workspace: four layouts, its own palette, and a shorter-spoken assistant. It exists to be taken apart — wear it, find something you like, open the editor and it is already there.
+- A workspace can carry the palette it was built around, so an arrangement about a look arrives looking like itself instead of like whatever was chosen last.
+- Another AI can design a layout for you. Copy the app's own instructions into whichever assistant you already use, describe the look you want, then drop the answer onto the layout editor or paste it in. The app never holds a key and never sends anything anywhere. What comes back is read the way a shared workspace is: unknown values dropped, and the file never allowed to overwrite something you made.
+- Changing a layout by voice reaches every window. "Put the list one on" is a sentence about the Hub, and you no longer have to say which window you meant.
+
+### Fixes
+
+- Choosing a palette no longer undoes the layout dials. A theme's stylesheet was applied after them, so picking one straightened corners somebody had rounded — and a workspace bringing a palette with it would have undone its own layout on the way in.
+- Deleting a layout you were wearing puts back that window's own default. It used to put the Voice Assistant's shape on whichever window you were editing.
+
 ## 2.3.2
 
 ### Fixes
