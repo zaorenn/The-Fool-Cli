@@ -1,7 +1,7 @@
-# Handover — 2.3.4 is out
+# Handover — 2.3.4 is out, and four fixes sit on top of it
 
 Written 8 August 2026. `main` in `C:/Fool-AionUI` at `3fbb50034`, version `2.3.4`, tree clean,
-pushed. **[v2.3.4](https://github.com/zaorenn/The-Fool-Cli/releases/tag/v2.3.4) is published,
+pushed at `3fbb50034`; four further commits have landed since and are **not yet in a release** — see "After 2.3.4" below. **[v2.3.4](https://github.com/zaorenn/The-Fool-Cli/releases/tag/v2.3.4) is published,
 non-draft, with both assets uploaded** — the first release since 2.2.55, and it carries the
 whole 2.3.x line with it.
 
@@ -112,6 +112,18 @@ handing it a file by dropping one on the window · `426c17c03` silent install.
   only the setting is missing. Genuinely small, and it has been on the list two sessions now.
 - **A Turkish TTS voice with real prosody.** Measure before shipping: the bar is Pocket's
   0.43 s.
+- **Some users download the installer at about 50 kbps on a fast connection.** Not diagnosed.
+  What has been ruled out, so it is not re-checked: differential download is not involved
+  (`differentialPackage: false`, no `.blockmap` is produced or uploaded, so electron-updater
+  cannot be doing ranged block requests); no Electron command-line switch touches networking;
+  the manual download loop in `updateBridge.ts` handles backpressure correctly and throttles
+  its progress events to 250 ms. The remaining suspects are the ones that need a real
+  measurement rather than a reading: GitHub asset throughput from the affected region, and
+  electron-updater 6.6.2's own HTTP client on the auto path. **Do not guess at a fix** — add
+  throughput and resolved-host logging to both download paths first, so the next report
+  arrives with evidence. A CDN in front of our own releases is the likely remedy if the
+  answer turns out to be regional; the code comment in `updateBridge.ts` explains why
+  upstream's CDN was removed and cannot simply be re-enabled.
 
 ### Dropped by the user, with the reason
 
@@ -161,3 +173,32 @@ node -e "const s=require('fs').readFileSync('resources/bundled-foolcore/win32-x6
 
 Both must print `false`. Both did for the binary in this release, and it carries the
 `voice.localSkills` documentation that was inert in the previous one.
+
+---
+
+## After 2.3.4, unreleased
+
+Four commits on `main` that no installer carries yet. A release needs a version bump, a
+`CHANGELOG.md` entry, a rebuilt installer verified on disk, and a published tag.
+
+| Commit                    | What                                               |
+| ------------------------- | -------------------------------------------------- |
+| `adb7e804f`               | Teaching a skill it can see but has no address for |
+| `90b97bb67`               | A TTS model released when you switch away from it  |
+| `6962d09bb`, `f902a7fca`… | (handover and the 2.3.4 work itself)               |
+
+**`adb7e804f` — why "play my favourite song" could not be taught.** The tool schema does not
+require an address, because the name and the trigger arrive a turn before one does. The
+handler answered that case with the generic "not something the voice can do", so the model
+read it as the tool being broken and fell back to asking the user to describe the steps by
+hand. Underneath was a real gap: looking at the screen gives a title, never an address — the
+browser sits behind our own window and its address bar is not in the picture. `app_find_video`
+resolves a title to a real watch address without opening anything, and the model is told to
+offer what it found and wait for a yes before saving, because this is a guess from a title.
+
+**`90b97bb67` — why a graphics card filled up.** The audio.cpp server was handed _every_
+installed model, and it loads every entry it is given and holds those weights for the life of
+the process. Four downloaded voices meant four resident at once, and choosing a different one
+released nothing, because the config had not changed and so the child was never replaced. The
+config carries one model now, which puts it in the runtime signature and makes a voice change
+a teardown. Switching to a different engine shuts it down entirely.
