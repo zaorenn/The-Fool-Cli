@@ -2,6 +2,29 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.3.4
+
+### The spoken assistant
+
+- Telling it to change something about itself now takes effect in the conversation you said it in. "Switch to a male voice" was heard, written down, agreed to out loud — and then ignored for the rest of the session, because the pipeline took one copy of those settings when it started and never looked again. From where you sit, agreeing and not doing it is worse than refusing.
+- A reply that streams and never says anything is no longer allowed to wedge the conversation. The watchdog asked whether the connection was alive; several local models write their whole deliberation into a field that is deliberately never read aloud, and every one of those frames reset it. A model that deliberated for ever left the conversation stuck with nothing on screen. A second clock, armed once a turn and cleared by the first spoken word, catches that without punishing a few seconds of normal thinking.
+- A rule you set is obeyed. "Answer me in English even when I speak Turkish" was agreed to and then drifted back a few turns later, because the language setting is written into the prompt as "every reply, every time" and anything you had said arrived earlier and simply lost. Rules come last now, under their own heading, stated as overriding everything above them.
+- A rule said in passing binds the conversation it was said in and dies with it. Only one you ask it to remember is written down — so an offhand "in English for this bit" cannot become silently permanent.
+- It can be taught things it then does itself. Bind words you say to one concrete action — open an address, open something on the machine — and it happens immediately, with no agent and no wait. The rules for what a taught skill may point at are deliberately narrow: web addresses and absolute paths, and nothing that could carry an argument, chain a command or expand a variable.
+- Everything it has taught itself is listed in Settings → Memory, with the actual address or program shown in full. "Opens a page" is not something you can check; the address is. A capability you cannot see is one you cannot withdraw.
+- The talk key opens a conversation instead of a single dictated sentence. Press it with nothing running and you are talking to it; while it is running the key is that conversation's microphone, so holding it works from the desktop or from inside another application. It is no longer a toggle — a conversation ends by being asked to stop, not by a key coming up.
+- Hand it a file by dropping one on the window. Saying a path out loud is miserable and sending an agent to find it takes minutes and often finds the wrong file. What it holds is a reference, never the contents, so a folder cannot push the conversation out of the prompt. It says so plainly when the provider in use cannot be handed one.
+
+### Updates
+
+- An update installs without an installer window and the app comes back up on its own. You asked for the update a moment earlier; a window telling you a program is being installed is not news.
+- And then it says what changed. On the first launch after the version moves, this release's own notes, once. Read from the changelog inside the app rather than from GitHub, because the machine that just came back up may not be online.
+
+### JARVIS
+
+- The display is switched on. It boots when you put it on, the grid drifts, a refresh band crosses the window, the accent breathes at its supply, and a point of light runs the underside of the title bar. The Hub becomes a bay: workspaces on a rack, the one in force lit at its leading edge.
+- All of it stops when asked. Anyone who has told their computer they want less motion gets none of it, and the frame's own movement dial does the same — set to calm, the display still resolves once and then holds still.
+
 ## 2.3.3
 
 ### Features
