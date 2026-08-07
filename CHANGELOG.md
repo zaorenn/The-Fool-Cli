@@ -2,6 +2,39 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.3.0
+
+### Fool's Hub, and workspaces
+
+- A workspace is the whole app aimed at one purpose: the layout, who the assistant is being, which agent and model do the work, all under a name. Switching applies every one of them at once. What you had before this is the `default` workspace, unchanged.
+- Arrange the app the way you want it, then keep it — a workspace is taken from how things already are rather than retyped into a form.
+- Workspaces are files. Send one to somebody and they get the arrangement, not your account: agents and models are named by id and no key is ever written into one. A file that is not a workspace is refused rather than quietly rearranging the app.
+- Switch by saying so: "put me in the guitar one", "back to default".
+
+### A workspace can be a thing, not just a set of settings
+
+- Ask for something and it is built: "make me something that turns a YouTube link into guitar tab" writes a real page, keeps it in a workspace, and moves you into it. It runs inside The Fool rather than in a browser tab beside it.
+- Those pages have the whole application behind them. Fetching, reading, transcribing, calling a model, driving the machine — all through the agent you already have, with your own models and keys. They carry no server of their own, which is what makes one safe to send to somebody else.
+- A shared workspace brings its page with it, so what arrives works rather than half-works.
+
+### Making the interface yours
+
+- A new Layout section: corners, spacing, text size, motion, accent reach and depth, as sliders with a live preview. The app wears the change as you turn it, and saving is what gives an arrangement a name.
+- The Voice Assistant has a second shape to choose — a HUD, with the level wrapped into a ring — beside the column it has always had. The one that ships stays the default; no update rearranges a screen nobody asked to have rearranged.
+- Every state of a conversation now moves differently. Connecting, thinking and working used to be one flat line with three different words under it.
+
+### Memory you can read and correct
+
+- What the assistant remembers is two markdown documents in Settings → Memory: `user.md` for who you are and what your own words mean, `agent.md` for what it got wrong and the ways of doing things you taught it. Both are yours to edit, and both are read by every agent working on your behalf — not only by the voice.
+- Teach it a skill by explaining it, or by showing it: it can watch your screen while you demonstrate, then write and install a real skill in your library. Recording starts and stops on your word and stops itself after six minutes.
+- Searching inside a site is now instant rather than minutes of an agent clicking: "open YouTube and find that song" is one step.
+- A conversation is remembered on every provider, not only the local one.
+
+### Fixes
+
+- The agent activity list no longer spells out the answer letter by letter, on the page or on the notch. It shows steps, and moves once a sentence finishes.
+- Voice Chat is now called Voice Assistant.
+
 ## 2.2.55
 
 ### Agentic voice conversation
