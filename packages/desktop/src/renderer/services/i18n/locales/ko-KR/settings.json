@@ -1689,7 +1689,11 @@
       "gallery": "갤러리",
       "index": "색인",
       "standard": "표준",
-      "focused": "집중"
+      "focused": "집중",
+      "jarvis-reactor": "JARVIS · 리액터",
+      "jarvis-readout": "JARVIS · 판독",
+      "jarvis-bay": "JARVIS · 베이",
+      "jarvis-hud": "JARVIS · HUD"
     },
     "option": {
       "shell": "구성",

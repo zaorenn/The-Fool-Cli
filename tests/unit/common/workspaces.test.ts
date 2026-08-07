@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { SURFACE_IDS } from '@/common/config/surfaceLayouts';
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_WORKSPACE_ID,
@@ -20,6 +21,7 @@ import {
   workspaceFileName,
   WORKSPACE_FILE_KIND,
   type Workspace,
+  BUILTIN_WORKSPACE_IDS,
 } from '@/common/config/workspaces';
 
 /**
@@ -96,7 +98,8 @@ describe('sanitizeWorkspaces', () => {
   it('drops an entry it cannot read, and keeps the ones it can', () => {
     const library = sanitizeWorkspaces({ broken: 'not a workspace', guitar: made() });
 
-    expect(Object.keys(library).toSorted()).toEqual(['default', 'guitar']);
+    // Both shipped ones, plus the readable entry; the unreadable one is gone.
+    expect(Object.keys(library).toSorted()).toEqual(['default', 'guitar', 'jarvis']);
   });
 
   it('keeps a bounded number of them', () => {
@@ -125,13 +128,14 @@ describe('resolveWorkspace', () => {
 });
 
 describe('listWorkspaces', () => {
-  it('shows the shipped one first, then the rest by name', () => {
+  it('shows the shipped ones first, then the rest by name', () => {
     const library = sanitizeWorkspaces({
       zebra: made({ id: 'zebra', name: 'Zebra' }),
       apple: made({ id: 'apple', name: 'Apple' }),
     });
 
-    expect(listWorkspaces(library).map((workspace) => workspace.name)).toEqual(['Default', 'Apple', 'Zebra']);
+    // The shipped ones keep their declared order; the user's follow by name.
+    expect(listWorkspaces(library).map((workspace) => workspace.name)).toEqual(['Default', 'JARVIS', 'Apple', 'Zebra']);
   });
 });
 
@@ -237,5 +241,50 @@ describe('sharing one', () => {
 describe('normalizeWorkspaceName', () => {
   it('matches the way a name is said rather than the way it was typed', () => {
     expect(normalizeWorkspaceName('  Guitar   Tab ')).toBe('guitar tab');
+  });
+});
+
+/**
+ * More than one arrangement shipping, and one of them bringing its colours.
+ *
+ * A workspace was "the app aimed at one purpose", but it could not carry the
+ * palette that purpose looks like — so a workspace built around a look would
+ * arrive wearing whatever the last person chose. And exactly one could ship,
+ * which made the feature impossible to show: somebody opening the Hub saw one
+ * card called Default and had to imagine the rest.
+ */
+describe('a workspace that ships and brings its own look', () => {
+  it('ships more than one, and every one of them is built in', () => {
+    const library = sanitizeWorkspaces({});
+
+    expect(Object.keys(library).length).toBeGreaterThan(1);
+    for (const id of BUILTIN_WORKSPACE_IDS) expect(library[id]?.builtin).toBe(true);
+  });
+
+  it('rebuilds a shipped one from code, so a stored copy cannot drift', () => {
+    const tampered = { jarvis: { id: 'jarvis', name: 'Not Jarvis', description: 'edited', layouts: {} } };
+
+    expect(sanitizeWorkspaces(tampered).jarvis?.name).not.toBe('Not Jarvis');
+  });
+
+  it('carries a palette, and leaves it blank when the workspace has no opinion', () => {
+    expect(sanitizeWorkspaces({}).jarvis?.theme.length).toBeGreaterThan(0);
+    expect(sanitizeWorkspaces({}).default?.theme).toBe('');
+  });
+
+  it('refuses a palette that is not a plain id, because this arrives from a file', () => {
+    const hostile = sanitizeWorkspace({ name: 'Mine', theme: '../../etc/passwd' });
+    expect(hostile?.theme).toBe('');
+  });
+
+  it('still refuses an imported file that claims to be built in', () => {
+    const claim = sanitizeWorkspace({ name: 'Mine', builtin: true });
+    expect(claim?.builtin).toBe(false);
+  });
+
+  it('names a layout for every surface, so nothing is left wearing the last one', () => {
+    const jarvis = sanitizeWorkspaces({}).jarvis;
+
+    for (const surface of SURFACE_IDS) expect(jarvis?.layouts[surface]).toBeTruthy();
   });
 });

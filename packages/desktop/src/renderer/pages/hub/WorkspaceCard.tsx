@@ -66,8 +66,16 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, active, onEnte
         ) : null}
       </header>
 
+      {/* A shipped workspace's description is the app's own words and is
+          translated; a user's own is theirs and is shown exactly as written. The
+          fallback is the English in the definition, so a locale that has not
+          caught up shows the real sentence rather than a key. */}
       {workspace.description ? (
-        <Typography.Text className={styles.cardBody}>{workspace.description}</Typography.Text>
+        <Typography.Text className={styles.cardBody}>
+          {workspace.builtin
+            ? t(`hub.shippedDescription.${workspace.id}`, { defaultValue: workspace.description })
+            : workspace.description}
+        </Typography.Text>
       ) : (
         <Typography.Text className={classNames(styles.cardBody, styles.cardBodyEmpty)}>
           {t('hub.noDescription')}

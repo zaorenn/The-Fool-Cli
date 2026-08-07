@@ -27,7 +27,12 @@ const styleElement = (surface: SurfaceId): HTMLStyleElement | null => {
   if (typeof document === 'undefined') return null;
 
   const existing = document.getElementById(styleId(surface));
-  if (existing instanceof HTMLStyleElement) return existing;
+  if (existing instanceof HTMLStyleElement) {
+    // Moved to the end, for the reason the dials are: a theme applied afterwards
+    // would otherwise sit on top of a movement the user built.
+    document.head.appendChild(existing);
+    return existing;
+  }
 
   const created = document.createElement('style');
   created.id = styleId(surface);

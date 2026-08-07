@@ -26,6 +26,8 @@
  * get the arrangement, not your account.
  */
 
+import { JARVIS_THEME_ID } from '../theme/constants';
+import { JARVIS_LAYOUT_ID } from './jarvisLayouts';
 import { DEFAULT_LAYOUT_ID, SURFACE_IDS, type SurfaceId } from './surfaceLayouts';
 import { sanitizeAddons, type WorkspaceAddon } from './workspaceAddon';
 import { sanitizeWorkspaceApp, type WorkspaceApp } from './workspaceApp';
@@ -57,6 +59,20 @@ export type Workspace = {
   };
   /** Skills switched on here, by name. */
   skills: string[];
+  /**
+   * The palette this workspace looks like, by theme id. Blank means "leave it".
+   *
+   * A workspace is the app aimed at one purpose, and what that purpose looks
+   * like is part of it — an arrangement built around a look would otherwise
+   * arrive wearing whatever the last person chose, which is not the arrangement.
+   * Blank rather than a default, because most workspaces are about what the app
+   * *does*, and those must not repaint somebody's app on the way in.
+   *
+   * An id, never a stylesheet. A workspace can arrive from another person, and
+   * "here is some CSS, apply it" is a different and much larger promise than
+   * "wear the theme called this".
+   */
+  theme: string;
   /**
    * A page of its own, or none.
    *
@@ -90,6 +106,9 @@ export const MAX_WORKSPACE_TEXT = 2000;
 /** The id of the one that ships, which is also the fallback for anything unknown. */
 export const DEFAULT_WORKSPACE_ID = 'default';
 
+/** The one that shows what the layout system can do. */
+export const JARVIS_WORKSPACE_ID = 'jarvis';
+
 /**
  * Trimmed, lower-cased and short enough to be said aloud.
  *
@@ -102,6 +121,19 @@ export const normalizeWorkspaceName = (name: string): string =>
 
 const text = (value: unknown, limit: number): string =>
   typeof value === 'string' ? value.replaceAll(/\s+/g, ' ').trim().slice(0, limit) : '';
+
+/**
+ * A theme id, or nothing.
+ *
+ * Closed to the shape an id actually has, because this field arrives inside a
+ * file somebody was sent. Anything else — a path, a URL, a stylesheet — is not a
+ * theme this app has and is dropped rather than carried to whatever would try to
+ * resolve it.
+ */
+const themeId = (value: unknown): string => {
+  const said = text(value, 64).toLowerCase();
+  return /^[a-z0-9-]+$/.test(said) ? said : '';
+};
 
 /**
  * The workspace the app ships with.
@@ -121,8 +153,61 @@ export const defaultWorkspace = (): Workspace => ({
   skills: [],
   app: null,
   addons: [],
+  theme: '',
   updatedAt: new Date(0).toISOString(),
 });
+
+/**
+ * JARVIS: the app aimed at being an assistant that runs a workshop.
+ *
+ * Ships for two reasons. It is a usable arrangement, and it is the only honest
+ * way to show what this system does — a Hub containing one card called Default
+ * asks somebody to imagine the feature, and nobody imagines a feature. This one
+ * moves all four windows, brings its own palette, changes what the assistant is
+ * being, and carries movements built out of the editor's own vocabulary, so
+ * taking it apart is the fastest way to learn what can be built.
+ *
+ * The instructions are the character rather than the capabilities. What the
+ * assistant can *do* is the app's business and does not change per workspace;
+ * what changes here is how it carries itself — brief, unhurried, and unwilling
+ * to narrate. That is the actual difference between this and the default, and
+ * writing a list of tools here instead would be describing the app to itself.
+ */
+const jarvisWorkspace = (): Workspace => ({
+  id: JARVIS_WORKSPACE_ID,
+  name: 'JARVIS',
+  description: 'A workshop assistant. Four windows, one instrument: dark glass, one light source, nothing decorative.',
+  builtin: true,
+  layouts: Object.fromEntries(SURFACE_IDS.map((surface) => [surface, JARVIS_LAYOUT_ID[surface]])),
+  voice: {
+    personaPresetId: 'companion',
+    instructions: [
+      'You are running a workshop, and the person you answer to is working.',
+      'Answer in one or two sentences. If something takes a moment, say so once and then be quiet until it is done — do not narrate progress nobody asked for.',
+      'Never describe a screen you have not looked at. Look first, then say what is there.',
+      'Say what you did, not what you are about to do. "Done" is a complete answer.',
+      'Address them directly and without ceremony. No greetings, no offers of further assistance, no asking whether they would like you to continue.',
+      'When something cannot be done, say that in one line and say what would make it possible.',
+    ].join(' '),
+    language: 'auto',
+  },
+  agent: { assistantId: '', providerId: '', modelId: '' },
+  skills: [],
+  app: null,
+  addons: [],
+  theme: JARVIS_THEME_ID,
+  updatedAt: new Date(0).toISOString(),
+});
+
+/**
+ * Every workspace that ships.
+ *
+ * Functions rather than objects so each read gets its own, and a caller that
+ * mutates what it was handed cannot edit what the app ships with.
+ */
+export const BUILTIN_WORKSPACES: readonly (() => Workspace)[] = [defaultWorkspace, jarvisWorkspace];
+
+export const BUILTIN_WORKSPACE_IDS = new Set(BUILTIN_WORKSPACES.map((build) => build().id));
 
 export type WorkspaceLibrary = Record<string, Workspace>;
 
@@ -159,7 +244,7 @@ export const sanitizeWorkspace = (value: unknown, fallbackId = ''): Workspace | 
     description: text(record.description, MAX_WORKSPACE_TEXT),
     // Never taken from the data: an imported file claiming to be built in would
     // be a workspace nobody can delete.
-    builtin: id === DEFAULT_WORKSPACE_ID,
+    builtin: BUILTIN_WORKSPACE_IDS.has(id),
     layouts: Object.keys(chosen).length > 0 ? chosen : base.layouts,
     voice: {
       personaPresetId: text(voice.personaPresetId, 48) || base.voice.personaPresetId,
@@ -179,6 +264,7 @@ export const sanitizeWorkspace = (value: unknown, fallbackId = ''): Workspace | 
       : [],
     app: sanitizeWorkspaceApp(record.app),
     addons: sanitizeAddons(record.addons),
+    theme: themeId(record.theme),
     updatedAt:
       typeof record.updatedAt === 'string' && !Number.isNaN(Date.parse(record.updatedAt))
         ? record.updatedAt
@@ -186,15 +272,15 @@ export const sanitizeWorkspace = (value: unknown, fallbackId = ''): Workspace | 
   };
 };
 
-/** Repairs the whole library, always including the one that ships. */
+/** Repairs the whole library, always including the ones that ship. */
 export const sanitizeWorkspaces = (value: unknown): WorkspaceLibrary => {
-  const library: WorkspaceLibrary = { [DEFAULT_WORKSPACE_ID]: defaultWorkspace() };
+  const library: WorkspaceLibrary = Object.fromEntries(BUILTIN_WORKSPACES.map((build) => [build().id, build()]));
   if (typeof value !== 'object' || value === null) return library;
 
   for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
-    // The shipped one is rebuilt from code rather than read back, so a stored
-    // copy cannot drift from what the app actually does by default.
-    if (normalizeWorkspaceName(key) === DEFAULT_WORKSPACE_ID) continue;
+    // The shipped ones are rebuilt from code rather than read back, so a stored
+    // copy cannot drift from what the app actually does.
+    if (BUILTIN_WORKSPACE_IDS.has(normalizeWorkspaceName(key))) continue;
     const workspace = sanitizeWorkspace(entry, key);
     if (workspace) library[workspace.id] = workspace;
   }
@@ -211,11 +297,18 @@ export const resolveWorkspace = (library: WorkspaceLibrary, activeId: unknown): 
 
 /** Everything on offer, the shipped one first and the rest by name. */
 export const listWorkspaces = (library: WorkspaceLibrary): Workspace[] => {
+  // Every shipped one first, in the order the app declares them, then the
+  // user's by name. Declaration order rather than alphabetical so Default stays
+  // the first card: it is the one somebody is already using, and a shipped
+  // example arriving above it would move their own arrangement down the page.
+  const shipped = BUILTIN_WORKSPACES.map((build) => library[build().id]).filter(
+    (workspace): workspace is Workspace => workspace !== undefined
+  );
   const rest = Object.values(library)
-    .filter((workspace) => workspace.id !== DEFAULT_WORKSPACE_ID)
+    .filter((workspace) => !BUILTIN_WORKSPACE_IDS.has(workspace.id))
     .toSorted((left, right) => left.name.localeCompare(right.name));
-  const shipped = library[DEFAULT_WORKSPACE_ID];
-  return shipped ? [shipped, ...rest] : rest;
+
+  return [...shipped, ...rest];
 };
 
 /**

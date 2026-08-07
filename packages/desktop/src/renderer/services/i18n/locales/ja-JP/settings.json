@@ -1689,7 +1689,11 @@
       "gallery": "ギャラリー",
       "index": "インデックス",
       "standard": "標準",
-      "focused": "集中"
+      "focused": "集中",
+      "jarvis-reactor": "JARVIS · リアクター",
+      "jarvis-readout": "JARVIS · 読み出し",
+      "jarvis-bay": "JARVIS · ベイ",
+      "jarvis-hud": "JARVIS · HUD"
     },
     "option": {
       "shell": "構成",

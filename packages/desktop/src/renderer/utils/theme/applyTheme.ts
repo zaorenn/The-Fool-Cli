@@ -10,6 +10,8 @@ import { ipcBridge } from '@/common';
 import { resolveActiveTheme } from '@/common/theme/resolveTheme';
 import { BUILTIN_THEMES } from '@renderer/theme/builtinThemes';
 import { reassertThemeOverrides } from './applyThemeOverrides';
+import { reapplyLayoutMotions } from './applyLayoutMotions';
+import { reapplyLayoutTokens } from './applyLayoutTokens';
 import { processCustomCss } from './customCssProcessor';
 import { getSystemPrefersDark } from './systemAppearance';
 import { stripFatalThemeCss, THEME_SAFETY_NET_CSS } from './themeSafetyNet';
@@ -49,6 +51,13 @@ export function applyTheme(theme: Theme, root: Document = document): void {
   // The theme's stylesheet has just been moved to the end of <head>; the user's
   // colour overrides have to follow it or the preset wins on source order.
   reassertThemeOverrides(root);
+  // And so does everything else the user chose. The dials and any movements they
+  // built are style elements in this same head, so a theme appended after them
+  // would win — choosing a palette would straighten corners somebody had
+  // rounded, and a workspace bringing a palette with it would undo its own
+  // layout on the way in.
+  reapplyLayoutTokens();
+  reapplyLayoutMotions();
   // Last of all, and re-appended on every change so it stays last: a theme may
   // restyle the application freely, but it may not leave the user looking at a
   // blank window with no way back to the settings that would undo it.

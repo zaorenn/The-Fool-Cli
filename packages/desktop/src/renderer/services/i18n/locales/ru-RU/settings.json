@@ -1687,7 +1687,11 @@
       "gallery": "Галерея",
       "index": "Указатель",
       "standard": "Стандартный",
-      "focused": "Сфокусированный"
+      "focused": "Сфокусированный",
+      "jarvis-reactor": "JARVIS · Реактор",
+      "jarvis-readout": "JARVIS · Показания",
+      "jarvis-bay": "JARVIS · Отсек",
+      "jarvis-hud": "JARVIS · HUD"
     },
     "option": {
       "shell": "Композиция",

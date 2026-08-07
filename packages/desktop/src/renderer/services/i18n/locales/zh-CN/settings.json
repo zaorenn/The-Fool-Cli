@@ -1688,7 +1688,11 @@
       "gallery": "画廊",
       "index": "索引",
       "standard": "标准",
-      "focused": "专注"
+      "focused": "专注",
+      "jarvis-reactor": "JARVIS · 反应堆",
+      "jarvis-readout": "JARVIS · 读数",
+      "jarvis-bay": "JARVIS · 机位",
+      "jarvis-hud": "JARVIS · 平显"
     },
     "option": {
       "shell": "构图",

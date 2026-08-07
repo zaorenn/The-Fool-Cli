@@ -31,7 +31,14 @@ const styleElement = (): HTMLStyleElement | null => {
   if (typeof document === 'undefined') return null;
 
   const existing = document.getElementById(STYLE_ID);
-  if (existing instanceof HTMLStyleElement) return existing;
+  if (existing instanceof HTMLStyleElement) {
+    // Appended again rather than left where it was. Applying a theme moves the
+    // preset's stylesheet to the end of the head, and a dial the user turned has
+    // to sit after it — otherwise picking a palette straightens corners somebody
+    // rounded, and nothing on screen explains why.
+    document.head.appendChild(existing);
+    return existing;
+  }
 
   const created = document.createElement('style');
   created.id = STYLE_ID;

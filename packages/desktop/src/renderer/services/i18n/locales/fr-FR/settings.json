@@ -1687,7 +1687,11 @@
       "gallery": "Galerie",
       "index": "Index",
       "standard": "Standard",
-      "focused": "Concentré"
+      "focused": "Concentré",
+      "jarvis-reactor": "JARVIS · Réacteur",
+      "jarvis-readout": "JARVIS · Relevé",
+      "jarvis-bay": "JARVIS · Baie",
+      "jarvis-hud": "JARVIS · HUD"
     },
     "option": {
       "shell": "Composition",

@@ -1689,7 +1689,11 @@
       "gallery": "畫廊",
       "index": "索引",
       "standard": "標準",
-      "focused": "專注"
+      "focused": "專注",
+      "jarvis-reactor": "JARVIS · 反應爐",
+      "jarvis-readout": "JARVIS · 讀數",
+      "jarvis-bay": "JARVIS · 機位",
+      "jarvis-hud": "JARVIS · 抬頭顯示"
     },
     "option": {
       "shell": "構圖",

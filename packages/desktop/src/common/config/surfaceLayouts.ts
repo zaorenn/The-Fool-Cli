@@ -26,6 +26,7 @@
  * store the user and a language model can both write to.
  */
 
+import { JARVIS_LAYOUTS } from './jarvisLayouts';
 import { sanitizeMotions, type LayoutMotion } from './layoutMotions';
 import { defaultLayoutTokens, sanitizeLayoutTokens, type LayoutTokens } from './layoutTokens';
 
@@ -245,6 +246,7 @@ export const BUILTIN_LAYOUTS: readonly LayoutPreset[] = [
     tokens: defaultLayoutTokens(),
     motions: [],
   },
+  ...JARVIS_LAYOUTS,
 ];
 
 /**

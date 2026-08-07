@@ -1687,7 +1687,11 @@
       "gallery": "Galerie",
       "index": "Index",
       "standard": "Standard",
-      "focused": "Fokussiert"
+      "focused": "Fokussiert",
+      "jarvis-reactor": "JARVIS · Reaktor",
+      "jarvis-readout": "JARVIS · Anzeige",
+      "jarvis-bay": "JARVIS · Bucht",
+      "jarvis-hud": "JARVIS · HUD"
     },
     "option": {
       "shell": "Aufbau",

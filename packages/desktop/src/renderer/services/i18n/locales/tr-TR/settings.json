@@ -1687,7 +1687,11 @@
       "gallery": "Galeri",
       "index": "Dizin",
       "standard": "Standart",
-      "focused": "Odaklanmış"
+      "focused": "Odaklanmış",
+      "jarvis-reactor": "JARVIS · Reaktör",
+      "jarvis-readout": "JARVIS · Gösterge",
+      "jarvis-bay": "JARVIS · Raf",
+      "jarvis-hud": "JARVIS · HUD"
     },
     "option": {
       "shell": "Düzen",

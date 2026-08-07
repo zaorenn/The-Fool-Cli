@@ -1687,7 +1687,11 @@
       "gallery": "گالری",
       "index": "فهرست",
       "standard": "استاندارد",
-      "focused": "متمرکز"
+      "focused": "متمرکز",
+      "jarvis-reactor": "JARVIS · راکتور",
+      "jarvis-readout": "JARVIS · قرائت",
+      "jarvis-bay": "JARVIS · جایگاه",
+      "jarvis-hud": "JARVIS · HUD"
     },
     "option": {
       "shell": "ترکیب‌بندی",

@@ -1,0 +1,221 @@
+/**
+ * JARVIS — the assistant that runs a workshop.
+ *
+ * The reference is a heads-up display projected onto glass in a dark room, not
+ * "a futuristic app". That distinction is the whole design. A projected display
+ * has no filled panels, because there is nothing to fill: it is light drawn on
+ * top of the dark, so every surface here is nearly the same near-black and the
+ * separation between them is done with hairlines and glow rather than with
+ * blocks of different grey.
+ *
+ * One accent, and it is a light source. Arc-reactor cyan reads as something
+ * switched on rather than as a brand colour, which is why it is allowed to glow
+ * and why nothing else is. Amber appears only where the app already means
+ * caution — a warning that shares the accent is a warning nobody sees.
+ *
+ * What this deliberately does not do: no gradients across panels, no purple, no
+ * neon on every edge. A workshop display is legible first. The glow is on the
+ * accent and on focus, and everywhere else the contrast does the work.
+ */
+
+:root,
+[data-theme='dark'],
+body[arco-theme='dark'] {
+  /* ── the light source ──────────────────────────────────────────────────── */
+  --color-primary: #48d5ff;
+  --primary: #48d5ff;
+  --color-primary-light-1: #6fe0ff;
+  --color-primary-light-2: #95e9ff;
+  --color-primary-light-3: #bcf1ff;
+  --color-primary-dark-1: #1fb4e6;
+  --primary-rgb: 72, 213, 255;
+  --primary-1: 6, 20, 28;
+  --primary-2: 8, 32, 44;
+  --primary-3: 10, 48, 66;
+  --primary-4: 13, 70, 95;
+  --primary-5: 18, 100, 134;
+  --primary-6: 72, 213, 255;
+  --primary-7: 111, 224, 255;
+  --primary-8: 149, 233, 255;
+  --primary-9: 188, 241, 255;
+  --primary-10: 226, 249, 255;
+
+  --brand: #48d5ff;
+  --brand-light: #08202c;
+  --brand-hover: #6fe0ff;
+  --color-brand-fill: #48d5ff;
+  --color-brand-bg: #08202c;
+
+  /* ── the dark it is drawn on ───────────────────────────────────────────── */
+  /* Barely separated on purpose: a projected display has no filled panels, so
+     depth comes from the hairlines below, not from four shades of grey. */
+  --aou-1: #070b11;
+  --aou-2: #0b1018;
+  --aou-3: #101722;
+  --aou-4: #16202e;
+  --aou-5: #1f566e;
+  --aou-6: #48d5ff;
+  --aou-7: #6fe0ff;
+  --aou-8: #a8dcef;
+  --aou-9: #cfe6f0;
+  --aou-10: #eaf6fb;
+
+  --color-bg-1: #070b11;
+  --bg-1: #070b11;
+  --color-bg-2: #0b1018;
+  --bg-2: #0b1018;
+  --color-bg-3: #101722;
+  --bg-3: #101722;
+  --color-bg-4: #16202e;
+  --bg-4: #16202e;
+  --bg-base: #04070b;
+  --bg-5: #1d2a3a;
+  --bg-6: #27374a;
+  --bg-8: #5d7186;
+  --bg-9: #a9bccb;
+  --bg-10: #eaf6fb;
+
+  --bg-hover: #0f1725;
+  --bg-active: #142032;
+
+  --fill: #070b11;
+  --color-fill: #070b11;
+  --fill-0: rgba(72, 213, 255, 0.07);
+  --fill-white-to-black: #04070b;
+  --dialog-fill-0: #0b1018;
+  --inverse: #eaf6fb;
+
+  /* ── type ──────────────────────────────────────────────────────────────── */
+  /* Cool white rather than pure: on a near-black ground pure white glares, and
+     a display you look at for hours must not. */
+  --color-text-1: #eaf6fb;
+  --text-primary: #eaf6fb;
+  --color-text-2: #a9bccb;
+  --text-secondary: #a9bccb;
+  --color-text-3: #74889a;
+  --text-disabled: #5d7186;
+  --text-0: #eaf6fb;
+  --text-white: #eaf6fb;
+
+  /* ── hairlines ─────────────────────────────────────────────────────────── */
+  /* The structure of the whole theme. Cyan-tinted rather than grey, so an edge
+     reads as part of the display rather than as a border somebody drew. */
+  --color-border: #1b3242;
+  --color-border-1: #1b3242;
+  --color-border-2: #122231;
+  --color-border-3: #244559;
+  --border-base: #1b3242;
+  --border-light: #122231;
+  --border-special: #1f6a8c;
+
+  /* ── the states ────────────────────────────────────────────────────────── */
+  --success: #35d9a3;
+  --success-6: 53, 217, 163;
+  --warning: #ffb648;
+  --warning-6: 255, 182, 72;
+  --danger: #ff5c6e;
+  --danger-1: 40, 12, 18;
+  --danger-6: 255, 92, 110;
+  --info: #48d5ff;
+
+  --message-user-bg: #0a1c28;
+  --message-tips-bg: #0b1018;
+  --workspace-btn-bg: #0b1018;
+  --color-guid-agent-bar: #0b1018;
+}
+
+html,
+body,
+#root {
+  background-color: #04070b;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * The display itself
+ *
+ * Everything below is decoration, and all of it is subtractive: it removes
+ * fills and adds light. Kept to a handful of rules because a projected display
+ * is mostly empty, and a theme that decorates every element is a theme that
+ * makes the app harder to read.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+/* A faint grid, far under everything. This is the one purely atmospheric rule
+   in the theme, and it is held at 3% for that reason — visible as texture when
+   you look for it, invisible when you are reading. */
+#root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(72, 213, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(72, 213, 255, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* The accent is a light source, so it is allowed to spill. Only here. */
+.arco-btn-primary {
+  box-shadow:
+    0 0 0 1px rgba(72, 213, 255, 0.35),
+    0 0 18px -6px rgba(72, 213, 255, 0.55);
+}
+
+.arco-btn-primary:hover {
+  box-shadow:
+    0 0 0 1px rgba(72, 213, 255, 0.6),
+    0 0 24px -4px rgba(72, 213, 255, 0.7);
+}
+
+/* Focus is the other thing worth lighting: on a display this dark, an outline in
+   a neutral colour is not findable. */
+:focus-visible {
+  outline: 1px solid rgba(72, 213, 255, 0.8);
+  outline-offset: 2px;
+}
+
+/* The title bar reads as the top edge of the display rather than as a bar. */
+.app-titlebar {
+  background: linear-gradient(180deg, rgba(72, 213, 255, 0.05), transparent);
+  border-bottom: 1px solid rgba(72, 213, 255, 0.16);
+}
+
+/* The sidebar is the instrument column: no fill, one lit edge. */
+.layout-sider {
+  background: transparent !important;
+  border-right: 1px solid rgba(72, 213, 255, 0.14);
+}
+
+/* What is selected is lit from its leading edge, the way a live channel is. */
+.chat-history__item[data-active='true'],
+.settings-sider__item[data-active='true'] {
+  background: linear-gradient(90deg, rgba(72, 213, 255, 0.14), transparent 70%);
+  box-shadow: inset 2px 0 0 #48d5ff;
+}
+
+/* A message is a readout. The user's own is the one with the lit edge, because
+   that is the line the display is answering. */
+.chat-message-body {
+  border: 1px solid rgba(72, 213, 255, 0.14);
+  background: rgba(11, 16, 24, 0.72) !important;
+  backdrop-filter: blur(2px);
+}
+
+/* Scrollbars as thin lit tracks rather than grey slabs. */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(72, 213, 255, 0.22);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(72, 213, 255, 0.4);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}

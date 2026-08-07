@@ -20,6 +20,7 @@ import {
   type WorkspaceLibrary,
 } from '@/common/config/workspaces';
 import { peekVoiceSettings, writeVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
+import { setActiveTheme } from '@renderer/utils/theme/applyTheme';
 
 /**
  * Workspaces, and what switching to one actually does.
@@ -54,6 +55,12 @@ export const enterWorkspace = async (workspace: Workspace): Promise<void> => {
   if (wanted.length > 0) {
     await configService.set(SURFACE_LAYOUT_CONFIG_KEY, { ...layouts, ...Object.fromEntries(wanted) });
   }
+
+  // The palette, if this workspace is built around one. Applied before the voice
+  // settings so the window has finished repainting by the time anything else
+  // reports it changed — and skipped entirely when blank, because a workspace
+  // about what the app *does* must not repaint somebody's app on the way in.
+  if (workspace.theme.length > 0) await setActiveTheme(workspace.theme);
 
   const settings = peekVoiceSettings();
   await writeVoiceSettings({
@@ -106,6 +113,10 @@ export const captureWorkspace = (name: string, description: string): Workspace =
     // already using expects the page they are looking at to come with it.
     app: peekActiveWorkspace().app,
     addons: peekActiveWorkspace().addons,
+    // The palette too: somebody who arranged a look and then named the
+    // arrangement meant the look. Blank if they are on the app's own default,
+    // so a workspace only repaints when it was built around a palette.
+    theme: (configService.get('theme.activeId') as string) || '',
     updatedAt: new Date().toISOString(),
   };
 };

@@ -5,7 +5,7 @@
  */
 
 import type { Theme } from '@/common/theme/types';
-import { DARK_THEME_ID, LIGHT_THEME_ID, THE_FOOL_THEME_ID } from '@/common/theme/constants';
+import { DARK_THEME_ID, JARVIS_THEME_ID, LIGHT_THEME_ID, THE_FOOL_THEME_ID } from '@/common/theme/constants';
 
 import {
   theFoolThemeCover,
@@ -25,6 +25,7 @@ import retromaY2kCss from '@renderer/pages/settings/AppearanceSettings/presets/r
 import retromaObsidianBookCss from '@renderer/pages/settings/AppearanceSettings/presets/retroma-obsidian-book.css?raw';
 import discourseHorizonCss from '@renderer/pages/settings/AppearanceSettings/presets/discourse-horizon.css?raw';
 import glitteringInputFieldCss from '@renderer/pages/settings/AppearanceSettings/presets/glittering-input-field.css?raw';
+import jarvisCss from '@renderer/pages/settings/AppearanceSettings/presets/jarvis.css?raw';
 
 const T0 = 0;
 
@@ -62,6 +63,7 @@ export const BUILTIN_THEMES: Theme[] = [
     retromaObsidianBookCss,
     retromaObsidianBookCover
   ),
+  decorative(JARVIS_THEME_ID, 'JARVIS', 'dark', jarvisCss),
   decorative('discourse-horizon', 'Discourse Horizon', 'light', discourseHorizonCss),
   decorative('glittering-input-field', 'Glittering Input Field', 'light', glitteringInputFieldCss),
 ];
