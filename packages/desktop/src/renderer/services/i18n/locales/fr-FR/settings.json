@@ -1806,6 +1806,25 @@
         "sharp": "Net",
         "spring": "Rebondissant"
       }
+    },
+    "brief": {
+      "title": "Faites-le concevoir par une autre IA",
+      "subtitle": "Copiez les instructions ci-dessous dans l'IA que vous utilisez déjà, décrivez l'aspect voulu, puis ramenez la réponse ici.",
+      "copy": "Copier les instructions",
+      "copyHint": "Collez-les avec ce que vous voulez.",
+      "drop": "Déposez ici le fichier du préréglage",
+      "pasteInstead": "Ou collez-le",
+      "use": "Utiliser ce préréglage",
+      "pastePlaceholder": "Collez ce que l'IA vous a donné — le JSON, bloc compris.",
+      "copied": "Instructions copiées.",
+      "imported": "« {{name}} » chargé. Regardez, puis enregistrez.",
+      "failed": {
+        "empty": "Il n'y avait rien à lire.",
+        "not-json": "Ce n'est pas un préréglage — on dirait la réponse de l'IA, pas le JSON qu'elle a produit.",
+        "not-a-preset": "C'est du JSON valide, mais pas un préréglage.",
+        "no-surface": "Cela n'indique pas pour quelle fenêtre, ou nomme une fenêtre que cette application n'a pas.",
+        "no-name": "Ce préréglage n'a pas de nom."
+      }
     }
   },
   "hub": {

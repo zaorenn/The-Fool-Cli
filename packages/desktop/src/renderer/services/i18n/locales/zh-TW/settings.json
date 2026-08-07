@@ -1808,6 +1808,25 @@
         "sharp": "乾脆",
         "spring": "回彈"
       }
+    },
+    "brief": {
+      "title": "讓別的 AI 來設計",
+      "subtitle": "把下面的說明複製到你已經在用的 AI，描述你想要的樣子，再把結果帶回這裡。",
+      "copy": "複製說明",
+      "copyHint": "連同你的想法一起貼上。",
+      "drop": "把預設檔案拖到這裡",
+      "pasteInstead": "或者貼上",
+      "use": "使用這個預設",
+      "pastePlaceholder": "貼上 AI 給你的內容——連同程式碼區塊一起。",
+      "copied": "說明已複製。",
+      "imported": "已載入「{{name}}」。看一眼，然後儲存。",
+      "failed": {
+        "empty": "沒有可讀取的內容。",
+        "not-json": "這不是預設——看起來是 AI 的回覆，而不是它產生的 JSON。",
+        "not-a-preset": "這是有效的 JSON，但不是預設。",
+        "no-surface": "沒有說明用於哪個視窗，或者寫了本應用沒有的視窗。",
+        "no-name": "這個預設沒有名字。"
+      }
     }
   },
   "hub": {

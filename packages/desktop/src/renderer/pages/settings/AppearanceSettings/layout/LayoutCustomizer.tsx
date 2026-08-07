@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button, Input, Select, Typography } from '@arco-design/web-react';
 import { Delete } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
@@ -19,8 +19,10 @@ import {
 } from '@/common/config/surfaceLayouts';
 import { defaultLayoutTokens, type LayoutTokens } from '@/common/config/layoutTokens';
 import type { LayoutMotion } from '@/common/config/layoutMotions';
+import type { ImportedLayout } from '@/common/config/layoutImport';
 import { useSurfaceLayout } from '@renderer/hooks/config/useSurfaceLayout';
 import { applyLayoutTokens } from '@renderer/utils/theme/applyLayoutTokens';
+import LayoutBrief from './LayoutBrief';
 import MotionBuilder from './MotionBuilder';
 import TokenEditor from './TokenEditor';
 
@@ -57,7 +59,20 @@ const LayoutCustomizer: React.FC = () => {
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
 
+  /** A preset that arrived from outside and must survive the surface changing. */
+  const pending = useRef<ImportedLayout | null>(null);
+
   useEffect(() => {
+    // An import that has just landed wins over whatever this surface was
+    // wearing. Without this the reload that follows `setSurface` would put the
+    // surface's own layout back and the imported one would vanish between two
+    // renders, with nothing on screen to say why.
+    const imported = pending.current;
+    if (imported && imported.surface === layout.surface) {
+      pending.current = null;
+      return;
+    }
+
     setDraft(layout.options);
     setTokens(layout.tokens ?? defaultLayoutTokens());
     setMotions(layout.motions);
@@ -74,6 +89,32 @@ const LayoutCustomizer: React.FC = () => {
   const turn = (next: LayoutTokens): void => {
     setTokens(next);
     applyLayoutTokens(next);
+  };
+
+  /**
+   * A preset that arrived from outside, put in front of the person rather than
+   * applied behind them.
+   *
+   * It lands in the editor as an unsaved draft, with the name it came with in
+   * the box — so what a stranger's model produced is looked at, adjusted and
+   * kept deliberately. Importing straight into the library would mean a file
+   * changing somebody's app before they had seen what was in it.
+   */
+  const adopt = (imported: ImportedLayout): void => {
+    // Held rather than written straight into the draft. Changing the surface
+    // reloads the layout for that surface, which runs the effect above and would
+    // overwrite everything that just arrived — so the import waits in a slot the
+    // effect knows to consume first.
+    pending.current = imported;
+    setSurface(imported.surface);
+    applyImported(imported);
+  };
+
+  const applyImported = (imported: ImportedLayout): void => {
+    setDraft(imported.options);
+    setMotions(imported.motions);
+    setName(imported.name);
+    turn(imported.tokens);
   };
 
   const available = layoutsForSurface(surface, presets);
@@ -161,6 +202,9 @@ const LayoutCustomizer: React.FC = () => {
       {/* Movements, built by choosing rather than by writing. Saved with the
           layout, so they arrive when it is worn. */}
       <MotionBuilder motions={motions} onChange={setMotions} />
+
+      {/* Or have whichever AI they already use design one, and bring it back. */}
+      <LayoutBrief onImported={adopt} />
 
       {/* Saving is what gives an arrangement a name — the app is already
           wearing it, so the hint says what a name buys rather than implying

@@ -1809,6 +1809,25 @@
         "sharp": "Direto",
         "spring": "Elástico"
       }
+    },
+    "brief": {
+      "title": "Deixe outra IA desenhar",
+      "subtitle": "Copie as instruções abaixo para a IA que você já usa, descreva o visual que quer e traga a resposta de volta para cá.",
+      "copy": "Copiar as instruções",
+      "copyHint": "Cole junto com o que você quer.",
+      "drop": "Solte o arquivo do preset aqui",
+      "pasteInstead": "Ou cole",
+      "use": "Usar este preset",
+      "pastePlaceholder": "Cole o que a IA te deu — o JSON, com bloco e tudo.",
+      "copied": "Instruções copiadas.",
+      "imported": "“{{name}}” carregado. Confira e salve.",
+      "failed": {
+        "empty": "Não havia nada para ler.",
+        "not-json": "Isso não é um preset — parece a resposta da IA, não o JSON que ela gerou.",
+        "not-a-preset": "É um JSON válido, mas não é um preset.",
+        "no-surface": "Não diz para qual janela é, ou nomeia uma que este app não tem.",
+        "no-name": "Esse preset não tem nome."
+      }
     }
   },
   "hub": {

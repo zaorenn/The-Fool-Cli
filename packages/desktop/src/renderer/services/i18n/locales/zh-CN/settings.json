@@ -1807,6 +1807,25 @@
         "sharp": "干脆",
         "spring": "回弹"
       }
+    },
+    "brief": {
+      "title": "让别的 AI 来设计",
+      "subtitle": "把下面的说明复制到你已经在用的 AI，描述你想要的样子，再把结果带回这里。",
+      "copy": "复制说明",
+      "copyHint": "连同你的想法一起粘贴。",
+      "drop": "把预设文件拖到这里",
+      "pasteInstead": "或者粘贴",
+      "use": "使用这个预设",
+      "pastePlaceholder": "粘贴 AI 给你的内容——连同代码块一起。",
+      "copied": "说明已复制。",
+      "imported": "已载入“{{name}}”。看一眼，然后保存。",
+      "failed": {
+        "empty": "没有可读取的内容。",
+        "not-json": "这不是预设——看起来是 AI 的回复，而不是它生成的 JSON。",
+        "not-a-preset": "这是有效的 JSON，但不是预设。",
+        "no-surface": "没有说明用于哪个窗口，或者写了本应用没有的窗口。",
+        "no-name": "这个预设没有名字。"
+      }
     }
   },
   "hub": {

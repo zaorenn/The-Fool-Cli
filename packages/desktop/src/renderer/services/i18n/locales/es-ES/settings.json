@@ -1806,6 +1806,25 @@
         "sharp": "Seco",
         "spring": "Con rebote"
       }
+    },
+    "brief": {
+      "title": "Que lo diseñe otra IA",
+      "subtitle": "Copia las instrucciones de abajo en la IA que ya uses, describe el aspecto que quieres y trae la respuesta aquí.",
+      "copy": "Copiar las instrucciones",
+      "copyHint": "Pégalas junto con lo que quieres.",
+      "drop": "Suelta aquí el archivo del preset",
+      "pasteInstead": "O pégalo",
+      "use": "Usar este preset",
+      "pastePlaceholder": "Pega lo que te dio la IA — el JSON, con bloque incluido.",
+      "copied": "Instrucciones copiadas.",
+      "imported": "«{{name}}» cargado. Míralo y guárdalo.",
+      "failed": {
+        "empty": "No había nada que leer.",
+        "not-json": "Eso no es un preset — parece la respuesta de la IA, no el JSON que generó.",
+        "not-a-preset": "Es JSON válido, pero no un preset.",
+        "no-surface": "No dice para qué ventana es, o nombra una que esta app no tiene.",
+        "no-name": "Ese preset no tiene nombre."
+      }
     }
   },
   "hub": {

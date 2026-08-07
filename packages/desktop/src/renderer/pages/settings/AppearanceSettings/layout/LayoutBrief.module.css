@@ -1,0 +1,35 @@
+/**
+ * The place a preset arrives from somewhere else.
+ *
+ * A drop zone has to look like one before anything is dragged over it — a
+ * rectangle that only reveals itself mid-drag is a rectangle nobody drags to.
+ * So it is always a dashed outline, and what changes on hover is the accent
+ * lighting up, which is the same language the rest of the app uses for "this
+ * will accept what you are holding".
+ */
+
+.zone {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 18px 14px;
+  border: 1px dashed var(--color-border-3, var(--border-base));
+  border-radius: 10px;
+  background: var(--color-fill-1, transparent);
+  text-align: center;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+
+.zoneOver {
+  border-color: rgb(var(--primary-6));
+  background: rgba(var(--primary-6), 0.08);
+}
+
+/* The pasted-answer route, for people who copy rather than save a file. */
+.paste {
+  width: 100%;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 12px;
+}

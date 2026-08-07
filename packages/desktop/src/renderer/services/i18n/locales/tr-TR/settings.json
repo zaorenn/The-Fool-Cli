@@ -1806,6 +1806,25 @@
         "sharp": "Keskin",
         "spring": "Yaylı"
       }
+    },
+    "brief": {
+      "title": "Başka bir yapay zekaya tasarlatın",
+      "subtitle": "Aşağıdaki yönergeleri zaten kullandığınız yapay zekaya kopyalayın, istediğiniz görünümü anlatın, cevabı buraya geri getirin.",
+      "copy": "Yönergeleri kopyala",
+      "copyHint": "İstediğinizle birlikte yapıştırın.",
+      "drop": "Preset dosyasını buraya bırakın",
+      "pasteInstead": "Ya da yapıştırın",
+      "use": "Bu preseti kullan",
+      "pastePlaceholder": "Yapay zekanın verdiğini yapıştırın — JSON, çerçevesiyle birlikte.",
+      "copied": "Yönergeler kopyalandı.",
+      "imported": "“{{name}}” yüklendi. Gözden geçirip kaydedin.",
+      "failed": {
+        "empty": "Okunacak bir şey yoktu.",
+        "not-json": "Bu bir preset değil — yapay zekanın ürettiği JSON yerine cevabı gibi görünüyor.",
+        "not-a-preset": "Geçerli JSON ama preset değil.",
+        "no-surface": "Hangi pencere için olduğunu söylemiyor ya da bu uygulamada olmayan bir pencere adı veriyor.",
+        "no-name": "Bu presetin adı yok."
+      }
     }
   },
   "hub": {

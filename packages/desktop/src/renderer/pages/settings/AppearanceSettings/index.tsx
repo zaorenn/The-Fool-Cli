@@ -7,7 +7,7 @@
 import React from 'react';
 import AppearanceModalContent from '@/renderer/components/settings/SettingsModal/contents/AppearanceModalContent';
 import SettingsPageWrapper from '../components/SettingsPageWrapper';
-import LayoutCustomizer from './LayoutCustomizer';
+import LayoutCustomizer from './layout/LayoutCustomizer';
 import ThemeCustomizer from './ThemeCustomizer';
 
 const AppearanceSettings: React.FC = () => {

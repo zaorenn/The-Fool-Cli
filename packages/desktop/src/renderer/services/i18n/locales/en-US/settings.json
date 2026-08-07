@@ -1806,6 +1806,25 @@
         "sharp": "Sharp",
         "spring": "Springy"
       }
+    },
+    "brief": {
+      "title": "Have another AI design one",
+      "subtitle": "Copy the instructions below into whichever AI you already use, describe the look you want, and bring the answer back here.",
+      "copy": "Copy the instructions",
+      "copyHint": "Paste them along with what you want.",
+      "drop": "Drop the preset file here",
+      "pasteInstead": "Or paste it",
+      "use": "Use this preset",
+      "pastePlaceholder": "Paste what the AI gave you — the JSON, fence and all.",
+      "copied": "Instructions copied.",
+      "imported": "“{{name}}” loaded. Look it over, then save it.",
+      "failed": {
+        "empty": "There was nothing to read.",
+        "not-json": "That was not a preset — it looks like the AI's reply rather than the JSON it produced.",
+        "not-a-preset": "That is valid JSON but not a preset.",
+        "no-surface": "That does not say which window it is for, or names one this app does not have.",
+        "no-name": "That preset has no name."
+      }
     }
   },
   "hub": {

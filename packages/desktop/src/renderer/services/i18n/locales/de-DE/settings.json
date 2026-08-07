@@ -1806,6 +1806,25 @@
         "sharp": "Knapp",
         "spring": "Federnd"
       }
+    },
+    "brief": {
+      "title": "Von einer anderen KI entwerfen lassen",
+      "subtitle": "Kopieren Sie die Anleitung unten in die KI, die Sie ohnehin nutzen, beschreiben Sie den gewünschten Look und bringen Sie die Antwort hierher zurück.",
+      "copy": "Anleitung kopieren",
+      "copyHint": "Zusammen mit Ihrem Wunsch einfügen.",
+      "drop": "Preset-Datei hier ablegen",
+      "pasteInstead": "Oder einfügen",
+      "use": "Dieses Preset verwenden",
+      "pastePlaceholder": "Fügen Sie ein, was die KI Ihnen gegeben hat — das JSON samt Codeblock.",
+      "copied": "Anleitung kopiert.",
+      "imported": "„{{name}}“ geladen. Ansehen, dann speichern.",
+      "failed": {
+        "empty": "Es gab nichts zu lesen.",
+        "not-json": "Das ist kein Preset — es sieht nach der Antwort der KI aus, nicht nach dem erzeugten JSON.",
+        "not-a-preset": "Gültiges JSON, aber kein Preset.",
+        "no-surface": "Es sagt nicht, für welches Fenster, oder nennt eines, das diese App nicht hat.",
+        "no-name": "Dieses Preset hat keinen Namen."
+      }
     }
   },
   "hub": {
