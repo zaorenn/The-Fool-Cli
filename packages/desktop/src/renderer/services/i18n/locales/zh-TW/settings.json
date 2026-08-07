@@ -1548,7 +1548,8 @@
       "LOCAL_LLM_FAILED": "本機模型拒絕了這個請求。",
       "LOCAL_SYNTHESIZE_FAILED": "無法朗讀回覆。",
       "LOCAL_PIPELINE_FAILED": "本機對話失敗。",
-      "LOCAL_HEARD_NOTHING": "我聽到了聲音，但沒聽清詞句。"
+      "LOCAL_HEARD_NOTHING": "我聽到了聲音，但沒聽清詞句。",
+      "LOCAL_TURN_STALLED": "這條回覆太久沒有進展，已放棄。請再問一次。"
     },
     "conversationLanguageName": {
       "en": "English",

@@ -251,6 +251,33 @@ const MAX_TOOL_ROUNDS = 4;
  */
 const SPEECH_LOOKAHEAD = 2;
 
+/**
+ * How many questions may wait behind a reply that is still being given.
+ *
+ * Somebody giving several instructions in a row has to get several answers —
+ * that is the whole point of a queue rather than the single slot this replaced.
+ * Bounded so that a turn which is wedged cannot collect them for ever.
+ */
+const MAX_WAITING = 8;
+
+/**
+ * How long a turn may make no progress at all before it is abandoned.
+ *
+ * Nothing used to bound a turn. The chat request carried no timeout of its own,
+ * a server that accepted the request and then stopped sending left the read
+ * waiting for ever, and the wait for the speaker had no ceiling either. One
+ * stall and `inFlight` stayed set for the rest of the session: every question
+ * after it took the "something is already being said" path, was shown once,
+ * replaced by the next one, and answered never. That is what was reported as
+ * the app freezing, and it is worth being precise that it never recovered on
+ * its own — there was nothing that could make it.
+ *
+ * Generous, because progress here means *any* byte from the server, and a local
+ * model that reasons before it answers can spend a while composing. Silence for
+ * this long is not slowness, it is a turn that is never going to end.
+ */
+export const TURN_STALL_MS = 45_000;
+
 /** One sentence, synthesised and ready for the speaker. */
 type RenderedSpeech = { pcm16Base64: string; sampleRate: number };
 
@@ -343,10 +370,16 @@ export class LocalVoicePipeline {
    *
    * Only the interrupt word cuts a reply short. Anything else said in the
    * meantime — including a whole new question — waits here, because guessing from
-   * the audio which of those it was is what threw answers away. One deep: the
-   * thing worth keeping is the last thing said.
+   * the audio which of those it was is what threw answers away.
+   *
+   * In order, and more than one deep. A single slot meant somebody giving three
+   * instructions in a row got the third answered and the other two silently
+   * discarded, which is not a queue at all.
    */
-  private queued: string | null = null;
+  private waiting: string[] = [];
+
+  /** The watchdog for the turn in flight, and the turn it is watching. */
+  private stall: ReturnType<typeof setTimeout> | null = null;
 
   constructor(options: LocalPipelineOptions) {
     this.options = options;
@@ -407,6 +440,7 @@ export class LocalVoicePipeline {
   interrupt(): void {
     this.inFlight?.abort();
     this.inFlight = null;
+    this.clearStall();
     this.speaking = false;
     this.pending = [];
     this.voice = null;
@@ -416,7 +450,7 @@ export class LocalVoicePipeline {
     this.closed = true;
     this.interrupt();
     this.utterance = [];
-    this.queued = null;
+    this.waiting = [];
     this.history = [];
   }
 
@@ -563,7 +597,81 @@ export class LocalVoicePipeline {
 
     // A real question, but not the word that stops things. It waits, and the
     // reply that is already being given gets to finish.
-    this.queued = heard;
+    //
+    // Shown immediately all the same. Being unable to answer yet is not a reason
+    // to leave somebody wondering whether they were heard at all — and that
+    // silence was indistinguishable from the app having frozen, which is exactly
+    // how this was reported.
+    this.options.onEvent({ kind: 'user-transcript', text: heard, final: true });
+
+    this.waiting.push(heard);
+    // Bounded, oldest first. Somebody giving five instructions in a row must get
+    // five answers; somebody whose turn is wedged must not accumulate them
+    // without limit.
+    if (this.waiting.length > MAX_WAITING) this.waiting.shift();
+  }
+
+  /**
+   * Answers the next thing asked while something else was being said.
+   *
+   * Its own method because two paths reach it — a turn finishing, and a turn
+   * being cut short — and only one of them used to. Interrupting the *reply* is
+   * not cancelling the *questions*: reaching for the talk key while it talks
+   * used to throw away whatever was waiting behind it, silently.
+   */
+  /**
+   * Restarts the clock on the turn in flight, because something happened.
+   *
+   * Progress is any byte from the server or any sentence reaching the speaker —
+   * not "an answer arrived". A model that spends thirty seconds reasoning before
+   * its first word is working, and cutting it off for that would be a worse bug
+   * than the one this exists for.
+   */
+  private markProgress(controller: AbortController): void {
+    if (this.inFlight !== controller) return;
+    if (this.stall !== null) clearTimeout(this.stall);
+    this.stall = setTimeout(() => this.abandonStalledTurn(controller), TURN_STALL_MS);
+  }
+
+  /** Stops watching, whatever the turn's outcome was. */
+  private clearStall(): void {
+    if (this.stall === null) return;
+    clearTimeout(this.stall);
+    this.stall = null;
+  }
+
+  /**
+   * Ends a turn that is never going to end, and hands the pipeline back.
+   *
+   * Aborting alone is not enough to rely on: the wait for the speaker resolves
+   * on a promise the abort does not touch, so a turn could be signalled dead and
+   * still hold `inFlight` for ever. This releases the pipeline itself rather than
+   * asking the stalled turn to release it, and the turn's own `finally` is
+   * written to notice it no longer owns anything.
+   *
+   * Said out loud, too. Going quiet is what made a stall indistinguishable from
+   * a freeze; being told the reply was given up on at least tells you to ask
+   * again.
+   */
+  private abandonStalledTurn(controller: AbortController): void {
+    this.stall = null;
+    if (this.closed || this.inFlight !== controller) return;
+
+    controller.abort();
+    this.inFlight = null;
+    this.speaking = false;
+    this.pending = [];
+    this.voice = null;
+
+    this.options.onEvent({ kind: 'error', message: 'LOCAL_TURN_STALLED' });
+    this.options.onEvent({ kind: 'phase', phase: 'listening' });
+    this.drainWaiting();
+  }
+
+  private drainWaiting(): void {
+    if (this.closed || this.inFlight !== null) return;
+    const next = this.waiting.shift();
+    if (next !== undefined) void this.answer([], next);
   }
 
   /** Transcribe, think, and speak — each stage feeding the next as it arrives. */
@@ -575,6 +683,9 @@ export class LocalVoicePipeline {
     this.inFlight = controller;
     this.pending = [];
     this.voice = null;
+    // From here the turn is on the clock. Every turn ends — this is what makes
+    // that true even when the thing it is waiting on never answers.
+    this.markProgress(controller);
 
     try {
       this.options.onEvent({ kind: 'phase', phase: 'thinking' });
@@ -612,14 +723,17 @@ export class LocalVoicePipeline {
       });
       this.options.onEvent({ kind: 'phase', phase: 'listening' });
     } finally {
-      if (this.inFlight === controller) this.inFlight = null;
-      // Something asked while this reply was still being said. Answered now
-      // rather than dropped — it was a real question, it just did not get to
-      // interrupt. `captured` is empty because the transcript is all that is
-      // needed; the audio was already read.
-      const waiting = this.queued;
-      this.queued = null;
-      if (waiting && !this.closed && !controller.signal.aborted) void this.answer([], waiting);
+      // Only if this turn still owns the pipeline. A turn that was superseded
+      // must not clear the flag a newer one set, nor take its queue with it —
+      // and a turn the watchdog already gave up on owns nothing at all.
+      if (this.inFlight === controller) {
+        this.inFlight = null;
+        this.clearStall();
+      }
+      // Whatever was asked while this reply was being said is answered now,
+      // whether this turn finished or was cut short. `captured` is empty because
+      // the transcript is all that is needed; the audio was already read.
+      this.drainWaiting();
     }
   }
 
@@ -732,6 +846,10 @@ export class LocalVoicePipeline {
     while (!controller.signal.aborted) {
       const { done, value } = await reader.read();
       if (done) break;
+      // The server is still talking to us. Reasoning it never shows counts:
+      // what is being watched for is a connection that has gone dead, not a
+      // model taking its time.
+      this.markProgress(controller);
 
       buffered += decoder.decode(value, { stream: true });
       const lines = buffered.split('\n');
@@ -887,6 +1005,9 @@ export class LocalVoicePipeline {
         if (next === undefined) break;
         const rendered = await next;
         this.renders.shift();
+        // A sentence reaching the speaker is progress too, and a long answer
+        // spends most of itself here rather than in the stream.
+        this.markProgress(controller);
         this.emitSpeech(rendered);
       }
     } catch (error) {

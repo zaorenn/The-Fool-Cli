@@ -1548,7 +1548,8 @@
       "LOCAL_LLM_FAILED": "로컬 모델이 요청을 거부했습니다.",
       "LOCAL_SYNTHESIZE_FAILED": "답변을 말할 수 없었습니다.",
       "LOCAL_PIPELINE_FAILED": "로컬 대화에 실패했습니다.",
-      "LOCAL_HEARD_NOTHING": "소리는 들렸지만 말을 알아듣지 못했어요."
+      "LOCAL_HEARD_NOTHING": "소리는 들렸지만 말을 알아듣지 못했어요.",
+      "LOCAL_TURN_STALLED": "응답이 너무 오래 걸려 중단했습니다. 다시 말씀해 주세요."
     },
     "conversationLanguageName": {
       "en": "English",

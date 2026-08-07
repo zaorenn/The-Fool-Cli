@@ -1547,7 +1547,8 @@
       "LOCAL_LLM_FAILED": "本地模型拒绝了该请求。",
       "LOCAL_SYNTHESIZE_FAILED": "无法朗读回复。",
       "LOCAL_PIPELINE_FAILED": "本地对话失败。",
-      "LOCAL_HEARD_NOTHING": "我听到了声音，但没听清词句。"
+      "LOCAL_HEARD_NOTHING": "我听到了声音，但没听清词句。",
+      "LOCAL_TURN_STALLED": "这条回复太久没有进展，已放弃。请再问一次。"
     },
     "conversationLanguageName": {
       "en": "English",

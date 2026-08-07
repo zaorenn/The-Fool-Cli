@@ -24,6 +24,7 @@ vi.mock('@/common', () => ({
 
 const {
   LocalVoicePipeline,
+  TURN_STALL_MS,
   checkLocalReadiness,
   listLocalModels,
   normalizeEndpoint,
@@ -1095,5 +1096,272 @@ describe('LocalVoicePipeline while it is talking', () => {
     // No transcript for it: the user did not say it and the assistant did not
     // answer it, so it belongs in neither side of the conversation.
     expect(events.some((event) => event.kind === 'assistant-transcript')).toBe(false);
+  });
+});
+
+/**
+ * Speaking while it is still talking.
+ *
+ * The reported failure: after a few commands, whatever the user says vanishes
+ * and the assistant stops answering. The cause is here rather than anywhere
+ * dramatic — a question asked mid-reply went into a single slot, was never shown
+ * on screen, was overwritten by the next one, and was thrown away entirely if
+ * anything interrupted the reply it was waiting behind.
+ *
+ * From the user's side that is indistinguishable from the app freezing: they
+ * talk, nothing appears, nothing happens, and the more commands they give the
+ * more certain it is to happen.
+ */
+describe('a question asked while the assistant is still talking', () => {
+  const readyCatalog = () => catalogInvoke.mockResolvedValue(okCatalog([STT_MODEL, TTS_MODEL]));
+
+  const speaks = () =>
+    synthesizeInvoke.mockImplementation(async () => ({
+      ok: true,
+      data: { audio: { dataBase64: pcm16ToWavBase64(pcmOf([1]), 22050), sampleRateHz: 22050 } },
+    }));
+
+  /**
+   * A pipeline whose first reply can be held open.
+   *
+   * The condition under test only exists while a turn is in flight, so the chat
+   * response for the first turn is a promise this test releases by hand. Without
+   * that the first turn finishes during `settle()` and every later utterance
+   * takes the ordinary path — which is how the first version of these tests
+   * passed against the very bug they were written for.
+   */
+  const openHeld = async (events: NormalizedRealtimeEvent[], sent: string[]) => {
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    let turn = 0;
+
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (String(url).endsWith('/models')) {
+        return { ok: true, json: async () => ({ data: [{ id: 'google/gemma-4-e4b' }] }) } as unknown as Response;
+      }
+      const body = JSON.parse(String(init?.body ?? '{}')) as { messages?: { role: string; content: string }[] };
+      const last = body.messages?.filter((message) => message.role === 'user').at(-1);
+      if (last) sent.push(last.content);
+
+      // Only the first turn is held; the rest answer at once so the queue can
+      // be seen draining.
+      if (++turn === 1) await held;
+      return { ok: true, body: sseBody(['Tamam. ']) } as unknown as Response;
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pipeline = new LocalVoicePipeline({
+      settings: settingsWith({ model: 'google/gemma-4-e4b' }),
+      interfaceLanguage: 'tr',
+      onEvent: (event) => events.push(event),
+    });
+    await pipeline.connect();
+    return { pipeline, release };
+  };
+
+  /** One utterance, end to end, as the detector delivers it. */
+  const say = (pipeline: LocalVoicePipeline, sample: number): void => {
+    pipeline.pushAudio(toBase64(pcmOf([sample])), 'speech-started');
+    pipeline.pushAudio('', 'utterance-ended');
+  };
+
+  const drain = async (): Promise<void> => {
+    for (let round = 0; round < 12; round += 1) await settle();
+  };
+
+  it('shows what it heard, even when it cannot answer yet', async () => {
+    readyCatalog();
+    speaks();
+    let spoken = 0;
+    transcribeInvoke.mockImplementation(async () => ({ ok: true, data: { text: `soru ${++spoken}` } }));
+
+    const events: NormalizedRealtimeEvent[] = [];
+    const { pipeline, release } = await openHeld(events, []);
+
+    say(pipeline, 1);
+    await settle();
+    events.length = 0;
+
+    // Spoken over the reply, which is still being written. It has to appear:
+    // silence here is the whole bug.
+    say(pipeline, 2);
+    await drain();
+
+    expect(events.filter((event) => event.kind === 'user-transcript')).not.toHaveLength(0);
+    release();
+    await drain();
+  });
+
+  it('keeps every question, not only the last one', async () => {
+    readyCatalog();
+    speaks();
+    let spoken = 0;
+    transcribeInvoke.mockImplementation(async () => ({ ok: true, data: { text: `soru ${++spoken}` } }));
+
+    const events: NormalizedRealtimeEvent[] = [];
+    const sent: string[] = [];
+    const { pipeline, release } = await openHeld(events, sent);
+
+    say(pipeline, 1);
+    await settle();
+
+    // Two more while the first is still being answered.
+    say(pipeline, 2);
+    await settle();
+    say(pipeline, 3);
+    await settle();
+
+    release();
+    await drain();
+
+    // Dropping the middle question is the failure the user actually saw.
+    expect(sent).toEqual(['soru 1', 'soru 2', 'soru 3']);
+  });
+
+  /**
+   * Interrupting the *reply* is not cancelling the *questions*. The talk key and
+   * the interrupt button both abort the turn in flight, and the queue behind it
+   * used to go with it.
+   */
+  it('still answers what was waiting after the reply is cut short', async () => {
+    readyCatalog();
+    speaks();
+    let spoken = 0;
+    transcribeInvoke.mockImplementation(async () => ({ ok: true, data: { text: `soru ${++spoken}` } }));
+
+    const events: NormalizedRealtimeEvent[] = [];
+    const sent: string[] = [];
+    const { pipeline, release } = await openHeld(events, sent);
+
+    say(pipeline, 1);
+    await settle();
+    say(pipeline, 2);
+    await settle();
+
+    // The user reaches for the talk key while it is still speaking.
+    pipeline.interrupt();
+    release();
+    await drain();
+
+    expect(sent).toContain('soru 2');
+  });
+});
+
+/**
+ * A turn that never ends.
+ *
+ * The reported failure was not that one answer went missing — it was that after
+ * a few commands the assistant stopped answering *at all*: what was said
+ * appeared on screen, disappeared, and the job was never done.
+ *
+ * That is what an unbounded turn looks like from the outside. Nothing bounded
+ * how long a reply could take: the chat request carried no timeout, a stalled
+ * stream left `reader.read()` waiting forever, and the wait for the speaker had
+ * no ceiling either. One stall and `inFlight` stayed set for the rest of the
+ * session, so every later question took the "something is already being said"
+ * path — shown once, then replaced by the next one, and answered never.
+ *
+ * A turn has to end. This pins that it does.
+ */
+describe('a turn that stalls', () => {
+  const readyCatalog = () => catalogInvoke.mockResolvedValue(okCatalog([STT_MODEL, TTS_MODEL]));
+
+  const speaks = () =>
+    synthesizeInvoke.mockImplementation(async () => ({
+      ok: true,
+      data: { audio: { dataBase64: pcm16ToWavBase64(pcmOf([1]), 22050), sampleRateHz: 22050 } },
+    }));
+
+  /** A pipeline whose first reply never arrives, the way a hung server behaves. */
+  const openStalled = async (events: NormalizedRealtimeEvent[], sent: string[]) => {
+    let turn = 0;
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (String(url).endsWith('/models')) {
+        return { ok: true, json: async () => ({ data: [{ id: 'google/gemma-4-e4b' }] }) } as unknown as Response;
+      }
+      const body = JSON.parse(String(init?.body ?? '{}')) as { messages?: { role: string; content: string }[] };
+      const last = body.messages?.filter((message) => message.role === 'user').at(-1);
+      if (last) sent.push(last.content);
+
+      // The first request never settles — no response, no error, no timeout of
+      // its own. Exactly what a wedged local server does.
+      if (++turn === 1) {
+        return new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+        });
+      }
+      return { ok: true, body: sseBody(['Tamam. ']) } as unknown as Response;
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pipeline = new LocalVoicePipeline({
+      settings: settingsWith({ model: 'google/gemma-4-e4b' }),
+      interfaceLanguage: 'tr',
+      onEvent: (event) => events.push(event),
+    });
+    await pipeline.connect();
+    return pipeline;
+  };
+
+  const say = (pipeline: LocalVoicePipeline, sample: number): void => {
+    pipeline.pushAudio(toBase64(pcmOf([sample])), 'speech-started');
+    pipeline.pushAudio('', 'utterance-ended');
+  };
+
+  const drain = async (): Promise<void> => {
+    for (let round = 0; round < 12; round += 1) await settle();
+  };
+
+  it('gives up on it, so the next thing asked is still answered', async () => {
+    vi.useFakeTimers();
+    try {
+      readyCatalog();
+      speaks();
+      let spoken = 0;
+      transcribeInvoke.mockImplementation(async () => ({ ok: true, data: { text: `soru ${++spoken}` } }));
+
+      const events: NormalizedRealtimeEvent[] = [];
+      const sent: string[] = [];
+      const pipeline = await openStalled(events, sent);
+
+      say(pipeline, 1);
+      await drain();
+
+      // Long enough that any honest reply would have started by now.
+      await vi.advanceTimersByTimeAsync(TURN_STALL_MS + 1000);
+      await drain();
+
+      say(pipeline, 2);
+      await drain();
+
+      // The second question is the whole point: a session is not over because
+      // one reply hung.
+      expect(sent).toContain('soru 2');
+      expect(events.some((event) => event.kind === 'phase' && event.phase === 'listening')).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('says that it gave up rather than going quiet', async () => {
+    vi.useFakeTimers();
+    try {
+      readyCatalog();
+      speaks();
+      transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'tarayıcıyı aç' } });
+
+      const events: NormalizedRealtimeEvent[] = [];
+      const pipeline = await openStalled(events, []);
+
+      say(pipeline, 1);
+      await drain();
+      await vi.advanceTimersByTimeAsync(TURN_STALL_MS + 1000);
+      await drain();
+
+      // Silence is what made this look like a freeze. Something has to be said.
+      expect(events.some((event) => event.kind === 'error')).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

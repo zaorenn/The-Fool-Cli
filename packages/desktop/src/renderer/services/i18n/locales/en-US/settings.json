@@ -1546,7 +1546,8 @@
       "LOCAL_LLM_FAILED": "The local model refused the request.",
       "LOCAL_SYNTHESIZE_FAILED": "The reply could not be spoken.",
       "LOCAL_PIPELINE_FAILED": "The local conversation failed.",
-      "LOCAL_HEARD_NOTHING": "I heard something but could not make out any words."
+      "LOCAL_HEARD_NOTHING": "I heard something but could not make out any words.",
+      "LOCAL_TURN_STALLED": "That reply took too long and was given up on — ask again."
     },
     "conversationLanguageName": {
       "en": "English",

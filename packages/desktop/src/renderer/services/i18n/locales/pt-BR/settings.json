@@ -1549,7 +1549,8 @@
       "LOCAL_LLM_FAILED": "O modelo local recusou a solicitação.",
       "LOCAL_SYNTHESIZE_FAILED": "Não foi possível falar a resposta.",
       "LOCAL_PIPELINE_FAILED": "A conversa local falhou.",
-      "LOCAL_HEARD_NOTHING": "Ouvi algo, mas não entendi as palavras."
+      "LOCAL_HEARD_NOTHING": "Ouvi algo, mas não entendi as palavras.",
+      "LOCAL_TURN_STALLED": "A resposta demorou demais e foi abandonada — pergunte de novo."
     },
     "conversationLanguageName": {
       "en": "English",

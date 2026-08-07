@@ -1546,7 +1546,8 @@
       "LOCAL_LLM_FAILED": "مدل محلی درخواست را رد کرد.",
       "LOCAL_SYNTHESIZE_FAILED": "پاسخ خوانده نشد.",
       "LOCAL_PIPELINE_FAILED": "گفت‌وگوی محلی ناموفق بود.",
-      "LOCAL_HEARD_NOTHING": "صدایی شنیدم اما کلمه‌ای تشخیص ندادم."
+      "LOCAL_HEARD_NOTHING": "صدایی شنیدم اما کلمه‌ای تشخیص ندادم.",
+      "LOCAL_TURN_STALLED": "پاسخ بیش از حد طول کشید و رها شد — دوباره بپرسید."
     },
     "conversationLanguageName": {
       "en": "English",

@@ -1546,7 +1546,8 @@
       "LOCAL_LLM_FAILED": "Yerel model isteği geri çevirdi.",
       "LOCAL_SYNTHESIZE_FAILED": "Yanıt seslendirilemedi.",
       "LOCAL_PIPELINE_FAILED": "Yerel sohbet başarısız oldu.",
-      "LOCAL_HEARD_NOTHING": "Bir şey duydum ama kelimeleri seçemedim."
+      "LOCAL_HEARD_NOTHING": "Bir şey duydum ama kelimeleri seçemedim.",
+      "LOCAL_TURN_STALLED": "Bu yanıt çok uzun sürdü ve bırakıldı — tekrar sorun."
     },
     "conversationLanguageName": {
       "en": "English",

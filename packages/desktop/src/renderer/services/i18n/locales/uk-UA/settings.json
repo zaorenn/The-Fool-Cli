@@ -1547,7 +1547,8 @@
       "LOCAL_LLM_FAILED": "Локальна модель відхилила запит.",
       "LOCAL_SYNTHESIZE_FAILED": "Не вдалося озвучити відповідь.",
       "LOCAL_PIPELINE_FAILED": "Локальна розмова не вдалася.",
-      "LOCAL_HEARD_NOTHING": "Я почув звук, але не розібрав слів."
+      "LOCAL_HEARD_NOTHING": "Я почув звук, але не розібрав слів.",
+      "LOCAL_TURN_STALLED": "Відповідь надто довго не надходила, спробу припинено. Запитайте ще раз."
     },
     "conversationLanguageName": {
       "en": "English",

@@ -1546,7 +1546,8 @@
       "LOCAL_LLM_FAILED": "Le modèle local a refusé la requête.",
       "LOCAL_SYNTHESIZE_FAILED": "Impossible de prononcer la réponse.",
       "LOCAL_PIPELINE_FAILED": "La conversation locale a échoué.",
-      "LOCAL_HEARD_NOTHING": "J’ai entendu quelque chose, mais aucun mot distinct."
+      "LOCAL_HEARD_NOTHING": "J’ai entendu quelque chose, mais aucun mot distinct.",
+      "LOCAL_TURN_STALLED": "La réponse a mis trop de temps et a été abandonnée — redemande."
     },
     "conversationLanguageName": {
       "en": "English",

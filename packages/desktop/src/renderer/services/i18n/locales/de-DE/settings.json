@@ -1546,7 +1546,8 @@
       "LOCAL_LLM_FAILED": "Das lokale Modell hat die Anfrage abgelehnt.",
       "LOCAL_SYNTHESIZE_FAILED": "Die Antwort konnte nicht gesprochen werden.",
       "LOCAL_PIPELINE_FAILED": "Das lokale Gespräch ist fehlgeschlagen.",
-      "LOCAL_HEARD_NOTHING": "Ich habe etwas gehört, aber keine Worte verstanden."
+      "LOCAL_HEARD_NOTHING": "Ich habe etwas gehört, aber keine Worte verstanden.",
+      "LOCAL_TURN_STALLED": "Die Antwort hat zu lange gedauert und wurde abgebrochen — frag noch einmal."
     },
     "conversationLanguageName": {
       "en": "English",

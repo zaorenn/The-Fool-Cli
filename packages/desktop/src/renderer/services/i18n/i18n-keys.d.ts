@@ -2470,6 +2470,7 @@ export type I18nKey =
   | 'settings.voice.conversationError.LOCAL_SYNTHESIZE_FAILED'
   | 'settings.voice.conversationError.LOCAL_TRANSCRIBE_FAILED'
   | 'settings.voice.conversationError.LOCAL_TTS_MISSING'
+  | 'settings.voice.conversationError.LOCAL_TURN_STALLED'
   | 'settings.voice.conversationError.REALTIME_CONNECTION_CLOSED'
   | 'settings.voice.conversationError.REALTIME_CONNECTION_FAILED'
   | 'settings.voice.conversationError.REALTIME_NO_PROVIDER'
