@@ -1,6 +1,6 @@
 {
   "name": "the-fool",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "A local-first, voice-first desktop agent for OpenClaw, Hermes, and ACP-compatible CLIs.",
   "keywords": [],
   "homepage": "https://github.com/zaorenn/The-Fool-Cli#readme",

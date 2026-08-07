@@ -2,6 +2,16 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.3.1
+
+### Addons
+
+- A workspace can declare capabilities the app does not have on its own — pitch detection, audio decoding, anything that needs a real library rather than a model thinking harder. An addon is an MCP server, so it plugs into the extension point that was already there and nothing about the backend changes.
+- Its page calls one directly: a function and a result in a second, with no model in the loop. That is the difference between an addon and handing the job to the agent.
+- Installed, an addon becomes an ordinary server in Settings → Tools — visible, switchable, removable, and usable by everything else on the machine.
+- Nothing is installed without you seeing it. An imported workspace that wants an addon shows the actual command line first; declining still opens the workspace, with the parts that need it switched off.
+- Asking for something built out loud can now declare the capability it needs, so the requirement travels with the workspace instead of being something the next person has to work out.
+
 ## 2.3.0
 
 ### Fool's Hub, and workspaces
