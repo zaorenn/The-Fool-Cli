@@ -376,6 +376,48 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_skill_teach',
+    description:
+      'Learn to do one thing yourself, so that next time you simply do it instead of handing it to the agent. Use it whenever they show you or tell you something they will want again: a song they call their favourite, an application they want opened by a name of their own, a page they keep going back to. If you do not already know the address or the path, find it out first — ask them to bring the address on screen and tell you when it is there, then look at the screen — because a skill saved without the right target is a skill that fails silently later. Say in a few words that you have it and what to say to use it.',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'What to call it, short. "Favourite song".' },
+        when: {
+          type: 'string',
+          description: 'When to use it, in their words. "When I ask for my favourite song."',
+        },
+        url: {
+          type: 'string',
+          description:
+            'The full web address to open, when the skill is a page. Must be the real address, read from the screen or given by them — never one you assembled from the title.',
+        },
+        path: {
+          type: 'string',
+          description:
+            'The full path of the program or file to open, when the skill is something on their machine. A path only: never a command, never anything after the path.',
+        },
+      },
+      required: ['name', 'when'],
+    },
+  },
+  {
+    name: 'app_skill_do',
+    description:
+      'Do one of the things they taught you, by name. Instant and local — no agent, nothing to wait for. Use it the moment a request matches one of the skills listed for you, in preference to app_ask_jester or app_open_url. Say what you are doing in a few words, and never read the address out.',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'The skill, as they refer to it. "my favourite song".' },
+        forget: {
+          type: 'boolean',
+          description: 'Drop the skill instead of doing it, when they say to forget how to do something.',
+        },
+      },
+      required: ['name'],
+    },
+  },
+  {
     name: 'app_workspace',
     description:
       'Build the user a small app of their own, and move them into it. Use this when they describe a thing they want rather than a task they want done — "make me something that turns a YouTube link into guitar tab", "I want a panel that watches my builds", "build me a place to draft posts". It writes a real page, gives it the agent as its back end, keeps it in a workspace under a name, and switches to it, so it is there tomorrow and can be sent to somebody. It runs for a few minutes while you keep talking, so say briefly that you are on it and tell them what it does when it comes back. Use \'use\' to move them into one they already have. For a one-off thing to look at rather than keep, app_build_app is lighter.',

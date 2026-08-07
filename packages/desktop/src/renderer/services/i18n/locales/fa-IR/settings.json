@@ -1630,7 +1630,12 @@
     "conversationWorkspaceUnknown": "فضای کاری‌ای به نام «{{name}}» ندارم",
     "conversationRuleKept": "برای همیشه یادداشت شد: {{rule}}",
     "conversationRuleForNow": "برای همین گفتگو یادداشت شد: {{rule}}",
-    "conversationRuleDropped": "آن قاعده برداشته شد."
+    "conversationRuleDropped": "آن قاعده برداشته شد.",
+    "conversationSkillLearned": "حالا بلدم — کافی است بگویید {{name}}.",
+    "conversationSkillDone": "{{name}}.",
+    "conversationSkillForgotten": "یادم رفت {{name}} چطور انجام می‌شد.",
+    "conversationSkillUnknown": "{{name}} را به من یاد نداده‌اند.",
+    "conversationSkillRefused": "نتوانستم ذخیره‌اش کنم — آن نشانی یا مسیر چیزی نیست که بتوانم باز کنم."
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",

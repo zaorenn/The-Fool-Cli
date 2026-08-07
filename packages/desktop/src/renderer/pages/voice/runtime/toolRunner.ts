@@ -19,6 +19,13 @@ import {
 } from '@/common/config/themeOverrides';
 import { parseOpenUrls } from '@/common/realtime/openUrls';
 import { buildSiteSearch } from '@/common/realtime/siteSearch';
+import { findLocalSkill } from '@/common/voice/localSkills';
+import {
+  forgetLocalSkill,
+  learnLocalSkill,
+  peekLocalSkills,
+  runLocalSkill,
+} from '@renderer/services/voice/session/localSkillStore';
 import { runAgentTask, type AgentTaskStep } from '@renderer/services/voice/session/runAgentTask';
 import {
   peekVoiceMemory,
@@ -417,6 +424,52 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
       const detail = teaching
         ? t('settings.voice.conversationLearnedSkill', { name })
         : t('settings.voice.conversationLearned');
+      host.updateActivity(invocation.callId, { detail, state: 'completed' });
+      host.backToListening();
+      return { ok: true, detail };
+    }
+
+    if (invocation.name === 'app_skill_teach') {
+      const name = text('name').trim();
+      const when = text('when').trim();
+      const url = text('url').trim();
+      const path = text('path').trim();
+      if (name.length === 0 || when.length === 0 || (url.length === 0 && path.length === 0)) {
+        throw new Error(t('settings.voice.conversationActionUnsupported'));
+      }
+
+      const action = url.length > 0 ? ({ kind: 'open-url', url } as const) : ({ kind: 'open-path', path } as const);
+      const saved = await learnLocalSkill({ name, when, action });
+      // Refused rather than silently kept: an address or a path this app will
+      // not open is a skill that would fail later, out of context, with the user
+      // believing they had taught it.
+      if (!saved) throw new Error(t('settings.voice.conversationSkillRefused'));
+
+      const detail = t('settings.voice.conversationSkillLearned', { name: saved.name });
+      host.updateActivity(invocation.callId, { detail, state: 'completed' });
+      host.backToListening();
+      return { ok: true, detail };
+    }
+
+    if (invocation.name === 'app_skill_do') {
+      const name = text('name').trim();
+      if (name.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));
+
+      if (flag('forget')) {
+        const dropped = await forgetLocalSkill(name);
+        if (!dropped) throw new Error(t('settings.voice.conversationSkillUnknown', { name }));
+
+        const detail = t('settings.voice.conversationSkillForgotten', { name });
+        host.updateActivity(invocation.callId, { detail, state: 'completed' });
+        host.backToListening();
+        return { ok: true, detail };
+      }
+
+      const found = findLocalSkill(peekLocalSkills(), name);
+      if (!found) throw new Error(t('settings.voice.conversationSkillUnknown', { name }));
+
+      await runLocalSkill(found);
+      const detail = t('settings.voice.conversationSkillDone', { name: found.name });
       host.updateActivity(invocation.callId, { detail, state: 'completed' });
       host.backToListening();
       return { ok: true, detail };

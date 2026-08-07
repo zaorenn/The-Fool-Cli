@@ -1630,7 +1630,12 @@
     "conversationWorkspaceUnknown": "“{{name}}” adında bir workspace yok",
     "conversationRuleKept": "Kalıcı olarak not ettim: {{rule}}",
     "conversationRuleForNow": "Bu sohbet için not ettim: {{rule}}",
-    "conversationRuleDropped": "O kuralı bıraktım."
+    "conversationRuleDropped": "O kuralı bıraktım.",
+    "conversationSkillLearned": "Artık yapabilirim — {{name}} demen yeter.",
+    "conversationSkillDone": "{{name}}.",
+    "conversationSkillForgotten": "{{name}} nasıl yapılırdı, unuttum.",
+    "conversationSkillUnknown": "{{name}} diye bir şey öğretilmedi bana.",
+    "conversationSkillRefused": "Onu kaydedemedim — adres ya da yol açabileceğim bir şey değildi."
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

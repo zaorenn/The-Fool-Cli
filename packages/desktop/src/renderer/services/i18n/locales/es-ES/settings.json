@@ -1630,7 +1630,12 @@
     "conversationWorkspaceUnknown": "No tengo ningún espacio de trabajo llamado «{{name}}»",
     "conversationRuleKept": "Anotado para siempre: {{rule}}",
     "conversationRuleForNow": "Anotado para esta conversación: {{rule}}",
-    "conversationRuleDropped": "Regla retirada."
+    "conversationRuleDropped": "Regla retirada.",
+    "conversationSkillLearned": "Ya sé hacerlo — solo di {{name}}.",
+    "conversationSkillDone": "{{name}}.",
+    "conversationSkillForgotten": "He olvidado cómo hacer {{name}}.",
+    "conversationSkillUnknown": "No me han enseñado {{name}}.",
+    "conversationSkillRefused": "No pude guardarlo — la dirección o la ruta no es algo que pueda abrir."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

@@ -1631,7 +1631,12 @@
     "conversationWorkspaceUnknown": "У мене немає робочого простору «{{name}}»",
     "conversationRuleKept": "Запам'ятав назавжди: {{rule}}",
     "conversationRuleForNow": "Запам'ятав на цю розмову: {{rule}}",
-    "conversationRuleDropped": "Це правило знято."
+    "conversationRuleDropped": "Це правило знято.",
+    "conversationSkillLearned": "Тепер умію — просто скажіть «{{name}}».",
+    "conversationSkillDone": "{{name}}.",
+    "conversationSkillForgotten": "Забув, як робити «{{name}}».",
+    "conversationSkillUnknown": "Мене не вчили «{{name}}».",
+    "conversationSkillRefused": "Не зміг це зберегти — адресу або шлях я відкрити не можу."
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",

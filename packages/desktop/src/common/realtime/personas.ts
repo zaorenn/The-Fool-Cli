@@ -22,6 +22,7 @@
  */
 
 import { buildMemoryInstructions, MEMORY_SECTIONS, readRules, type VoiceMemory } from '@/common/voice/memory';
+import { describeLocalSkills, type LocalSkill } from '@/common/voice/localSkills';
 import { APP_KNOWLEDGE, APP_KNOWLEDGE_RULES } from './appKnowledge';
 
 export type PersonaPresetId = 'companion' | 'english-teacher' | 'language-partner' | 'interview-coach' | 'custom';
@@ -166,6 +167,14 @@ export type PersonaInput = {
    * other direction.
    */
   sessionRules?: readonly string[];
+  /**
+   * Things this person taught it to do by itself.
+   *
+   * In the prompt so the model knows a request is already answerable without an
+   * agent. A skill it does not know it has is a skill it will never reach for,
+   * and the whole point of them is not waiting minutes for something instant.
+   */
+  localSkills?: readonly LocalSkill[];
   /**
    * The voices installed on this computer, so it can pick one when asked.
    *
@@ -314,6 +323,7 @@ export const buildPersonaInstructions = (input: PersonaInput): string => {
     // otherwise, placed anywhere before it, was simply the losing instruction —
     // which is what "it agreed and then drifted back" actually was. Something
     // the person said out loud has to be the last word in the prompt.
+    describeLocalSkills(input.localSkills ?? []),
     rulesSection(input.memory ? readRules(input.memory) : [], input.sessionRules ?? []),
   ]
     .filter((section) => section.length > 0)

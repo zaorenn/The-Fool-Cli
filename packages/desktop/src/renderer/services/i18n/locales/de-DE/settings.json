@@ -1630,7 +1630,12 @@
     "conversationWorkspaceUnknown": "Ich habe keinen Workspace namens „{{name}}“",
     "conversationRuleKept": "Dauerhaft notiert: {{rule}}",
     "conversationRuleForNow": "Für dieses Gespräch notiert: {{rule}}",
-    "conversationRuleDropped": "Regel aufgehoben."
+    "conversationRuleDropped": "Regel aufgehoben.",
+    "conversationSkillLearned": "Das kann ich jetzt — sagen Sie einfach {{name}}.",
+    "conversationSkillDone": "{{name}}.",
+    "conversationSkillForgotten": "Wie {{name}} geht, habe ich vergessen.",
+    "conversationSkillUnknown": "{{name}} wurde mir nicht beigebracht.",
+    "conversationSkillRefused": "Das konnte ich nicht speichern — die Adresse oder der Pfad ist nichts, was ich öffnen kann."
   },
   "themeCustomizer": {
     "title": "Design anpassen",

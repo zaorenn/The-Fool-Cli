@@ -3,6 +3,7 @@ import type { Theme } from '@/common/theme/types';
 import type { LayoutPresetLibrary, SurfaceLayoutSelection } from '@/common/config/surfaceLayouts';
 import type { ThemeOverrides, ThemePalettes } from '@/common/config/themeOverrides';
 import type { WorkspaceLibrary } from '@/common/config/workspaces';
+import type { LocalSkill } from '@/common/voice/localSkills';
 
 export type ConfigKeyMap = {
   language: string;
@@ -25,6 +26,8 @@ export type ConfigKeyMap = {
   'ui.surfaceLayouts': SurfaceLayoutSelection | undefined;
   /** Layouts the user built and named, recalled the same way a palette is. */
   'ui.layoutPresets': LayoutPresetLibrary | undefined;
+  /** Things the user taught the assistant to do by itself. */
+  'voice.localSkills': LocalSkill[] | undefined;
   /**
    * The whole app aimed at one purpose, by name.
    *

@@ -1632,7 +1632,12 @@
     "conversationWorkspaceUnknown": "「{{name}}」というワークスペースはありません",
     "conversationRuleKept": "今後も守ります：{{rule}}",
     "conversationRuleForNow": "この会話のあいだ守ります：{{rule}}",
-    "conversationRuleDropped": "そのルールはやめました。"
+    "conversationRuleDropped": "そのルールはやめました。",
+    "conversationSkillLearned": "できるようになりました。「{{name}}」と言ってください。",
+    "conversationSkillDone": "{{name}}。",
+    "conversationSkillForgotten": "{{name}} のやり方は忘れました。",
+    "conversationSkillUnknown": "{{name}} は教わっていません。",
+    "conversationSkillRefused": "それは保存できませんでした。開けるアドレスやパスではありませんでした。"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",

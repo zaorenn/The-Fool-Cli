@@ -1632,7 +1632,12 @@
     "conversationWorkspaceUnknown": "沒有叫「{{name}}」的工作區",
     "conversationRuleKept": "已長期記下：{{rule}}",
     "conversationRuleForNow": "僅本次對話記下：{{rule}}",
-    "conversationRuleDropped": "已取消該規則。"
+    "conversationRuleDropped": "已取消該規則。",
+    "conversationSkillLearned": "現在我會了——說「{{name}}」就行。",
+    "conversationSkillDone": "{{name}}。",
+    "conversationSkillForgotten": "已忘掉怎麼做{{name}}。",
+    "conversationSkillUnknown": "還沒人教過我{{name}}。",
+    "conversationSkillRefused": "這個沒能儲存——那個位址或路徑我打不開。"
   },
   "themeCustomizer": {
     "title": "自訂主題",

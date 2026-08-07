@@ -1630,7 +1630,12 @@
     "conversationWorkspaceUnknown": "У меня нет рабочего пространства «{{name}}»",
     "conversationRuleKept": "Запомнил насовсем: {{rule}}",
     "conversationRuleForNow": "Запомнил на этот разговор: {{rule}}",
-    "conversationRuleDropped": "Это правило снято."
+    "conversationRuleDropped": "Это правило снято.",
+    "conversationSkillLearned": "Теперь умею — просто скажите «{{name}}».",
+    "conversationSkillDone": "{{name}}.",
+    "conversationSkillForgotten": "Забыл, как делать «{{name}}».",
+    "conversationSkillUnknown": "Меня не учили «{{name}}».",
+    "conversationSkillRefused": "Не смог это сохранить — адрес или путь я открыть не могу."
   },
   "themeCustomizer": {
     "title": "Настроить тему",

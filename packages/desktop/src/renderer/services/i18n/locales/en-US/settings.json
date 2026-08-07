@@ -1630,7 +1630,12 @@
     "conversationWorkspaceUnknown": "I have no workspace called “{{name}}”",
     "conversationRuleKept": "Noted for good: {{rule}}",
     "conversationRuleForNow": "Noted for this conversation: {{rule}}",
-    "conversationRuleDropped": "Dropped that rule."
+    "conversationRuleDropped": "Dropped that rule.",
+    "conversationSkillLearned": "I can do that now — just say {{name}}.",
+    "conversationSkillDone": "{{name}}.",
+    "conversationSkillForgotten": "Forgotten how to do {{name}}.",
+    "conversationSkillUnknown": "I have not been taught {{name}}.",
+    "conversationSkillRefused": "I could not save that one — the address or the path was not something I can open."
   },
   "themeCustomizer": {
     "title": "Customize theme",

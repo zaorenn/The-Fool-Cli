@@ -1632,7 +1632,12 @@
     "conversationWorkspaceUnknown": "“{{name}}”이라는 워크스페이스는 없습니다",
     "conversationRuleKept": "계속 지킬게요: {{rule}}",
     "conversationRuleForNow": "이번 대화 동안 지킬게요: {{rule}}",
-    "conversationRuleDropped": "그 규칙은 해제했어요."
+    "conversationRuleDropped": "그 규칙은 해제했어요.",
+    "conversationSkillLearned": "이제 할 수 있어요 — “{{name}}”이라고만 하세요.",
+    "conversationSkillDone": "{{name}}.",
+    "conversationSkillForgotten": "{{name}} 하는 법은 잊었어요.",
+    "conversationSkillUnknown": "{{name}}은(는) 배운 적이 없어요.",
+    "conversationSkillRefused": "그건 저장하지 못했어요 — 열 수 있는 주소나 경로가 아니었어요."
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",

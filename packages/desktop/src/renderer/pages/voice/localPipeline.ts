@@ -17,6 +17,7 @@ import { isHallucinatedTranscript } from '@/common/voice/hallucinations';
 import { refersToScreen } from '@/common/voice/screenIntent';
 import { describeSpokenTurns, worthRemembering, type SpokenTurn } from '@/common/voice/sessionSummary';
 import { applyTranscriptRules } from '@/common/voice/transcriptRules';
+import { peekLocalSkills } from '@renderer/services/voice/session/localSkillStore';
 import { peekVoiceMemory, rememberVoiceSession } from '@renderer/services/voice/session/voiceMemoryStore';
 import { findWakePhrase } from '@renderer/services/voice/wakePhrase';
 import { createIncrementalSentenceDetector } from '@renderer/services/voice/narration/incrementalSentences';
@@ -486,6 +487,7 @@ export class LocalVoicePipeline {
       memory: peekVoiceMemory(),
       voices: this.options.voices ?? [],
       sessionRules: this.sessionRules,
+      localSkills: peekLocalSkills(),
     });
   }
 
