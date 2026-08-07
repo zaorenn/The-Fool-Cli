@@ -273,7 +273,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
         means: {
           type: 'string',
           description:
-            'What that word stands for, exactly enough to act on: a full folder path, a person\'s full name, the address of a site. "C:\\Users\\sarhen\\Desktop".',
+            "What that word stands for, exactly enough to act on: a full folder path, a person's full name, the address of a site. Take it from what they actually said — never from an example, and never a path with somebody else's name in it.",
         },
       },
       required: [],
