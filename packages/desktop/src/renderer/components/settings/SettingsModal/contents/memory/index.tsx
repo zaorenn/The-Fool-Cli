@@ -8,6 +8,7 @@ import React from 'react';
 import { Tabs, Typography } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { writeMemoryDoc } from '@renderer/services/voice/session/voiceMemoryStore';
+import LocalSkillList from './LocalSkillList';
 import MemoryDocEditor from './MemoryDocEditor';
 import { useMemoryDocs } from './useMemoryDocs';
 
@@ -62,6 +63,13 @@ const MemoryModalContent: React.FC = () => {
             hint={t('settings.memory.agentHint')}
             onSave={(text) => writeMemoryDoc('agent', text)}
           />
+        </Tabs.TabPane>
+        {/* The third kind of thing it remembers, and the only one that acts.
+            A skill opens an address or a program when a phrase is said, so it
+            belongs where the rest of the memory is read and crossed out — not
+            in a place the user has to be told about. */}
+        <Tabs.TabPane key='skills' title={t('settings.memory.skillsTab')}>
+          <LocalSkillList />
         </Tabs.TabPane>
       </Tabs>
     </div>

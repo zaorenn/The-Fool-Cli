@@ -1674,7 +1674,14 @@
     "placeholder": "Nothing remembered yet. Write whatever you want known, or just start talking.",
     "unsaved": "Unsaved changes",
     "upToDate": "Up to date",
-    "revert": "Revert"
+    "revert": "Revert",
+    "skillsTab": "Skills",
+    "skillsHint": "Things you taught The Fool to do by itself. Each one runs the moment you say it — no agent, nothing to wait for. Delete any you did not mean to teach.",
+    "skillsEmpty": "Nothing taught yet. Tell it about something in a conversation — a song, a page, a program — and it will be here.",
+    "skillAction": {
+      "open-url": "Opens",
+      "open-path": "Opens on this machine"
+    }
   },
   "layout": {
     "title": "Layout",

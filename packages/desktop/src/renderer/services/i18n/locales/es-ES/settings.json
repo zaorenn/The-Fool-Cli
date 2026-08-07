@@ -1674,7 +1674,14 @@
     "placeholder": "Todavía no recuerda nada. Escribe lo que quieras que sepa, o simplemente empieza a hablar.",
     "unsaved": "Cambios sin guardar",
     "upToDate": "Al día",
-    "revert": "Deshacer"
+    "revert": "Deshacer",
+    "skillsTab": "Habilidades",
+    "skillsHint": "Cosas que enseñaste a The Fool a hacer por su cuenta. Cada una se ejecuta en cuanto lo dices: sin agente, sin esperas. Borra lo que no querías enseñar.",
+    "skillsEmpty": "Aún no has enseñado nada. Habla de algo en una conversación —una canción, una página, un programa— y aparecerá aquí.",
+    "skillAction": {
+      "open-url": "Abre",
+      "open-path": "Abre en este equipo"
+    }
   },
   "layout": {
     "title": "Disposición",

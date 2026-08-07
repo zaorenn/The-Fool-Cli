@@ -1674,7 +1674,14 @@
     "placeholder": "Noch nichts gemerkt. Schreib auf, was bekannt sein soll, oder fang einfach an zu reden.",
     "unsaved": "Nicht gespeicherte Änderungen",
     "upToDate": "Aktuell",
-    "revert": "Zurücksetzen"
+    "revert": "Zurücksetzen",
+    "skillsTab": "Fähigkeiten",
+    "skillsHint": "Was Sie The Fool beigebracht haben, selbst zu tun. Jede läuft, sobald Sie es sagen — ohne Agent, ohne Warten. Löschen Sie, was Sie nicht beibringen wollten.",
+    "skillsEmpty": "Noch nichts beigebracht. Erzählen Sie im Gespräch von etwas — einem Lied, einer Seite, einem Programm — und es steht hier.",
+    "skillAction": {
+      "open-url": "Öffnet",
+      "open-path": "Öffnet auf diesem Rechner"
+    }
   },
   "layout": {
     "title": "Layout",

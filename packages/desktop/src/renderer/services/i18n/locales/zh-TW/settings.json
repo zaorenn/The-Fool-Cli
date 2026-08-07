@@ -1676,7 +1676,14 @@
     "placeholder": "還沒有記住任何內容。寫下你希望它知道的事，或者直接開始說話。",
     "unsaved": "有未儲存的修改",
     "upToDate": "已是最新",
-    "revert": "還原"
+    "revert": "還原",
+    "skillsTab": "技能",
+    "skillsHint": "你教會 The Fool 自己去做的事。說出來就立刻執行——不用代理，不用等。不想教的可以刪掉。",
+    "skillsEmpty": "還沒教過什麼。在對話裡說說某樣東西——一首歌、一個頁面、一個程式——它就會出現在這裡。",
+    "skillAction": {
+      "open-url": "開啟",
+      "open-path": "在本機開啟"
+    }
   },
   "layout": {
     "title": "版面",

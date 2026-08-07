@@ -1674,7 +1674,14 @@
     "placeholder": "Rien de retenu pour l’instant. Écrivez ce qu’il faut savoir, ou commencez simplement à parler.",
     "unsaved": "Modifications non enregistrées",
     "upToDate": "À jour",
-    "revert": "Rétablir"
+    "revert": "Rétablir",
+    "skillsTab": "Compétences",
+    "skillsHint": "Ce que vous avez appris à The Fool à faire tout seul. Chacune s'exécute dès que vous le dites — sans agent, sans attente. Supprimez ce que vous ne vouliez pas lui apprendre.",
+    "skillsEmpty": "Rien d'appris pour l'instant. Parlez de quelque chose dans une conversation — une chanson, une page, un programme — et cela apparaîtra ici.",
+    "skillAction": {
+      "open-url": "Ouvre",
+      "open-path": "Ouvre sur cet ordinateur"
+    }
   },
   "layout": {
     "title": "Disposition",

@@ -1677,7 +1677,14 @@
     "placeholder": "Nada memorizado ainda. Escreva o que quiser que ele saiba, ou simplesmente comece a falar.",
     "unsaved": "Alterações não salvas",
     "upToDate": "Em dia",
-    "revert": "Reverter"
+    "revert": "Reverter",
+    "skillsTab": "Habilidades",
+    "skillsHint": "Coisas que você ensinou The Fool a fazer sozinho. Cada uma acontece assim que você fala — sem agente, sem espera. Apague o que não quis ensinar.",
+    "skillsEmpty": "Nada ensinado ainda. Fale de algo numa conversa — uma música, uma página, um programa — e aparecerá aqui.",
+    "skillAction": {
+      "open-url": "Abre",
+      "open-path": "Abre neste computador"
+    }
   },
   "layout": {
     "title": "Layout",

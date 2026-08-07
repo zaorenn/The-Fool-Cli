@@ -1674,7 +1674,14 @@
     "placeholder": "Henüz bir şey hatırlanmıyor. Bilinmesini istediğin her şeyi yaz ya da konuşmaya başla.",
     "unsaved": "Kaydedilmemiş değişiklikler",
     "upToDate": "Güncel",
-    "revert": "Geri al"
+    "revert": "Geri al",
+    "skillsTab": "Beceriler",
+    "skillsHint": "The Fool'a kendi kendine yapmayı öğrettiğiniz şeyler. Her biri siz söyler söylemez çalışır — ajan yok, bekleme yok. Öğretmek istemediğiniz varsa silin.",
+    "skillsEmpty": "Henüz bir şey öğretilmedi. Sohbette bir şeyden bahsedin — bir şarkı, bir sayfa, bir program — burada görünür.",
+    "skillAction": {
+      "open-url": "Açar",
+      "open-path": "Bu bilgisayarda açar"
+    }
   },
   "layout": {
     "title": "Yerleşim",
