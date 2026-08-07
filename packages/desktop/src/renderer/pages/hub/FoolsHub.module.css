@@ -253,3 +253,50 @@
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
+
+/* ── the shape the layout editor chose ─────────────────────────────────────── */
+
+/*
+ * The Hub's classes are hashed, so these live here rather than in
+ * `surface-shapes.css` where the other three surfaces' rules are: only this file
+ * can name `.grid` and `.card`. The selector is the same document attribute,
+ * reached through `:global` because the attribute is on the document root and
+ * the class is local to this module.
+ */
+
+/* A list rather than a gallery: one workspace per row, laid out to be scanned
+   down instead of looked over. */
+:global(html[data-fool-hub-cards='list']) .grid {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+:global(html[data-fool-hub-cards='list']) .card {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px;
+}
+
+/* In a row the body is the middle of the line, not a block under the title. */
+:global(html[data-fool-hub-cards='list']) .cardBody {
+  flex: 1;
+  min-width: 0;
+}
+
+:global(html[data-fool-hub-density='compact']) .card {
+  padding: 8px 12px;
+  gap: 6px;
+}
+
+:global(html[data-fool-hub-density='compact']) .grid {
+  gap: 8px;
+}
+
+:global(html[data-fool-hub-motion='none']) .card {
+  transition: none;
+}
+
+:global(html[data-fool-hub-motion='calm']) .card {
+  transition-duration: 80ms;
+}

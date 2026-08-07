@@ -1,0 +1,120 @@
+/**
+ * What a chosen shape actually does.
+ *
+ * The layout editor publishes each surface's choices as attributes on the
+ * document root (see `applySurfaceShape`), and this is the other half: the rules
+ * those attributes select. Keeping them here rather than in each component is
+ * what makes a surface shapeable without being rewritten — the Hub obeys its
+ * layout by existing, not by having a second Hub written for it.
+ *
+ * Only the non-default values appear. The default of every axis is what the app
+ * already drew, so a person who never opens the editor gets no rules at all
+ * rather than a stylesheet re-asserting what was already true.
+ *
+ * `!important` appears only where it is beating an inline style that the
+ * component sets itself. Where the app uses a class, so does this.
+ */
+
+/* ---------------------------------------------------------------------------
+ * Chat
+ * ------------------------------------------------------------------------ */
+
+/* Flat: a transcript rather than a conversation. The bubble loses its fill and
+   its corners and keeps a rule down the side, so the eye still finds where one
+   message ends without a shape around each. */
+html[data-fool-chat-bubbles='flat'] .chat-message-body {
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding-left: 10px !important;
+  padding-right: 0 !important;
+  border-left: 2px solid var(--border-base);
+}
+
+html[data-fool-chat-density='compact'] .chat-message-body {
+  padding-top: 3px !important;
+  padding-bottom: 3px !important;
+  line-height: 1.45;
+}
+
+/* A compact conversation gives its messages less air between them, which is the
+   whole of what "compact" means to somebody reading a long one. */
+html[data-fool-chat-density='compact'] .chat-surface-container {
+  --chat-message-gap: 8px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Fool's Hub
+ *
+ * The Hub's own classes are hashed by CSS Modules, so its two rules live in
+ * `FoolsHub.module.css` next to the names they match. Nothing here.
+ * ------------------------------------------------------------------------ */
+
+/* ---------------------------------------------------------------------------
+ * The frame every surface sits inside
+ * ------------------------------------------------------------------------ */
+
+/* The sidebar on the right. Reordering the flex children rather than moving
+   anything, so the drag-to-resize handle and the collapse animation keep
+   working — they are positioned relative to the sider, not to the window. */
+html[data-fool-frame-sider='right'] .layout {
+  flex-direction: row-reverse;
+}
+
+html[data-fool-frame-sider='right'] .layout-sider {
+  border-left: 1px solid var(--border-base);
+  border-right: none;
+}
+
+/* Hidden means gone, not narrow. Someone who chose this wants the window to be
+   the conversation; leaving a stub would be neither one thing nor the other. */
+html[data-fool-frame-sider='hidden'] .layout-sider {
+  display: none;
+}
+
+/* A slim title bar. The buttons keep their hit area — shrinking a window
+   control below what a pointer can reliably hit is not a style choice. */
+html[data-fool-frame-titlebar='slim'] .app-titlebar {
+  min-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+html[data-fool-frame-titlebar='slim'] .app-titlebar__button {
+  transform: scale(0.9);
+}
+
+html[data-fool-frame-density='compact'] .layout-sider-header {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+html[data-fool-frame-density='compact'] .chat-history__item,
+html[data-fool-frame-density='compact'] .settings-sider__item {
+  min-height: 28px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Movement, on every surface
+ *
+ * `none` is the accessibility floor rather than a look, so it is the one rule
+ * here that is allowed to be blunt: nothing animates, including anything a user
+ * built in the animation editor. Somebody who cannot tolerate motion has said
+ * so, and a motion they made earlier does not outrank that.
+ * ------------------------------------------------------------------------ */
+
+html[data-fool-chat-motion='none'] .chat-message-body,
+html[data-fool-hub-motion='none'] [class*='card'],
+html[data-fool-frame-motion='none'] .layout-sider,
+html[data-fool-frame-motion='none'] .app-titlebar {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Calm keeps what reports a value — a progress bar still moves — and drops the
+   decoration. Expressed as a shorter duration rather than as a list of
+   exceptions, so a motion added later is calmed without being enumerated. */
+html[data-fool-chat-motion='calm'] .chat-message-body,
+html[data-fool-frame-motion='calm'] .layout-sider {
+  animation-duration: 0.12s !important;
+  transition-duration: 0.12s !important;
+}

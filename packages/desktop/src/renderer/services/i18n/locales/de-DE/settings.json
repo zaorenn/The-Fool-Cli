@@ -1673,19 +1673,32 @@
     "subtitle": "Ein Theme bestimmt, welche Farben die App überall hat. Das Layout bestimmt die Form eines einzelnen Fensters — du kannst deine Farben behalten und die Sprachseite trotzdem von einer Spalte in ein Zifferblatt verwandeln.",
     "surface": "Fenster",
     "surfaceName": {
-      "voice": "Sprachchat"
+      "voice": "Sprachchat",
+      "chat": "Chat",
+      "hub": "Fool's Hub",
+      "frame": "App-Rahmen"
     },
     "wearing": "Aktuell",
     "presetName": {
       "instrument": "Instrument",
-      "hud": "HUD"
+      "hud": "HUD",
+      "column": "Spalte",
+      "transcript": "Mitschrift",
+      "gallery": "Galerie",
+      "index": "Index",
+      "standard": "Standard",
+      "focused": "Fokussiert"
     },
     "option": {
       "shell": "Aufbau",
       "meter": "Ton",
       "panel": "Einstellungen",
       "motion": "Bewegung",
-      "density": "Dichte"
+      "density": "Dichte",
+      "bubbles": "Nachrichten",
+      "cards": "Arbeitsbereiche",
+      "sider": "Seitenleiste",
+      "titlebar": "Titelleiste"
     },
     "value": {
       "shell": {
@@ -1708,6 +1721,23 @@
       "density": {
         "comfortable": "Großzügig",
         "compact": "Kompakt"
+      },
+      "bubbles": {
+        "bubbles": "Sprechblasen",
+        "flat": "Flache Mitschrift"
+      },
+      "cards": {
+        "grid": "Galerie",
+        "list": "Liste"
+      },
+      "sider": {
+        "left": "Links",
+        "right": "Rechts",
+        "hidden": "Ausgeblendet"
+      },
+      "titlebar": {
+        "full": "Voll",
+        "slim": "Schmal"
       }
     },
     "save": "Als meins speichern",
@@ -1737,7 +1767,42 @@
     "previewTitle": "Eine Fläche",
     "previewBody": "Hier sieht alles schon vor dem Speichern so aus, wie die Regler sagen.",
     "previewChip": "ruhig",
-    "previewChipAccent": "Akzent"
+    "previewChipAccent": "Akzent",
+    "motion": {
+      "title": "Bewegung",
+      "subtitle": "Eine Bewegung entsteht durch Auswählen, nicht durch CSS. Was sich bewegt, wie es erscheint und wie schnell; ansehen, dann hinzufügen.",
+      "what": "Was sich bewegt",
+      "how": "Wie es erscheint",
+      "pacing": "Charakter",
+      "speed": "Tempo — {{ms}} ms",
+      "distance": "Weg — {{px}} px",
+      "sample": "Eine Nachricht",
+      "replay": "Abspielen",
+      "add": "Bewegung hinzufügen",
+      "built": "Hinzugefügt",
+      "full": "Mehr geht nicht ({{count}}).",
+      "summary": "{{what}}, {{how}}, {{ms}} ms",
+      "target": {
+        "message": "Eine Nachricht",
+        "card": "Arbeitsbereich-Karte",
+        "sider": "Seitenleiste",
+        "titlebar": "Titelleiste",
+        "button": "Eine Schaltfläche"
+      },
+      "move": {
+        "fade": "Blendet ein",
+        "rise": "Von unten herauf",
+        "fall": "Von oben herab",
+        "in-from-left": "Von links",
+        "in-from-right": "Von rechts",
+        "pop": "Springt hervor"
+      },
+      "easing": {
+        "smooth": "Weich",
+        "sharp": "Knapp",
+        "spring": "Federnd"
+      }
+    }
   },
   "hub": {
     "title": "Fool's Hub",

@@ -257,7 +257,11 @@ const MessageText: React.FC<{ message: IMessageText; showCopyRow?: boolean }> = 
           </div>
         )}
         <div
-          className={classNames('min-w-0 [&>p:first-child]:mt-0px [&>p:last-child]:mb-0px', {
+          // `chat-message-body` is the handle the chat surface's layout is
+          // written against. A stable name rather than a utility soup, because a
+          // stylesheet has to find this element to flatten it, and the radius
+          // below is an inline style it has to be able to beat.
+          className={classNames('chat-message-body min-w-0 [&>p:first-child]:mt-0px [&>p:last-child]:mb-0px', {
             'bg-aou-2 p-6px md:p-8px': isUserMessage || cronMeta,
             'bg-3 p-6px md:p-8px': isTeammateMessage,
             'w-full': !(isUserMessage || cronMeta || isTeammateMessage),

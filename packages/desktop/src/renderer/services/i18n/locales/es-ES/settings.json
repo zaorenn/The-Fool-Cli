@@ -1673,19 +1673,32 @@
     "subtitle": "Un tema decide de qué color es toda la aplicación. La disposición decide la forma de una ventana: puedes conservar tus colores y aun así cambiar la página de voz de una columna a un dial.",
     "surface": "Ventana",
     "surfaceName": {
-      "voice": "Conversación por voz"
+      "voice": "Conversación por voz",
+      "chat": "Chat",
+      "hub": "Fool's Hub",
+      "frame": "Marco de la app"
     },
     "wearing": "Actual",
     "presetName": {
       "instrument": "Instrumento",
-      "hud": "HUD"
+      "hud": "HUD",
+      "column": "Columna",
+      "transcript": "Transcripción",
+      "gallery": "Galería",
+      "index": "Índice",
+      "standard": "Estándar",
+      "focused": "Enfocado"
     },
     "option": {
       "shell": "Composición",
       "meter": "Sonido",
       "panel": "Ajustes",
       "motion": "Movimiento",
-      "density": "Densidad"
+      "density": "Densidad",
+      "bubbles": "Mensajes",
+      "cards": "Espacios de trabajo",
+      "sider": "Barra lateral",
+      "titlebar": "Barra de título"
     },
     "value": {
       "shell": {
@@ -1708,6 +1721,23 @@
       "density": {
         "comfortable": "Holgada",
         "compact": "Compacta"
+      },
+      "bubbles": {
+        "bubbles": "Burbujas",
+        "flat": "Transcripción plana"
+      },
+      "cards": {
+        "grid": "Galería",
+        "list": "Lista"
+      },
+      "sider": {
+        "left": "A la izquierda",
+        "right": "A la derecha",
+        "hidden": "Oculta"
+      },
+      "titlebar": {
+        "full": "Completa",
+        "slim": "Estrecha"
       }
     },
     "save": "Guardar como mía",
@@ -1737,7 +1767,42 @@
     "previewTitle": "Un panel",
     "previewBody": "Aquí todo lleva lo que dicen los deslizadores, antes de guardar.",
     "previewChip": "discreto",
-    "previewChipAccent": "acento"
+    "previewChipAccent": "acento",
+    "motion": {
+      "title": "Movimiento",
+      "subtitle": "Un movimiento se arma eligiendo, no escribiendo CSS. Qué se mueve, cómo llega y a qué velocidad; míralo y añádelo.",
+      "what": "Qué se mueve",
+      "how": "Cómo llega",
+      "pacing": "Carácter",
+      "speed": "Velocidad — {{ms}} ms",
+      "distance": "Distancia — {{px}} px",
+      "sample": "Un mensaje",
+      "replay": "Reproducir",
+      "add": "Añadir movimiento",
+      "built": "Añadidos",
+      "full": "Este es el máximo ({{count}}).",
+      "summary": "{{what}}, {{how}}, {{ms}} ms",
+      "target": {
+        "message": "Un mensaje",
+        "card": "Tarjeta de espacio de trabajo",
+        "sider": "Barra lateral",
+        "titlebar": "Barra de título",
+        "button": "Un botón"
+      },
+      "move": {
+        "fade": "Aparece gradualmente",
+        "rise": "De abajo arriba",
+        "fall": "De arriba abajo",
+        "in-from-left": "Desde la izquierda",
+        "in-from-right": "Desde la derecha",
+        "pop": "Aparece de golpe"
+      },
+      "easing": {
+        "smooth": "Suave",
+        "sharp": "Seco",
+        "spring": "Con rebote"
+      }
+    }
   },
   "hub": {
     "title": "Fool's Hub",

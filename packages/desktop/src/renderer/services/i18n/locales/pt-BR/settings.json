@@ -1676,19 +1676,32 @@
     "subtitle": "Um tema decide a cor do aplicativo inteiro. O layout decide o formato de uma janela — você mantém suas cores e ainda assim muda a página de voz de uma coluna para um mostrador.",
     "surface": "Janela",
     "surfaceName": {
-      "voice": "Conversa por voz"
+      "voice": "Conversa por voz",
+      "chat": "Conversa",
+      "hub": "Fool's Hub",
+      "frame": "Moldura do app"
     },
     "wearing": "Atual",
     "presetName": {
       "instrument": "Instrumento",
-      "hud": "HUD"
+      "hud": "HUD",
+      "column": "Coluna",
+      "transcript": "Transcrição",
+      "gallery": "Galeria",
+      "index": "Índice",
+      "standard": "Padrão",
+      "focused": "Focado"
     },
     "option": {
       "shell": "Composição",
       "meter": "Som",
       "panel": "Configurações",
       "motion": "Movimento",
-      "density": "Densidade"
+      "density": "Densidade",
+      "bubbles": "Mensagens",
+      "cards": "Espaços de trabalho",
+      "sider": "Barra lateral",
+      "titlebar": "Barra de título"
     },
     "value": {
       "shell": {
@@ -1711,6 +1724,23 @@
       "density": {
         "comfortable": "Folgado",
         "compact": "Compacto"
+      },
+      "bubbles": {
+        "bubbles": "Balões",
+        "flat": "Transcrição plana"
+      },
+      "cards": {
+        "grid": "Galeria",
+        "list": "Lista"
+      },
+      "sider": {
+        "left": "À esquerda",
+        "right": "À direita",
+        "hidden": "Oculta"
+      },
+      "titlebar": {
+        "full": "Completa",
+        "slim": "Estreita"
       }
     },
     "save": "Salvar como meu",
@@ -1740,7 +1770,42 @@
     "previewTitle": "Um painel",
     "previewBody": "Aqui tudo já usa o que os controles dizem, antes de salvar.",
     "previewChip": "discreto",
-    "previewChipAccent": "destaque"
+    "previewChipAccent": "destaque",
+    "motion": {
+      "title": "Movimento",
+      "subtitle": "Monte um movimento escolhendo, sem escrever CSS. O que se move, como chega e com que rapidez; veja e adicione.",
+      "what": "O que se move",
+      "how": "Como chega",
+      "pacing": "Ritmo",
+      "speed": "Velocidade — {{ms}} ms",
+      "distance": "Distância — {{px}} px",
+      "sample": "Uma mensagem",
+      "replay": "Reproduzir",
+      "add": "Adicionar movimento",
+      "built": "Adicionados",
+      "full": "Este é o limite ({{count}}).",
+      "summary": "{{what}}, {{how}}, {{ms}} ms",
+      "target": {
+        "message": "Uma mensagem",
+        "card": "Cartão de espaço de trabalho",
+        "sider": "Barra lateral",
+        "titlebar": "Barra de título",
+        "button": "Um botão"
+      },
+      "move": {
+        "fade": "Surge suavemente",
+        "rise": "De baixo para cima",
+        "fall": "De cima para baixo",
+        "in-from-left": "Pela esquerda",
+        "in-from-right": "Pela direita",
+        "pop": "Aparece saltando"
+      },
+      "easing": {
+        "smooth": "Suave",
+        "sharp": "Direto",
+        "spring": "Elástico"
+      }
+    }
   },
   "hub": {
     "title": "Fool's Hub",

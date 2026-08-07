@@ -106,7 +106,7 @@ vi.mock('@renderer/hooks/config/useSurfaceLayout', () => ({
       options: { shell: 'hud', meter: 'ring', panel: 'drawer', motion: 'calm', density: 'comfortable' },
     },
   }),
-  wearLayout: async (_surface: string, layoutId: string) => void worn.push(layoutId),
+  wearLayout: async (surface: string, layoutId: string) => void worn.push(`${surface}:${layoutId}`),
 }));
 
 const { applySpokenSetting, listSpokenVoices } = await import('@renderer/pages/voice/runtime/settingsTool');
@@ -225,17 +225,17 @@ describe('changing the layout out loud', () => {
 
   it('takes a built-in by name', async () => {
     await applySpokenSetting('layout', 'HUD', t);
-    expect(worn).toEqual(['hud']);
+    expect(worn).toEqual(['voice:hud']);
   });
 
   it('takes one the user built and named themselves', async () => {
     await applySpokenSetting('layout', 'my quiet one', t);
-    expect(worn).toEqual(['my quiet one']);
+    expect(worn).toEqual(['voice:my quiet one']);
   });
 
   it('takes part of a name, because that is how people refer to their own things', async () => {
     await applySpokenSetting('layout', 'quiet', t);
-    expect(worn).toEqual(['my quiet one']);
+    expect(worn).toEqual(['voice:my quiet one']);
   });
 
   it('refuses a layout that does not exist rather than changing nothing in silence', async () => {
@@ -274,5 +274,39 @@ describe('changing the workspace out loud', () => {
   it('refuses one that does not exist rather than changing nothing in silence', async () => {
     await expect(applySpokenSetting('workspace', 'piano', t)).rejects.toThrow();
     expect(entered).toEqual([]);
+  });
+});
+
+/**
+ * Naming a layout that belongs to another window.
+ *
+ * Now that four surfaces can be shaped, "put the list one on" is a sentence
+ * about the Hub, and the person saying it has no idea the app files layouts by
+ * window. Making them say which window would be asking them to know the data
+ * model. So the name decides the surface: a layout knows what it is for.
+ */
+describe('changing a layout that belongs to another window', () => {
+  beforeEach(() => {
+    worn.length = 0;
+  });
+
+  it('puts a Hub layout on the Hub, not on the voice page', async () => {
+    await applySpokenSetting('layout', 'Index', t);
+    expect(worn).toEqual(['hub:index']);
+  });
+
+  it('puts a chat layout on the chat window', async () => {
+    await applySpokenSetting('layout', 'Transcript', t);
+    expect(worn).toEqual(['chat:transcript']);
+  });
+
+  it('puts a frame layout on the frame', async () => {
+    await applySpokenSetting('layout', 'Focused', t);
+    expect(worn).toEqual(['frame:focused']);
+  });
+
+  it('still refuses a name no window has', async () => {
+    await expect(applySpokenSetting('layout', 'spaceship', t)).rejects.toThrow();
+    expect(worn).toEqual([]);
   });
 });

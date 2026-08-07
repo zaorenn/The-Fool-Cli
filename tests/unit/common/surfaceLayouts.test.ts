@@ -18,6 +18,8 @@ import {
   sanitizeLayoutOptions,
   sanitizeLayoutPresets,
   sanitizeSurfaceLayouts,
+  SURFACE_IDS,
+  surfaceOptionKeys,
   type LayoutPreset,
 } from '@/common/config/surfaceLayouts';
 
@@ -142,8 +144,11 @@ describe('layoutsForSurface', () => {
   it('offers the built-ins first, then the ones the user made', () => {
     const library = sanitizeLayoutPresets({ mine: preset('Mine') });
     const available = layoutsForSurface('voice', library);
+    // The ones this surface ships with, not every one in the app: built-ins for
+    // three other surfaces are not supposed to appear in the voice picker.
+    const shipped = BUILTIN_LAYOUTS.filter((entry) => entry.surface === 'voice').length;
 
-    expect(available.slice(0, BUILTIN_LAYOUTS.length).every((entry) => entry.builtin)).toBe(true);
+    expect(available.slice(0, shipped).every((entry) => entry.builtin)).toBe(true);
     expect(available.at(-1)?.name).toBe('Mine');
   });
 });
@@ -152,5 +157,58 @@ describe('normalizeLayoutName', () => {
   it('matches the way a name is said rather than the way it was typed', () => {
     expect(normalizeLayoutName('  My   Quiet One ')).toBe('my quiet one');
     expect(normalizeLayoutName('x'.repeat(90))).toHaveLength(48);
+  });
+});
+
+/**
+ * More than one window whose shape can be chosen.
+ *
+ * The editor shipped able to shape exactly one surface, which made "customise
+ * the app" mean "customise the voice page". These pin the widening: every
+ * surface offers only the axes that mean something on it — a message bubble is
+ * not a thing the sidebar has, a level meter is not a thing the Hub has — while
+ * the axes they share stay one decision with one name.
+ */
+describe('a surface other than voice', () => {
+  it('offers every surface a shape', () => {
+    expect([...SURFACE_IDS].sort()).toEqual(['chat', 'frame', 'hub', 'voice']);
+  });
+
+  it("gives each surface its own axes, not the voice page's", () => {
+    expect(surfaceOptionKeys('voice')).toContain('meter');
+    expect(surfaceOptionKeys('chat')).not.toContain('meter');
+    expect(surfaceOptionKeys('chat')).toContain('bubbles');
+    expect(surfaceOptionKeys('hub')).toContain('cards');
+    expect(surfaceOptionKeys('frame')).toContain('sider');
+  });
+
+  it('shares the axes that mean the same thing everywhere', () => {
+    for (const surface of SURFACE_IDS) {
+      expect(surfaceOptionKeys(surface)).toContain('motion');
+      expect(surfaceOptionKeys(surface)).toContain('density');
+    }
+  });
+
+  it('ships at least two shapes for every surface, so the picker is never a dead end', () => {
+    for (const surface of SURFACE_IDS) {
+      expect(layoutsForSurface(surface, {}).length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('resolves a default for every surface', () => {
+    for (const surface of SURFACE_IDS) {
+      expect(resolveLayout(surface, {}, {}).surface).toBe(surface);
+    }
+  });
+
+  it("does not let one surface wear another surface's shape", () => {
+    const worn = resolveLayout('hub', { hub: 'instrument' }, {});
+    expect(worn.surface).toBe('hub');
+  });
+
+  it('keeps a stored preset made before the other surfaces existed', () => {
+    const library = sanitizeLayoutPresets({ mine: preset('Mine') });
+    expect(library.mine.surface).toBe('voice');
+    expect(library.mine.options.meter).toBe('ring');
   });
 });

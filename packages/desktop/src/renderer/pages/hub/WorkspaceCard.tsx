@@ -46,7 +46,15 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, active, onEnte
   ].filter((fact) => fact.length > 0);
 
   return (
-    <article className={classNames(styles.card, active && styles.cardActive)} data-testid={`workspace-${workspace.id}`}>
+    // `data-fool-target` is what a movement built in the layout editor aims at.
+    // An attribute rather than a class because this file's classes are hashed by
+    // CSS Modules, and a generated stylesheet lives outside the module and so
+    // cannot name them.
+    <article
+      className={classNames(styles.card, active && styles.cardActive)}
+      data-fool-target='card'
+      data-testid={`workspace-${workspace.id}`}
+    >
       <header className={styles.cardHead}>
         <Typography.Text className='text-15px font-600 text-t-primary'>{workspace.name}</Typography.Text>
         {active ? (

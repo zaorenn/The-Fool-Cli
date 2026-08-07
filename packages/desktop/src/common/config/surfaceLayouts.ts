@@ -26,25 +26,40 @@
  * store the user and a language model can both write to.
  */
 
+import { sanitizeMotions, type LayoutMotion } from './layoutMotions';
 import { defaultLayoutTokens, sanitizeLayoutTokens, type LayoutTokens } from './layoutTokens';
 
-/** A window whose shape can be chosen. One so far; the shape of the API is the point. */
-export type SurfaceId = 'voice';
+/** A window whose shape can be chosen. */
+export type SurfaceId = 'voice' | 'chat' | 'hub' | 'frame';
 
-export const SURFACE_IDS: readonly SurfaceId[] = ['voice'];
+export const SURFACE_IDS: readonly SurfaceId[] = ['voice', 'chat', 'hub', 'frame'];
 
 /**
- * The decisions a layout is made of.
+ * The decisions a layout is made of, across every surface.
+ *
+ * One flat shape rather than a type per surface, because these are stored,
+ * spoken about and sanitised as one thing, and a union would put a cast at every
+ * one of those boundaries to buy nothing. Which of these keys a given surface
+ * actually answers is `SURFACE_OPTION_KEYS` below — a level meter is not a
+ * question the Hub has an opinion about.
  *
  * Every one of these is something a person can say out loud about a screen, and
  * every combination has to be usable — there is no option here that only makes
  * sense next to one value of another.
  */
 export type LayoutOptions = {
-  /** Which composition draws the surface. */
+  /** Which composition draws the voice surface. */
   shell: 'instrument' | 'hud';
   /** How the sound is drawn: a straight meter, or wrapped into a ring. */
   meter: 'bars' | 'ring';
+  /** Whether a message is drawn as a bubble or as a line of a transcript. */
+  bubbles: 'bubbles' | 'flat';
+  /** Whether the Hub shows its workspaces as a gallery or as a list. */
+  cards: 'grid' | 'list';
+  /** Which side the sidebar is on, or whether it is there at all. */
+  sider: 'left' | 'right' | 'hidden';
+  /** How much room the title bar takes. */
+  titlebar: 'full' | 'slim';
   /** Whether the settings sit beside the conversation or slide over it. */
   panel: 'inline' | 'drawer';
   /** How much the surface moves. `none` is the accessibility floor, not a style. */
@@ -65,12 +80,39 @@ export type LayoutOptionKey = keyof LayoutOptions;
 export const LAYOUT_OPTION_VALUES: { [K in LayoutOptionKey]: readonly LayoutOptions[K][] } = {
   shell: ['instrument', 'hud'],
   meter: ['bars', 'ring'],
+  bubbles: ['bubbles', 'flat'],
+  cards: ['grid', 'list'],
+  sider: ['left', 'right', 'hidden'],
+  titlebar: ['full', 'slim'],
   panel: ['inline', 'drawer'],
   motion: ['full', 'calm', 'none'],
   density: ['comfortable', 'compact'],
 };
 
 export const LAYOUT_OPTION_KEYS = Object.keys(LAYOUT_OPTION_VALUES) as LayoutOptionKey[];
+
+/**
+ * Which questions each surface actually answers.
+ *
+ * Showing somebody a level-meter switch on the sidebar page is how a settings
+ * screen stops being trusted: they turn it, nothing happens, and now no dial on
+ * the page is believable. So the editor asks a surface what it has an opinion
+ * about, and a stored value for a key outside that list is ignored rather than
+ * worn.
+ *
+ * `motion` and `density` are on every surface deliberately. They mean the same
+ * thing everywhere, and splitting them per surface would make "calm the whole
+ * app down" four separate errands.
+ */
+export const SURFACE_OPTION_KEYS: Record<SurfaceId, readonly LayoutOptionKey[]> = {
+  voice: ['shell', 'meter', 'panel', 'motion', 'density'],
+  chat: ['bubbles', 'panel', 'motion', 'density'],
+  hub: ['cards', 'motion', 'density'],
+  frame: ['sider', 'titlebar', 'motion', 'density'],
+};
+
+export const surfaceOptionKeys = (surface: SurfaceId): readonly LayoutOptionKey[] =>
+  SURFACE_OPTION_KEYS[surface] ?? SURFACE_OPTION_KEYS.voice;
 
 /** One named shape for one surface. */
 export type LayoutPreset = {
@@ -91,6 +133,15 @@ export type LayoutPreset = {
    * between picking a look and having one.
    */
   tokens: LayoutTokens;
+  /**
+   * Movements the user built, which the app has none of until they do.
+   *
+   * Part of the layout rather than a setting beside it, for the same reason the
+   * dials are: someone who made a shape where messages rise into place means
+   * that as part of the shape. Wearing the layout and not getting the movement
+   * would be wearing half of it.
+   */
+  motions: LayoutMotion[];
 };
 
 /**
@@ -105,31 +156,114 @@ export type LayoutPreset = {
  * rather than a stack of cards, and the settings behind a drawer so the
  * conversation has the screen to itself.
  */
+const baseOptions: LayoutOptions = {
+  shell: 'instrument',
+  meter: 'bars',
+  bubbles: 'bubbles',
+  cards: 'grid',
+  sider: 'left',
+  titlebar: 'full',
+  panel: 'inline',
+  motion: 'full',
+  density: 'comfortable',
+};
+
 export const BUILTIN_LAYOUTS: readonly LayoutPreset[] = [
   {
     id: 'instrument',
     name: 'Instrument',
     surface: 'voice',
     builtin: true,
-    options: { shell: 'instrument', meter: 'bars', panel: 'inline', motion: 'full', density: 'comfortable' },
+    options: { ...baseOptions },
     tokens: defaultLayoutTokens(),
+    motions: [],
   },
   {
     id: 'hud',
     name: 'HUD',
     surface: 'voice',
     builtin: true,
-    options: { shell: 'hud', meter: 'ring', panel: 'drawer', motion: 'full', density: 'comfortable' },
+    options: { ...baseOptions, shell: 'hud', meter: 'ring', panel: 'drawer' },
     tokens: defaultLayoutTokens(),
+    motions: [],
+  },
+  // Chat. `column` is the app as it has always drawn a conversation, so an
+  // update leaves an existing screen exactly where its owner left it.
+  {
+    id: 'column',
+    name: 'Column',
+    surface: 'chat',
+    builtin: true,
+    options: { ...baseOptions },
+    tokens: defaultLayoutTokens(),
+    motions: [],
+  },
+  {
+    id: 'transcript',
+    name: 'Transcript',
+    surface: 'chat',
+    builtin: true,
+    options: { ...baseOptions, bubbles: 'flat', panel: 'drawer', density: 'compact' },
+    tokens: defaultLayoutTokens(),
+    motions: [],
+  },
+  // Hub.
+  {
+    id: 'gallery',
+    name: 'Gallery',
+    surface: 'hub',
+    builtin: true,
+    options: { ...baseOptions },
+    tokens: defaultLayoutTokens(),
+    motions: [],
+  },
+  {
+    id: 'index',
+    name: 'Index',
+    surface: 'hub',
+    builtin: true,
+    options: { ...baseOptions, cards: 'list', density: 'compact' },
+    tokens: defaultLayoutTokens(),
+    motions: [],
+  },
+  // The frame every surface sits inside.
+  {
+    id: 'standard',
+    name: 'Standard',
+    surface: 'frame',
+    builtin: true,
+    options: { ...baseOptions },
+    tokens: defaultLayoutTokens(),
+    motions: [],
+  },
+  {
+    id: 'focused',
+    name: 'Focused',
+    surface: 'frame',
+    builtin: true,
+    options: { ...baseOptions, sider: 'hidden', titlebar: 'slim', density: 'compact' },
+    tokens: defaultLayoutTokens(),
+    motions: [],
   },
 ];
 
-/** The shape a surface has when nothing has been chosen. */
-export const DEFAULT_LAYOUT_ID: Record<SurfaceId, string> = { voice: 'instrument' };
+/**
+ * The shape a surface has when nothing has been chosen.
+ *
+ * Every one of these reproduces what the app drew before it could be shaped at
+ * all. A layout arriving in an update and rearranging somebody's screen is not
+ * an improvement however good the new one is.
+ */
+export const DEFAULT_LAYOUT_ID: Record<SurfaceId, string> = {
+  voice: 'instrument',
+  chat: 'column',
+  hub: 'gallery',
+  frame: 'standard',
+};
 
 export const defaultLayoutOptions = (surface: SurfaceId): LayoutOptions => {
   const preset = BUILTIN_LAYOUTS.find((entry) => entry.id === DEFAULT_LAYOUT_ID[surface]);
-  return preset ? { ...preset.options } : { ...BUILTIN_LAYOUTS[0].options };
+  return preset ? { ...preset.options } : { ...baseOptions };
 };
 
 /** Which layout each surface is currently wearing. */
@@ -163,7 +297,11 @@ export const sanitizeLayoutOptions = (value: unknown, surface: SurfaceId = 'voic
   const record = value as Record<string, unknown>;
   const options = { ...base };
 
-  for (const key of LAYOUT_OPTION_KEYS) {
+  // Only the questions this surface answers. A stored `meter` on the Hub is not
+  // repaired into something meaningful — it is simply not one of the Hub's
+  // decisions, and carrying it would let a picker offer a switch that does
+  // nothing.
+  for (const key of surfaceOptionKeys(surface)) {
     const raw = record[key];
     const allowed = LAYOUT_OPTION_VALUES[key] as readonly string[];
     if (typeof raw === 'string' && allowed.includes(raw)) {
@@ -194,7 +332,13 @@ export const sanitizeLayoutPresets = (value: unknown): LayoutPresetLibrary => {
     if (name.length === 0 || builtinIds.has(name)) continue;
     if (typeof rawPreset !== 'object' || rawPreset === null) continue;
 
-    const record = rawPreset as { surface?: unknown; options?: unknown; name?: unknown; tokens?: unknown };
+    const record = rawPreset as {
+      surface?: unknown;
+      options?: unknown;
+      name?: unknown;
+      tokens?: unknown;
+      motions?: unknown;
+    };
     const surface = SURFACE_IDS.includes(record.surface as SurfaceId) ? (record.surface as SurfaceId) : 'voice';
 
     library[name] = {
@@ -204,6 +348,7 @@ export const sanitizeLayoutPresets = (value: unknown): LayoutPresetLibrary => {
       builtin: false,
       options: sanitizeLayoutOptions(record.options, surface),
       tokens: sanitizeLayoutTokens(record.tokens),
+      motions: sanitizeMotions(record.motions),
     };
   }
 
@@ -260,6 +405,7 @@ export const resolveLayout = (
       builtin: true,
       options: defaultLayoutOptions(surface),
       tokens: defaultLayoutTokens(),
+      motions: [],
     }
   );
 };

@@ -1673,19 +1673,32 @@
     "subtitle": "A theme decides what the app is coloured like everywhere. This decides what one window is shaped like — so you can keep your colours and still change the voice page from a column into a dial.",
     "surface": "Window",
     "surfaceName": {
-      "voice": "Voice chat"
+      "voice": "Voice chat",
+      "chat": "Chat",
+      "hub": "Fool's Hub",
+      "frame": "App frame"
     },
     "wearing": "Wearing",
     "presetName": {
       "instrument": "Instrument",
-      "hud": "HUD"
+      "hud": "HUD",
+      "column": "Column",
+      "transcript": "Transcript",
+      "gallery": "Gallery",
+      "index": "Index",
+      "standard": "Standard",
+      "focused": "Focused"
     },
     "option": {
       "shell": "Composition",
       "meter": "Sound",
       "panel": "Settings",
       "motion": "Movement",
-      "density": "Density"
+      "density": "Density",
+      "bubbles": "Messages",
+      "cards": "Workspaces",
+      "sider": "Sidebar",
+      "titlebar": "Title bar"
     },
     "value": {
       "shell": {
@@ -1708,6 +1721,23 @@
       "density": {
         "comfortable": "Comfortable",
         "compact": "Compact"
+      },
+      "bubbles": {
+        "bubbles": "Bubbles",
+        "flat": "Flat transcript"
+      },
+      "cards": {
+        "grid": "Gallery",
+        "list": "List"
+      },
+      "sider": {
+        "left": "On the left",
+        "right": "On the right",
+        "hidden": "Hidden"
+      },
+      "titlebar": {
+        "full": "Full",
+        "slim": "Slim"
       }
     },
     "save": "Save as mine",
@@ -1737,7 +1767,42 @@
     "previewTitle": "A panel",
     "previewBody": "Everything here wears what the sliders say, before you save it.",
     "previewChip": "quiet",
-    "previewChipAccent": "accent"
+    "previewChipAccent": "accent",
+    "motion": {
+      "title": "Movement",
+      "subtitle": "Build a movement by choosing, not by writing CSS. Pick what moves, how it arrives and how fast; watch it, then add it.",
+      "what": "What moves",
+      "how": "How it arrives",
+      "pacing": "Pacing",
+      "speed": "Speed — {{ms}}ms",
+      "distance": "Distance — {{px}}px",
+      "sample": "A message",
+      "replay": "Play",
+      "add": "Add this movement",
+      "built": "Built",
+      "full": "That is the most ({{count}}).",
+      "summary": "{{what}}, {{how}}, {{ms}}ms",
+      "target": {
+        "message": "A message",
+        "card": "A workspace card",
+        "sider": "The sidebar",
+        "titlebar": "The title bar",
+        "button": "A button"
+      },
+      "move": {
+        "fade": "Fades in",
+        "rise": "Comes up from below",
+        "fall": "Comes down from above",
+        "in-from-left": "Comes in from the left",
+        "in-from-right": "Comes in from the right",
+        "pop": "Pops in"
+      },
+      "easing": {
+        "smooth": "Smooth",
+        "sharp": "Sharp",
+        "spring": "Springy"
+      }
+    }
   },
   "hub": {
     "title": "Fool's Hub",

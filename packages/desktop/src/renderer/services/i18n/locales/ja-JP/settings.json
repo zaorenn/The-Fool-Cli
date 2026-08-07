@@ -1675,19 +1675,32 @@
     "subtitle": "テーマはアプリ全体の色を決め、レイアウトはひとつのウィンドウの形を決めます。色はそのままに、音声ページを一列からダイヤルに変えられます。",
     "surface": "ウィンドウ",
     "surfaceName": {
-      "voice": "音声チャット"
+      "voice": "音声チャット",
+      "chat": "チャット",
+      "hub": "Fool's Hub",
+      "frame": "アプリの枠"
     },
     "wearing": "現在",
     "presetName": {
       "instrument": "計器",
-      "hud": "HUD"
+      "hud": "HUD",
+      "column": "カラム",
+      "transcript": "書き起こし",
+      "gallery": "ギャラリー",
+      "index": "インデックス",
+      "standard": "標準",
+      "focused": "集中"
     },
     "option": {
       "shell": "構成",
       "meter": "音",
       "panel": "設定",
       "motion": "動き",
-      "density": "密度"
+      "density": "密度",
+      "bubbles": "メッセージ",
+      "cards": "ワークスペース",
+      "sider": "サイドバー",
+      "titlebar": "タイトルバー"
     },
     "value": {
       "shell": {
@@ -1710,6 +1723,23 @@
       "density": {
         "comfortable": "ゆったり",
         "compact": "コンパクト"
+      },
+      "bubbles": {
+        "bubbles": "吹き出し",
+        "flat": "フラットな書き起こし"
+      },
+      "cards": {
+        "grid": "ギャラリー",
+        "list": "リスト"
+      },
+      "sider": {
+        "left": "左",
+        "right": "右",
+        "hidden": "非表示"
+      },
+      "titlebar": {
+        "full": "標準",
+        "slim": "細め"
       }
     },
     "save": "自分のものとして保存",
@@ -1739,7 +1769,42 @@
     "previewTitle": "パネル",
     "previewBody": "保存する前から、ここはスライダーどおりに見えます。",
     "previewChip": "静か",
-    "previewChipAccent": "アクセント"
+    "previewChipAccent": "アクセント",
+    "motion": {
+      "title": "動き",
+      "subtitle": "CSS を書かず、選んで動きを作ります。何が、どう現れ、どのくらい速いか。見てから追加してください。",
+      "what": "動かすもの",
+      "how": "現れ方",
+      "pacing": "テンポ",
+      "speed": "速さ — {{ms}}ms",
+      "distance": "距離 — {{px}}px",
+      "sample": "メッセージ",
+      "replay": "再生",
+      "add": "この動きを追加",
+      "built": "追加済み",
+      "full": "これが上限です（{{count}}）。",
+      "summary": "{{what}}・{{how}}・{{ms}}ms",
+      "target": {
+        "message": "メッセージ",
+        "card": "ワークスペースのカード",
+        "sider": "サイドバー",
+        "titlebar": "タイトルバー",
+        "button": "ボタン"
+      },
+      "move": {
+        "fade": "ふわりと現れる",
+        "rise": "下から上へ",
+        "fall": "上から下へ",
+        "in-from-left": "左から入る",
+        "in-from-right": "右から入る",
+        "pop": "ぽんと現れる"
+      },
+      "easing": {
+        "smooth": "なめらか",
+        "sharp": "きびきび",
+        "spring": "弾む"
+      }
+    }
   },
   "hub": {
     "title": "Fool ハブ",

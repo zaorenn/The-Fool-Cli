@@ -6,9 +6,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { configService } from '@/common/config/configService';
+import { sanitizeMotions, type LayoutMotion } from '@/common/config/layoutMotions';
 import { defaultLayoutTokens, sanitizeLayoutTokens, type LayoutTokens } from '@/common/config/layoutTokens';
 import { applyLayoutTokens } from '@renderer/utils/theme/applyLayoutTokens';
 import {
+  DEFAULT_LAYOUT_ID,
   LAYOUT_PRESETS_CONFIG_KEY,
   MAX_LAYOUT_PRESETS,
   normalizeLayoutName,
@@ -66,7 +68,8 @@ export const saveLayoutPreset = async (
   surface: SurfaceId,
   name: string,
   options: LayoutOptions,
-  tokens: LayoutTokens = defaultLayoutTokens()
+  tokens: LayoutTokens = defaultLayoutTokens(),
+  motions: readonly LayoutMotion[] = []
 ): Promise<LayoutPreset | null> => {
   const id = normalizeLayoutName(name);
   if (id.length === 0) return null;
@@ -79,6 +82,7 @@ export const saveLayoutPreset = async (
     builtin: false,
     options: sanitizeLayoutOptions(options, surface),
     tokens: sanitizeLayoutTokens(tokens),
+    motions: sanitizeMotions(motions),
   };
 
   // Oldest first, so a library built up out loud never grows without bound.
@@ -103,8 +107,11 @@ export const deleteLayoutPreset = async (surface: SurfaceId, name: string): Prom
   // A surface left wearing something that no longer exists resolves back to its
   // default on the next read, but doing it here means the change is visible now
   // rather than on the next launch.
+  // Back to *this* surface's default. A named one here would put the voice
+  // page's shape on the Hub the moment somebody deleted a Hub layout they
+  // happened to be wearing.
   const selection = sanitizeSurfaceLayouts(configService.get(SURFACE_LAYOUT_CONFIG_KEY));
-  if (selection[surface] === id) await wearLayout(surface, 'instrument');
+  if (selection[surface] === id) await wearLayout(surface, DEFAULT_LAYOUT_ID[surface]);
   return true;
 };
 
@@ -112,7 +119,12 @@ export type SurfaceLayoutHandle = {
   layout: LayoutPreset;
   presets: LayoutPresetLibrary;
   wear: (layoutId: string) => Promise<void>;
-  save: (name: string, options: LayoutOptions, tokens?: LayoutTokens) => Promise<LayoutPreset | null>;
+  save: (
+    name: string,
+    options: LayoutOptions,
+    tokens?: LayoutTokens,
+    motions?: readonly LayoutMotion[]
+  ) => Promise<LayoutPreset | null>;
   remove: (name: string) => Promise<boolean>;
 };
 
@@ -148,7 +160,8 @@ export const useSurfaceLayout = (surface: SurfaceId): SurfaceLayoutHandle => {
     presets,
     wear: useCallback((layoutId: string) => wearLayout(surface, layoutId), [surface]),
     save: useCallback(
-      (name: string, options: LayoutOptions, tokens?: LayoutTokens) => saveLayoutPreset(surface, name, options, tokens),
+      (name: string, options: LayoutOptions, tokens?: LayoutTokens, motions?: readonly LayoutMotion[]) =>
+        saveLayoutPreset(surface, name, options, tokens, motions),
       [surface]
     ),
     remove: useCallback((name: string) => deleteLayoutPreset(surface, name), [surface]),

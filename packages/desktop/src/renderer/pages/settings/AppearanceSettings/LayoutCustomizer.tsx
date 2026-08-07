@@ -9,17 +9,19 @@ import { Button, Input, Select, Typography } from '@arco-design/web-react';
 import { Delete } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import {
-  LAYOUT_OPTION_KEYS,
   LAYOUT_OPTION_VALUES,
   layoutsForSurface,
   SURFACE_IDS,
+  surfaceOptionKeys,
   type LayoutOptionKey,
   type LayoutOptions,
   type SurfaceId,
 } from '@/common/config/surfaceLayouts';
 import { defaultLayoutTokens, type LayoutTokens } from '@/common/config/layoutTokens';
+import type { LayoutMotion } from '@/common/config/layoutMotions';
 import { useSurfaceLayout } from '@renderer/hooks/config/useSurfaceLayout';
 import { applyLayoutTokens } from '@renderer/utils/theme/applyLayoutTokens';
+import MotionBuilder from './MotionBuilder';
 import TokenEditor from './TokenEditor';
 
 /**
@@ -51,12 +53,14 @@ const LayoutCustomizer: React.FC = () => {
    */
   const [draft, setDraft] = useState<LayoutOptions>(layout.options);
   const [tokens, setTokens] = useState<LayoutTokens>(layout.tokens ?? defaultLayoutTokens());
+  const [motions, setMotions] = useState<LayoutMotion[]>(layout.motions);
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setDraft(layout.options);
     setTokens(layout.tokens ?? defaultLayoutTokens());
+    setMotions(layout.motions);
   }, [layout]);
 
   /**
@@ -73,13 +77,18 @@ const LayoutCustomizer: React.FC = () => {
   };
 
   const available = layoutsForSurface(surface, presets);
+  // Only what this surface answers. Asked twice — once to draw the switches,
+  // once to decide whether anything changed — because a difference in a key the
+  // surface does not use is not an edit the user made.
+  const keys = surfaceOptionKeys(surface);
   const tokensDirty = JSON.stringify(tokens) !== JSON.stringify(layout.tokens ?? defaultLayoutTokens());
-  const dirty = LAYOUT_OPTION_KEYS.some((key) => draft[key] !== layout.options[key]) || tokensDirty;
+  const motionsDirty = JSON.stringify(motions) !== JSON.stringify(layout.motions);
+  const dirty = keys.some((key) => draft[key] !== layout.options[key]) || tokensDirty || motionsDirty;
 
   const commit = async (): Promise<void> => {
     setSaving(true);
     try {
-      const saved = await save(name.trim() || t('settings.layout.untitled'), draft, tokens);
+      const saved = await save(name.trim() || t('settings.layout.untitled'), draft, tokens, motions);
       if (saved) setName('');
     } finally {
       setSaving(false);
@@ -128,7 +137,7 @@ const LayoutCustomizer: React.FC = () => {
       </div>
 
       <div className='grid grid-cols-2 gap-12px max-[560px]:grid-cols-1'>
-        {LAYOUT_OPTION_KEYS.map((key: LayoutOptionKey) => (
+        {keys.map((key: LayoutOptionKey) => (
           <label key={key} className='grid gap-5px'>
             <Typography.Text className='text-12px font-600 text-t-secondary'>
               {t(`settings.layout.option.${key}`)}
@@ -148,6 +157,10 @@ const LayoutCustomizer: React.FC = () => {
 
       {/* The dials, and a real card to watch while they are turned. */}
       <TokenEditor tokens={tokens} onChange={turn} />
+
+      {/* Movements, built by choosing rather than by writing. Saved with the
+          layout, so they arrive when it is worn. */}
+      <MotionBuilder motions={motions} onChange={setMotions} />
 
       {/* Saving is what gives an arrangement a name — the app is already
           wearing it, so the hint says what a name buys rather than implying

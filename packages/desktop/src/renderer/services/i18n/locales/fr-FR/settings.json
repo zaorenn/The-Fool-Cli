@@ -1673,19 +1673,32 @@
     "subtitle": "Un thème décide des couleurs de toute l’application. La disposition décide de la forme d’une fenêtre — vous gardez vos couleurs et transformez quand même la page vocale d’une colonne en cadran.",
     "surface": "Fenêtre",
     "surfaceName": {
-      "voice": "Conversation vocale"
+      "voice": "Conversation vocale",
+      "chat": "Discussion",
+      "hub": "Fool's Hub",
+      "frame": "Cadre de l'application"
     },
     "wearing": "Actuelle",
     "presetName": {
       "instrument": "Instrument",
-      "hud": "HUD"
+      "hud": "HUD",
+      "column": "Colonne",
+      "transcript": "Transcription",
+      "gallery": "Galerie",
+      "index": "Index",
+      "standard": "Standard",
+      "focused": "Concentré"
     },
     "option": {
       "shell": "Composition",
       "meter": "Son",
       "panel": "Réglages",
       "motion": "Mouvement",
-      "density": "Densité"
+      "density": "Densité",
+      "bubbles": "Messages",
+      "cards": "Espaces de travail",
+      "sider": "Barre latérale",
+      "titlebar": "Barre de titre"
     },
     "value": {
       "shell": {
@@ -1708,6 +1721,23 @@
       "density": {
         "comfortable": "Aérée",
         "compact": "Compacte"
+      },
+      "bubbles": {
+        "bubbles": "Bulles",
+        "flat": "Transcription à plat"
+      },
+      "cards": {
+        "grid": "Galerie",
+        "list": "Liste"
+      },
+      "sider": {
+        "left": "À gauche",
+        "right": "À droite",
+        "hidden": "Masquée"
+      },
+      "titlebar": {
+        "full": "Complète",
+        "slim": "Fine"
       }
     },
     "save": "Enregistrer comme la mienne",
@@ -1737,7 +1767,42 @@
     "previewTitle": "Un panneau",
     "previewBody": "Tout ici porte ce que disent les curseurs, avant même d’enregistrer.",
     "previewChip": "discret",
-    "previewChipAccent": "accent"
+    "previewChipAccent": "accent",
+    "motion": {
+      "title": "Mouvement",
+      "subtitle": "Un mouvement se compose en choisissant, pas en écrivant du CSS. Ce qui bouge, comment il arrive et à quelle vitesse ; regardez, puis ajoutez.",
+      "what": "Ce qui bouge",
+      "how": "Comment il arrive",
+      "pacing": "Caractère",
+      "speed": "Vitesse — {{ms}} ms",
+      "distance": "Distance — {{px}} px",
+      "sample": "Un message",
+      "replay": "Lire",
+      "add": "Ajouter ce mouvement",
+      "built": "Ajoutés",
+      "full": "C'est le maximum ({{count}}).",
+      "summary": "{{what}}, {{how}}, {{ms}} ms",
+      "target": {
+        "message": "Un message",
+        "card": "Carte d'espace de travail",
+        "sider": "Barre latérale",
+        "titlebar": "Barre de titre",
+        "button": "Un bouton"
+      },
+      "move": {
+        "fade": "Apparaît en fondu",
+        "rise": "Depuis le bas",
+        "fall": "Depuis le haut",
+        "in-from-left": "Depuis la gauche",
+        "in-from-right": "Depuis la droite",
+        "pop": "Surgit"
+      },
+      "easing": {
+        "smooth": "Doux",
+        "sharp": "Net",
+        "spring": "Rebondissant"
+      }
+    }
   },
   "hub": {
     "title": "Fool's Hub",

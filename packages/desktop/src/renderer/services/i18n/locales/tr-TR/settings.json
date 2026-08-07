@@ -1673,19 +1673,32 @@
     "subtitle": "Tema uygulamanın her yerde nasıl renklendiğine karar verir. Bu ise tek bir pencerenin nasıl şekillendiğine — yani renklerini koruyup sesli sohbet sayfasını sütundan kadrana çevirebilirsin.",
     "surface": "Pencere",
     "surfaceName": {
-      "voice": "Sesli sohbet"
+      "voice": "Sesli sohbet",
+      "chat": "Sohbet",
+      "hub": "Fool's Hub",
+      "frame": "Uygulama çerçevesi"
     },
     "wearing": "Şu an",
     "presetName": {
       "instrument": "Gösterge",
-      "hud": "HUD"
+      "hud": "HUD",
+      "column": "Sütun",
+      "transcript": "Döküm",
+      "gallery": "Galeri",
+      "index": "Dizin",
+      "standard": "Standart",
+      "focused": "Odaklanmış"
     },
     "option": {
       "shell": "Düzen",
       "meter": "Ses",
       "panel": "Ayarlar",
       "motion": "Hareket",
-      "density": "Yoğunluk"
+      "density": "Yoğunluk",
+      "bubbles": "Mesajlar",
+      "cards": "Çalışma alanları",
+      "sider": "Kenar çubuğu",
+      "titlebar": "Başlık çubuğu"
     },
     "value": {
       "shell": {
@@ -1708,6 +1721,23 @@
       "density": {
         "comfortable": "Rahat",
         "compact": "Sıkışık"
+      },
+      "bubbles": {
+        "bubbles": "Balonlar",
+        "flat": "Düz döküm"
+      },
+      "cards": {
+        "grid": "Galeri",
+        "list": "Liste"
+      },
+      "sider": {
+        "left": "Solda",
+        "right": "Sağda",
+        "hidden": "Gizli"
+      },
+      "titlebar": {
+        "full": "Tam",
+        "slim": "İnce"
       }
     },
     "save": "Benimki olarak kaydet",
@@ -1737,7 +1767,42 @@
     "previewTitle": "Bir panel",
     "previewBody": "Buradaki her şey, kaydetmeden önce sürgülerin söylediğini giyer.",
     "previewChip": "sakin",
-    "previewChipAccent": "vurgu"
+    "previewChipAccent": "vurgu",
+    "motion": {
+      "title": "Hareket",
+      "subtitle": "CSS yazarak değil, seçerek bir hareket oluşturun. Ne hareket etsin, nasıl gelsin, ne kadar hızlı; izleyin, sonra ekleyin.",
+      "what": "Ne hareket etsin",
+      "how": "Nasıl gelsin",
+      "pacing": "Tempo",
+      "speed": "Hız — {{ms}}ms",
+      "distance": "Mesafe — {{px}}px",
+      "sample": "Bir mesaj",
+      "replay": "Oynat",
+      "add": "Bu hareketi ekle",
+      "built": "Oluşturulanlar",
+      "full": "En fazla bu kadar ({{count}}).",
+      "summary": "{{what}}, {{how}}, {{ms}}ms",
+      "target": {
+        "message": "Bir mesaj",
+        "card": "Çalışma alanı kartı",
+        "sider": "Kenar çubuğu",
+        "titlebar": "Başlık çubuğu",
+        "button": "Bir düğme"
+      },
+      "move": {
+        "fade": "Belirerek gelsin",
+        "rise": "Aşağıdan yukarı gelsin",
+        "fall": "Yukarıdan aşağı gelsin",
+        "in-from-left": "Soldan gelsin",
+        "in-from-right": "Sağdan gelsin",
+        "pop": "Büyüyerek gelsin"
+      },
+      "easing": {
+        "smooth": "Yumuşak",
+        "sharp": "Keskin",
+        "spring": "Yaylı"
+      }
+    }
   },
   "hub": {
     "title": "Fool's Hub",

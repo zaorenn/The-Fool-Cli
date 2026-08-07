@@ -1675,19 +1675,32 @@
     "subtitle": "主題決定整個應用的配色，版面決定某一個視窗的形狀——你可以保留配色，同時把語音頁從一欄改成錶盤。",
     "surface": "視窗",
     "surfaceName": {
-      "voice": "語音聊天"
+      "voice": "語音聊天",
+      "chat": "對話",
+      "hub": "Fool's Hub",
+      "frame": "應用框架"
     },
     "wearing": "目前",
     "presetName": {
       "instrument": "儀錶",
-      "hud": "HUD"
+      "hud": "HUD",
+      "column": "單欄",
+      "transcript": "紀要",
+      "gallery": "畫廊",
+      "index": "索引",
+      "standard": "標準",
+      "focused": "專注"
     },
     "option": {
       "shell": "構圖",
       "meter": "聲音",
       "panel": "設定",
       "motion": "動態",
-      "density": "密度"
+      "density": "密度",
+      "bubbles": "訊息",
+      "cards": "工作區",
+      "sider": "側邊欄",
+      "titlebar": "標題列"
     },
     "value": {
       "shell": {
@@ -1710,6 +1723,23 @@
       "density": {
         "comfortable": "寬鬆",
         "compact": "緊湊"
+      },
+      "bubbles": {
+        "bubbles": "氣泡",
+        "flat": "純文字"
+      },
+      "cards": {
+        "grid": "畫廊",
+        "list": "清單"
+      },
+      "sider": {
+        "left": "在左側",
+        "right": "在右側",
+        "hidden": "隱藏"
+      },
+      "titlebar": {
+        "full": "完整",
+        "slim": "纖細"
       }
     },
     "save": "存為我的版面",
@@ -1739,7 +1769,42 @@
     "previewTitle": "一個面板",
     "previewBody": "儲存之前，這裡的一切都按滑桿的設定顯示。",
     "previewChip": "安靜",
-    "previewChipAccent": "強調"
+    "previewChipAccent": "強調",
+    "motion": {
+      "title": "動效",
+      "subtitle": "不寫 CSS，靠選擇做動效。選好動什麼、怎麼出現、多快；先看，再加入。",
+      "what": "動什麼",
+      "how": "怎麼出現",
+      "pacing": "節奏",
+      "speed": "速度 — {{ms}} 毫秒",
+      "distance": "距離 — {{px}} 像素",
+      "sample": "一則訊息",
+      "replay": "播放",
+      "add": "加入此動效",
+      "built": "已加入",
+      "full": "最多這些（{{count}}）。",
+      "summary": "{{what}}、{{how}}、{{ms}} 毫秒",
+      "target": {
+        "message": "訊息",
+        "card": "工作區卡片",
+        "sider": "側邊欄",
+        "titlebar": "標題列",
+        "button": "按鈕"
+      },
+      "move": {
+        "fade": "淡入",
+        "rise": "由下往上",
+        "fall": "由上往下",
+        "in-from-left": "從左側進入",
+        "in-from-right": "從右側進入",
+        "pop": "彈入"
+      },
+      "easing": {
+        "smooth": "平滑",
+        "sharp": "乾脆",
+        "spring": "回彈"
+      }
+    }
   },
   "hub": {
     "title": "Fool 中心",

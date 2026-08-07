@@ -34,6 +34,7 @@ import BrowserPanel from '@renderer/components/browser/BrowserPanel';
 import { LayoutContext } from '@renderer/hooks/context/LayoutContext';
 import { NavigationHistoryProvider } from '@renderer/hooks/context/NavigationHistoryContext';
 import { useDeepLink } from '@renderer/hooks/system/useDeepLink';
+import { useSurfaceShapes } from '@renderer/hooks/config/useSurfaceShapes';
 import { useNotificationClick } from '@renderer/hooks/system/notification/useNotificationClick';
 import { useBrowserNotification } from '@renderer/hooks/system/notification/useBrowserNotification';
 import { useDesktopTurnNotification } from '@renderer/hooks/system/notification/useDesktopTurnNotification';
@@ -43,6 +44,9 @@ import { useConversationShortcuts } from '@renderer/hooks/ui/useConversationShor
 import { isElectronDesktop } from '@renderer/utils/platform';
 import { resetThemeToDefault } from '@renderer/utils/theme/resetTheme';
 import '@renderer/styles/layout.css';
+// The rules the layout editor's choices select. After layout.css deliberately:
+// a chosen shape is meant to win over the shape the app ships with.
+import '@renderer/styles/surface-shapes.css';
 
 const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 18, strokeWidth = 4 }) => (
   <svg
@@ -132,6 +136,11 @@ const Layout: React.FC<{
   const { onClick } = useDebug();
   const { contextHolder: directorySelectionContextHolder } = useDirectorySelection();
   useDeepLink();
+  // Every surface's chosen shape, on the document, before any of them is looked
+  // at. Here rather than per page because the frame's own shape is drawn by this
+  // component — a hook that waited for the frame's page to mount would wait for
+  // a page that does not exist.
+  useSurfaceShapes();
   useNotificationClick();
   useBrowserNotification();
   useDesktopTurnNotification();

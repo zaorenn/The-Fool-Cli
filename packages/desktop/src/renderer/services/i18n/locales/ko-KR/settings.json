@@ -1675,19 +1675,32 @@
     "subtitle": "테마는 앱 전체의 색을 정하고, 레이아웃은 창 하나의 모양을 정합니다. 색은 그대로 두고 음성 페이지만 세로 열에서 다이얼로 바꿀 수 있습니다.",
     "surface": "창",
     "surfaceName": {
-      "voice": "음성 대화"
+      "voice": "음성 대화",
+      "chat": "채팅",
+      "hub": "Fool's Hub",
+      "frame": "앱 프레임"
     },
     "wearing": "현재",
     "presetName": {
       "instrument": "계기",
-      "hud": "HUD"
+      "hud": "HUD",
+      "column": "칼럼",
+      "transcript": "기록",
+      "gallery": "갤러리",
+      "index": "색인",
+      "standard": "표준",
+      "focused": "집중"
     },
     "option": {
       "shell": "구성",
       "meter": "소리",
       "panel": "설정",
       "motion": "움직임",
-      "density": "밀도"
+      "density": "밀도",
+      "bubbles": "메시지",
+      "cards": "작업 공간",
+      "sider": "사이드바",
+      "titlebar": "제목 표시줄"
     },
     "value": {
       "shell": {
@@ -1710,6 +1723,23 @@
       "density": {
         "comfortable": "여유롭게",
         "compact": "촘촘하게"
+      },
+      "bubbles": {
+        "bubbles": "말풍선",
+        "flat": "평면 기록"
+      },
+      "cards": {
+        "grid": "갤러리",
+        "list": "목록"
+      },
+      "sider": {
+        "left": "왼쪽",
+        "right": "오른쪽",
+        "hidden": "숨김"
+      },
+      "titlebar": {
+        "full": "전체",
+        "slim": "얇게"
       }
     },
     "save": "내 것으로 저장",
@@ -1739,7 +1769,42 @@
     "previewTitle": "패널 하나",
     "previewBody": "저장하기 전에도 여기 있는 모든 것이 슬라이더대로 보입니다.",
     "previewChip": "조용함",
-    "previewChipAccent": "강조"
+    "previewChipAccent": "강조",
+    "motion": {
+      "title": "움직임",
+      "subtitle": "CSS를 쓰지 않고 선택으로 움직임을 만듭니다. 무엇이, 어떻게, 얼마나 빠르게. 확인한 뒤 추가하세요.",
+      "what": "움직일 대상",
+      "how": "나타나는 방식",
+      "pacing": "속도감",
+      "speed": "속도 — {{ms}}ms",
+      "distance": "거리 — {{px}}px",
+      "sample": "메시지 하나",
+      "replay": "재생",
+      "add": "이 움직임 추가",
+      "built": "추가됨",
+      "full": "여기까지입니다({{count}}).",
+      "summary": "{{what}}, {{how}}, {{ms}}ms",
+      "target": {
+        "message": "메시지",
+        "card": "작업 공간 카드",
+        "sider": "사이드바",
+        "titlebar": "제목 표시줄",
+        "button": "버튼"
+      },
+      "move": {
+        "fade": "서서히 나타남",
+        "rise": "아래에서 위로",
+        "fall": "위에서 아래로",
+        "in-from-left": "왼쪽에서 들어옴",
+        "in-from-right": "오른쪽에서 들어옴",
+        "pop": "톡 나타남"
+      },
+      "easing": {
+        "smooth": "부드럽게",
+        "sharp": "또렷하게",
+        "spring": "탄력 있게"
+      }
+    }
   },
   "hub": {
     "title": "Fool 허브",

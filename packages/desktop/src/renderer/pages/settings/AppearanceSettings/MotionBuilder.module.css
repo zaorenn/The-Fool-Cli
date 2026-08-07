@@ -1,0 +1,103 @@
+/**
+ * The movement being built, played on something real.
+ *
+ * These keyframes are the preview's own — deliberately not the ones the compiler
+ * emits. The compiler writes rules aimed at the app's actual elements, and
+ * playing those here would animate every message in the app behind the settings
+ * page while somebody dragged a slider. Same shapes, same curves, one element.
+ */
+
+.stage {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border-2);
+  border-radius: 10px;
+  background: var(--color-bg-2);
+  /* The travelling keyframes read this; the component sets it per draft. */
+  --fool-motion-distance: 12px;
+  overflow: hidden;
+}
+
+.sample {
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--color-fill-2);
+  color: var(--color-text-1);
+  font-size: 13px;
+}
+
+/*
+ * CSS Modules scopes `@keyframes` names as well as class names and exports both,
+ * so the component reads the scoped name out of `styles`. Named without dashes on
+ * purpose: whether a dashed name survives into the exports depends on the
+ * bundler's `localsConvention`, and a keyframe that silently stops resolving
+ * gives a preview that plays nothing with no error to explain it.
+ */
+
+@keyframes moveFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes moveRise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--fool-motion-distance));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes moveFall {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--fool-motion-distance)));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes moveInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--fool-motion-distance)));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes moveInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(var(--fool-motion-distance));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes movePop {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

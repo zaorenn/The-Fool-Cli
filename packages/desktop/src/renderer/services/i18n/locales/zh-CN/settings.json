@@ -1674,19 +1674,32 @@
     "subtitle": "主题决定整个应用的配色，布局决定某一个窗口的形状——你可以保留配色，同时把语音页从一列改成表盘。",
     "surface": "窗口",
     "surfaceName": {
-      "voice": "语音聊天"
+      "voice": "语音聊天",
+      "chat": "对话",
+      "hub": "Fool's Hub",
+      "frame": "应用框架"
     },
     "wearing": "当前",
     "presetName": {
       "instrument": "仪表",
-      "hud": "HUD"
+      "hud": "HUD",
+      "column": "单栏",
+      "transcript": "纪要",
+      "gallery": "画廊",
+      "index": "索引",
+      "standard": "标准",
+      "focused": "专注"
     },
     "option": {
       "shell": "构图",
       "meter": "声音",
       "panel": "设置",
       "motion": "动效",
-      "density": "密度"
+      "density": "密度",
+      "bubbles": "消息",
+      "cards": "工作区",
+      "sider": "侧边栏",
+      "titlebar": "标题栏"
     },
     "value": {
       "shell": {
@@ -1709,6 +1722,23 @@
       "density": {
         "comfortable": "宽松",
         "compact": "紧凑"
+      },
+      "bubbles": {
+        "bubbles": "气泡",
+        "flat": "纯文本"
+      },
+      "cards": {
+        "grid": "画廊",
+        "list": "列表"
+      },
+      "sider": {
+        "left": "在左侧",
+        "right": "在右侧",
+        "hidden": "隐藏"
+      },
+      "titlebar": {
+        "full": "完整",
+        "slim": "纤细"
       }
     },
     "save": "存为我的布局",
@@ -1738,7 +1768,42 @@
     "previewTitle": "一个面板",
     "previewBody": "保存之前，这里的一切都按滑块的设定显示。",
     "previewChip": "安静",
-    "previewChipAccent": "强调"
+    "previewChipAccent": "强调",
+    "motion": {
+      "title": "动效",
+      "subtitle": "不写 CSS，靠选择来做动效。选好动什么、怎么出现、多快；先看，再添加。",
+      "what": "动什么",
+      "how": "怎么出现",
+      "pacing": "节奏",
+      "speed": "速度 — {{ms}} 毫秒",
+      "distance": "距离 — {{px}} 像素",
+      "sample": "一条消息",
+      "replay": "播放",
+      "add": "添加此动效",
+      "built": "已添加",
+      "full": "最多这些（{{count}}）。",
+      "summary": "{{what}}，{{how}}，{{ms}} 毫秒",
+      "target": {
+        "message": "消息",
+        "card": "工作区卡片",
+        "sider": "侧边栏",
+        "titlebar": "标题栏",
+        "button": "按钮"
+      },
+      "move": {
+        "fade": "淡入",
+        "rise": "自下而上",
+        "fall": "自上而下",
+        "in-from-left": "从左侧进入",
+        "in-from-right": "从右侧进入",
+        "pop": "弹入"
+      },
+      "easing": {
+        "smooth": "平滑",
+        "sharp": "干脆",
+        "spring": "回弹"
+      }
+    }
   },
   "hub": {
     "title": "Fool 中心",

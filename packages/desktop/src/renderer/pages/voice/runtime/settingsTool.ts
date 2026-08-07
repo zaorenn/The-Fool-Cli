@@ -5,7 +5,7 @@
  */
 
 import { ipcBridge } from '@/common';
-import { findLayoutByName } from '@/common/config/surfaceLayouts';
+import { findLayoutByName, SURFACE_IDS } from '@/common/config/surfaceLayouts';
 import { findWorkspaceByName } from '@/common/config/workspaces';
 import { synthesisProviderFor, type FoolVoiceSettings, type VoiceProfile } from '@/common/types/foolVoice';
 import type { SpokenVoice } from '@/common/realtime/personas';
@@ -304,9 +304,24 @@ export const applySpokenSetting = async (setting: string, value: string, t: Tran
      * looking at the screen and would otherwise watch nothing happen.
      */
     case 'layout': {
-      const found = said.length === 0 ? null : findLayoutByName('voice', said, peekLayoutPresets());
+      /**
+       * Every window, not only this one.
+       *
+       * "Put the list one on" is a sentence about the Hub, and the person saying
+       * it has no idea the app files layouts by window. Making them say which
+       * window would be asking them to know the data model, so the name decides
+       * the surface — a layout already knows what it is for. Searched in the
+       * order the app lists its surfaces, so a name matching two windows lands
+       * somewhere predictable rather than wherever the object happened to sit.
+       */
+      const presets = peekLayoutPresets();
+      const found =
+        said.length === 0
+          ? null
+          : SURFACE_IDS.map((surface) => findLayoutByName(surface, said, presets)).find((match) => match !== null);
+
       if (!found) return bad();
-      await wearLayout('voice', found.id);
+      await wearLayout(found.surface, found.id);
       return t('settings.voice.conversationSettingLayout', { name: found.name });
     }
 
