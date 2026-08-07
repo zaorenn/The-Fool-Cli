@@ -1637,7 +1637,9 @@
     "conversationSkillDone": "{{name}}。",
     "conversationSkillForgotten": "{{name}} のやり方は忘れました。",
     "conversationSkillUnknown": "{{name}} は教わっていません。",
-    "conversationSkillRefused": "それは保存できませんでした。開けるアドレスやパスではありませんでした。"
+    "conversationSkillRefused": "それは保存できませんでした。開けるアドレスやパスではありませんでした。",
+    "conversationHolding": "受け取りました——{{name}}。",
+    "conversationCannotHold": "ローカルの会話が動いているあいだだけファイルを受け取れます。"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",

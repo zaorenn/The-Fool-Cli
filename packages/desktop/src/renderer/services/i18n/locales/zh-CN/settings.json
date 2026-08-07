@@ -1636,7 +1636,9 @@
     "conversationSkillDone": "{{name}}。",
     "conversationSkillForgotten": "已忘掉怎么做{{name}}。",
     "conversationSkillUnknown": "还没人教过我{{name}}。",
-    "conversationSkillRefused": "这个没能保存——那个地址或路径我打不开。"
+    "conversationSkillRefused": "这个没能保存——那个地址或路径我打不开。",
+    "conversationHolding": "收到——{{name}}。",
+    "conversationCannotHold": "只有在本地对话进行时我才能接收文件。"
   },
   "themeCustomizer": {
     "title": "自定义主题",

@@ -22,6 +22,7 @@
  */
 
 import { buildMemoryInstructions, MEMORY_SECTIONS, readRules, type VoiceMemory } from '@/common/voice/memory';
+import { describeConversationFiles, type ConversationFile } from '@/common/voice/conversationFiles';
 import { describeLocalSkills, type LocalSkill } from '@/common/voice/localSkills';
 import { APP_KNOWLEDGE, APP_KNOWLEDGE_RULES } from './appKnowledge';
 
@@ -175,6 +176,8 @@ export type PersonaInput = {
    * and the whole point of them is not waiting minutes for something instant.
    */
   localSkills?: readonly LocalSkill[];
+  /** Files and folders dropped into this conversation, which "this" refers to. */
+  files?: readonly ConversationFile[];
   /**
    * The voices installed on this computer, so it can pick one when asked.
    *
@@ -323,6 +326,7 @@ export const buildPersonaInstructions = (input: PersonaInput): string => {
     // otherwise, placed anywhere before it, was simply the losing instruction —
     // which is what "it agreed and then drifted back" actually was. Something
     // the person said out loud has to be the last word in the prompt.
+    describeConversationFiles(input.files ?? []),
     describeLocalSkills(input.localSkills ?? []),
     rulesSection(input.memory ? readRules(input.memory) : [], input.sessionRules ?? []),
   ]

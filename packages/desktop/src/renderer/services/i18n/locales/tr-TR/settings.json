@@ -1635,7 +1635,9 @@
     "conversationSkillDone": "{{name}}.",
     "conversationSkillForgotten": "{{name}} nasıl yapılırdı, unuttum.",
     "conversationSkillUnknown": "{{name}} diye bir şey öğretilmedi bana.",
-    "conversationSkillRefused": "Onu kaydedemedim — adres ya da yol açabileceğim bir şey değildi."
+    "conversationSkillRefused": "Onu kaydedemedim — adres ya da yol açabileceğim bir şey değildi.",
+    "conversationHolding": "Aldım — {{name}}.",
+    "conversationCannotHold": "Dosyayı ancak yerel bir sohbet açıkken alabilirim."
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

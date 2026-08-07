@@ -204,3 +204,20 @@
 .settingsGroups :global(.arco-collapse-item-content-box) {
   padding: 2px 0 12px;
 }
+
+/*
+ * Something is being dragged over the window.
+ *
+ * An outline rather than an overlay: the conversation stays readable underneath,
+ * and what is being invited is a drop onto the page as a whole rather than onto
+ * a particular rectangle in it.
+ */
+.over::after {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  pointer-events: none;
+  border: 2px dashed rgba(var(--primary-6), 0.7);
+  border-radius: 14px;
+  background: rgba(var(--primary-6), 0.06);
+}

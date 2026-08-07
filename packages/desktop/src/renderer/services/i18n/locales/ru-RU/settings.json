@@ -1635,7 +1635,9 @@
     "conversationSkillDone": "{{name}}.",
     "conversationSkillForgotten": "Забыл, как делать «{{name}}».",
     "conversationSkillUnknown": "Меня не учили «{{name}}».",
-    "conversationSkillRefused": "Не смог это сохранить — адрес или путь я открыть не могу."
+    "conversationSkillRefused": "Не смог это сохранить — адрес или путь я открыть не могу.",
+    "conversationHolding": "Принял — {{name}}.",
+    "conversationCannotHold": "Файл я могу принять только во время локального разговора."
   },
   "themeCustomizer": {
     "title": "Настроить тему",

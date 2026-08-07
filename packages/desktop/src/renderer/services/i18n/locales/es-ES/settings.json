@@ -1635,7 +1635,9 @@
     "conversationSkillDone": "{{name}}.",
     "conversationSkillForgotten": "He olvidado cómo hacer {{name}}.",
     "conversationSkillUnknown": "No me han enseñado {{name}}.",
-    "conversationSkillRefused": "No pude guardarlo — la dirección o la ruta no es algo que pueda abrir."
+    "conversationSkillRefused": "No pude guardarlo — la dirección o la ruta no es algo que pueda abrir.",
+    "conversationHolding": "Recibido — {{name}}.",
+    "conversationCannotHold": "Solo puedo recibir un archivo mientras haya una conversación local en marcha."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

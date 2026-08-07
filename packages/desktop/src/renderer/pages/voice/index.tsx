@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo } from 'react';
-import { Alert, Button, Tabs, Tag, Typography } from '@arco-design/web-react';
+import React, { useMemo, useState } from 'react';
+import { Alert, Button, Message, Tabs, Tag, Typography } from '@arco-design/web-react';
 import { Check, CloseOne, Link, Magic, Microphone, PauseOne, Voice } from '@icon-park/react';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +14,7 @@ import { useSurfaceLayout } from '@renderer/hooks/config/useSurfaceLayout';
 import TextToSpeechSection from '@renderer/components/settings/SettingsModal/contents/voice/tts/TextToSpeechSection';
 import ConversationSettings from './ConversationSettings';
 import VoiceHudBody from './hud/VoiceHudBody';
+import { conversationRuntime } from './runtime/conversationRuntime';
 import { useConversation } from './runtime/useConversation';
 import VoiceMeter from './VoiceMeter';
 import styles from './VoiceConversationPage.module.css';
@@ -43,8 +44,52 @@ const VoiceConversationPage: React.FC = () => {
   const active = phase !== 'idle';
   const phaseLabel = useMemo(() => t(`settings.voice.conversationPhase.${phase}`), [phase, t]);
 
+  /** Highlighted while something is being dragged over, so the drop is invited. */
+  const [over, setOver] = useState(false);
+
+  /**
+   * Handing the assistant a document by dropping it on the window.
+   *
+   * The alternative was reading a path out loud or sending the agent to find
+   * it, and both are worse than the problem. Electron gives a real path on a
+   * dropped `File`, which is the whole reason this can work at all — a browser
+   * would give a sandboxed handle nothing else on the machine could open.
+   */
+  const onDrop = (event: React.DragEvent<HTMLElement>): void => {
+    event.preventDefault();
+    setOver(false);
+
+    const dropped = [...(event.dataTransfer?.files ?? [])]
+      .map((file) => {
+        const path = (file as File & { path?: string }).path ?? '';
+        // A folder arrives with an empty type and no size; that is the only
+        // signal available here, and getting it wrong only changes a word in
+        // the prompt rather than what can be done with it.
+        return { path, name: file.name, directory: file.type === '' && file.size === 0 };
+      })
+      .filter((file) => file.path.length > 0);
+
+    if (dropped.length === 0) return;
+
+    const taken = conversationRuntime.hold(dropped);
+    Message.info(
+      taken
+        ? t('settings.voice.conversationHolding', { name: dropped.map((file) => file.name).join(', ') })
+        : t('settings.voice.conversationCannotHold')
+    );
+  };
+
   return (
-    <main className={classNames(styles.page, active && styles.active, styles[phase])} data-testid='voice-conversation'>
+    <main
+      className={classNames(styles.page, active && styles.active, styles[phase], over && styles.over)}
+      data-testid='voice-conversation'
+      onDragOver={(event) => {
+        event.preventDefault();
+        setOver(true);
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={onDrop}
+    >
       <div className='relative z-1 mx-auto flex h-full min-h-0 max-w-1440px flex-col px-24px py-20px'>
         <header className='flex flex-wrap items-center justify-between gap-12px'>
           <div className='flex items-center gap-10px'>

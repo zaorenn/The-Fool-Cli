@@ -1637,7 +1637,9 @@
     "conversationSkillDone": "{{name}}.",
     "conversationSkillForgotten": "{{name}} 하는 법은 잊었어요.",
     "conversationSkillUnknown": "{{name}}은(는) 배운 적이 없어요.",
-    "conversationSkillRefused": "그건 저장하지 못했어요 — 열 수 있는 주소나 경로가 아니었어요."
+    "conversationSkillRefused": "그건 저장하지 못했어요 — 열 수 있는 주소나 경로가 아니었어요.",
+    "conversationHolding": "받았어요 — {{name}}.",
+    "conversationCannotHold": "로컬 대화가 진행 중일 때만 파일을 받을 수 있어요."
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",

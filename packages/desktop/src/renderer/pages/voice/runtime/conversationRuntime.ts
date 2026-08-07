@@ -32,6 +32,7 @@ import {
   rememberVoiceSession,
 } from '@renderer/services/voice/session/voiceMemoryStore';
 import { peekVoiceSettings, subscribeVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
+import type { ConversationFile } from '@/common/voice/conversationFiles';
 import { LocalVoicePipeline } from '../localPipeline';
 import { PcmAudioOutput, PcmMicrophone } from '../pcmAudio';
 import { RealtimeVoiceClient } from '../RealtimeVoiceClient';
@@ -634,6 +635,20 @@ class ConversationRuntime {
   }
 
   // ------------------------------------------------------------------ control
+
+  /**
+   * Takes what was dropped on the window into the conversation.
+   *
+   * Only the local pipeline holds a prompt this app owns; a socket provider
+   * keeps its own on the far side and cannot be told mid-call. Answering `false`
+   * rather than pretending, so the page can say so instead of leaving somebody
+   * waiting for an assistant that never received the file.
+   */
+  hold = (files: readonly ConversationFile[]): boolean => {
+    if (!this.local || files.length === 0) return false;
+    this.local.holdFiles(files);
+    return true;
+  };
 
   start = async (): Promise<void> => {
     if (this.phase !== 'idle') return;

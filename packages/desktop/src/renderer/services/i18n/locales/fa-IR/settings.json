@@ -1635,7 +1635,9 @@
     "conversationSkillDone": "{{name}}.",
     "conversationSkillForgotten": "یادم رفت {{name}} چطور انجام می‌شد.",
     "conversationSkillUnknown": "{{name}} را به من یاد نداده‌اند.",
-    "conversationSkillRefused": "نتوانستم ذخیره‌اش کنم — آن نشانی یا مسیر چیزی نیست که بتوانم باز کنم."
+    "conversationSkillRefused": "نتوانستم ذخیره‌اش کنم — آن نشانی یا مسیر چیزی نیست که بتوانم باز کنم.",
+    "conversationHolding": "گرفتم — {{name}}.",
+    "conversationCannotHold": "فقط وقتی گفتگوی محلی در جریان باشد می‌توانم فایل بگیرم."
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",

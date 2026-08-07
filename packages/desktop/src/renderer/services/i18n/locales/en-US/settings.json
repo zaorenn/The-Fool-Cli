@@ -1635,7 +1635,9 @@
     "conversationSkillDone": "{{name}}.",
     "conversationSkillForgotten": "Forgotten how to do {{name}}.",
     "conversationSkillUnknown": "I have not been taught {{name}}.",
-    "conversationSkillRefused": "I could not save that one — the address or the path was not something I can open."
+    "conversationSkillRefused": "I could not save that one — the address or the path was not something I can open.",
+    "conversationHolding": "Got it — {{name}}.",
+    "conversationCannotHold": "I can only take a file while a local conversation is running."
   },
   "themeCustomizer": {
     "title": "Customize theme",

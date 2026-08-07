@@ -17,6 +17,7 @@ import { isHallucinatedTranscript } from '@/common/voice/hallucinations';
 import { refersToScreen } from '@/common/voice/screenIntent';
 import { describeSpokenTurns, worthRemembering, type SpokenTurn } from '@/common/voice/sessionSummary';
 import { applyTranscriptRules } from '@/common/voice/transcriptRules';
+import { sanitizeConversationFiles, type ConversationFile } from '@/common/voice/conversationFiles';
 import { peekLocalSkills } from '@renderer/services/voice/session/localSkillStore';
 import { peekVoiceMemory, rememberVoiceSession } from '@renderer/services/voice/session/voiceMemoryStore';
 import { findWakePhrase } from '@renderer/services/voice/wakePhrase';
@@ -406,6 +407,9 @@ export class LocalVoicePipeline {
   /** Rules set out loud this conversation, never written to the memory. */
   private sessionRules: string[] = [];
 
+  /** What has been dropped into this conversation, and so what "this" means. */
+  private files: ConversationFile[] = [];
+
   /** The watchdog for the turn in flight, and the turn it is watching. */
   private stall: ReturnType<typeof setTimeout> | null = null;
 
@@ -488,6 +492,7 @@ export class LocalVoicePipeline {
       voices: this.options.voices ?? [],
       sessionRules: this.sessionRules,
       localSkills: peekLocalSkills(),
+      files: this.files,
     });
   }
 
@@ -505,6 +510,26 @@ export class LocalVoicePipeline {
     if (this.sessionRules.some((kept) => kept.toLowerCase() === line.toLowerCase())) return;
 
     this.sessionRules.push(line);
+    this.refreshSystemPrompt();
+  }
+
+  /**
+   * Something handed over by dropping it on the window.
+   *
+   * Rebuilds the prompt rather than mentioning it in a turn: the person may drop
+   * a file and then say "summarise this", and the sentence they say next has to
+   * already know what "this" is.
+   */
+  holdFiles(files: readonly ConversationFile[]): void {
+    if (this.closed) return;
+
+    this.files = sanitizeConversationFiles([...this.files, ...files]);
+    this.refreshSystemPrompt();
+  }
+
+  /** Lets go of everything handed over, for a conversation starting fresh. */
+  releaseFiles(): void {
+    this.files = [];
     this.refreshSystemPrompt();
   }
 
@@ -571,6 +596,7 @@ export class LocalVoicePipeline {
     // Gone with the conversation they were set in. That is what made them
     // session rules rather than remembered ones.
     this.sessionRules = [];
+    this.files = [];
   }
 
   /**
