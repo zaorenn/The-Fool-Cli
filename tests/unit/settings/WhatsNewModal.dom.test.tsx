@@ -46,21 +46,36 @@ const answerWith = (currentVersion: string, entries: ReleaseNoteEntry[]) => {
   mocks.releaseNotesMock.mockResolvedValue({ success: true, data: { currentVersion, entries } });
 };
 
+/** What this copy of the app has on disk before the modal looks. */
+const storedState = ({ lastSeen, greeted }: { lastSeen?: string; greeted?: boolean }) => {
+  mocks.configGetMock.mockImplementation((key: string) =>
+    Promise.resolve(key === 'system.lastSeenVersion' ? lastSeen : greeted)
+  );
+};
+
 describe('decideWhatsNew', () => {
-  it('stays quiet and records the version when nothing was ever recorded', () => {
-    expect(decideWhatsNew(undefined, '2.4.0', ENTRIES)).toBe('record');
+  it('stays quiet on a fresh install, which has missed nothing', () => {
+    expect(decideWhatsNew(undefined, '2.4.0', ENTRIES, false)).toBe('record');
+  });
+
+  it('speaks on the very update that adds it, to somebody who was already here', () => {
+    // Nothing recorded, but this copy has been through first-run setup — so it
+    // is an existing install arriving from a build older than this feature.
+    // Answering "record" here would make a feature whose whole job is to say
+    // what changed ship silent on the one update that introduces it.
+    expect(decideWhatsNew(undefined, '2.4.0', ENTRIES, true)).toBe('show');
   });
 
   it('does nothing at all when the recorded version is the one running', () => {
-    expect(decideWhatsNew('2.4.0', '2.4.0', ENTRIES)).toBe('nothing');
+    expect(decideWhatsNew('2.4.0', '2.4.0', ENTRIES, true)).toBe('nothing');
   });
 
   it('shows the notes when the version moved and there is something to read', () => {
-    expect(decideWhatsNew('2.3.9', '2.4.0', ENTRIES)).toBe('show');
+    expect(decideWhatsNew('2.3.9', '2.4.0', ENTRIES, true)).toBe('show');
   });
 
   it('records without showing when the version moved but there is nothing to read', () => {
-    expect(decideWhatsNew('2.3.9', '2.4.0', [])).toBe('record');
+    expect(decideWhatsNew('2.3.9', '2.4.0', [], true)).toBe('record');
   });
 });
 
@@ -75,7 +90,7 @@ describe('WhatsNewModal', () => {
   });
 
   it('shows what changed after an update, and remembers it once dismissed', async () => {
-    mocks.configGetMock.mockResolvedValue('2.3.9');
+    storedState({ lastSeen: '2.3.9', greeted: true });
     answerWith('2.4.0', ENTRIES);
 
     render(<WhatsNewModal />);
@@ -92,8 +107,8 @@ describe('WhatsNewModal', () => {
     expect(mocks.releaseNotesMock).toHaveBeenCalledWith({ since: '2.3.9' });
   });
 
-  it('says nothing on a first launch, and records the version so the next update can', async () => {
-    mocks.configGetMock.mockResolvedValue(undefined);
+  it('says nothing on a fresh install, and records the version so the next update can', async () => {
+    storedState({});
     answerWith('2.4.0', ENTRIES);
 
     render(<WhatsNewModal />);
@@ -102,8 +117,18 @@ describe('WhatsNewModal', () => {
     expect(screen.queryByText('A thing that is new.')).toBeNull();
   });
 
+  it('speaks to an existing install arriving from a build that never recorded one', async () => {
+    storedState({ greeted: true });
+    answerWith('2.4.0', ENTRIES);
+
+    render(<WhatsNewModal />);
+
+    await screen.findByText('A thing that is new.');
+    expect(mocks.releaseNotesMock).toHaveBeenCalledWith({ since: undefined });
+  });
+
   it('says nothing when the app has not changed version', async () => {
-    mocks.configGetMock.mockResolvedValue('2.4.0');
+    storedState({ lastSeen: '2.4.0', greeted: true });
     answerWith('2.4.0', []);
 
     render(<WhatsNewModal />);
@@ -114,7 +139,7 @@ describe('WhatsNewModal', () => {
   });
 
   it('does not interrupt a launch when the notes cannot be read', async () => {
-    mocks.configGetMock.mockResolvedValue('2.3.9');
+    storedState({ lastSeen: '2.3.9', greeted: true });
     mocks.releaseNotesMock.mockRejectedValue(new Error('bridge is not there'));
 
     render(<WhatsNewModal />);

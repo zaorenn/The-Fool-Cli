@@ -26,13 +26,20 @@ type WhatsNewState = {
 export const decideWhatsNew = (
   lastSeenVersion: string | undefined,
   currentVersion: string,
-  entries: ReleaseNoteEntry[]
+  entries: ReleaseNoteEntry[],
+  /** Whether this copy has been through first-run setup — see below. */
+  returning: boolean
 ): 'show' | 'record' | 'nothing' => {
-  // Never recorded: a fresh install, or the first launch of the build that
-  // introduced this. Neither of those is somebody returning to a changed app,
-  // so the version is remembered silently and the next update is the one that
-  // gets to speak.
-  if (!lastSeenVersion) return 'record';
+  // Nothing recorded happens two ways, and they want opposite answers. A fresh
+  // install has missed nothing and should be left alone. Somebody updating from
+  // a build older than this feature has missed exactly what this release
+  // changed, and telling them nothing is how a "say what changed" feature ships
+  // silent on the one update that introduces it.
+  //
+  // First-run setup tells the two apart, because it is completed deliberately
+  // rather than on startup — a fresh install has not been through it yet at the
+  // moment this runs, and every existing install has.
+  if (!lastSeenVersion) return returning && entries.length > 0 ? 'show' : 'record';
   if (lastSeenVersion === currentVersion) return 'nothing';
   // The version moved but there is nothing to read — a downgrade, or a
   // changelog that could not be found. Record it so this does not re-run on
@@ -78,11 +85,12 @@ const WhatsNewModal: React.FC = () => {
 
     const run = async () => {
       const lastSeenVersion = await ConfigStorage.get('system.lastSeenVersion');
+      const returning = Boolean(await ConfigStorage.get('system.firstRunGreeted'));
       const response = await ipcBridge.update.releaseNotes.invoke({ since: lastSeenVersion });
       if (cancelled || !response.success || !response.data) return;
 
       const { currentVersion, entries } = response.data;
-      const decision = decideWhatsNew(lastSeenVersion, currentVersion, entries);
+      const decision = decideWhatsNew(lastSeenVersion, currentVersion, entries, returning);
       if (decision === 'nothing') return;
       if (decision === 'record') {
         await ConfigStorage.set('system.lastSeenVersion', currentVersion);
