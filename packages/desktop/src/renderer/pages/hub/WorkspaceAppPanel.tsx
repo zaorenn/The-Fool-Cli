@@ -9,6 +9,8 @@ import { Button, Typography } from '@arco-design/web-react';
 import { Refresh } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
+import type { IMcpServer } from '@/common/config/storage';
+import { addonForTool, type WorkspaceAddon } from '@/common/config/workspaceAddon';
 import {
   parseAppRequest,
   WORKSPACE_APP_CHANNEL,
@@ -41,9 +43,11 @@ export type WorkspaceAppPanelProps = {
   app: WorkspaceApp;
   /** Which workspace this belongs to, so stored values cannot collide. */
   workspaceId: string;
+  /** The capabilities this workspace declared, which its page may call. */
+  addons: readonly WorkspaceAddon[];
 };
 
-const WorkspaceAppPanel: React.FC<WorkspaceAppPanelProps> = ({ app, workspaceId }) => {
+const WorkspaceAppPanel: React.FC<WorkspaceAppPanelProps> = ({ app, workspaceId, addons }) => {
   const { t } = useTranslation();
   const frame = useRef<HTMLIFrameElement | null>(null);
   const [url, setUrl] = useState('');
@@ -115,6 +119,31 @@ const WorkspaceAppPanel: React.FC<WorkspaceAppPanelProps> = ({ app, workspaceId 
             maxSpokenCharacters: peekVoiceSettings().narrator.maxSpokenCharacters,
           }).catch((): undefined => undefined);
           return { ok: true };
+        /**
+         * A call into one of this workspace's own addons.
+         *
+         * The page names a *tool*, never a server and never a command. Which
+         * addon that is comes from the workspace, and whether it is installed
+         * comes from the app's own list — so the worst a page can do here is
+         * name something that is not there and be told so.
+         */
+        case 'call': {
+          const addon = addonForTool(addons, request.tool);
+          if (!addon) return { ok: false, error: t('hub.addonUnknownTool', { tool: request.tool }) };
+
+          const servers = await ipcBridge.mcpService.listServers.invoke().catch((): IMcpServer[] => []);
+          const server = (servers ?? []).find((entry) => entry.name.trim().toLowerCase() === addon.id);
+          if (!server) return { ok: false, error: t('hub.addonNotInstalled', { name: addon.name }) };
+
+          const answer = await ipcBridge.foolVoice.executeMcpTool.invoke({
+            version: 1,
+            requestId: crypto.randomUUID(),
+            payload: { serverId: server.id, toolName: request.tool, args: request.args },
+          });
+
+          if (answer.ok === false) return { ok: false, error: answer.error.code };
+          return { ok: true, result: JSON.stringify(answer.data.result) };
+        }
         case 'store':
           window.localStorage.setItem(storageKey(request.key), request.value);
           return { ok: true };
@@ -124,7 +153,7 @@ const WorkspaceAppPanel: React.FC<WorkspaceAppPanelProps> = ({ app, workspaceId 
           return { ok: false, error: 'unsupported' };
       }
     },
-    [storageKey, t]
+    [addons, storageKey, t]
   );
 
   useEffect(() => {

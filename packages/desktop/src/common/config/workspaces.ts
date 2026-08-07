@@ -27,6 +27,7 @@
  */
 
 import { DEFAULT_LAYOUT_ID, SURFACE_IDS, type SurfaceId } from './surfaceLayouts';
+import { sanitizeAddons, type WorkspaceAddon } from './workspaceAddon';
 import { sanitizeWorkspaceApp, type WorkspaceApp } from './workspaceApp';
 
 /** How a workspace is stored, and what an exported file contains. */
@@ -65,6 +66,14 @@ export type Workspace = {
    * {@link WorkspaceApp} for why it is not allowed a back end of its own.
    */
   app: WorkspaceApp | null;
+  /**
+   * Capabilities the app does not already have, as MCP servers.
+   *
+   * Declared rather than bundled, and never installed without the user seeing
+   * the command first — see {@link WorkspaceAddon}. This is how a workspace gets
+   * something like pitch detection without anybody forking the backend.
+   */
+  addons: WorkspaceAddon[];
   /** When it was last written, so a card can be ordered by recency. */
   updatedAt: string;
 };
@@ -111,6 +120,7 @@ export const defaultWorkspace = (): Workspace => ({
   agent: { assistantId: '', providerId: '', modelId: '' },
   skills: [],
   app: null,
+  addons: [],
   updatedAt: new Date(0).toISOString(),
 });
 
@@ -168,6 +178,7 @@ export const sanitizeWorkspace = (value: unknown, fallbackId = ''): Workspace | 
         })
       : [],
     app: sanitizeWorkspaceApp(record.app),
+    addons: sanitizeAddons(record.addons),
     updatedAt:
       typeof record.updatedAt === 'string' && !Number.isNaN(Date.parse(record.updatedAt))
         ? record.updatedAt

@@ -1765,6 +1765,16 @@
     },
     "skillsFetching": "Je récupère ce qu’il faut : {{names}}",
     "skillsInstalled": "{{names}} installé",
-    "skillsMissing": "Introuvable : {{names}} — l’espace s’ouvrira, mais les parties qui s’en servent ne marcheront pas encore"
+    "skillsMissing": "Introuvable : {{names}} — l’espace s’ouvrira, mais les parties qui s’en servent ne marcheront pas encore",
+    "addonApproveTitle": "« {{name}} » veut ajouter des capacités",
+    "addonApproveBody": "Cet espace de travail a besoin de choses que The Fool ne sait pas faire seul. Chacune exécute la commande ci-dessous sur votre machine et reste dans Réglages → Outils, où vous pouvez la désactiver ou la retirer.",
+    "addonApproveWarning": "N’acceptez que si vous faites confiance à la personne qui vous a envoyé cet espace. Si vous refusez, il s’ouvrira quand même — seules les parties qui en ont besoin ne marcheront pas.",
+    "addonApprove": "Ajouter",
+    "addonDecline": "Pas maintenant",
+    "addonInstalled": "{{names}} ajouté",
+    "addonFailed": "Impossible d’ajouter {{names}}",
+    "addonDeclined": "Non ajouté — l’espace s’ouvrira sans",
+    "addonUnknownTool": "Cette page a demandé « {{tool}} », que cet espace ne déclare pas",
+    "addonNotInstalled": "« {{name}} » n’est pas installé, cette partie ne peut pas encore fonctionner"
   }
 }

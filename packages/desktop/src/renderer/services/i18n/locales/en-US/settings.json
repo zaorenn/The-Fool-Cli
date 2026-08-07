@@ -1765,6 +1765,16 @@
     },
     "skillsFetching": "Getting what it needs: {{names}}",
     "skillsInstalled": "Installed {{names}}",
-    "skillsMissing": "Could not find {{names}} — the workspace will open, but the parts that use them will not work yet"
+    "skillsMissing": "Could not find {{names}} — the workspace will open, but the parts that use them will not work yet",
+    "addonApproveTitle": "“{{name}}” wants to add capabilities",
+    "addonApproveBody": "This workspace needs things The Fool cannot do on its own. Each one runs the command shown below on your machine, and stays in Settings → Tools where you can switch it off or remove it.",
+    "addonApproveWarning": "Only agree if you trust whoever sent you this workspace. If you decline, the workspace still opens — the parts that need these will not work.",
+    "addonApprove": "Add them",
+    "addonDecline": "Not now",
+    "addonInstalled": "Added {{names}}",
+    "addonFailed": "Could not add {{names}}",
+    "addonDeclined": "Left them out — the workspace will open without them",
+    "addonUnknownTool": "This page asked for “{{tool}}”, which this workspace does not declare",
+    "addonNotInstalled": "“{{name}}” is not installed, so this part cannot run yet"
   }
 }

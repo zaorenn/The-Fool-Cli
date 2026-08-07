@@ -119,7 +119,16 @@ export type WorkspaceAppRequest =
   | { id: string; kind: 'say'; text: string }
   /** Keep something small between runs, under the app's own name. */
   | { id: string; kind: 'store'; key: string; value: string }
-  | { id: string; kind: 'recall'; key: string };
+  | { id: string; kind: 'recall'; key: string }
+  /**
+   * Call one of the workspace's own addons, directly.
+   *
+   * The difference between this and `ask` is the whole reason addons exist.
+   * `ask` costs a minute of an agent thinking and gives back prose; this calls a
+   * function and gives back its result, in a second, with no model in the loop.
+   * A page that needs pitch detection needs the second kind.
+   */
+  | { id: string; kind: 'call'; tool: string; args: Record<string, unknown> };
 
 export type WorkspaceAppResponse = {
   id: string;
@@ -132,7 +141,7 @@ export type WorkspaceAppResponse = {
 /** The message channel, named so a stray `postMessage` cannot be mistaken for one. */
 export const WORKSPACE_APP_CHANNEL = 'fool.workspace.app';
 
-const KINDS = new Set(['ask', 'open', 'say', 'store', 'recall']);
+const KINDS = new Set(['ask', 'open', 'say', 'store', 'recall', 'call']);
 
 /**
  * Reads a request out of whatever arrived on the window.
@@ -176,6 +185,15 @@ export const parseAppRequest = (data: unknown): WorkspaceAppRequest | null => {
     case 'recall': {
       const key = text('key', 64).trim();
       return key.length > 0 ? { id, kind: 'recall', key } : null;
+    }
+    case 'call': {
+      const tool = text('tool', 64).trim();
+      // The arguments go to an addon rather than to a shell, so their shape is
+      // the server's business — but it has to be an object, because a string
+      // here would be a page trying something else.
+      const args = record.args;
+      if (tool.length === 0 || typeof args !== 'object' || args === null || Array.isArray(args)) return null;
+      return { id, kind: 'call', tool, args: args as Record<string, unknown> };
     }
     default:
       return null;
@@ -229,5 +247,7 @@ export const WORKSPACE_APP_BRIDGE = `(() => {
     /** Keep something small between runs. */
     store: (key, value) => send('store', { key: String(key), value: String(value) }),
     recall: (key) => send('recall', { key: String(key) }),
+    /** Call one of this workspace's addons. A second, not a minute. */
+    call: (tool, args) => send('call', { tool: String(tool), args: args ?? {} }),
   };
 })();`;

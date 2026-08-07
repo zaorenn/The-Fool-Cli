@@ -1767,6 +1767,16 @@
     },
     "skillsFetching": "必要なものを取得しています: {{names}}",
     "skillsInstalled": "{{names}} を入れました",
-    "skillsMissing": "{{names}} が見つかりませんでした。ワークスペースは開きますが、それを使う部分はまだ動きません"
+    "skillsMissing": "{{names}} が見つかりませんでした。ワークスペースは開きますが、それを使う部分はまだ動きません",
+    "addonApproveTitle": "「{{name}}」が機能の追加を求めています",
+    "addonApproveBody": "このワークスペースには、The Fool だけではできないことが必要です。それぞれ下に表示されたコマンドをあなたのマシンで実行し、設定 → ツールに残ります。そこで無効化も削除もできます。",
+    "addonApproveWarning": "このワークスペースを送ってきた相手を信頼できる場合だけ許可してください。断ってもワークスペースは開きます——これらを使う部分が動かないだけです。",
+    "addonApprove": "追加する",
+    "addonDecline": "今はしない",
+    "addonInstalled": "{{names}} を追加しました",
+    "addonFailed": "{{names}} を追加できませんでした",
+    "addonDeclined": "追加しませんでした。ワークスペースはそのまま開きます",
+    "addonUnknownTool": "このページは「{{tool}}」を求めましたが、このワークスペースは宣言していません",
+    "addonNotInstalled": "「{{name}}」が入っていないため、この部分はまだ動きません"
   }
 }

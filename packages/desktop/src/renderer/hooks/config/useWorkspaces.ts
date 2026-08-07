@@ -105,6 +105,7 @@ export const captureWorkspace = (name: string, description: string): Workspace =
     // Kept from whatever is in force: someone naming the arrangement they are
     // already using expects the page they are looking at to come with it.
     app: peekActiveWorkspace().app,
+    addons: peekActiveWorkspace().addons,
     updatedAt: new Date().toISOString(),
   };
 };

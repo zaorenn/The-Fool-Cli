@@ -16,7 +16,10 @@ import {
   type Workspace,
 } from '@/common/config/workspaces';
 import { useWorkspaces } from '@renderer/hooks/config/useWorkspaces';
+import type { WorkspaceAddon } from '@/common/config/workspaceAddon';
+import AddonApproval from './AddonApproval';
 import { fetchMissingSkills, missingSkills } from './fetchMissingSkills';
+import { installAddons, missingAddons } from './installAddons';
 import WorkspaceAppPanel from './WorkspaceAppPanel';
 import WorkspaceCard from './WorkspaceCard';
 import styles from './FoolsHub.module.css';
@@ -46,6 +49,13 @@ const FoolsHubPage: React.FC = () => {
   const [busy, setBusy] = useState(false);
   /** Skills being fetched for a workspace that has just arrived. */
   const [fetching, setFetching] = useState<string[]>([]);
+  /**
+   * What an arriving workspace wants to install, waiting on the user.
+   *
+   * Held rather than installed: an addon names a command that gets run, and this
+   * file came from another person. Nothing happens until they have seen it.
+   */
+  const [pending, setPending] = useState<{ workspace: Workspace; addons: WorkspaceAddon[] } | null>(null);
   const fileInput = useRef<HTMLInputElement | null>(null);
 
   /**
@@ -123,6 +133,11 @@ const FoolsHubPage: React.FC = () => {
     // about the app can arrive incomplete — but the skills its page calls live
     // in the library rather than in the file, and without this it opens, looks
     // correct, and fails the first time somebody presses the button.
+    // Addons first, and only with permission. They run a command; the skills
+    // below do not, which is why only one of these two asks.
+    const wanted = await missingAddons(result.workspace);
+    if (wanted.length > 0) setPending({ workspace: result.workspace, addons: wanted });
+
     const missing = await missingSkills(result.workspace);
     if (missing.length === 0) return;
 
@@ -152,7 +167,7 @@ const FoolsHubPage: React.FC = () => {
       {/* The workspace's own page, when it has one. Above the list rather than
           below it: this is the thing the user came to use, and the list is how
           they got here. */}
-      {active.app ? <WorkspaceAppPanel app={active.app} workspaceId={active.id} /> : null}
+      {active.app ? <WorkspaceAppPanel app={active.app} workspaceId={active.id} addons={active.addons} /> : null}
 
       <section className={styles.grid}>
         {workspaces.map((workspace) => (
@@ -166,6 +181,31 @@ const FoolsHubPage: React.FC = () => {
           />
         ))}
       </section>
+
+      {pending ? (
+        <AddonApproval
+          workspaceName={pending.workspace.name}
+          addons={pending.addons}
+          onApprove={() => {
+            const approving = pending;
+            setPending(null);
+            void installAddons(approving.addons).then((installed) => {
+              const failed = approving.addons.filter((addon) => !installed.includes(addon.id));
+              if (failed.length > 0) {
+                Message.warning(t('hub.addonFailed', { names: failed.map((addon) => addon.name).join(', ') }));
+                return;
+              }
+              Message.success(t('hub.addonInstalled', { names: approving.addons.map((a) => a.name).join(', ') }));
+            });
+          }}
+          onDecline={() => {
+            // Declining is an outcome, not a cancel: the workspace still opens,
+            // with the parts that need the addon switched off.
+            Message.info(t('hub.addonDeclined'));
+            setPending(null);
+          }}
+        />
+      ) : null}
 
       {fetching.length > 0 ? (
         <div className={styles.fetching} data-testid='workspace-fetching'>

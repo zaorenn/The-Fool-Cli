@@ -202,3 +202,54 @@
   border-radius: var(--fool-radius, 12px);
   background: var(--color-fill-1, var(--color-bg-2));
 }
+
+/* ── what a workspace wants to install ─────────────────────────────────────── */
+
+.addonList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.addonList li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--color-border-2);
+  border-radius: var(--fool-radius, 10px);
+}
+
+.addonName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-1);
+}
+
+.addonPurpose {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-3);
+}
+
+/*
+ * The command itself, as written.
+ *
+ * Monospaced and allowed to wrap rather than truncated: this is the thing being
+ * agreed to, and an ellipsis in the middle of it would hide exactly the part
+ * somebody needs to read.
+ */
+.addonCommand {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--color-text-2);
+  background: var(--color-fill-1, var(--color-bg-3));
+  border-radius: var(--fool-radius-sm, 6px);
+  padding: 6px 8px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}

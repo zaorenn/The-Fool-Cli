@@ -1765,6 +1765,16 @@
     },
     "skillsFetching": "Hole, was gebraucht wird: {{names}}",
     "skillsInstalled": "{{names}} installiert",
-    "skillsMissing": "{{names}} nicht gefunden — der Workspace öffnet sich, aber die Teile, die sie brauchen, laufen noch nicht"
+    "skillsMissing": "{{names}} nicht gefunden — der Workspace öffnet sich, aber die Teile, die sie brauchen, laufen noch nicht",
+    "addonApproveTitle": "„{{name}}“ möchte Fähigkeiten hinzufügen",
+    "addonApproveBody": "Dieser Workspace braucht Dinge, die The Fool allein nicht kann. Jede führt den unten gezeigten Befehl auf deinem Rechner aus und bleibt in Einstellungen → Werkzeuge, wo du sie abschalten oder entfernen kannst.",
+    "addonApproveWarning": "Stimm nur zu, wenn du dem vertraust, der dir diesen Workspace geschickt hat. Lehnst du ab, öffnet er sich trotzdem — nur die Teile, die das brauchen, laufen nicht.",
+    "addonApprove": "Hinzufügen",
+    "addonDecline": "Jetzt nicht",
+    "addonInstalled": "{{names}} hinzugefügt",
+    "addonFailed": "{{names}} konnte nicht hinzugefügt werden",
+    "addonDeclined": "Nicht hinzugefügt — der Workspace öffnet sich ohne sie",
+    "addonUnknownTool": "Diese Seite wollte „{{tool}}“, was dieser Workspace nicht angibt",
+    "addonNotInstalled": "„{{name}}“ ist nicht installiert, dieser Teil läuft noch nicht"
   }
 }

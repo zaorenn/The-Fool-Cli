@@ -1767,6 +1767,16 @@
     },
     "skillsFetching": "필요한 것을 가져오는 중: {{names}}",
     "skillsInstalled": "{{names}} 설치됨",
-    "skillsMissing": "{{names}}을(를) 찾지 못했습니다 — 워크스페이스는 열리지만 그것을 쓰는 부분은 아직 동작하지 않습니다"
+    "skillsMissing": "{{names}}을(를) 찾지 못했습니다 — 워크스페이스는 열리지만 그것을 쓰는 부분은 아직 동작하지 않습니다",
+    "addonApproveTitle": "“{{name}}”이(가) 기능을 추가하려 합니다",
+    "addonApproveBody": "이 워크스페이스는 The Fool 혼자서는 할 수 없는 것들이 필요합니다. 각각 아래 표시된 명령을 사용자의 컴퓨터에서 실행하며, 설정 → 도구에 남아 거기서 끄거나 지울 수 있습니다.",
+    "addonApproveWarning": "이 워크스페이스를 보낸 사람을 믿을 때만 허용하세요. 거절해도 워크스페이스는 열립니다 — 이것들이 필요한 부분만 동작하지 않습니다.",
+    "addonApprove": "추가",
+    "addonDecline": "지금은 아니요",
+    "addonInstalled": "{{names}} 추가됨",
+    "addonFailed": "{{names}}을(를) 추가하지 못했습니다",
+    "addonDeclined": "추가하지 않았습니다 — 워크스페이스는 그대로 열립니다",
+    "addonUnknownTool": "이 페이지가 “{{tool}}”을(를) 요청했지만 이 워크스페이스는 선언하지 않았습니다",
+    "addonNotInstalled": "“{{name}}”이(가) 설치되지 않아 이 부분은 아직 동작할 수 없습니다"
   }
 }

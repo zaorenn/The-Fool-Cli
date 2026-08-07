@@ -1765,6 +1765,16 @@
     },
     "skillsFetching": "İhtiyaç duyduğu şeyler alınıyor: {{names}}",
     "skillsInstalled": "{{names}} kuruldu",
-    "skillsMissing": "{{names}} bulunamadı — workspace açılacak ama onları kullanan kısımlar henüz çalışmayacak"
+    "skillsMissing": "{{names}} bulunamadı — workspace açılacak ama onları kullanan kısımlar henüz çalışmayacak",
+    "addonApproveTitle": "“{{name}}” bazı yetenekler eklemek istiyor",
+    "addonApproveBody": "Bu workspace, The Fool’un tek başına yapamadığı şeylere ihtiyaç duyuyor. Her biri aşağıdaki komutu bilgisayarında çalıştırır ve Ayarlar → Araçlar’da kalır; oradan kapatabilir ya da kaldırabilirsin.",
+    "addonApproveWarning": "Yalnızca bu workspace’i gönderen kişiye güveniyorsan kabul et. Reddedersen workspace yine açılır — sadece bunlara ihtiyaç duyan kısımlar çalışmaz.",
+    "addonApprove": "Ekle",
+    "addonDecline": "Şimdi değil",
+    "addonInstalled": "{{names}} eklendi",
+    "addonFailed": "{{names}} eklenemedi",
+    "addonDeclined": "Eklenmedi — workspace onlarsız açılacak",
+    "addonUnknownTool": "Bu sayfa “{{tool}}” istedi ama bu workspace onu tanımlamıyor",
+    "addonNotInstalled": "“{{name}}” kurulu değil, bu kısım henüz çalışamaz"
   }
 }

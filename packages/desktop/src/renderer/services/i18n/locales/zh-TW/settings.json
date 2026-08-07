@@ -1767,6 +1767,16 @@
     },
     "skillsFetching": "正在取得它需要的：{{names}}",
     "skillsInstalled": "已安裝 {{names}}",
-    "skillsMissing": "找不到 {{names}}——工作區能開啟，但用到它們的部分暫時不能用"
+    "skillsMissing": "找不到 {{names}}——工作區能開啟，但用到它們的部分暫時不能用",
+    "addonApproveTitle": "「{{name}}」想要新增能力",
+    "addonApproveBody": "這個工作區需要 The Fool 自己做不到的事。每一項都會在你的機器上執行下面顯示的指令，並留在「設定 → 工具」裡，你可以在那裡關閉或移除。",
+    "addonApproveWarning": "只有在你信任傳給你這個工作區的人時才同意。拒絕的話工作區照樣能開啟——只是需要這些的部分不能用。",
+    "addonApprove": "新增",
+    "addonDecline": "暫不",
+    "addonInstalled": "已新增 {{names}}",
+    "addonFailed": "無法新增 {{names}}",
+    "addonDeclined": "沒有新增——工作區會在沒有它們的情況下開啟",
+    "addonUnknownTool": "這個頁面請求了「{{tool}}」，但這個工作區沒有宣告它",
+    "addonNotInstalled": "「{{name}}」尚未安裝，這部分還不能執行"
   }
 }
