@@ -1395,8 +1395,8 @@
     "needsClonedVoice": "This engine has no voice of its own — it only speaks in a voice you clone. Drop a recording below to give it one.",
     "cloneTextOptional": "What is said in the recording — optional, this engine does not read it.",
     "cloneSavedNoEngine": "{{name}} saved. Install a cloning voice engine to hear it.",
-    "conversationModeTitle": "Voice Chat",
-    "conversationModeSubtitle": "Realtime speech with visible agent actions",
+    "conversationModeTitle": "語音助手",
+    "conversationModeSubtitle": "對電腦說話，看它做事",
     "conversationWelcomeTitle": "Connect your agent",
     "conversationWelcomeSubtitle": "Choose Codex or Claude. Sign-in stays inside the official CLI OAuth flow; then Jester can finish the rest of The Fool setup with you.",
     "conversationReadyHint": "Start talking naturally. Ask Jester to configure the app or say “make the theme more blue.”",
@@ -1464,7 +1464,8 @@
       "persona.english-teacher": "英語老師",
       "persona.language-partner": "語伴",
       "persona.interview-coach": "面試教練",
-      "layout": "版面"
+      "layout": "版面",
+      "workspace": "工作區"
     },
     "conversationSettingPersona": "下次對話起改為{{name}}",
     "conversationSettingSpeed": "語速改為 {{value}} 倍",
@@ -1617,7 +1618,8 @@
     "conversationSkillInstalled": "「{{name}}」已加入你的技能",
     "conversationSkillCancelled": "已丟棄那段錄製",
     "conversationSkillIncomplete": "要做成技能，我需要一個名字和步驟",
-    "conversationSkillUnnamed": "新技能"
+    "conversationSkillUnnamed": "新技能",
+    "conversationSettingWorkspace": "已切換到{{name}}"
   },
   "themeCustomizer": {
     "title": "自訂主題",
@@ -1706,5 +1708,28 @@
     "namePlaceholder": "取個名字",
     "untitled": "我的版面",
     "yours": "你的版面"
+  },
+  "hub": {
+    "title": "Fool 中心",
+    "subtitle": "工作區就是整個應用對準一件事——版面、助手的身分、幹活的智慧體和模型。整理一次、取個名字，之後一鍵或一句話即可。",
+    "inUse": "使用中",
+    "shipped": "內建",
+    "use": "使用",
+    "share": "分享",
+    "noDescription": "沒有說明",
+    "factLayout": "版面：{{name}}",
+    "factPersona": "身分：{{name}}",
+    "factModel": "模型：{{name}}",
+    "makeTitle": "按現在的樣子做一個",
+    "makeHint": "會把應用目前的版面、身分、智慧體和模型原樣儲存，並取個名字。",
+    "namePlaceholder": "取個名字",
+    "descriptionPlaceholder": "用來做什麼",
+    "make": "儲存這套設定",
+    "import": "開啟別人傳來的",
+    "imported": "「{{name}}」已就緒",
+    "importError": {
+      "not-a-workspace": "這個檔案不是工作區",
+      "unreadable": "無法讀取這個檔案"
+    }
   }
 }

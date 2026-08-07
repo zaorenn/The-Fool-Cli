@@ -2,6 +2,7 @@ import type { ICssTheme } from '@/common/config/storage';
 import type { Theme } from '@/common/theme/types';
 import type { LayoutPresetLibrary, SurfaceLayoutSelection } from '@/common/config/surfaceLayouts';
 import type { ThemeOverrides, ThemePalettes } from '@/common/config/themeOverrides';
+import type { WorkspaceLibrary } from '@/common/config/workspaces';
 
 export type ConfigKeyMap = {
   language: string;
@@ -24,6 +25,16 @@ export type ConfigKeyMap = {
   'ui.surfaceLayouts': SurfaceLayoutSelection | undefined;
   /** Layouts the user built and named, recalled the same way a palette is. */
   'ui.layoutPresets': LayoutPresetLibrary | undefined;
+  /**
+   * The whole app aimed at one purpose, by name.
+   *
+   * Layout, persona, agent, model and skills bundled together, because every one
+   * of those is global and a person who uses this app for two different things
+   * needs two different answers to all of them at once.
+   */
+  'workspaces.library': WorkspaceLibrary | undefined;
+  /** Which of them is in force. */
+  'workspaces.activeId': string | undefined;
   /** The chat that spoken turns go to, until the user asks for a new one. */
   'voice.boundConversationId': string | undefined;
   /**

@@ -85,7 +85,18 @@ vi.mock('@renderer/services/voice/voiceSettingsStore', () => ({
 /** What shape each window is wearing, which a spoken request can change. */
 const worn: string[] = [];
 
-vi.mock('@renderer/hooks/system/useSurfaceLayout', () => ({
+/** Which workspace is in force, which a spoken request can also change. */
+const entered: string[] = [];
+
+vi.mock('@renderer/hooks/config/useWorkspaces', () => ({
+  peekWorkspaces: () => ({
+    default: { id: 'default', name: 'Default', builtin: true, layouts: {}, voice: {}, agent: {}, skills: [] },
+    guitar: { id: 'guitar', name: 'Guitar tab', builtin: false, layouts: {}, voice: {}, agent: {}, skills: [] },
+  }),
+  enterWorkspace: async (workspace: { id: string }) => void entered.push(workspace.id),
+}));
+
+vi.mock('@renderer/hooks/config/useSurfaceLayout', () => ({
   peekLayoutPresets: () => ({
     'my quiet one': {
       id: 'my quiet one',
@@ -230,5 +241,38 @@ describe('changing the layout out loud', () => {
   it('refuses a layout that does not exist rather than changing nothing in silence', async () => {
     await expect(applySpokenSetting('layout', 'spaceship', t)).rejects.toThrow();
     expect(worn).toEqual([]);
+  });
+});
+
+/**
+ * The largest thing one sentence can change.
+ *
+ * A workspace moves the layout, the persona, the agent and the model at once,
+ * which is exactly why a name that matches nothing has to be refused rather
+ * than half-applied.
+ */
+describe('changing the workspace out loud', () => {
+  beforeEach(() => {
+    entered.length = 0;
+  });
+
+  it('takes one by the name the user gave it', async () => {
+    await applySpokenSetting('workspace', 'guitar tab', t);
+    expect(entered).toEqual(['guitar']);
+  });
+
+  it('takes part of a name, because that is how people refer to their own things', async () => {
+    await applySpokenSetting('workspace', 'guitar', t);
+    expect(entered).toEqual(['guitar']);
+  });
+
+  it('goes back to the shipped one when asked for it', async () => {
+    await applySpokenSetting('workspace', 'default', t);
+    expect(entered).toEqual(['default']);
+  });
+
+  it('refuses one that does not exist rather than changing nothing in silence', async () => {
+    await expect(applySpokenSetting('workspace', 'piano', t)).rejects.toThrow();
+    expect(entered).toEqual([]);
   });
 });

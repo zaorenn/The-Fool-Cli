@@ -1393,8 +1393,8 @@
     "needsClonedVoice": "This engine has no voice of its own — it only speaks in a voice you clone. Drop a recording below to give it one.",
     "cloneTextOptional": "What is said in the recording — optional, this engine does not read it.",
     "cloneSavedNoEngine": "{{name}} saved. Install a cloning voice engine to hear it.",
-    "conversationModeTitle": "Voice Chat",
-    "conversationModeSubtitle": "Realtime speech with visible agent actions",
+    "conversationModeTitle": "Assistant vocal",
+    "conversationModeSubtitle": "Parlez à votre ordinateur et voyez ce qu’il fait",
     "conversationWelcomeTitle": "Connect your agent",
     "conversationWelcomeSubtitle": "Choose Codex or Claude. Sign-in stays inside the official CLI OAuth flow; then Jester can finish the rest of The Fool setup with you.",
     "conversationReadyHint": "Start talking naturally. Ask Jester to configure the app or say “make the theme more blue.”",
@@ -1462,7 +1462,8 @@
       "persona.english-teacher": "Professeur d'anglais",
       "persona.language-partner": "Partenaire linguistique",
       "persona.interview-coach": "Coach d'entretien",
-      "layout": "disposition"
+      "layout": "disposition",
+      "workspace": "espace de travail"
     },
     "conversationSettingPersona": "{{name}} à partir de la prochaine conversation",
     "conversationSettingSpeed": "Débit à {{value}}×",
@@ -1615,7 +1616,8 @@
     "conversationSkillInstalled": "« {{name}} » est maintenant dans vos compétences",
     "conversationSkillCancelled": "Enregistrement oublié",
     "conversationSkillIncomplete": "Il me faut un nom et les étapes pour en faire une compétence",
-    "conversationSkillUnnamed": "Une nouvelle compétence"
+    "conversationSkillUnnamed": "Une nouvelle compétence",
+    "conversationSettingWorkspace": "Passé à « {{name}} »"
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",
@@ -1704,5 +1706,28 @@
     "namePlaceholder": "Comment l’appeler",
     "untitled": "ma disposition",
     "yours": "Les vôtres"
+  },
+  "hub": {
+    "title": "Fool's Hub",
+    "subtitle": "Un espace de travail, c’est toute l’application orientée vers une seule chose — la disposition, qui est l’assistant, quel agent et quel modèle travaillent. Réglez une fois, nommez, et ensuite c’est un clic ou une phrase.",
+    "inUse": "En cours",
+    "shipped": "Fourni",
+    "use": "Utiliser",
+    "share": "Partager",
+    "noDescription": "Sans description",
+    "factLayout": "disposition : {{name}}",
+    "factPersona": "en tant que : {{name}}",
+    "factModel": "modèle : {{name}}",
+    "makeTitle": "En créer un à partir de l’état actuel",
+    "makeHint": "Reprend l’application exactement telle que vous l’avez réglée — disposition, rôle, agent et modèle — et la garde sous un nom.",
+    "namePlaceholder": "Comment l’appeler",
+    "descriptionPlaceholder": "À quoi il sert",
+    "make": "Garder ce réglage",
+    "import": "Ouvrir celui qu’on vous a envoyé",
+    "imported": "« {{name}} » est prêt",
+    "importError": {
+      "not-a-workspace": "Ce fichier n’est pas un espace de travail",
+      "unreadable": "Ce fichier n’a pas pu être lu"
+    }
   }
 }

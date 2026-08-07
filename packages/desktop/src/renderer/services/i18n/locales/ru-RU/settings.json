@@ -1393,8 +1393,8 @@
     "needsClonedVoice": "This engine has no voice of its own — it only speaks in a voice you clone. Drop a recording below to give it one.",
     "cloneTextOptional": "What is said in the recording — optional, this engine does not read it.",
     "cloneSavedNoEngine": "{{name}} saved. Install a cloning voice engine to hear it.",
-    "conversationModeTitle": "Voice Chat",
-    "conversationModeSubtitle": "Realtime speech with visible agent actions",
+    "conversationModeTitle": "Голосовой ассистент",
+    "conversationModeSubtitle": "Говорите с компьютером и смотрите, что он делает",
     "conversationWelcomeTitle": "Connect your agent",
     "conversationWelcomeSubtitle": "Choose Codex or Claude. Sign-in stays inside the official CLI OAuth flow; then Jester can finish the rest of The Fool setup with you.",
     "conversationReadyHint": "Start talking naturally. Ask Jester to configure the app or say “make the theme more blue.”",
@@ -1462,7 +1462,8 @@
       "persona.english-teacher": "Учитель английского",
       "persona.language-partner": "Языковой партнёр",
       "persona.interview-coach": "Тренер по собеседованиям",
-      "layout": "компоновка"
+      "layout": "компоновка",
+      "workspace": "рабочее пространство"
     },
     "conversationSettingPersona": "{{name}} со следующего разговора",
     "conversationSettingSpeed": "Скорость речи {{value}}×",
@@ -1615,7 +1616,8 @@
     "conversationSkillInstalled": "«{{name}}» теперь среди ваших навыков",
     "conversationSkillCancelled": "Забыл эту запись",
     "conversationSkillIncomplete": "Чтобы сделать навык, нужны название и шаги",
-    "conversationSkillUnnamed": "Новый навык"
+    "conversationSkillUnnamed": "Новый навык",
+    "conversationSettingWorkspace": "Переключил на «{{name}}»"
   },
   "themeCustomizer": {
     "title": "Настроить тему",
@@ -1704,5 +1706,28 @@
     "namePlaceholder": "Как назвать",
     "untitled": "моя компоновка",
     "yours": "Ваши"
+  },
+  "hub": {
+    "title": "Fool Hub",
+    "subtitle": "Рабочее пространство — это всё приложение, направленное на одно дело: компоновка, кем становится ассистент, какой агент и модель работают. Настройте один раз, дайте имя — дальше один клик или одна фраза.",
+    "inUse": "Используется",
+    "shipped": "Из коробки",
+    "use": "Использовать",
+    "share": "Поделиться",
+    "noDescription": "Без описания",
+    "factLayout": "компоновка: {{name}}",
+    "factPersona": "роль: {{name}}",
+    "factModel": "модель: {{name}}",
+    "makeTitle": "Создать из того, как всё настроено сейчас",
+    "makeHint": "Возьмёт приложение ровно так, как вы его настроили — компоновку, роль, агента и модель — и сохранит под именем.",
+    "namePlaceholder": "Как назвать",
+    "descriptionPlaceholder": "Для чего это",
+    "make": "Сохранить эту настройку",
+    "import": "Открыть присланное",
+    "imported": "«{{name}}» готово",
+    "importError": {
+      "not-a-workspace": "Этот файл не рабочее пространство",
+      "unreadable": "Не удалось прочитать файл"
+    }
   }
 }

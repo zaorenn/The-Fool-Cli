@@ -1395,8 +1395,8 @@
     "needsClonedVoice": "This engine has no voice of its own — it only speaks in a voice you clone. Drop a recording below to give it one.",
     "cloneTextOptional": "What is said in the recording — optional, this engine does not read it.",
     "cloneSavedNoEngine": "{{name}} saved. Install a cloning voice engine to hear it.",
-    "conversationModeTitle": "Voice Chat",
-    "conversationModeSubtitle": "Realtime speech with visible agent actions",
+    "conversationModeTitle": "音声アシスタント",
+    "conversationModeSubtitle": "コンピューターに話しかけ、動くのを見る",
     "conversationWelcomeTitle": "Connect your agent",
     "conversationWelcomeSubtitle": "Choose Codex or Claude. Sign-in stays inside the official CLI OAuth flow; then Jester can finish the rest of The Fool setup with you.",
     "conversationReadyHint": "Start talking naturally. Ask Jester to configure the app or say “make the theme more blue.”",
@@ -1464,7 +1464,8 @@
       "persona.english-teacher": "英語の先生",
       "persona.language-partner": "会話パートナー",
       "persona.interview-coach": "面接コーチ",
-      "layout": "レイアウト"
+      "layout": "レイアウト",
+      "workspace": "ワークスペース"
     },
     "conversationSettingPersona": "次の会話から{{name}}になります",
     "conversationSettingSpeed": "話す速さを {{value}} 倍にしました",
@@ -1617,7 +1618,8 @@
     "conversationSkillInstalled": "「{{name}}」をスキルに追加しました",
     "conversationSkillCancelled": "その記録は破棄しました",
     "conversationSkillIncomplete": "スキルにするには名前と手順が必要です",
-    "conversationSkillUnnamed": "新しいスキル"
+    "conversationSkillUnnamed": "新しいスキル",
+    "conversationSettingWorkspace": "{{name}}に切り替えました"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",
@@ -1706,5 +1708,28 @@
     "namePlaceholder": "名前",
     "untitled": "わたしのレイアウト",
     "yours": "あなたのもの"
+  },
+  "hub": {
+    "title": "Fool ハブ",
+    "subtitle": "ワークスペースは、アプリ全体をひとつの目的に向けたものです——レイアウト、アシスタントの人格、作業を担うエージェントとモデル。一度整えて名前を付ければ、あとはワンクリックか一言です。",
+    "inUse": "使用中",
+    "shipped": "標準",
+    "use": "使う",
+    "share": "共有",
+    "noDescription": "説明なし",
+    "factLayout": "レイアウト: {{name}}",
+    "factPersona": "人格: {{name}}",
+    "factModel": "モデル: {{name}}",
+    "makeTitle": "今の状態から作る",
+    "makeHint": "今のレイアウト・人格・エージェント・モデルをそのまま名前を付けて保存します。",
+    "namePlaceholder": "名前",
+    "descriptionPlaceholder": "何のためか",
+    "make": "この設定を保存",
+    "import": "送られてきたものを開く",
+    "imported": "「{{name}}」の準備ができました",
+    "importError": {
+      "not-a-workspace": "このファイルはワークスペースではありません",
+      "unreadable": "このファイルを読めませんでした"
+    }
   }
 }

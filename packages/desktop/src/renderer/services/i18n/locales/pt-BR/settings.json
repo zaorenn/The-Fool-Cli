@@ -1396,8 +1396,8 @@
     "needsClonedVoice": "This engine has no voice of its own — it only speaks in a voice you clone. Drop a recording below to give it one.",
     "cloneTextOptional": "What is said in the recording — optional, this engine does not read it.",
     "cloneSavedNoEngine": "{{name}} saved. Install a cloning voice engine to hear it.",
-    "conversationModeTitle": "Voice Chat",
-    "conversationModeSubtitle": "Realtime speech with visible agent actions",
+    "conversationModeTitle": "Assistente de voz",
+    "conversationModeSubtitle": "Fale com seu computador e veja o que ele faz",
     "conversationWelcomeTitle": "Connect your agent",
     "conversationWelcomeSubtitle": "Choose Codex or Claude. Sign-in stays inside the official CLI OAuth flow; then Jester can finish the rest of The Fool setup with you.",
     "conversationReadyHint": "Start talking naturally. Ask Jester to configure the app or say “make the theme more blue.”",
@@ -1465,7 +1465,8 @@
       "persona.english-teacher": "Professor de inglês",
       "persona.language-partner": "Parceiro de idioma",
       "persona.interview-coach": "Treinador de entrevistas",
-      "layout": "layout"
+      "layout": "layout",
+      "workspace": "espaço de trabalho"
     },
     "conversationSettingPersona": "{{name}} a partir da próxima conversa",
     "conversationSettingSpeed": "Falando a {{value}}×",
@@ -1618,7 +1619,8 @@
     "conversationSkillInstalled": "“{{name}}” já está nas suas habilidades",
     "conversationSkillCancelled": "Descartei essa gravação",
     "conversationSkillIncomplete": "Preciso de um nome e dos passos para virar habilidade",
-    "conversationSkillUnnamed": "Uma nova habilidade"
+    "conversationSkillUnnamed": "Uma nova habilidade",
+    "conversationSettingWorkspace": "Mudei para “{{name}}”"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",
@@ -1707,5 +1709,28 @@
     "namePlaceholder": "Como chamar",
     "untitled": "meu layout",
     "yours": "Os seus"
+  },
+  "hub": {
+    "title": "Fool's Hub",
+    "subtitle": "Um espaço de trabalho é o aplicativo inteiro apontado para uma coisa só — o layout, quem o assistente está sendo, qual agente e modelo fazem o trabalho. Ajuste uma vez, dê um nome, e depois é um clique ou uma frase.",
+    "inUse": "Em uso",
+    "shipped": "Que vem junto",
+    "use": "Usar",
+    "share": "Compartilhar",
+    "noDescription": "Sem descrição",
+    "factLayout": "layout: {{name}}",
+    "factPersona": "como: {{name}}",
+    "factModel": "modelo: {{name}}",
+    "makeTitle": "Criar um a partir de como está agora",
+    "makeHint": "Pega o aplicativo exatamente como você deixou — layout, papel, agente e modelo — e guarda com um nome.",
+    "namePlaceholder": "Como chamar",
+    "descriptionPlaceholder": "Para que serve",
+    "make": "Guardar esta configuração",
+    "import": "Abrir um que te mandaram",
+    "imported": "“{{name}}” está pronto",
+    "importError": {
+      "not-a-workspace": "Esse arquivo não é um espaço de trabalho",
+      "unreadable": "Não foi possível ler esse arquivo"
+    }
   }
 }

@@ -1394,8 +1394,8 @@
     "needsClonedVoice": "This engine has no voice of its own — it only speaks in a voice you clone. Drop a recording below to give it one.",
     "cloneTextOptional": "What is said in the recording — optional, this engine does not read it.",
     "cloneSavedNoEngine": "{{name}} saved. Install a cloning voice engine to hear it.",
-    "conversationModeTitle": "Voice Chat",
-    "conversationModeSubtitle": "Realtime speech with visible agent actions",
+    "conversationModeTitle": "Голосовий асистент",
+    "conversationModeSubtitle": "Говоріть із комп’ютером і дивіться, що він робить",
     "conversationWelcomeTitle": "Connect your agent",
     "conversationWelcomeSubtitle": "Choose Codex or Claude. Sign-in stays inside the official CLI OAuth flow; then Jester can finish the rest of The Fool setup with you.",
     "conversationReadyHint": "Start talking naturally. Ask Jester to configure the app or say “make the theme more blue.”",
@@ -1463,7 +1463,8 @@
       "persona.english-teacher": "Учитель англійської",
       "persona.language-partner": "Мовний партнер",
       "persona.interview-coach": "Тренер зі співбесід",
-      "layout": "компонування"
+      "layout": "компонування",
+      "workspace": "робочий простір"
     },
     "conversationSettingPersona": "{{name}} з наступної розмови",
     "conversationSettingSpeed": "Швидкість мовлення {{value}}×",
@@ -1616,7 +1617,8 @@
     "conversationSkillInstalled": "«{{name}}» тепер серед ваших навичок",
     "conversationSkillCancelled": "Забув цей запис",
     "conversationSkillIncomplete": "Щоб зробити навичку, потрібні назва та кроки",
-    "conversationSkillUnnamed": "Нова навичка"
+    "conversationSkillUnnamed": "Нова навичка",
+    "conversationSettingWorkspace": "Перемкнув на «{{name}}»"
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",
@@ -1705,5 +1707,28 @@
     "namePlaceholder": "Як назвати",
     "untitled": "моє компонування",
     "yours": "Ваші"
+  },
+  "hub": {
+    "title": "Fool Hub",
+    "subtitle": "Робочий простір — це весь застосунок, спрямований на одну справу: компонування, ким стає асистент, який агент і модель працюють. Налаштуйте один раз, дайте назву — далі один клік або одна фраза.",
+    "inUse": "Використовується",
+    "shipped": "З коробки",
+    "use": "Використати",
+    "share": "Поділитися",
+    "noDescription": "Без опису",
+    "factLayout": "компонування: {{name}}",
+    "factPersona": "роль: {{name}}",
+    "factModel": "модель: {{name}}",
+    "makeTitle": "Створити з того, як усе налаштовано зараз",
+    "makeHint": "Візьме застосунок саме так, як ви його налаштували — компонування, роль, агента й модель — і збереже під назвою.",
+    "namePlaceholder": "Як назвати",
+    "descriptionPlaceholder": "Для чого це",
+    "make": "Зберегти це налаштування",
+    "import": "Відкрити надіслане",
+    "imported": "«{{name}}» готово",
+    "importError": {
+      "not-a-workspace": "Цей файл не робочий простір",
+      "unreadable": "Не вдалося прочитати файл"
+    }
   }
 }

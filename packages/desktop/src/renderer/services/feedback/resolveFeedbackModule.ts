@@ -22,6 +22,10 @@ const ROUTE_MODULE_MAP: ReadonlyArray<readonly [prefix: string, tag: FeedbackMod
   ['/team', 'agent-team'],
   ['/scheduled', 'scheduled-task'],
   ['/assistants', 'assistant-preset'],
+  // Fool's Hub bundles a layout, a persona, an agent and a model under a name,
+  // so a report from there is about the arrangement rather than about any one of
+  // them — the same module the assistant presets report to.
+  ['/hub', 'assistant-preset'],
   ['/settings/agent', 'agent-detection'],
   ['/settings/model', 'model-auth'],
   ['/settings/skills', 'skills-plugin'],

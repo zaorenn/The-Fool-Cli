@@ -1393,8 +1393,8 @@
     "needsClonedVoice": "This engine has no voice of its own — it only speaks in a voice you clone. Drop a recording below to give it one.",
     "cloneTextOptional": "What is said in the recording — optional, this engine does not read it.",
     "cloneSavedNoEngine": "{{name}} saved. Install a cloning voice engine to hear it.",
-    "conversationModeTitle": "Voice Chat",
-    "conversationModeSubtitle": "Realtime speech with visible agent actions",
+    "conversationModeTitle": "Voice Assistant",
+    "conversationModeSubtitle": "Talk to your computer; watch what it does",
     "conversationWelcomeTitle": "Connect your agent",
     "conversationWelcomeSubtitle": "Choose Codex or Claude. Sign-in stays inside the official CLI OAuth flow; then Jester can finish the rest of The Fool setup with you.",
     "conversationReadyHint": "Start talking naturally. Ask Jester to configure the app or say “make the theme more blue.”",
@@ -1462,7 +1462,8 @@
       "persona.english-teacher": "English teacher",
       "persona.language-partner": "Language partner",
       "persona.interview-coach": "Interview coach",
-      "layout": "layout"
+      "layout": "layout",
+      "workspace": "workspace"
     },
     "conversationSettingPersona": "{{name}} from the next conversation on",
     "conversationSettingSpeed": "Speaking at {{value}}×",
@@ -1615,7 +1616,8 @@
     "conversationSkillInstalled": "“{{name}}” is in your skills now",
     "conversationSkillCancelled": "Forgot that recording",
     "conversationSkillIncomplete": "I need a name and the steps before I can make that a skill",
-    "conversationSkillUnnamed": "A new skill"
+    "conversationSkillUnnamed": "A new skill",
+    "conversationSettingWorkspace": "Switched to {{name}}"
   },
   "themeCustomizer": {
     "title": "Customize theme",
@@ -1704,5 +1706,28 @@
     "namePlaceholder": "What to call it",
     "untitled": "my layout",
     "yours": "Yours"
+  },
+  "hub": {
+    "title": "Fool's Hub",
+    "subtitle": "A workspace is the whole app aimed at one thing — the layout, who the assistant is being, which agent and model do the work. Arrange it once, name it, and it is one click or one sentence from then on.",
+    "inUse": "In use",
+    "shipped": "Shipped",
+    "use": "Use",
+    "share": "Share",
+    "noDescription": "No description",
+    "factLayout": "layout: {{name}}",
+    "factPersona": "as: {{name}}",
+    "factModel": "model: {{name}}",
+    "makeTitle": "Make one from how things are now",
+    "makeHint": "This takes the app exactly as you have it arranged — layout, persona, agent and model — and keeps it under a name.",
+    "namePlaceholder": "What to call it",
+    "descriptionPlaceholder": "What it is for",
+    "make": "Keep this setup",
+    "import": "Open one somebody sent",
+    "imported": "“{{name}}” is ready",
+    "importError": {
+      "not-a-workspace": "That file is not a workspace",
+      "unreadable": "That file could not be read"
+    }
   }
 }

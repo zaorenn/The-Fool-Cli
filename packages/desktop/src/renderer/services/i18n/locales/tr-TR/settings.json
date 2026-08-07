@@ -1393,8 +1393,8 @@
     "needsClonedVoice": "Bu motorun kendine ait bir sesi yok — yalnızca klonladığınız bir sesle konuşur. Ona bir ses vermek için aşağıya bir kayıt bırakın.",
     "cloneTextOptional": "Kayıtta ne söylendiği — isteğe bağlı, bu motor okumuyor.",
     "cloneSavedNoEngine": "{{name}} kaydedildi. Duyabilmek için bir ses klonlama motoru kurun.",
-    "conversationModeTitle": "Sesli Sohbet",
-    "conversationModeSubtitle": "Görünür agent eylemleriyle gerçek zamanlı konuşma",
+    "conversationModeTitle": "Sesli Asistan",
+    "conversationModeSubtitle": "Bilgisayarınla konuş; ne yaptığını gör",
     "conversationWelcomeTitle": "Agentını bağla",
     "conversationWelcomeSubtitle": "Codex veya Claude seç. Giriş, resmi CLI OAuth akışında kalır; ardından Jester The Fool kurulumunun kalanını seninle tamamlar.",
     "conversationReadyHint": "Doğal biçimde konuş. Jester’dan uygulamayı kurmasını iste veya “temayı daha mavi yap” de.",
@@ -1462,7 +1462,8 @@
       "persona.english-teacher": "İngilizce öğretmeni",
       "persona.language-partner": "Dil arkadaşı",
       "persona.interview-coach": "Mülakat koçu",
-      "layout": "yerleşim"
+      "layout": "yerleşim",
+      "workspace": "workspace"
     },
     "conversationSettingPersona": "Bir sonraki sohbetten itibaren {{name}}",
     "conversationSettingSpeed": "Konuşma hızı {{value}}×",
@@ -1615,7 +1616,8 @@
     "conversationSkillInstalled": "“{{name}}” artık skill’lerinde",
     "conversationSkillCancelled": "O kaydı unuttum",
     "conversationSkillIncomplete": "Skill yapabilmem için bir ad ve adımlar lazım",
-    "conversationSkillUnnamed": "Yeni bir skill"
+    "conversationSkillUnnamed": "Yeni bir skill",
+    "conversationSettingWorkspace": "{{name}} workspace’ine geçildi"
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",
@@ -1704,5 +1706,28 @@
     "namePlaceholder": "Adı ne olsun",
     "untitled": "yerleşimim",
     "yours": "Seninkiler"
+  },
+  "hub": {
+    "title": "Fool's Hub",
+    "subtitle": "Workspace, uygulamanın tamamının tek bir amaca yöneltilmiş hâli — yerleşim, asistanın kimliği, işi yapan ajan ve model. Bir kez düzenle, adını koy; sonrası tek tık ya da tek cümle.",
+    "inUse": "Kullanımda",
+    "shipped": "Yerleşik",
+    "use": "Kullan",
+    "share": "Paylaş",
+    "noDescription": "Açıklama yok",
+    "factLayout": "yerleşim: {{name}}",
+    "factPersona": "kimlik: {{name}}",
+    "factModel": "model: {{name}}",
+    "makeTitle": "Şu anki hâlinden bir tane oluştur",
+    "makeHint": "Uygulamayı tam da düzenlediğin gibi alır — yerleşim, kimlik, ajan ve model — ve bir adla saklar.",
+    "namePlaceholder": "Adı ne olsun",
+    "descriptionPlaceholder": "Ne için",
+    "make": "Bu düzeni sakla",
+    "import": "Sana gönderilen birini aç",
+    "imported": "“{{name}}” hazır",
+    "importError": {
+      "not-a-workspace": "Bu dosya bir workspace değil",
+      "unreadable": "Bu dosya okunamadı"
+    }
   }
 }

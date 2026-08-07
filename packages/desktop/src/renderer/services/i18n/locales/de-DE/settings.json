@@ -1393,8 +1393,8 @@
     "needsClonedVoice": "This engine has no voice of its own — it only speaks in a voice you clone. Drop a recording below to give it one.",
     "cloneTextOptional": "What is said in the recording — optional, this engine does not read it.",
     "cloneSavedNoEngine": "{{name}} saved. Install a cloning voice engine to hear it.",
-    "conversationModeTitle": "Voice Chat",
-    "conversationModeSubtitle": "Realtime speech with visible agent actions",
+    "conversationModeTitle": "Sprachassistent",
+    "conversationModeSubtitle": "Sprich mit deinem Rechner und sieh zu, was er tut",
     "conversationWelcomeTitle": "Connect your agent",
     "conversationWelcomeSubtitle": "Choose Codex or Claude. Sign-in stays inside the official CLI OAuth flow; then Jester can finish the rest of The Fool setup with you.",
     "conversationReadyHint": "Start talking naturally. Ask Jester to configure the app or say “make the theme more blue.”",
@@ -1462,7 +1462,8 @@
       "persona.english-teacher": "Englischlehrer",
       "persona.language-partner": "Sprachpartner",
       "persona.interview-coach": "Interview-Coach",
-      "layout": "Layout"
+      "layout": "Layout",
+      "workspace": "Workspace"
     },
     "conversationSettingPersona": "{{name}} ab dem nächsten Gespräch",
     "conversationSettingSpeed": "Sprechtempo {{value}}×",
@@ -1615,7 +1616,8 @@
     "conversationSkillInstalled": "„{{name}}“ ist jetzt bei deinen Skills",
     "conversationSkillCancelled": "Aufnahme verworfen",
     "conversationSkillIncomplete": "Für einen Skill brauche ich einen Namen und die Schritte",
-    "conversationSkillUnnamed": "Ein neuer Skill"
+    "conversationSkillUnnamed": "Ein neuer Skill",
+    "conversationSettingWorkspace": "Auf „{{name}}“ umgestellt"
   },
   "themeCustomizer": {
     "title": "Design anpassen",
@@ -1704,5 +1706,28 @@
     "namePlaceholder": "Wie soll es heißen",
     "untitled": "mein Layout",
     "yours": "Deine"
+  },
+  "hub": {
+    "title": "Fool's Hub",
+    "subtitle": "Ein Workspace ist die ganze App, auf eine Sache ausgerichtet — das Layout, wer die Assistenz gerade ist, welcher Agent und welches Modell arbeiten. Einmal einrichten, benennen, danach ein Klick oder ein Satz.",
+    "inUse": "In Benutzung",
+    "shipped": "Mitgeliefert",
+    "use": "Benutzen",
+    "share": "Teilen",
+    "noDescription": "Keine Beschreibung",
+    "factLayout": "Layout: {{name}}",
+    "factPersona": "als: {{name}}",
+    "factModel": "Modell: {{name}}",
+    "makeTitle": "Einen aus dem jetzigen Zustand machen",
+    "makeHint": "Nimmt die App genau so, wie du sie eingerichtet hast — Layout, Rolle, Agent und Modell — und behält sie unter einem Namen.",
+    "namePlaceholder": "Wie soll er heißen",
+    "descriptionPlaceholder": "Wofür er ist",
+    "make": "Diese Einrichtung behalten",
+    "import": "Einen geschickten öffnen",
+    "imported": "„{{name}}“ ist bereit",
+    "importError": {
+      "not-a-workspace": "Diese Datei ist kein Workspace",
+      "unreadable": "Diese Datei konnte nicht gelesen werden"
+    }
   }
 }

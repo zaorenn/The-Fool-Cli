@@ -6,9 +6,11 @@
 
 import { ipcBridge } from '@/common';
 import { findLayoutByName } from '@/common/config/surfaceLayouts';
+import { findWorkspaceByName } from '@/common/config/workspaces';
 import { synthesisProviderFor, type FoolVoiceSettings, type VoiceProfile } from '@/common/types/foolVoice';
 import type { SpokenVoice } from '@/common/realtime/personas';
-import { peekLayoutPresets, wearLayout } from '@renderer/hooks/system/useSurfaceLayout';
+import { peekLayoutPresets, wearLayout } from '@renderer/hooks/config/useSurfaceLayout';
+import { enterWorkspace, peekWorkspaces } from '@renderer/hooks/config/useWorkspaces';
 import { peekVoiceSettings, writeVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import type { Translate } from './types';
 
@@ -40,6 +42,7 @@ export const SPOKEN_SETTINGS = [
   'thinking_model',
   'vision_model',
   'layout',
+  'workspace',
 ] as const;
 
 export type SpokenSetting = (typeof SPOKEN_SETTINGS)[number];
@@ -305,6 +308,21 @@ export const applySpokenSetting = async (setting: string, value: string, t: Tran
       if (!found) return bad();
       await wearLayout('voice', found.id);
       return t('settings.voice.conversationSettingLayout', { name: found.name });
+    }
+
+    /**
+     * The whole app aimed somewhere else, by saying so.
+     *
+     * A workspace moves the layout, the persona, the agent and the model at
+     * once, so this is the largest thing a single sentence can change — which
+     * is exactly why it has to be refused by name when it matches nothing
+     * rather than half-applied or silently ignored.
+     */
+    case 'workspace': {
+      const found = said.length === 0 ? null : findWorkspaceByName(peekWorkspaces(), said);
+      if (!found) return bad();
+      await enterWorkspace(found);
+      return t('settings.voice.conversationSettingWorkspace', { name: found.name });
     }
 
     default:

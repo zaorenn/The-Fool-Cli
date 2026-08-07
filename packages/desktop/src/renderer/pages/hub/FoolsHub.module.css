@@ -1,0 +1,142 @@
+/*
+ * Fool's Hub.
+ *
+ * A room of cards rather than a settings form, because choosing a workspace is
+ * choosing what the app is for today — a decision made by looking, not by
+ * reading labels down a column. Every colour comes from the theme's own
+ * variables, so a palette the user changes reaches this page like any other.
+ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 28px 28px 40px;
+  max-width: 1180px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lede {
+  max-width: 68ch;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text-3);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+/* ── a workspace ───────────────────────────────────────────────────────────── */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--color-border-2);
+  border-radius: 12px;
+  background: var(--color-bg-2);
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.card:hover {
+  border-color: var(--color-text-4, var(--color-text-3));
+}
+
+/* The one in force is marked by its edge rather than by a badge alone: which
+   workspace you are in is the single thing this page exists to answer. */
+.cardActive {
+  border-color: rgb(var(--primary-6));
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cardBody {
+  font-size: 12.5px !important;
+  line-height: 1.55;
+  color: var(--color-text-2) !important;
+  min-height: 38px;
+}
+
+.cardBodyEmpty {
+  color: var(--color-text-4, var(--color-text-3)) !important;
+  font-style: italic;
+}
+
+/*
+ * What switching would actually change.
+ *
+ * A list of names is quicker to build and useless to choose from — the point of
+ * a workspace is that it moves several settings at once, so the card says which.
+ */
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.facts li {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--color-text-3);
+  background: var(--color-fill-1, var(--color-bg-3));
+  border-radius: 4px;
+  padding: 3px 7px;
+}
+
+.cardFoot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+/* ── making one ────────────────────────────────────────────────────────────── */
+
+.maker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border: 1px dashed var(--color-border-2);
+  border-radius: 12px;
+}
+
+.makerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.makerRow > :global(.arco-input-wrapper) {
+  flex: 1;
+  min-width: 180px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}

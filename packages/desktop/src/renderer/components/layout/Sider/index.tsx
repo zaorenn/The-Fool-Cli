@@ -7,7 +7,14 @@ import { useAuth } from '@renderer/hooks/context/AuthContext';
 import { useLayoutContext } from '@renderer/hooks/context/LayoutContext';
 import { blurActiveElement } from '@renderer/utils/ui/focus';
 import { useThemeContext } from '@renderer/hooks/context/ThemeContext';
-import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry, SiderAssistantEntry, SiderVoiceEntry } from './SiderNav';
+import {
+  SiderToolbar,
+  SiderSearchEntry,
+  SiderScheduledEntry,
+  SiderAssistantEntry,
+  SiderVoiceEntry,
+  SiderHubEntry,
+} from './SiderNav';
 import SiderFooter from './SiderFooter';
 import TeamSiderSection from './TeamSiderSection';
 import siderStyles from './Sider.module.css';
@@ -109,6 +116,19 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
     }
   };
 
+  const handleHubClick = () => {
+    cleanupSiderTooltips();
+    blurActiveElement();
+    closePreview();
+    setIsBatchMode(false);
+    Promise.resolve(navigate('/hub')).catch((error) => {
+      console.error('Navigation failed:', error);
+    });
+    if (onSessionClick) {
+      onSessionClick();
+    }
+  };
+
   const handleAssistantClick = () => {
     cleanupSiderTooltips();
     blurActiveElement();
@@ -203,6 +223,15 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
               collapsed={collapsed}
               siderTooltipProps={siderTooltipProps}
               onClick={handleVoiceClick}
+            />
+            {/* Fool's Hub: which app you are using today, beside the assistant
+                that uses it rather than buried in Settings. */}
+            <SiderHubEntry
+              isMobile={isMobile}
+              isActive={pathname === '/hub'}
+              collapsed={collapsed}
+              siderTooltipProps={siderTooltipProps}
+              onClick={handleHubClick}
             />
             {/* Assistant nav entry - fixed above Scheduled */}
             <SiderAssistantEntry

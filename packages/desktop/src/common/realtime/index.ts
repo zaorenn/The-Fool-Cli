@@ -235,13 +235,14 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
             'thinking_model',
             'vision_model',
             'layout',
+            'workspace',
           ],
           description: 'Which one to change.',
         },
         value: {
           type: 'string',
           description:
-            "The new value. For 'voice', an id from the list of installed voices you were given. For 'speed' and 'volume', a number — 1 is normal, 1.3 is faster. For 'reply_language', a language code such as en or tr, or 'auto' to follow whoever is speaking. For 'persona', one of companion, english-teacher, language-partner, interview-coach. For 'layout', the name of a layout — 'instrument' or 'hud' ship with the app, and the user may have saved others under their own names. For the on/off ones, 'on' or 'off'.",
+            "The new value. For 'voice', an id from the list of installed voices you were given. For 'speed' and 'volume', a number — 1 is normal, 1.3 is faster. For 'reply_language', a language code such as en or tr, or 'auto' to follow whoever is speaking. For 'persona', one of companion, english-teacher, language-partner, interview-coach. For 'layout', the name of a layout — 'instrument' or 'hud' ship with the app, and the user may have saved others under their own names. For 'workspace', the name of a workspace: 'default' ships, and the user names their own. For the on/off ones, 'on' or 'off'.",
         },
       },
       required: ['setting', 'value'],

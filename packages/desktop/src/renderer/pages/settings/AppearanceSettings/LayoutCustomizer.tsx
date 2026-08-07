@@ -17,7 +17,7 @@ import {
   type LayoutOptions,
   type SurfaceId,
 } from '@/common/config/surfaceLayouts';
-import { useSurfaceLayout } from '@renderer/hooks/system/useSurfaceLayout';
+import { useSurfaceLayout } from '@renderer/hooks/config/useSurfaceLayout';
 
 /**
  * Choosing what shape a window is, and keeping the one you built.

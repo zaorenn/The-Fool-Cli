@@ -1393,8 +1393,8 @@
     "needsClonedVoice": "This engine has no voice of its own — it only speaks in a voice you clone. Drop a recording below to give it one.",
     "cloneTextOptional": "What is said in the recording — optional, this engine does not read it.",
     "cloneSavedNoEngine": "{{name}} saved. Install a cloning voice engine to hear it.",
-    "conversationModeTitle": "Voice Chat",
-    "conversationModeSubtitle": "Realtime speech with visible agent actions",
+    "conversationModeTitle": "دستیار صوتی",
+    "conversationModeSubtitle": "با رایانه‌تان حرف بزنید و ببینید چه می‌کند",
     "conversationWelcomeTitle": "Connect your agent",
     "conversationWelcomeSubtitle": "Choose Codex or Claude. Sign-in stays inside the official CLI OAuth flow; then Jester can finish the rest of The Fool setup with you.",
     "conversationReadyHint": "Start talking naturally. Ask Jester to configure the app or say “make the theme more blue.”",
@@ -1462,7 +1462,8 @@
       "persona.english-teacher": "معلم انگلیسی",
       "persona.language-partner": "همراه زبانی",
       "persona.interview-coach": "مربی مصاحبه",
-      "layout": "چیدمان"
+      "layout": "چیدمان",
+      "workspace": "فضای کاری"
     },
     "conversationSettingPersona": "از گفتگوی بعدی: {{name}}",
     "conversationSettingSpeed": "سرعت گفتار {{value}}×",
@@ -1615,7 +1616,8 @@
     "conversationSkillInstalled": "«{{name}}» حالا در مهارت‌های شماست",
     "conversationSkillCancelled": "آن ضبط را دور ریختم",
     "conversationSkillIncomplete": "برای ساختن مهارت به یک نام و مراحل نیاز دارم",
-    "conversationSkillUnnamed": "یک مهارت تازه"
+    "conversationSkillUnnamed": "یک مهارت تازه",
+    "conversationSettingWorkspace": "به «{{name}}» تغییر کرد"
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",
@@ -1704,5 +1706,28 @@
     "namePlaceholder": "چه نامی بگذاریم",
     "untitled": "چیدمان من",
     "yours": "مال شما"
+  },
+  "hub": {
+    "title": "Fool Hub",
+    "subtitle": "فضای کاری یعنی کل برنامه که به یک هدف نشانه رفته است — چیدمان، اینکه دستیار چه کسی باشد، کدام عامل و کدام مدل کار را انجام دهد. یک بار تنظیم کنید، نامی بگذارید، از آن پس یک کلیک یا یک جمله کافی است.",
+    "inUse": "در حال استفاده",
+    "shipped": "همراه برنامه",
+    "use": "استفاده",
+    "share": "هم‌رسانی",
+    "noDescription": "بدون توضیح",
+    "factLayout": "چیدمان: {{name}}",
+    "factPersona": "به‌عنوان: {{name}}",
+    "factModel": "مدل: {{name}}",
+    "makeTitle": "از وضعیت فعلی یکی بساز",
+    "makeHint": "برنامه را دقیقاً همان‌طور که تنظیم کرده‌اید برمی‌دارد — چیدمان، نقش، عامل و مدل — و با یک نام نگه می‌دارد.",
+    "namePlaceholder": "چه نامی بگذاریم",
+    "descriptionPlaceholder": "برای چه کاری",
+    "make": "این تنظیم را نگه دار",
+    "import": "یکی که برایتان فرستاده‌اند باز کنید",
+    "imported": "«{{name}}» آماده است",
+    "importError": {
+      "not-a-workspace": "این فایل یک فضای کاری نیست",
+      "unreadable": "این فایل خوانده نشد"
+    }
   }
 }

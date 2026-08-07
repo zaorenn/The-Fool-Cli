@@ -10,7 +10,7 @@ import { Check, CloseOne, Link, Magic, Microphone, PauseOne, Voice } from '@icon
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import { useFoolVoiceSettings } from '@renderer/hooks/voice/useFoolVoiceSettings';
-import { useSurfaceLayout } from '@renderer/hooks/system/useSurfaceLayout';
+import { useSurfaceLayout } from '@renderer/hooks/config/useSurfaceLayout';
 import TextToSpeechSection from '@renderer/components/settings/SettingsModal/contents/voice/tts/TextToSpeechSection';
 import ConversationSettings from './ConversationSettings';
 import VoiceHudBody from './hud/VoiceHudBody';
