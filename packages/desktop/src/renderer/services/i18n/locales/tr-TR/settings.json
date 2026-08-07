@@ -1705,7 +1705,29 @@
     "editHint": "Yukarıdakileri değiştir, sonra kendi verdiğin bir adla kaydet.",
     "namePlaceholder": "Adı ne olsun",
     "untitled": "yerleşimim",
-    "yours": "Seninkiler"
+    "yours": "Seninkiler",
+    "token": {
+      "radius": "Köşeler",
+      "spacing": "Boşluk",
+      "textScale": "Yazı boyutu",
+      "motionMs": "Hareket",
+      "accent": "Vurgu",
+      "contrast": "Derinlik",
+      "instant": "anında"
+    },
+    "tokenHint": {
+      "radius": "Her köşenin ne kadar yuvarlak olduğu. Sıfır köşeli demek.",
+      "spacing": "Öğelerin ne kadar yer bulduğu.",
+      "textScale": "Göreli birimle ölçülen her şey buna uyar.",
+      "motionMs": "Bir geçişin ne kadar sürdüğü. Sıfır anında demek.",
+      "accent": "Vurgu renginin ne kadar yayıldığı.",
+      "contrast": "Bir panelin sayfadan ne kadar ayrıldığı."
+    },
+    "preview": "Önizleme",
+    "previewTitle": "Bir panel",
+    "previewBody": "Buradaki her şey, kaydetmeden önce sürgülerin söylediğini giyer.",
+    "previewChip": "sakin",
+    "previewChipAccent": "vurgu"
   },
   "hub": {
     "title": "Fool's Hub",

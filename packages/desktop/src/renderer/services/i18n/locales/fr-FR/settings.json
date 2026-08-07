@@ -1705,7 +1705,29 @@
     "editHint": "Modifiez ce qui précède, puis enregistrez sous un nom à vous.",
     "namePlaceholder": "Comment l’appeler",
     "untitled": "ma disposition",
-    "yours": "Les vôtres"
+    "yours": "Les vôtres",
+    "token": {
+      "radius": "Angles",
+      "spacing": "Air",
+      "textScale": "Taille du texte",
+      "motionMs": "Mouvement",
+      "accent": "Accent",
+      "contrast": "Relief",
+      "instant": "instantané"
+    },
+    "tokenHint": {
+      "radius": "À quel point les angles sont arrondis. Zéro, c’est carré.",
+      "spacing": "La place laissée aux éléments.",
+      "textScale": "Tout ce qui est dimensionné en unités relatives suit.",
+      "motionMs": "La durée d’une transition. Zéro, c’est instantané.",
+      "accent": "Jusqu’où va votre couleur d’accent.",
+      "contrast": "À quel point un panneau se détache de la page."
+    },
+    "preview": "Aperçu",
+    "previewTitle": "Un panneau",
+    "previewBody": "Tout ici porte ce que disent les curseurs, avant même d’enregistrer.",
+    "previewChip": "discret",
+    "previewChipAccent": "accent"
   },
   "hub": {
     "title": "Fool's Hub",

@@ -17,7 +17,10 @@ import {
   type LayoutOptions,
   type SurfaceId,
 } from '@/common/config/surfaceLayouts';
+import { defaultLayoutTokens, type LayoutTokens } from '@/common/config/layoutTokens';
 import { useSurfaceLayout } from '@renderer/hooks/config/useSurfaceLayout';
+import { applyLayoutTokens } from '@renderer/utils/theme/applyLayoutTokens';
+import TokenEditor from './TokenEditor';
 
 /**
  * Choosing what shape a window is, and keeping the one you built.
@@ -47,20 +50,36 @@ const LayoutCustomizer: React.FC = () => {
    * under a name, and a built-in stays exactly as it shipped.
    */
   const [draft, setDraft] = useState<LayoutOptions>(layout.options);
+  const [tokens, setTokens] = useState<LayoutTokens>(layout.tokens ?? defaultLayoutTokens());
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setDraft(layout.options);
+    setTokens(layout.tokens ?? defaultLayoutTokens());
   }, [layout]);
 
+  /**
+   * The dials take effect as they are turned, before anything is saved.
+   *
+   * A slider you have to save to see is a slider nobody uses: you turn it, close
+   * the page, look, come back, turn it again. So the app wears the draft while
+   * it is being edited, and saving is what gives it a name rather than what
+   * makes it real. Reverting is one click on the layout picker.
+   */
+  const turn = (next: LayoutTokens): void => {
+    setTokens(next);
+    applyLayoutTokens(next);
+  };
+
   const available = layoutsForSurface(surface, presets);
-  const dirty = LAYOUT_OPTION_KEYS.some((key) => draft[key] !== layout.options[key]);
+  const tokensDirty = JSON.stringify(tokens) !== JSON.stringify(layout.tokens ?? defaultLayoutTokens());
+  const dirty = LAYOUT_OPTION_KEYS.some((key) => draft[key] !== layout.options[key]) || tokensDirty;
 
   const commit = async (): Promise<void> => {
     setSaving(true);
     try {
-      const saved = await save(name.trim() || t('settings.layout.untitled'), draft);
+      const saved = await save(name.trim() || t('settings.layout.untitled'), draft, tokens);
       if (saved) setName('');
     } finally {
       setSaving(false);
@@ -127,8 +146,12 @@ const LayoutCustomizer: React.FC = () => {
         ))}
       </div>
 
-      {/* Saving is how an edit takes effect, so the hint says so plainly rather
-          than leaving someone to wonder why the page has not moved. */}
+      {/* The dials, and a real card to watch while they are turned. */}
+      <TokenEditor tokens={tokens} onChange={turn} />
+
+      {/* Saving is what gives an arrangement a name — the app is already
+          wearing it, so the hint says what a name buys rather than implying
+          nothing has happened yet. */}
       <div className='grid gap-6px rounded-8px bg-fill-1 px-12px py-10px'>
         <Typography.Text className='text-11px leading-16px text-t-tertiary'>
           {dirty ? t('settings.layout.saveHint') : t('settings.layout.editHint')}

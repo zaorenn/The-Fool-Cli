@@ -1707,7 +1707,29 @@
     "editHint": "上を変えてから、自分の名前で保存してください。",
     "namePlaceholder": "名前",
     "untitled": "わたしのレイアウト",
-    "yours": "あなたのもの"
+    "yours": "あなたのもの",
+    "token": {
+      "radius": "角の丸み",
+      "spacing": "余白",
+      "textScale": "文字の大きさ",
+      "motionMs": "動き",
+      "accent": "アクセント",
+      "contrast": "奥行き",
+      "instant": "即時"
+    },
+    "tokenHint": {
+      "radius": "角をどれだけ丸くするか。ゼロは直角です。",
+      "spacing": "要素にどれだけ場所を与えるか。",
+      "textScale": "相対単位で指定されたものはすべて追随します。",
+      "motionMs": "ひとつの遷移にかかる時間。ゼロは即時です。",
+      "accent": "アクセント色がどこまで及ぶか。",
+      "contrast": "パネルが紙面からどれだけ浮くか。"
+    },
+    "preview": "プレビュー",
+    "previewTitle": "パネル",
+    "previewBody": "保存する前から、ここはスライダーどおりに見えます。",
+    "previewChip": "静か",
+    "previewChipAccent": "アクセント"
   },
   "hub": {
     "title": "Fool ハブ",

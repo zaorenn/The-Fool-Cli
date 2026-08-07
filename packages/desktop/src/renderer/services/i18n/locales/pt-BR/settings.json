@@ -1708,7 +1708,29 @@
     "editHint": "Mude algo acima e salve com um nome seu.",
     "namePlaceholder": "Como chamar",
     "untitled": "meu layout",
-    "yours": "Os seus"
+    "yours": "Os seus",
+    "token": {
+      "radius": "Cantos",
+      "spacing": "Respiro",
+      "textScale": "Tamanho do texto",
+      "motionMs": "Movimento",
+      "accent": "Destaque",
+      "contrast": "Profundidade",
+      "instant": "instantâneo"
+    },
+    "tokenHint": {
+      "radius": "O quanto cada canto é arredondado. Zero é reto.",
+      "spacing": "Quanto espaço as coisas recebem.",
+      "textScale": "Tudo dimensionado em unidades relativas acompanha.",
+      "motionMs": "Quanto dura uma transição. Zero é instantâneo.",
+      "accent": "Até onde vai sua cor de destaque.",
+      "contrast": "O quanto um painel se destaca da página."
+    },
+    "preview": "Prévia",
+    "previewTitle": "Um painel",
+    "previewBody": "Aqui tudo já usa o que os controles dizem, antes de salvar.",
+    "previewChip": "discreto",
+    "previewChipAccent": "destaque"
   },
   "hub": {
     "title": "Fool's Hub",

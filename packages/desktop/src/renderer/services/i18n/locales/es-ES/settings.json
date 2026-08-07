@@ -1705,7 +1705,29 @@
     "editHint": "Cambia algo de arriba y guárdalo con un nombre tuyo.",
     "namePlaceholder": "Cómo llamarla",
     "untitled": "mi disposición",
-    "yours": "Las tuyas"
+    "yours": "Las tuyas",
+    "token": {
+      "radius": "Esquinas",
+      "spacing": "Aire",
+      "textScale": "Tamaño del texto",
+      "motionMs": "Movimiento",
+      "accent": "Acento",
+      "contrast": "Relieve",
+      "instant": "instantáneo"
+    },
+    "tokenHint": {
+      "radius": "Cuánto se redondea cada esquina. Cero es recta.",
+      "spacing": "Cuánto espacio se da a las cosas.",
+      "textScale": "Todo lo medido en unidades relativas lo sigue.",
+      "motionMs": "Cuánto dura una transición. Cero es instantáneo.",
+      "accent": "Hasta dónde llega tu color de acento.",
+      "contrast": "Cuánto se despega un panel de la página."
+    },
+    "preview": "Vista previa",
+    "previewTitle": "Un panel",
+    "previewBody": "Aquí todo lleva lo que dicen los deslizadores, antes de guardar.",
+    "previewChip": "discreto",
+    "previewChipAccent": "acento"
   },
   "hub": {
     "title": "Fool's Hub",

@@ -6,6 +6,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { configService } from '@/common/config/configService';
+import { defaultLayoutTokens, sanitizeLayoutTokens, type LayoutTokens } from '@/common/config/layoutTokens';
+import { applyLayoutTokens } from '@renderer/utils/theme/applyLayoutTokens';
 import {
   LAYOUT_PRESETS_CONFIG_KEY,
   MAX_LAYOUT_PRESETS,
@@ -47,6 +49,10 @@ export const peekLayoutPresets = (): LayoutPresetLibrary =>
 export const wearLayout = async (surface: SurfaceId, layoutId: string): Promise<void> => {
   const selection = sanitizeSurfaceLayouts(configService.get(SURFACE_LAYOUT_CONFIG_KEY));
   await configService.set(SURFACE_LAYOUT_CONFIG_KEY, { ...selection, [surface]: normalizeLayoutName(layoutId) });
+  // The dials go on with the shape. They are part of the layout rather than a
+  // setting beside it, so a layout that is worn and does not bring its own
+  // corners with it would be half a layout.
+  applyLayoutTokens(peekSurfaceLayout(surface).tokens);
 };
 
 /**
@@ -59,7 +65,8 @@ export const wearLayout = async (surface: SurfaceId, layoutId: string): Promise<
 export const saveLayoutPreset = async (
   surface: SurfaceId,
   name: string,
-  options: LayoutOptions
+  options: LayoutOptions,
+  tokens: LayoutTokens = defaultLayoutTokens()
 ): Promise<LayoutPreset | null> => {
   const id = normalizeLayoutName(name);
   if (id.length === 0) return null;
@@ -71,6 +78,7 @@ export const saveLayoutPreset = async (
     surface,
     builtin: false,
     options: sanitizeLayoutOptions(options, surface),
+    tokens: sanitizeLayoutTokens(tokens),
   };
 
   // Oldest first, so a library built up out loud never grows without bound.
@@ -104,7 +112,7 @@ export type SurfaceLayoutHandle = {
   layout: LayoutPreset;
   presets: LayoutPresetLibrary;
   wear: (layoutId: string) => Promise<void>;
-  save: (name: string, options: LayoutOptions) => Promise<LayoutPreset | null>;
+  save: (name: string, options: LayoutOptions, tokens?: LayoutTokens) => Promise<LayoutPreset | null>;
   remove: (name: string) => Promise<boolean>;
 };
 
@@ -114,8 +122,13 @@ export const useSurfaceLayout = (surface: SurfaceId): SurfaceLayoutHandle => {
 
   useEffect(() => {
     const read = (): void => {
-      setLayout(peekSurfaceLayout(surface));
+      const worn = peekSurfaceLayout(surface);
+      setLayout(worn);
       setPresets(peekLayoutPresets());
+      // Also when the change came from somewhere else — another window, or a
+      // workspace being switched — so the corners follow the shape wherever the
+      // decision was made.
+      applyLayoutTokens(worn.tokens);
     };
 
     read();
@@ -134,7 +147,10 @@ export const useSurfaceLayout = (surface: SurfaceId): SurfaceLayoutHandle => {
     layout,
     presets,
     wear: useCallback((layoutId: string) => wearLayout(surface, layoutId), [surface]),
-    save: useCallback((name: string, options: LayoutOptions) => saveLayoutPreset(surface, name, options), [surface]),
+    save: useCallback(
+      (name: string, options: LayoutOptions, tokens?: LayoutTokens) => saveLayoutPreset(surface, name, options, tokens),
+      [surface]
+    ),
     remove: useCallback((name: string) => deleteLayoutPreset(surface, name), [surface]),
   };
 };

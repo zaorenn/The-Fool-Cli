@@ -26,6 +26,8 @@
  * store the user and a language model can both write to.
  */
 
+import { defaultLayoutTokens, sanitizeLayoutTokens, type LayoutTokens } from './layoutTokens';
+
 /** A window whose shape can be chosen. One so far; the shape of the API is the point. */
 export type SurfaceId = 'voice';
 
@@ -80,6 +82,15 @@ export type LayoutPreset = {
   /** True for one that ships with the app and cannot be edited or deleted. */
   builtin: boolean;
   options: LayoutOptions;
+  /**
+   * The dials behind the look: corners, air, motion, text size.
+   *
+   * Separate from the options because they are a different kind of decision.
+   * An option is a choice between compositions somebody designed; these are
+   * numbers the user turns until it looks right, which is the difference
+   * between picking a look and having one.
+   */
+  tokens: LayoutTokens;
 };
 
 /**
@@ -101,6 +112,7 @@ export const BUILTIN_LAYOUTS: readonly LayoutPreset[] = [
     surface: 'voice',
     builtin: true,
     options: { shell: 'instrument', meter: 'bars', panel: 'inline', motion: 'full', density: 'comfortable' },
+    tokens: defaultLayoutTokens(),
   },
   {
     id: 'hud',
@@ -108,6 +120,7 @@ export const BUILTIN_LAYOUTS: readonly LayoutPreset[] = [
     surface: 'voice',
     builtin: true,
     options: { shell: 'hud', meter: 'ring', panel: 'drawer', motion: 'full', density: 'comfortable' },
+    tokens: defaultLayoutTokens(),
   },
 ];
 
@@ -181,7 +194,7 @@ export const sanitizeLayoutPresets = (value: unknown): LayoutPresetLibrary => {
     if (name.length === 0 || builtinIds.has(name)) continue;
     if (typeof rawPreset !== 'object' || rawPreset === null) continue;
 
-    const record = rawPreset as { surface?: unknown; options?: unknown; name?: unknown };
+    const record = rawPreset as { surface?: unknown; options?: unknown; name?: unknown; tokens?: unknown };
     const surface = SURFACE_IDS.includes(record.surface as SurfaceId) ? (record.surface as SurfaceId) : 'voice';
 
     library[name] = {
@@ -190,6 +203,7 @@ export const sanitizeLayoutPresets = (value: unknown): LayoutPresetLibrary => {
       surface,
       builtin: false,
       options: sanitizeLayoutOptions(record.options, surface),
+      tokens: sanitizeLayoutTokens(record.tokens),
     };
   }
 
@@ -245,6 +259,7 @@ export const resolveLayout = (
       surface,
       builtin: true,
       options: defaultLayoutOptions(surface),
+      tokens: defaultLayoutTokens(),
     }
   );
 };

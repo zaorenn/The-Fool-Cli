@@ -1705,7 +1705,29 @@
     "editHint": "Ändere oben etwas und speichere es unter deinem eigenen Namen.",
     "namePlaceholder": "Wie soll es heißen",
     "untitled": "mein Layout",
-    "yours": "Deine"
+    "yours": "Deine",
+    "token": {
+      "radius": "Ecken",
+      "spacing": "Luft",
+      "textScale": "Schriftgröße",
+      "motionMs": "Bewegung",
+      "accent": "Akzent",
+      "contrast": "Tiefe",
+      "instant": "sofort"
+    },
+    "tokenHint": {
+      "radius": "Wie rund jede Ecke ist. Null ist eckig.",
+      "spacing": "Wie viel Platz die Dinge bekommen.",
+      "textScale": "Alles in relativen Einheiten zieht mit.",
+      "motionMs": "Wie lange ein Übergang dauert. Null ist sofort.",
+      "accent": "Wie weit deine Akzentfarbe reicht.",
+      "contrast": "Wie weit sich eine Fläche von der Seite abhebt."
+    },
+    "preview": "Vorschau",
+    "previewTitle": "Eine Fläche",
+    "previewBody": "Hier sieht alles schon vor dem Speichern so aus, wie die Regler sagen.",
+    "previewChip": "ruhig",
+    "previewChipAccent": "Akzent"
   },
   "hub": {
     "title": "Fool's Hub",

@@ -1705,7 +1705,29 @@
     "editHint": "Change anything above, then save it under a name of your own.",
     "namePlaceholder": "What to call it",
     "untitled": "my layout",
-    "yours": "Yours"
+    "yours": "Yours",
+    "token": {
+      "radius": "Corners",
+      "spacing": "Air",
+      "textScale": "Text size",
+      "motionMs": "Motion",
+      "accent": "Accent",
+      "contrast": "Depth",
+      "instant": "instant"
+    },
+    "tokenHint": {
+      "radius": "How round every corner is. Zero is square.",
+      "spacing": "How much room things get.",
+      "textScale": "Everything sized in relative units follows.",
+      "motionMs": "How long a transition takes. Zero is instant.",
+      "accent": "How far your accent colour reaches.",
+      "contrast": "How far a panel stands off the page."
+    },
+    "preview": "Preview",
+    "previewTitle": "A panel",
+    "previewBody": "Everything here wears what the sliders say, before you save it.",
+    "previewChip": "quiet",
+    "previewChipAccent": "accent"
   },
   "hub": {
     "title": "Fool's Hub",

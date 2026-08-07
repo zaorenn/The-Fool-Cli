@@ -1707,7 +1707,29 @@
     "editHint": "改動上面的選項，再用你自己的名字儲存。",
     "namePlaceholder": "取個名字",
     "untitled": "我的版面",
-    "yours": "你的版面"
+    "yours": "你的版面",
+    "token": {
+      "radius": "圓角",
+      "spacing": "留白",
+      "textScale": "文字大小",
+      "motionMs": "動態",
+      "accent": "強調色",
+      "contrast": "層次",
+      "instant": "瞬間"
+    },
+    "tokenHint": {
+      "radius": "每個角有多圓。零就是直角。",
+      "spacing": "元素之間留多少空間。",
+      "textScale": "所有用相對單位的尺寸都會跟著變。",
+      "motionMs": "一次轉場有多久。零表示瞬間。",
+      "accent": "強調色覆蓋的範圍。",
+      "contrast": "面板從頁面上浮起多少。"
+    },
+    "preview": "預覽",
+    "previewTitle": "一個面板",
+    "previewBody": "儲存之前，這裡的一切都按滑桿的設定顯示。",
+    "previewChip": "安靜",
+    "previewChipAccent": "強調"
   },
   "hub": {
     "title": "Fool 中心",

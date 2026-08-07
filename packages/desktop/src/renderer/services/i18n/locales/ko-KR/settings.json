@@ -1707,7 +1707,29 @@
     "editHint": "위 항목을 바꾼 뒤 직접 지은 이름으로 저장하세요.",
     "namePlaceholder": "이름",
     "untitled": "내 레이아웃",
-    "yours": "내가 만든 것"
+    "yours": "내가 만든 것",
+    "token": {
+      "radius": "모서리",
+      "spacing": "여백",
+      "textScale": "글자 크기",
+      "motionMs": "움직임",
+      "accent": "강조색",
+      "contrast": "깊이",
+      "instant": "즉시"
+    },
+    "tokenHint": {
+      "radius": "모서리를 얼마나 둥글게 할지. 0은 각진 모서리입니다.",
+      "spacing": "요소에 얼마나 여유를 줄지.",
+      "textScale": "상대 단위로 지정된 것은 모두 따라갑니다.",
+      "motionMs": "전환에 걸리는 시간. 0은 즉시입니다.",
+      "accent": "강조색이 얼마나 넓게 쓰일지.",
+      "contrast": "패널이 페이지에서 얼마나 떠 보일지."
+    },
+    "preview": "미리보기",
+    "previewTitle": "패널 하나",
+    "previewBody": "저장하기 전에도 여기 있는 모든 것이 슬라이더대로 보입니다.",
+    "previewChip": "조용함",
+    "previewChipAccent": "강조"
   },
   "hub": {
     "title": "Fool 허브",
