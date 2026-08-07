@@ -2,6 +2,15 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.3.2
+
+### Fixes
+
+- The Voice Assistant no longer stops answering. Asking something while it was still talking put the question in a single slot: it was never shown, a second question overwrote the first, and interrupting the reply threw away whatever was waiting. Questions now queue in order, appear the moment they are heard, and are answered whether the reply they waited on finished or was cut short.
+- Underneath that, nothing bounded a turn. A model server that accepted a request and then stopped sending left the conversation wedged for the rest of the session — every later question shown once, replaced, and answered never. A turn that makes no progress for forty-five seconds is now abandoned out loud and the conversation carries on. A model that reasons for a while before its first word is left alone.
+- Scanning the QR code to carry on from a phone works. The code used to fall back to this computer's own address whenever there was no network one, which no phone can ever reach, and the settings panel could believe remote access was off while it was on — hiding the QR section entirely. It refuses rather than falling back now, and says which of the three things is missing.
+- Windows blocks incoming connections by default and no rule for The Fool has ever existed, so even a correct QR code reached a port nothing was allowed to talk to. The WebUI panel says so and shows the exact command, scoped to private networks. Changing the firewall stays your decision.
+
 ## 2.3.1
 
 ### Addons
