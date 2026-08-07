@@ -1,116 +1,163 @@
-# Handover — voice, layout and the release that has not gone out
+# Handover — 2.3.4 is out
 
-Written 8 August 2026. Everything below is the state of `main` in `C:/Fool-AionUI` at commit `426c17c03`, version `2.3.3` in `package.json`, working tree clean.
+Written 8 August 2026. `main` in `C:/Fool-AionUI` at `3fbb50034`, version `2.3.4`, tree clean,
+pushed. **[v2.3.4](https://github.com/zaorenn/The-Fool-Cli/releases/tag/v2.3.4) is published,
+non-draft, with both assets uploaded** — the first release since 2.2.55, and it carries the
+whole 2.3.x line with it.
 
-**Read the two warnings at the bottom before building or publishing anything.**
-
----
-
-## What is done, and where
-
-Fifteen commits since `0bb1ce3f0`. Every one is on `main`, tested, and can be tried directly — nothing is on a worktree branch.
-
-### The layout system, widened
-
-`c8acc5552` — the editor could shape exactly one window, which made "customise the app" mean "customise the voice page". Four surfaces now (`voice`, `chat`, `hub`, `frame`), each with its own axes and its own built-in presets.
-
-The load-bearing decision: a shape is published as **attributes on the document root** and answered in CSS, not by writing a second version of each page. Nobody was going to write a second Hub. See `common/config/surfaceShape.ts` and `renderer/styles/surface-shapes.css`; the Hub's own rules live in `FoolsHub.module.css` because its class names are hashed by CSS Modules and a global stylesheet cannot name them.
-
-Also in there: a movement builder (`layout/MotionBuilder.tsx`) that compiles three dropdown choices into keyframes, so somebody who does not write CSS can add motion. Movements are stored on the preset and suppressed both by the app's own "still" setting and by the OS reduced-motion preference.
-
-`0b5243b0c` — the app writes out its own specification (`common/config/layoutBrief.ts`) for pasting into whatever AI the user already talks to, and reads the answer back (`layoutImport.ts`). **The brief is generated from the same catalogues the editor draws and the sanitiser checks.** A hand-written one would describe the app as it was the day it was written and would silently start telling external models to produce presets this app rejects.
-
-### JARVIS
-
-`c8b9c15f5` — a second shipped workspace: four layouts, its own palette (`presets/jarvis.css`), its own persona instructions. It exists to be taken apart — wear it, like something, open the editor and find it already there.
-
-Two things had to exist first: a workspace could not carry a palette, and exactly one workspace could ship. Both were fixed here.
-
-It also fixed a real defect: applying a theme moved its stylesheet to the end of `<head>` and left the layout dials above it, so **choosing a palette straightened corners somebody had rounded**. `applyLayoutTokens` and `applyLayoutMotions` now re-append themselves.
-
-### Voice
-
-| Commit                   | What                                                                                                                           |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| `04e7d7176`, `2d0a4a98e` | A stalled turn no longer takes the conversation with it                                                                        |
-| `cbc0a122a`              | A QR code a phone can actually reach                                                                                           |
-| `ad12b3734`              | A spoken setting change reaches the conversation it was said in; plus a second clock for a reply that streams and never speaks |
-| `8a6dff569`              | A rule the user sets is obeyed, and only kept when they say to remember it                                                     |
-| `612a5187b`              | Skills it can do itself, taught out loud                                                                                       |
-| `32f764c39`              | Those skills listed in Settings → Memory, where they can be withdrawn                                                          |
-| `1d0c8a27e`              | The talk key opens a conversation instead of a dictation turn                                                                  |
-| `03a551166`              | Hand it a file by dropping one on the window                                                                                   |
-| `426c17c03`              | Updates install silently and the app comes back up                                                                             |
-
-Three of these are worth understanding rather than just knowing about:
-
-**The freeze was not what it looked like.** A 45-second watchdog existed, but it asked whether the _connection_ was alive, not whether the _reply_ was going anywhere. Local models write their deliberation into `reasoning_content`, which is deliberately never read aloud — every one of those frames reset the watchdog. A model that deliberated forever wedged the conversation with no ceiling and nothing on screen. `SILENT_REPLY_MS` is a second clock, armed once per turn and cleared by the first visible character. It is deliberately _not_ reset by traffic; resetting it would make it the same watchdog again.
-
-**Memory was not being obeyed because of position.** The language setting is written into the prompt as "answer only in Turkish, every reply, every time". A rule the user set arrived earlier in the text and simply lost. Rules now come last, under their own heading, stated as overriding everything above. Session rules (not written down) and remembered rules are presented identically — the difference is how long they live, not how firmly they are said.
-
-**Local skills are the most dangerous record in the app.** Written by a model, out of a conversation that may have included a web page, and they end in something being opened. `common/voice/localSkills.ts` is closed by construction rather than repaired on read: `http(s)` only, absolute paths only, refused outright if a path could carry an argument, chain a command, redirect or expand a variable. Every other sanitiser in this codebase falls back to a default because the cost of being wrong is a window drawn the wrong shape. Here the cost is running something, so there is no default worth having. Sixteen tests pin the refusals.
+The two warnings that opened the previous version of this document are both resolved. What
+replaces them is at the bottom, and it is shorter.
 
 ---
 
-## What is not done
+## The release, and how it was checked
 
-### Asked for and not started
+Nothing here was taken on trust from an exit code, because on this project an exit code has
+lied twice.
 
-- **PDF by voice** — summarise, translate, and fill a form by asking for each value in conversation. `pdfjs-dist@5.5.207` is already installed, so reading needs no new dependency. **Writing a filled form does** — `pdf-lib` or similar — and adding a dependency is a decision for the user, not something to slip in.
-- **Changelog pop-up after an update.** The silent install landed without it, so updates are currently quiet in both senses: they install without a window _and_ without telling anyone what changed. This is half a feature and should be finished before the next release goes out.
-- **JARVIS, cinematic.** The user asked for the Hub's JARVIS preset to feel like it came out of the film — heavily animated, Figma-like — as the last thing before release. The palette and the four layouts are in place; the cinematic pass is not.
+| Checked                      | Result                                                                                             |
+| ---------------------------- | -------------------------------------------------------------------------------------------------- |
+| Installer on disk            | `out/TheFool-2.3.4-win-x64.exe`, 330,033,719 bytes, built 01:20                                    |
+| `latest.yml` vs the file     | version, path and SHA-512 match the bytes on disk exactly                                          |
+| The feed the updater fetches | `releases/latest/download/latest.yml` → **HTTP 200**, correct hash                                 |
+| The installer download       | **HTTP 200**, resolving to `release-assets.githubusercontent.com`, which is on the app's allowlist |
+| Release state                | `draft=false  prerelease=false`, both assets `uploaded`                                            |
+| Test suite                   | **4530 passed, 3 skipped, exit 0** — twice, once directly and once inside `just push`              |
 
-### Asked for earlier, still open
+The installer is still **unsigned**. electron-builder prints `signing with signtool.exe` for
+every executable it touches and then prints `NOT signed (NotSigned)` at the end; the second
+line is the true one. SmartScreen will warn on any machine that has not seen this build. The
+release notes say so.
 
-- Voice conversation history: it resets to zero every launch, and there is no conversations panel, no saved transcript, no resuming a past one.
-- Learning a skill by watching: ask for an app it does not know, watch which one the user opens, remember it.
-- The notch's fade level, adjustable in settings. **The fade itself already works** and is already 0.06 — only the setting is missing.
-- A Turkish TTS voice that reads with real prosody. Measure before shipping: the bar is Pocket's 0.43 s.
+## What shipped in 2.3.4
 
-### Dropped by the user
+Seven voice commits from the previous session that had never been in a release, plus four
+written this one.
 
-Interactive pop-ups and an app-owned media player. Worth recording _why_, because it will come up again: a controllable player (pause, seek, remaining time) and "play without stealing focus" are both impossible with the default browser — the app cannot see or drive another browser's tabs. The only design that satisfies them is app-owned playback. The user chose the default browser and dropped the pop-ups instead.
+### The changelog pop-up — `f902a7fca`, `78b2a4a64`, `3fbb50034`
 
-Also deferred by the user: the visual, Figma-like layout editor.
+The silent install landed last session without it, which made updates quiet in both senses.
+This is the other half: on the first launch after the version moves, that release's own
+entries, once.
+
+Three decisions worth keeping:
+
+**It reads the changelog shipped inside the app, not GitHub.** `CHANGELOG.md` is an
+`extraResource` now and lands in `resources/` beside `LICENSE`. The machine that just came
+back up from a silent install may not be online, and a window that says what changed is worth
+much less if it only appears sometimes.
+
+**Dismissal is what records the version, not display.** A window closed by a crash shows the
+same notes again rather than losing them.
+
+**It had to be taught to fire on its own release.** Nothing has ever recorded a version, so
+every existing installation looked exactly like a fresh one — a feature whose whole job is to
+say what changed would have shipped mute on the one update that introduced it. The signal for
+"this installation has run before" is the saved window bounds. It is _not_
+`system.firstRunGreeted`, which is only ever written with `configService.setLocal` — an
+in-memory cache write that never reaches disk, so it reads `undefined` on every launch
+including the ten-thousandth. That was caught by reading `setLocal`, not by testing.
+
+### JARVIS, switched on — `8cf295133`, `fba0a6af5`
+
+The palette drew a projected display; this makes it a running one. Boot sweep on arrival, the
+grid drifting one tile every forty seconds, a refresh band every nine, the accent breathing at
+its supply, a point of light running the underside of the title bar, and the Hub as a bay with
+the worn workspace armed at its leading edge.
+
+**The load-bearing discovery, and the reason there is a whole extra stylesheet:** a theme
+preset's CSS is run through `processCustomCss`, which appends `!important` to every
+declaration. That does two things, both silent:
+
+1. `@keyframes` written in a preset are **dead** — an important declaration inside a keyframe
+   is ignored, so the block ends up empty.
+2. A resting value in the preset **kills an animation declared anywhere else**, because
+   important author declarations sit above animations in the cascade.
+
+So the motion lives in `renderer/styles/jarvis-cinema.css`, scoped by a new `data-theme-id`
+attribute that `applyTheme` sets from `theme.id`, and the palette had to be stripped of every
+property that file animates — including through shorthands, since `background` pins
+`background-position` as surely as naming it. Written the obvious way, the button would never
+have breathed, the light would never have run and the edge would never have charged, and all
+three would have looked perfectly correct in the source.
+`tests/unit/renderer/jarvisCinema.test.ts` holds both halves of that line.
+
+Everything ambient is `transform` and `opacity`, nothing sits above text at an opacity you
+could read through, and both stops are wired: `prefers-reduced-motion` and the frame's own
+movement dial, where `calm` keeps the arrival and drops every loop.
+
+### Already written, now actually released
+
+`ad12b3734` a spoken setting change reaching the conversation it was said in, plus the second
+clock for a reply that streams and never speaks · `8a6dff569` a rule the user sets being
+obeyed, and only kept when they say so · `612a5187b` skills it can do itself, taught out loud ·
+`32f764c39` those skills listed in Settings → Memory where they can be withdrawn ·
+`1d0c8a27e` the talk key opening a conversation rather than a dictation turn · `03a551166`
+handing it a file by dropping one on the window · `426c17c03` silent install.
 
 ---
 
-## Two warnings
+## What is left
 
-### 1. `foolcore` must be rebuilt before the next installer
+### Asked for, not started
 
-`backend/core/crates/fool-app/assets/builtin-skills/auto-inject/fool-config/SKILL.md` gained a row documenting `voice.localSkills`. **That file is baked into the `foolcore` binary.** Editing the asset changes nothing until the binary is rebuilt and restaged, and it fails silently — the agent simply will not know the key exists.
+- **PDF by voice** — summarise, translate, fill a form by asking for each value aloud.
+  `pdfjs-dist@5.5.207` is already installed so reading needs nothing new. **Writing a filled
+  form does** — `pdf-lib` or similar — and adding a dependency is the user's call.
+- **Voice conversation history.** It still resets to zero every launch: no conversations
+  panel, no saved transcript, no resuming a past one. This is the largest thing outstanding.
+- **Learning a skill by watching** — ask for an app it does not know, watch which one the user
+  opens, remember it. The local-skills machinery from `612a5187b` is the half that exists.
+- **The notch's fade level in settings.** The fade itself already works and is already 0.06;
+  only the setting is missing. Genuinely small, and it has been on the list two sessions now.
+- **A Turkish TTS voice with real prosody.** Measure before shipping: the bar is Pocket's
+  0.43 s.
 
-Rebuild through the project's script with a neutral `CARGO_HOME`. The staged binary otherwise drifts: it silently regains a `VCRUNTIME140` import and the build machine's username.
+### Dropped by the user, with the reason
 
-### 2. The release has not been published, and the reasons are not all mine
+Interactive pop-ups and an app-owned media player. Worth keeping written down because it will
+come up again: a controllable player (pause, seek, remaining time) and "play without stealing
+focus" are both impossible with the default browser, since the app cannot see or drive another
+browser's tabs. The only design that satisfies both is app-owned playback. The user chose the
+default browser and dropped the pop-ups.
 
-`2.3.3` was built and verified on disk earlier in the session (`out/TheFool-2.3.3-win-x64.exe`, 330,014,392 bytes, `latest.yml` matching). **That artifact predates the seven voice and update commits above** — it is not what should go out.
-
-Before publishing anything:
-
-- Rebuild `foolcore` (see above), then the installer with `bun run build-win:x64`. Not `build:win` — that script does not exist, and the failure looks like success because the compound command's last step succeeds. **Check the `.exe` timestamp and size on disk; never trust the exit code.**
-- The installer is **unsigned**. electron-builder prints "signing with signtool" and then prints `NOT signed (NotSigned)` at the end. SmartScreen will warn on any machine that has not seen the build.
-- Auto-update needs a **published, non-draft** release with `latest.yml` uploaded. A public repo alone is not enough.
-
-I did not publish. The list the user asked to be finished is not finished, and a release is outward-facing and hard to take back.
-
----
-
-## Running the test suite
-
-`bun run test` on this machine intermittently reports a **short** count — 4474, 4477, 4478 — with `Error: [vitest-pool]: Worker forks emitted error` and **no `FAIL` line**. It reads exactly like tests silently vanishing.
-
-It is resource exhaustion from vitest's default parallelism, not a regression. The true figure is **4502 passed, 3 skipped, exit 0**, which `bunx vitest run --maxWorkers=2` produces reliably. (`--poolOptions.*` is not a valid flag on this vitest and errors with `Unknown option`.)
-
-If the count ever does look wrong, the way to settle it is `bunx vitest list` against the working tree and against `HEAD`, then diff. That proves whether a test exists, independently of whether a worker survived long enough to run it.
+Also deferred: the visual, Figma-like layout editor.
 
 ---
 
-## Where to pick up
+## Things that will waste your time if you do not know them
 
-1. Rebuild `foolcore`, since the asset edit is already committed and inert until you do.
-2. Finish the changelog pop-up — the silent install is half a feature without it.
-3. The cinematic JARVIS pass.
-4. Decide on `pdf-lib`, then PDF.
-5. Rebuild, verify the artifact on disk, publish.
+**The test suite reports a short count under load.** 4474, 4477, 4478, with
+`Error: [vitest-pool]: Worker forks emitted error` and **no `FAIL` line** — it reads exactly
+like tests silently vanishing. It is resource exhaustion from vitest's default parallelism.
+The true figure is **4530 passed, 3 skipped, exit 0**, which `bunx vitest run --maxWorkers=2`
+gives reliably. (`--poolOptions.*` is not a valid flag on this vitest.) If a count ever does
+look wrong, settle it with `bunx vitest list` against the working tree and against `HEAD`,
+then diff — that proves whether a test exists independently of whether a worker survived.
+
+**Killing a build locks `out/win-unpacked`.** The next build does its full fifteen minutes and
+then dies with `EPERM` at the very last step. Delete the directory first: the first `rm -rf`
+says `Device or resource busy`, the second succeeds. No process shows up owning the handle, so
+do not go looking for one.
+
+**Do not wrap a build so its exit code is something else's.**
+`bun run build-win:x64 > log 2>&1; echo "EXIT=$?"` reports the _echo's_ status; a background
+task said "exit code 0" while the log ended in `exited with code 1`. Redirect, read the log,
+then look at the artifact on disk.
+
+**`foolcore` must be rebuilt through the script, with a neutral `CARGO_HOME`.**
+
+```bash
+CARGO_HOME=C:/cargo-clean node scripts/buildFoolcore.js
+```
+
+Anything else silently restores a `VCRUNTIME140` import — which breaks the backend on a
+Windows without the VC++ redistributable, i.e. exactly a first-time user's machine — and bakes
+the build machine's username into a public download. Verify, do not assume:
+
+```bash
+node -e "const s=require('fs').readFileSync('resources/bundled-foolcore/win32-x64/foolcore.exe').toString('latin1'); console.log(/VCRUNTIME140/i.test(s), /sarhen/i.test(s))"
+```
+
+Both must print `false`. Both did for the binary in this release, and it carries the
+`voice.localSkills` documentation that was inert in the previous one.
