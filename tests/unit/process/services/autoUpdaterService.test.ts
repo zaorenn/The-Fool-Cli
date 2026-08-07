@@ -421,7 +421,7 @@ describe('AutoUpdaterService', () => {
     await installPromise;
 
     expect(cleanup).toHaveBeenCalledTimes(1);
-    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(false, true);
+    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(true, true);
   });
 
   it('does not quit on macOS when native updater reports readiness error first', async () => {
@@ -490,7 +490,7 @@ describe('AutoUpdaterService', () => {
     await installPromise;
 
     expect(cleanup).toHaveBeenCalledTimes(1);
-    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(false, true);
+    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(true, true);
   });
 
   it('rejects a pending macOS install wait when a new update check starts', async () => {
@@ -568,11 +568,19 @@ describe('AutoUpdaterService', () => {
     await autoUpdaterService.quitAndInstall();
 
     expect(cleanup).toHaveBeenCalledTimes(1);
-    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(false, true);
+    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(true, true);
     expect(nativeAutoUpdaterMock.on).not.toHaveBeenCalled();
   });
 
-  it('uses a non-silent handoff for user-initiated Windows installs without changing app-quit installs', async () => {
+  /**
+   * Silent, including when the user asked for it.
+   *
+   * The installer used to show its progress and completion pages on the grounds
+   * that somebody who clicked "install now" should see it happen. They see it
+   * happen on every update, and what the window tells them — that a program is
+   * being installed — is what they asked for a moment earlier.
+   */
+  it('uses a silent handoff for Windows installs without changing app-quit installs', async () => {
     setPlatform('win32');
     const cleanup = vi.fn();
     const { autoUpdaterService } = await import('@/process/services/autoUpdaterService');
@@ -584,7 +592,7 @@ describe('AutoUpdaterService', () => {
 
     expect(cleanup).toHaveBeenCalledTimes(1);
     expect(autoUpdaterMock.autoInstallOnAppQuit).toBe(true);
-    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(false, true);
+    expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(true, true);
   });
 
   it('moves the process cwd to temp before the Windows updater handoff', async () => {
@@ -601,7 +609,7 @@ describe('AutoUpdaterService', () => {
       await autoUpdaterService.quitAndInstall();
 
       expect(chdir).toHaveBeenCalledWith(expectedCwd);
-      expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(false, true);
+      expect(autoUpdaterMock.quitAndInstall).toHaveBeenCalledWith(true, true);
     } finally {
       chdir.mockRestore();
       rmSync(tempRoot, { recursive: true, force: true });

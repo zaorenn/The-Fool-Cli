@@ -868,10 +868,15 @@ class AutoUpdaterService extends EventEmitter {
     log.info('Quitting and installing update...');
     try {
       this.moveCwdOutOfInstallDirForWindowsHandoff();
-      // The first argument maps to electron-updater's silent installer flag.
-      // User-clicked "install now" should show NSIS progress/completion pages;
-      // autoInstallOnAppQuit remains true for background app-quit installs.
-      autoUpdater.quitAndInstall(false, true);
+      // Silent, and then straight back up.
+      //
+      // This used to show the NSIS progress and completion pages on the grounds
+      // that somebody who clicked "install now" should see it happen. In
+      // practice they see it happen every single time they update, and what an
+      // installer window communicates — that a program is being installed — is
+      // something they already know, because they asked for it a moment ago. So
+      // the first flag is the silent one and the second brings the app back.
+      autoUpdater.quitAndInstall(true, true);
       recordAutoUpdateQuitAndInstall(this.getAutoUpdateDiagnosticOptions());
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
