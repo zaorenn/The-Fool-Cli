@@ -213,7 +213,7 @@ export const resolveWorkspace = (library: WorkspaceLibrary, activeId: unknown): 
 export const listWorkspaces = (library: WorkspaceLibrary): Workspace[] => {
   const rest = Object.values(library)
     .filter((workspace) => workspace.id !== DEFAULT_WORKSPACE_ID)
-    .sort((left, right) => left.name.localeCompare(right.name));
+    .toSorted((left, right) => left.name.localeCompare(right.name));
   const shipped = library[DEFAULT_WORKSPACE_ID];
   return shipped ? [shipped, ...rest] : rest;
 };

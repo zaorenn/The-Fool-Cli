@@ -1536,6 +1536,16 @@ export const webui = {
   statusChanged: bridge.buildEmitter<{
     running: boolean;
     port?: number;
+    /**
+     * Whether the server is bound to the network rather than to loopback.
+     *
+     * Carried because the main process is the only thing that knows it. Left
+     * out of this event the settings panel had to keep whatever it last
+     * believed, so a server restarted with remote access on could still be
+     * shown as local-only — and the QR code, drawn only when this is true,
+     * would not appear at all.
+     */
+    allowRemote?: boolean;
     localUrl?: string;
     networkUrl?: string;
     lanIP?: string;

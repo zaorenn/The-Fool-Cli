@@ -8,6 +8,7 @@ import { WEBUI_DEFAULT_PORT } from '@/common/config/constants';
 import { shell, webui, type IWebUIStatus } from '@/common/adapter/ipcBridge';
 import { isBackendHttpError } from '@/common/adapter/httpBridge';
 import { configService } from '@/common/config/configService';
+import { qrLoginTarget, type QrTarget } from '@/common/config/qrLoginUrl';
 import FoolModal from '@/renderer/components/base/FoolModal';
 import FoolScrollArea from '@/renderer/components/base/FoolScrollArea';
 import { useTalkToJester } from '@/renderer/hooks/assistant/useTalkToJester';
@@ -18,7 +19,8 @@ import ChannelSlackLogo from '@/renderer/assets/channel-logos/slack.svg';
 import ChannelTelegramLogo from '@/renderer/assets/channel-logos/telegram.svg';
 import ChannelWecomLogo from '@/renderer/assets/channel-logos/wecom.svg';
 import ChannelWeixinLogo from '@/renderer/assets/channel-logos/weixin.svg';
-import { isElectronDesktop } from '@/renderer/utils/platform';
+import type { I18nKey } from '@/renderer/services/i18n';
+import { isElectronDesktop, isWindows } from '@/renderer/utils/platform';
 import { Button, Form, Input, Message, Switch, Tabs, Tooltip } from '@arco-design/web-react';
 import { CheckOne, Communication, Copy, Earth, EditTwo, Refresh } from '@icon-park/react';
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
@@ -65,6 +67,19 @@ const QRCodeSVGLazy = React.lazy(async () => {
 
 const DESKTOP_WEBUI_ENABLED_KEY = 'webui.desktop.enabled';
 const DESKTOP_WEBUI_ALLOW_REMOTE_KEY = 'webui.desktop.allowRemote';
+
+/**
+ * What to say when there is no address a phone could scan.
+ *
+ * Each reason names the one thing standing in the way, because "QR generation
+ * failed" told nobody what to do about it — and doing nothing about it is how
+ * this ends up looking like the phone being at fault.
+ */
+const QR_REFUSAL_KEY: Record<Extract<QrTarget, { kind: 'refused' }>['reason'], I18nKey> = {
+  'not-running': 'settings.webui.qrNeedsServer',
+  'remote-off': 'settings.webui.qrNeedsRemote',
+  'no-address': 'settings.webui.qrNeedsNetwork',
+};
 
 /**
  * WebUI 设置内容组件
@@ -182,10 +197,14 @@ const WebuiModalContent: React.FC = () => {
           ...(prev || { adminUsername: 'admin' }),
           running: true,
           port: data.port ?? prev?.port ?? WEBUI_DEFAULT_PORT,
-          allowRemote: prev?.allowRemote ?? false,
+          // The main process owns the binding, so its word beats whatever this
+          // panel last believed. Keeping the old value here meant a server
+          // restarted with remote access on still looked local-only, and the QR
+          // code — which is only drawn when this is true — never appeared.
+          allowRemote: data.allowRemote ?? prev?.allowRemote ?? false,
           localUrl: data.localUrl ?? `http://localhost:${data.port ?? WEBUI_DEFAULT_PORT}`,
           networkUrl: data.networkUrl,
-          lanIP: prev?.lanIP,
+          lanIP: data.lanIP ?? prev?.lanIP,
           initialPassword: prev?.initialPassword,
         }));
         if (data.networkUrl) {
@@ -479,11 +498,27 @@ const WebuiModalContent: React.FC = () => {
       const qrData = await webui.generateQRToken.invoke();
 
       if (qrData) {
-        const baseUrl =
-          status.allowRemote && status.networkUrl
-            ? status.networkUrl
-            : (status.localUrl ?? `http://localhost:${status.port ?? port}`);
-        setQrUrl(`${baseUrl}/qr-login?token=${qrData.token}`);
+        // Refuses rather than falling back. The old fallback put the local
+        // address in the code whenever there was no network one, which produced
+        // a perfectly valid QR that no phone could ever use: `localhost` on the
+        // phone is the phone. A code that cannot work is worse than no code,
+        // because it looks like the feature working.
+        const target = qrLoginTarget(
+          {
+            running: status.running,
+            allowRemote: status.allowRemote,
+            networkUrl: status.networkUrl,
+            localUrl: status.localUrl,
+          },
+          qrData.token
+        );
+        if (target.kind === 'refused') {
+          setQrUrl(null);
+          setQrExpiresAt(null);
+          Message.error(t(QR_REFUSAL_KEY[target.reason]));
+          return;
+        }
+        setQrUrl(target.url);
         setQrExpiresAt(qrData.expires_at_ms);
 
         // 设置自动刷新定时器（4分钟后自动刷新，因为 token 5分钟过期）
@@ -533,6 +568,20 @@ const WebuiModalContent: React.FC = () => {
       }
     }
   }, [status?.allowRemote, status?.running]);
+
+  /**
+   * The one command that makes a phone able to reach this machine at all.
+   *
+   * Shown rather than run. Windows blocks inbound connections by default and no
+   * rule for this app exists until somebody adds one, so every other part of
+   * remote access can be correct and the phone still times out. Changing the
+   * firewall is the user's decision to make on their own machine — this puts the
+   * exact command in front of them and stops there.
+   *
+   * Scoped to the private profile so joining a public network does not carry the
+   * permission with it.
+   */
+  const firewallCommand = `netsh advfirewall firewall add rule name="The Fool (WebUI)" dir=in action=allow protocol=TCP localport=${status?.port ?? port} profile=private`;
 
   // 格式化过期时间 / Format expiration time
   const formatExpiresAt = (timestamp: number) => {
@@ -737,7 +786,34 @@ const WebuiModalContent: React.FC = () => {
             <>
               <div className='border-t border-line my-12px' />
               <div className='text-14px font-500 mb-4px text-t-primary'>{t('settings.webui.qrLogin')}</div>
-              <div className='text-12px text-t-tertiary mb-12px'>{t('settings.webui.qrLoginHint')}</div>
+              <div className='text-12px text-t-tertiary mb-8px'>{t('settings.webui.qrLoginHint')}</div>
+
+              {/*
+                Windows blocks inbound connections by default, and nothing here
+                can change that on the user's behalf — it is a machine setting.
+                Saying so is the difference between a phone that "just will not
+                connect" and one sentence explaining why.
+              */}
+              {isWindows() && (
+                <div className='text-12px text-t-tertiary mb-12px'>
+                  <div>{t('settings.webui.qrFirewallHint')}</div>
+                  <div className='flex items-center gap-6px mt-4px'>
+                    <code className='text-11px text-t-secondary bg-fill-1 rd-4px px-6px py-2px break-all'>
+                      {firewallCommand}
+                    </code>
+                    <Tooltip content={t('settings.webui.copyQrLink')}>
+                      <Button
+                        type='text'
+                        size='mini'
+                        className='rd-100px !px-6px inline-flex items-center !h-24px shrink-0'
+                        onClick={() => handleCopy(firewallCommand)}
+                      >
+                        <Copy size={14} />
+                      </Button>
+                    </Tooltip>
+                  </div>
+                </div>
+              )}
 
               <div className='flex flex-col items-center gap-12px'>
                 {/* 二维码显示区域 / QR Code display area */}

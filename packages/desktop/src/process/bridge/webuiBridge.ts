@@ -92,6 +92,8 @@ export function initWebuiBridge(): void {
     ipcBridge.webui.statusChanged.emit({
       running: true,
       port: handle.port,
+      // The binding this server actually got, not the one that was asked for.
+      allowRemote: handle.allowRemote,
       localUrl: handle.localUrl,
       networkUrl: handle.networkUrl,
       lanIP: handle.lanIP,
