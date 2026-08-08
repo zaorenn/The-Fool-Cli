@@ -57,7 +57,53 @@ CARGO_TARGET_DIR=/tmp/fool-measure cargo run -p fool-app-tools --example measure
 
 ---
 
-## 2. Still to be measured
+## 2. What a spoken turn costs today
+
+Taken 9 August 2026 against `google/gemma-4-e4b` in LM Studio, on the machine this product is
+written on. The prompt is not approximated: the script calls the same `buildPersonaInstructions`
+and uses the same `REALTIME_TOOLS` the running app does.
+
+```bash
+bun scripts/measure-spoken-turn.ts
+```
+
+### What is sent before anybody says anything
+
+| Part                    | Size                             |
+| ----------------------- | ---------------------------------- |
+| Persona, memory, rules  | 18,008 characters                |
+| Tool schemas, 18 tools  | 19,182 characters                |
+| **Prompt, as tokens**   | **8,912, on every single turn**  |
+
+**The tool schemas are larger than the persona.** More than half of what the model reads before it
+can answer "what's the weather" is the description of tools it will not call.
+
+### What the person waits
+
+Eight of the ten tasks, driven through the model directly. Interleaved and alternated per sentence,
+because a first attempt ran the two configurations one after the other and produced an answer that
+was about cache warmth rather than about prompts.
+
+| Configuration                        | Prompt      | To first token                | Total       |
+| ------------------------------------ | ----------- | ----------------------------- | ----------- |
+| Every tool advertised, as today      | 8,912 tok   | median 4,766 ms (3,428–6,165) | 5,108 ms   |
+| Core six advertised, the rest deferred | 5,675 tok | median 3,283 ms (1,464–6,095) | 4,016 ms   |
+
+**What this settles.** The prompt is 8,912 tokens per turn and deferring the long tail removes 3,237
+of them — 36% — deterministically. And the wait before the first word is **seconds, not
+milliseconds**: on this model, on this machine, the median is between three and five. Whatever
+"context optimized" and "fast on 8 GB" have meant so far, this is the number they have to be argued
+against.
+
+**What this does not settle.** Whether the smaller prompt is *faster*. The two spreads overlap
+almost completely, and eight sentences on one machine cannot separate them. Anybody quoting the
+median difference as a speed-up is quoting noise. The token difference is the honest claim; the
+latency difference needs a quiet machine and many more samples.
+
+**What is still not measured at all: time to first _audio_.** Everything above is time to first
+*token*. Synthesis is added on top of it, and that figure needs a speaker and a person.
+
+## 3. Still to be measured
 
 These are the figures §9 of the design gates the merge on. None can be taken yet.
 
