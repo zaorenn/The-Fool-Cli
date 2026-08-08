@@ -12,6 +12,7 @@ import {
   type SpokenVoice,
 } from '@/common/realtime';
 import { synthesisProviderFor, type FoolVoiceSettings, type VoiceModel } from '@/common/types/foolVoice';
+import { isUnbackedClaim, unbackedClaimCorrection } from '@/common/voice/actionClaims';
 import { isBackchannel } from '@/common/voice/backchannel';
 import { isHallucinatedTranscript } from '@/common/voice/hallucinations';
 import { refersToScreen } from '@/common/voice/screenIntent';
@@ -361,6 +362,14 @@ export class LocalVoicePipeline {
    */
   private options: LocalPipelineOptions;
   private history: Turn[] = [];
+  /**
+   * A refused sentence, waiting to be handed back to the model.
+   *
+   * Set when a reply claimed something that had not happened. Held rather than
+   * pushed on the spot because the stream is still being read when it is
+   * noticed, and the turn loop is where history is safe to touch.
+   */
+  private pendingCorrection: string | null = null;
   private ready: Extract<LocalReadiness, { ok: true }> | null = null;
   /** Aborts a reply the user has genuinely taken the floor from. */
   private inFlight: AbortController | null = null;
@@ -977,11 +986,26 @@ export class LocalVoicePipeline {
     readiness: Extract<LocalReadiness, { ok: true }>,
     controller: AbortController
   ): Promise<void> {
+    let toolsRan = 0;
     for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
-      const calls = await this.streamReply(readiness, controller);
+      const calls = await this.streamReply(readiness, controller, toolsRan);
       if (controller.signal.aborted) return;
+
+      // A sentence was caught claiming something that had not happened, and was
+      // stopped before it reached the speaker. The correction goes in as a
+      // system turn and the model gets one more round to either do the thing or
+      // say it cannot — the same shape as the look-first nudge, and bounded by
+      // the same round budget, so a model that will not stop cannot loop.
+      if (this.pendingCorrection) {
+        this.history.push({ role: 'system', content: this.pendingCorrection });
+        this.pendingCorrection = null;
+        this.trimHistory();
+        continue;
+      }
+
       if (calls.length === 0) break;
       await this.runTools(calls, controller);
+      toolsRan += calls.length;
       if (controller.signal.aborted) return;
     }
 
@@ -1000,7 +1024,8 @@ export class LocalVoicePipeline {
    */
   private async streamReply(
     readiness: Extract<LocalReadiness, { ok: true }>,
-    controller: AbortController
+    controller: AbortController,
+    toolsRan = 0
   ): Promise<WireToolCall[]> {
     const response = await fetch(`${readiness.endpoint}/chat/completions`, {
       method: 'POST',
@@ -1054,6 +1079,14 @@ export class LocalVoicePipeline {
         // moment it stopped being said — and there would be nothing left to
         // carry on with.
         for (const sentence of detector.push(frame.text)) {
+          // The gate has to be here, before the speaker, because a reply is said
+          // a sentence at a time while the rest is still being written —
+          // checking the finished reply would catch the lie only after the user
+          // had already heard it.
+          if (isUnbackedClaim(sentence, toolsRan)) {
+            this.pendingCorrection = unbackedClaimCorrection(sentence);
+            return [];
+          }
           this.voice ??= this.resolveVoice(readiness);
           this.queueForSpeech(sentence, controller);
         }
@@ -1062,6 +1095,10 @@ export class LocalVoicePipeline {
     }
 
     const tail = detector.flush().trim();
+    if (tail.length > 0 && isUnbackedClaim(tail, toolsRan)) {
+      this.pendingCorrection = unbackedClaimCorrection(tail);
+      return [];
+    }
     if (tail.length > 0) {
       this.voice ??= this.resolveVoice(readiness);
       this.queueForSpeech(tail, controller);

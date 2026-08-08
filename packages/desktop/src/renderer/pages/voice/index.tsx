@@ -216,51 +216,60 @@ const VoiceConversationPage: React.FC = () => {
                   </Tabs.TabPane>
                 </Tabs>
               ) : (
-                <>
-                  <div className='mb-14px flex items-center justify-between'>
-                    <div className='flex items-center gap-8px'>
-                      <Magic size={16} className='text-primary-6' />
-                      <Typography.Text className='font-600 text-t-primary'>
-                        {t('settings.voice.conversationAgentActivity')}
-                      </Typography.Text>
-                    </div>
-                    <Tag size='small'>{activities.length}</Tag>
-                  </div>
-                  <div
-                    className={classNames(styles.timeline, 'min-h-260px flex-1 space-y-8px overflow-y-auto pb-20px')}
-                  >
-                    {activities.length === 0 ? (
-                      <div className='flex h-220px flex-col items-center justify-center text-center text-t-tertiary'>
-                        <Magic size={26} className='mb-10px opacity-55' />
-                        <Typography.Text className='max-w-230px text-12px leading-19px text-t-tertiary'>
-                          {t('settings.voice.conversationActivityEmpty')}
+                // Tabs while running too. History used to be offered only when idle,
+                // which put it behind ending the conversation — and the first
+                // thing anybody wants mid-conversation is what they said last
+                // time. A panel you can only reach by stopping is not a panel.
+                <Tabs defaultActiveTab='activity' size='small' className={styles.settingsTabs}>
+                  <Tabs.TabPane key='activity' title={t('settings.voice.conversationAgentActivity')}>
+                    <div className='mb-14px flex items-center justify-between'>
+                      <div className='flex items-center gap-8px'>
+                        <Magic size={16} className='text-primary-6' />
+                        <Typography.Text className='font-600 text-t-primary'>
+                          {t('settings.voice.conversationAgentActivity')}
                         </Typography.Text>
                       </div>
-                    ) : (
-                      activities.map((activity) => (
-                        <div key={activity.id} className='flex gap-9px rounded-12px bg-fill-1 px-10px py-10px'>
-                          <span className='mt-1px flex size-20px shrink-0 items-center justify-center rounded-full bg-bg-3'>
-                            {activity.state === 'completed' ? (
-                              <Check size={12} className='text-success-6' />
-                            ) : activity.state === 'failed' ? (
-                              <CloseOne size={12} className='text-danger-6' />
-                            ) : (
-                              <span className='size-7px animate-pulse rounded-full bg-primary-6' />
-                            )}
-                          </span>
-                          <div className='min-w-0'>
-                            <Typography.Text className='block truncate text-12px font-600 text-t-primary'>
-                              {activity.label}
-                            </Typography.Text>
-                            <Typography.Text className='mt-2px block text-11px leading-17px text-t-tertiary'>
-                              {activity.detail}
-                            </Typography.Text>
-                          </div>
+                      <Tag size='small'>{activities.length}</Tag>
+                    </div>
+                    <div
+                      className={classNames(styles.timeline, 'min-h-260px flex-1 space-y-8px overflow-y-auto pb-20px')}
+                    >
+                      {activities.length === 0 ? (
+                        <div className='flex h-220px flex-col items-center justify-center text-center text-t-tertiary'>
+                          <Magic size={26} className='mb-10px opacity-55' />
+                          <Typography.Text className='max-w-230px text-12px leading-19px text-t-tertiary'>
+                            {t('settings.voice.conversationActivityEmpty')}
+                          </Typography.Text>
                         </div>
-                      ))
-                    )}
-                  </div>
-                </>
+                      ) : (
+                        activities.map((activity) => (
+                          <div key={activity.id} className='flex gap-9px rounded-12px bg-fill-1 px-10px py-10px'>
+                            <span className='mt-1px flex size-20px shrink-0 items-center justify-center rounded-full bg-bg-3'>
+                              {activity.state === 'completed' ? (
+                                <Check size={12} className='text-success-6' />
+                              ) : activity.state === 'failed' ? (
+                                <CloseOne size={12} className='text-danger-6' />
+                              ) : (
+                                <span className='size-7px animate-pulse rounded-full bg-primary-6' />
+                              )}
+                            </span>
+                            <div className='min-w-0'>
+                              <Typography.Text className='block truncate text-12px font-600 text-t-primary'>
+                                {activity.label}
+                              </Typography.Text>
+                              <Typography.Text className='mt-2px block text-11px leading-17px text-t-tertiary'>
+                                {activity.detail}
+                              </Typography.Text>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </Tabs.TabPane>
+                  <Tabs.TabPane key='history' title={t('settings.voice.history')}>
+                    <ConversationHistory onResume={(conversation) => conversationRuntime.resume(conversation)} />
+                  </Tabs.TabPane>
+                </Tabs>
               )}
             </aside>
           </div>
