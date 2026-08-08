@@ -1777,3 +1777,32 @@ Named here so nobody has to guess whether it was forgotten.
   next plan, because it has no consumer until then.
 - The claim gate still guards only the local pipeline. It moves when there is a single output path
   to move it to.
+
+---
+
+## What was built differently, and why
+
+Recorded after execution, because a plan that quietly disagrees with the code is worse than no plan.
+
+**The app-tools config moved off the request.** The plan put `app_tools_mcp` on `FoolrsBuildExtra`,
+which is deserialised from the `extra` field a client sends. That would have meant the server's own
+token travelling out to the client and back, and a client able to name a different port. It is on
+`AgentFactoryDeps` instead — the process's own configuration, never read from a request. A test
+(`the_client_cannot_name_the_port_itself`) pins the property.
+
+**An unadvertised tool never reaches the renderer.** Not in the plan. `Catalogue::offers` is checked
+before anything is broadcast, so a call for a tool the application never registered is refused in
+the backend with a sentence the model can read. Without it, the renderer's handler fall-through
+would decide what happens to a name nobody advertised.
+
+**The end-to-end proof is a Rust integration test, not a Playwright spec.** The plan had the
+renderer call the MCP server directly through `window.__foolAppTools`. That cannot exist without
+leaking the token into the renderer, which would undo the change above. So the proof is
+`crates/fool-app-tools/tests/channel_over_real_sockets.rs`: a real TCP connection, real HTTP framing,
+a stub in the renderer's place, covering auth refusal, path routing, an answered call and an
+unadvertised one. The renderer's own half is covered by the vitest tests in
+`tests/unit/renderer/appTools/`.
+
+**The measurement is an example binary rather than a note.** `cargo run -p fool-app-tools --example
+measure_channel --release` produces the figure, so anybody can reproduce it. Results are in
+`docs/specs/2026-08-08-one-harness-measurements.md`.
