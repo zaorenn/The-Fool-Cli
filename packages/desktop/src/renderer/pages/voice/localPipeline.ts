@@ -28,6 +28,9 @@ import { sanitizeConversationFiles, type ConversationFile } from '@/common/voice
 import { findLocalSkill } from '@/common/voice/localSkills';
 import { peekLocalSkills } from '@renderer/services/voice/session/localSkillStore';
 import { peekVoiceMemory, rememberVoiceSession } from '@renderer/services/voice/session/voiceMemoryStore';
+import { PendingInstructions } from '@/common/voice/pendingInstructions';
+import { openSpokenSession } from '@renderer/services/voice/session/spokenSession';
+import { runSpokenTurn } from '@renderer/services/voice/session/spokenTurn';
 import { findWakePhrase } from '@renderer/services/voice/wakePhrase';
 import { createIncrementalSentenceDetector } from '@renderer/services/voice/narration/incrementalSentences';
 import { sanitizeForSpeech } from '@renderer/services/voice/narration/narrationSanitizer';
@@ -369,6 +372,17 @@ export class LocalVoicePipeline {
    */
   private options: LocalPipelineOptions;
   private history: Turn[] = [];
+
+  /**
+   * The conversation the agent runtime owns, when the flag is on.
+   *
+   * `null` means this class is doing its own thinking, which is what it did
+   * alone until the harnesses were merged.
+   */
+  private agentConversationId: string | null = null;
+
+  /** Rules set out loud, waiting for the next turn to carry them. */
+  private readonly pendingInstructions = new PendingInstructions();
   /**
    * A refused sentence, waiting to be handed back to the model.
    *
@@ -489,6 +503,31 @@ export class LocalVoicePipeline {
     this.ready = readiness;
 
     this.history = [{ role: 'system', content: this.systemPrompt() }];
+
+    // With the flag on the thinking moves to the agent runtime, and this class
+    // keeps the microphone, the speaker and the sentence queue. The history
+    // above is still built because a failure here falls back to it rather than
+    // leaving the user with a conversation that cannot answer at all.
+    if (this.options.settings.realtime.useAgentRuntime) {
+      const session = await openSpokenSession({
+        settings: this.options.settings,
+        interfaceLanguage: this.options.interfaceLanguage,
+        voices: this.options.voices ?? [],
+        sessionRules: this.sessionRules,
+      });
+      // Checked against `false` rather than truthiness: this project runs
+      // without `strictNullChecks`, so a union discriminated by a boolean does
+      // not narrow and the other branch keeps the wrong shape.
+      if (session.ok === false) {
+        this.options.onEvent({
+          kind: 'error',
+          message: `LOCAL_AGENT_${session.reason.toUpperCase().replaceAll('-', '_')}`,
+        });
+      } else {
+        this.agentConversationId = session.conversationId;
+      }
+    }
+
     this.options.onEvent({ kind: 'ready' });
   }
 
@@ -532,6 +571,11 @@ export class LocalVoicePipeline {
     if (this.sessionRules.some((kept) => kept.toLowerCase() === line.toLowerCase())) return;
 
     this.sessionRules.push(line);
+    // A session owned by the agent runtime built its system prompt once, so the
+    // rule cannot be written into it. It rides ahead of the next thing said
+    // instead — which is the difference between agreeing to a rule and obeying
+    // it. See `common/voice/pendingInstructions.ts`.
+    if (this.agentConversationId !== null) this.pendingInstructions.add(line);
     this.refreshSystemPrompt();
   }
 
@@ -953,6 +997,15 @@ export class LocalVoicePipeline {
       }
       this.trimHistory();
 
+      // The whole of the harness merge, at one line. With the flag on, the
+      // thinking belongs to the agent runtime — the same tools, context
+      // handling and skills a typed conversation gets — and this class keeps
+      // what it is good at, which is sound.
+      if (this.agentConversationId !== null) {
+        await this.speakFromAgent(controller, heard);
+        return;
+      }
+
       await this.speakReply(readiness, controller);
     } catch (error) {
       if (controller.signal.aborted) return;
@@ -1276,6 +1329,60 @@ export class LocalVoicePipeline {
     // length of a tool is right; leaving it off afterwards would mean a model
     // that calls one tool and then deliberates for ever is never bounded again.
     if (!controller.signal.aborted) this.watchForSilentReply(controller);
+  }
+
+  /**
+   * A turn answered by the agent runtime rather than by the loop below.
+   *
+   * The sentences arrive the same way and go to the same speaker; what changes
+   * is who wrote them. The claim gate runs inside `runSpokenTurn`, in front of
+   * this speaker rather than after the reply, so a refused sentence is never
+   * queued at all.
+   */
+  private async speakFromAgent(controller: AbortController, heard: string): Promise<void> {
+    const conversationId = this.agentConversationId;
+    if (conversationId === null) return;
+
+    const memory = peekVoiceMemory();
+    const remembered = memory.user.trim().length + memory.agent.trim().length;
+
+    const turn = async (said: string, instructions: readonly string[]): Promise<string | null> => {
+      let refusal: string | null = null;
+      const result = await runSpokenTurn({
+        conversationId,
+        said,
+        instructions,
+        remembered,
+        onSentence: (sentence) => {
+          this.markProgress(controller);
+          this.queueForSpeech(sentence, controller);
+        },
+        // Kept rather than spoken. The point of refusing is that the user never
+        // hears the claim; the model still has to be told what it did.
+        onRefused: (correction) => (refusal ??= correction),
+        signal: controller.signal,
+      });
+
+      if (result.ok === false && result.reason !== 'cancelled') {
+        this.options.onEvent({
+          kind: 'error',
+          message: `LOCAL_AGENT_${result.reason.toUpperCase().replaceAll('-', '_')}`,
+        });
+      }
+      return refusal;
+    };
+
+    const refusal = await turn(heard, this.pendingInstructions.takeForNextTurn());
+    // Exactly one more round, and only when something was refused. The model is
+    // handed back its own sentence and gets a chance to do the thing instead of
+    // claiming it. Bounded at one because a model that lies twice will lie
+    // again, and a user waiting through three rounds of it is worse off than
+    // one told nothing.
+    if (refusal !== null && !controller.signal.aborted) await turn(refusal, []);
+
+    if (controller.signal.aborted) return;
+    await this.whileSpeaking(controller);
+    if (!controller.signal.aborted) this.options.onEvent({ kind: 'phase', phase: 'listening' });
   }
 
   /**
