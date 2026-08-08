@@ -2,6 +2,17 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.3.9
+
+### Fixes
+
+- **The speech engine lets go of your graphics card.** It was stopped only when the app closed or a model was deleted, so a single spoken sentence left a process holding its weights for the rest of the session — gigabytes of graphics memory, on an otherwise idle machine, for nothing. Two minutes without anyone speaking and it unloads now. Speaking again costs one model load, which is the right price for not holding a card hostage.
+
+### Setup
+
+- **A local model recommendation that fits your machine.** "Install LM Studio and load a model" is where local-first quietly fails: the catalogue is thousands of files, and the only way to learn a 14B will not fit in 8 GB is to download twelve gigabytes and watch it fail. The app reads the card and says what fits, leaving room for the window and a speaking voice. These are size calculations, not benchmarks.
+- **Connecting Claude Code, Codex or Gemini is one action, not a conversation.** The app looks for the CLI first and offers the single next step — use it, sign in, or install — instead of asking you to describe a setup you have usually already done.
+
 ## 2.3.8
 
 ### The spoken assistant actually finishing what it starts
