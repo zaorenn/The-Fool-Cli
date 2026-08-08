@@ -24,6 +24,7 @@ import { refersToScreen } from '@/common/voice/screenIntent';
 import { describeSpokenTurns, worthRemembering, type SpokenTurn } from '@/common/voice/sessionSummary';
 import { applyTranscriptRules } from '@/common/voice/transcriptRules';
 import { sanitizeConversationFiles, type ConversationFile } from '@/common/voice/conversationFiles';
+import { findLocalSkill } from '@/common/voice/localSkills';
 import { peekLocalSkills } from '@renderer/services/voice/session/localSkillStore';
 import { peekVoiceMemory, rememberVoiceSession } from '@renderer/services/voice/session/voiceMemoryStore';
 import { findWakePhrase } from '@renderer/services/voice/wakePhrase';
@@ -898,6 +899,41 @@ export class LocalVoicePipeline {
 
       this.options.onEvent({ kind: 'user-transcript', text: heard, final: true });
       this.history.push({ role: 'user', content: heard });
+
+      // A taught skill is run without asking the model at all.
+      //
+      // This is the difference between "play my favourite song" working and
+      // almost working. The skill already exists, the address is already
+      // known, and the only thing standing between the two is a small local
+      // model choosing to call `app_skill_do` — which it does most of the
+      // time, and "most of the time" is what the user has been living with. It
+      // is also the slow path: a round trip to think about a decision that was
+      // already made when they taught it.
+      //
+      // Matched against the trigger they described it with, by the same
+      // function the tool uses, so a phrase that would have worked through the
+      // model works here identically. No match falls straight through to the
+      // ordinary turn, which is every other sentence they say.
+      const taught = this.options.runTool ? findLocalSkill(peekLocalSkills(), heard) : null;
+      if (taught) {
+        await this.runTools(
+          [
+            {
+              id: newId(),
+              type: 'function',
+              function: { name: 'app_skill_do', arguments: JSON.stringify({ name: taught.name }) },
+            },
+          ],
+          controller
+        );
+        if (controller.signal.aborted) return;
+        // Straight back to listening. The tool says what it did on the notch
+        // and in the activity list; making the model narrate a thing that has
+        // already happened would add a second of latency to the one path that
+        // is meant to be instant.
+        this.options.onEvent({ kind: 'phase', phase: 'listening' });
+        return;
+      }
       // "What does this error mean" is a question about a screen, and asked it
       // the model answers from nothing — confidently, which is the whole
       // problem. Telling it in the persona to work that out for itself helps and
