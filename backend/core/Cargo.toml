@@ -17,6 +17,7 @@ members = [
   "crates/fool-ai-agent",
   "crates/fool-mcp",
   "crates/fool-mcp-server",
+  "crates/fool-app-tools",
   "crates/fool-conversation",
   "crates/fool-extension",
   "crates/fool-channel",
@@ -52,6 +53,7 @@ fool-shell = { path = "crates/fool-shell" }
 fool-ai-agent = { path = "crates/fool-ai-agent" }
 fool-mcp = { path = "crates/fool-mcp" }
 fool-mcp-server = { path = "crates/fool-mcp-server" }
+fool-app-tools = { path = "crates/fool-app-tools" }
 fool-conversation = { path = "crates/fool-conversation" }
 fool-extension = { path = "crates/fool-extension" }
 fool-channel = { path = "crates/fool-channel" }

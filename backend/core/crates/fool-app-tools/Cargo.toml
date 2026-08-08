@@ -1,0 +1,19 @@
+[package]
+name = "fool-app-tools"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+fool-api-types.workspace = true
+fool-mcp-server.workspace = true
+fool-realtime.workspace = true
+async-trait.workspace = true
+axum.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+tower.workspace = true

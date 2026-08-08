@@ -28,7 +28,7 @@ pub struct AppToolRequest {
 /// and could not do it, and the model is told so in words it may repeat. The
 /// distinction matters because a tool that returns nothing is read by a model
 /// as a tool that worked.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AppToolResult {
     pub call_id: String,
     pub ok: bool,
