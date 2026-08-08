@@ -1642,7 +1642,18 @@
     "conversationCannotHold": "ローカルの会話が動いているあいだだけファイルを受け取れます。",
     "conversationSkillNeedsTarget": "名前はありますがアドレスがありません。先に調べてから保存してください。",
     "conversationFinding": "検索中…",
-    "conversationFoundNothing": "見つかりません"
+    "conversationFoundNothing": "見つかりません",
+    "history": "履歴",
+    "historyEmpty": "話した会話はここに残ります。何を話したか、そして続きから戻る方法。",
+    "historyCount": "{{count}} 件の会話",
+    "historyForgetAll": "すべて削除",
+    "historyForgetAllConfirm": "保存された会話をすべて削除しますか？",
+    "historyForgetConfirm": "この会話を削除しますか？",
+    "historyUntitled": "無題",
+    "historyTurns": "{{count}} ターン",
+    "historyResume": "ここから続ける",
+    "historyYou": "あなた:",
+    "historyAssistant": "相手:"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",

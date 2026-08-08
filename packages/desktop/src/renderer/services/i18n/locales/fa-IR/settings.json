@@ -1640,7 +1640,18 @@
     "conversationCannotHold": "فقط وقتی گفتگوی محلی در جریان باشد می‌توانم فایل بگیرم.",
     "conversationSkillNeedsTarget": "نام را دارم اما نشانی را نه — اول آن را پیدا کن، بعد ذخیره کن.",
     "conversationFinding": "در حال جست‌وجو…",
-    "conversationFoundNothing": "چیزی پیدا نشد"
+    "conversationFoundNothing": "چیزی پیدا نشد",
+    "history": "تاریخچه",
+    "historyEmpty": "گفت‌وگوهای صوتی شما اینجا نگه داشته می‌شوند — آنچه گفته شد و راهی برای بازگشت.",
+    "historyCount": "{{count}} گفت‌وگو",
+    "historyForgetAll": "فراموش کردن همه",
+    "historyForgetAllConfirm": "همهٔ گفت‌وگوهای ذخیره‌شده فراموش شوند؟",
+    "historyForgetConfirm": "این گفت‌وگو فراموش شود؟",
+    "historyUntitled": "بدون عنوان",
+    "historyTurns": "{{count}} نوبت",
+    "historyResume": "از اینجا ادامه بده",
+    "historyYou": "شما:",
+    "historyAssistant": "او:"
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",

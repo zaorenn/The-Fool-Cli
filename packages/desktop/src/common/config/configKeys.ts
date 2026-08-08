@@ -71,6 +71,14 @@ export type ConfigKeyMap = {
    * user is never dropped back into onboarding.
    */
   'system.firstRunGreeted': boolean | undefined;
+  /**
+   * The version whose changes have already been shown, so they are shown once.
+   *
+   * Absent means this copy has never recorded one — a fresh install, or a build
+   * older than the feature. The two are told apart by whether the window has
+   * ever saved its position. See `WhatsNewModal`.
+   */
+  'system.lastSeenVersion': string | undefined;
   'skillsMarket.enabled': boolean | undefined;
   'pet.enabled': boolean | undefined;
   'pet.size': number | undefined;

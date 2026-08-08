@@ -1642,7 +1642,18 @@
     "conversationCannotHold": "只有在本機對話進行時我才能接收檔案。",
     "conversationSkillNeedsTarget": "有名稱但沒有網址 —— 先找到網址再儲存。",
     "conversationFinding": "正在尋找…",
-    "conversationFoundNothing": "沒有找到"
+    "conversationFoundNothing": "沒有找到",
+    "history": "歷史",
+    "historyEmpty": "語音對話都保存在這裡 —— 說過什麼，以及如何接著聊。",
+    "historyCount": "{{count}} 段對話",
+    "historyForgetAll": "全部清除",
+    "historyForgetAllConfirm": "清除所有已儲存的對話？",
+    "historyForgetConfirm": "清除這段對話？",
+    "historyUntitled": "未命名",
+    "historyTurns": "{{count}} 輪",
+    "historyResume": "從這裡繼續",
+    "historyYou": "你：",
+    "historyAssistant": "它："
   },
   "themeCustomizer": {
     "title": "自訂主題",

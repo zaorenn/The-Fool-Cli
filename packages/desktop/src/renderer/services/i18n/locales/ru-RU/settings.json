@@ -1640,7 +1640,18 @@
     "conversationCannotHold": "Файл я могу принять только во время локального разговора.",
     "conversationSkillNeedsTarget": "Название есть, а адреса нет — сначала найдите его, потом сохраняйте.",
     "conversationFinding": "Ищу…",
-    "conversationFoundNothing": "Ничего не найдено"
+    "conversationFoundNothing": "Ничего не найдено",
+    "history": "История",
+    "historyEmpty": "Голосовые разговоры хранятся здесь — что было сказано и как к ним вернуться.",
+    "historyCount": "Разговоров: {{count}}",
+    "historyForgetAll": "Забыть всё",
+    "historyForgetAllConfirm": "Забыть все сохранённые разговоры?",
+    "historyForgetConfirm": "Забыть этот разговор?",
+    "historyUntitled": "Без названия",
+    "historyTurns": "реплик: {{count}}",
+    "historyResume": "Продолжить отсюда",
+    "historyYou": "Вы:",
+    "historyAssistant": "Он:"
   },
   "themeCustomizer": {
     "title": "Настроить тему",

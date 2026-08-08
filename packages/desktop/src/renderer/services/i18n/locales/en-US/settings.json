@@ -1640,7 +1640,18 @@
     "conversationCannotHold": "I can only take a file while a local conversation is running.",
     "conversationSkillNeedsTarget": "I have the name but not the address — find it first, then save it.",
     "conversationFinding": "Looking it up…",
-    "conversationFoundNothing": "Nothing found"
+    "conversationFoundNothing": "Nothing found",
+    "history": "History",
+    "historyEmpty": "Conversations you have out loud are kept here — what was said, and a way back into one.",
+    "historyCount": "{{count}} conversations",
+    "historyForgetAll": "Forget all",
+    "historyForgetAllConfirm": "Forget every saved conversation?",
+    "historyForgetConfirm": "Forget this conversation?",
+    "historyUntitled": "Untitled",
+    "historyTurns": "{{count}} turns",
+    "historyResume": "Carry on from here",
+    "historyYou": "You:",
+    "historyAssistant": "It:"
   },
   "themeCustomizer": {
     "title": "Customize theme",

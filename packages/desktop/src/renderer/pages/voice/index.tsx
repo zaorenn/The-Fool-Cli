@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useFoolVoiceSettings } from '@renderer/hooks/voice/useFoolVoiceSettings';
 import { useSurfaceLayout } from '@renderer/hooks/config/useSurfaceLayout';
 import TextToSpeechSection from '@renderer/components/settings/SettingsModal/contents/voice/tts/TextToSpeechSection';
+import ConversationHistory from './ConversationHistory';
 import ConversationSettings from './ConversationSettings';
 import VoiceHudBody from './hud/VoiceHudBody';
 import { conversationRuntime } from './runtime/conversationRuntime';
@@ -205,6 +206,13 @@ const VoiceConversationPage: React.FC = () => {
                     <div className='max-h-460px overflow-y-auto pr-4px'>
                       <TextToSpeechSection settings={settings} onChange={update} />
                     </div>
+                  </Tabs.TabPane>
+                  {/* Beside the conversation rather than on a page of its own:
+                      voice history is something you glance at on the way into
+                      talking again, and a separate destination is a place
+                      nobody navigates to. */}
+                  <Tabs.TabPane key='history' title={t('settings.voice.history')}>
+                    <ConversationHistory onResume={(conversation) => conversationRuntime.resume(conversation)} />
                   </Tabs.TabPane>
                 </Tabs>
               ) : (

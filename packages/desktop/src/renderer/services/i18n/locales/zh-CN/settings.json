@@ -1641,7 +1641,18 @@
     "conversationCannotHold": "只有在本地对话进行时我才能接收文件。",
     "conversationSkillNeedsTarget": "有名称但没有地址 —— 先找到地址再保存。",
     "conversationFinding": "正在查找…",
-    "conversationFoundNothing": "没有找到"
+    "conversationFoundNothing": "没有找到",
+    "history": "历史",
+    "historyEmpty": "语音对话都保存在这里 —— 说过什么，以及如何接着聊。",
+    "historyCount": "{{count}} 段对话",
+    "historyForgetAll": "全部清除",
+    "historyForgetAllConfirm": "清除所有已保存的对话？",
+    "historyForgetConfirm": "清除这段对话？",
+    "historyUntitled": "未命名",
+    "historyTurns": "{{count}} 轮",
+    "historyResume": "从这里继续",
+    "historyYou": "你：",
+    "historyAssistant": "它："
   },
   "themeCustomizer": {
     "title": "自定义主题",

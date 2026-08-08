@@ -159,6 +159,13 @@ export type PersonaInput = {
    */
   memory?: VoiceMemory;
   /**
+   * The end of an earlier conversation this one is carrying on from.
+   *
+   * Set only when the user chose to resume one, and only ever its tail. Absent
+   * means this is a conversation of its own, which is the ordinary case.
+   */
+  carried?: readonly { role: 'user' | 'assistant'; text: string }[];
+  /**
    * Rules set out loud that were never asked to be remembered.
    *
    * They bind this conversation exactly as hard as a remembered one and are gone
@@ -297,6 +304,25 @@ const rulesSection = (standing: readonly string[], session: readonly string[]): 
   ].join('\n');
 };
 
+/**
+ * Where an earlier conversation left off, when the user asked to carry on.
+ *
+ * Marked plainly as something already said rather than pasted in as if it were
+ * happening now: a model handed a bare transcript answers the last line in it,
+ * which from the user's side looks like the assistant replying to a question
+ * they asked yesterday. What it is meant to do is know what "it" and "that one"
+ * refer to when the first new sentence arrives.
+ */
+const carriedSection = (turns: readonly { role: 'user' | 'assistant'; text: string }[]): string => {
+  if (turns.length === 0) return '';
+
+  return [
+    '# Where you left off',
+    'This is the end of an earlier conversation the user has just asked to carry on from. It has already happened — do not answer the last line in it, and do not read it back. Use it only to know what they are referring to when they speak next.',
+    ...turns.map((turn) => `- ${turn.role === 'user' ? 'They said' : 'You said'}: ${turn.text}`),
+  ].join('\n');
+};
+
 export const buildPersonaInstructions = (input: PersonaInput): string => {
   const custom = input.customInstructions.trim();
   const body = input.presetId === 'custom' ? custom : PRESET_BODIES[input.presetId];
@@ -320,6 +346,10 @@ export const buildPersonaInstructions = (input: PersonaInput): string => {
     // most specific thing in the prompt and the thing most worth having read
     // recently, and on a first run it is the whole opening of the conversation.
     input.memory ? buildMemoryInstructions(input.memory) : '',
+    // After the memory, because it is the more specific of the two and only
+    // present at all when the user has just chosen it — and before the rules
+    // below, which have to stay last.
+    carriedSection(input.carried ?? []),
     languageDirective(input.language, input.interfaceLanguage),
     // Last, and that position is the whole of it. The language setting above
     // says "answer only in Turkish, every reply, every time"; a rule saying

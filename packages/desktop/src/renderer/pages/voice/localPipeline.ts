@@ -44,6 +44,8 @@ export type LocalToolCall = { callId: string; name: string; argumentsJson: strin
 export type LocalPipelineOptions = {
   settings: FoolVoiceSettings;
   interfaceLanguage: string;
+  /** The tail of a conversation this one is carrying on from, when resumed. */
+  carried?: readonly { role: 'user' | 'assistant'; text: string }[];
   /** The installed voices, so a spoken request can pick one. Absent in tests. */
   voices?: readonly SpokenVoice[];
   onEvent: (event: NormalizedRealtimeEvent) => void;
@@ -490,6 +492,7 @@ export class LocalVoicePipeline {
       wakePhrase: this.options.settings.activation.wakePhrase.phrase,
       memory: peekVoiceMemory(),
       voices: this.options.voices ?? [],
+      carried: this.options.carried ?? [],
       sessionRules: this.sessionRules,
       localSkills: peekLocalSkills(),
       files: this.files,

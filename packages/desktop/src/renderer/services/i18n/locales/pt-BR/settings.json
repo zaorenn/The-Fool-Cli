@@ -1643,7 +1643,18 @@
     "conversationCannotHold": "Só consigo receber um arquivo enquanto uma conversa local estiver ativa.",
     "conversationSkillNeedsTarget": "Tenho o nome, mas não o endereço — encontre-o primeiro e depois salve.",
     "conversationFinding": "Procurando…",
-    "conversationFoundNothing": "Nada encontrado"
+    "conversationFoundNothing": "Nada encontrado",
+    "history": "Histórico",
+    "historyEmpty": "Suas conversas faladas ficam aqui — o que foi dito e um jeito de voltar a elas.",
+    "historyCount": "{{count}} conversas",
+    "historyForgetAll": "Esquecer tudo",
+    "historyForgetAllConfirm": "Esquecer todas as conversas salvas?",
+    "historyForgetConfirm": "Esquecer esta conversa?",
+    "historyUntitled": "Sem título",
+    "historyTurns": "{{count}} turnos",
+    "historyResume": "Continuar daqui",
+    "historyYou": "Você:",
+    "historyAssistant": "Ele:"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

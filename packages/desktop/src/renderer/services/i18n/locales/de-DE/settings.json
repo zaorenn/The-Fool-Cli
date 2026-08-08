@@ -1640,7 +1640,18 @@
     "conversationCannotHold": "Eine Datei kann ich nur annehmen, solange ein lokales Gespräch läuft.",
     "conversationSkillNeedsTarget": "Der Name ist da, die Adresse nicht — erst suchen, dann speichern.",
     "conversationFinding": "Wird gesucht…",
-    "conversationFoundNothing": "Nichts gefunden"
+    "conversationFoundNothing": "Nichts gefunden",
+    "history": "Verlauf",
+    "historyEmpty": "Gesprochene Unterhaltungen werden hier aufbewahrt — was gesagt wurde und ein Weg zurück.",
+    "historyCount": "{{count}} Unterhaltungen",
+    "historyForgetAll": "Alle vergessen",
+    "historyForgetAllConfirm": "Alle gespeicherten Unterhaltungen vergessen?",
+    "historyForgetConfirm": "Diese Unterhaltung vergessen?",
+    "historyUntitled": "Ohne Titel",
+    "historyTurns": "{{count}} Beiträge",
+    "historyResume": "Hier weitermachen",
+    "historyYou": "Du:",
+    "historyAssistant": "Es:"
   },
   "themeCustomizer": {
     "title": "Design anpassen",

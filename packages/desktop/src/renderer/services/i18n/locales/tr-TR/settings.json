@@ -1640,7 +1640,18 @@
     "conversationCannotHold": "Dosyayı ancak yerel bir sohbet açıkken alabilirim.",
     "conversationSkillNeedsTarget": "Adı var ama adresi yok — önce adresi bul, sonra kaydet.",
     "conversationFinding": "Aranıyor…",
-    "conversationFoundNothing": "Bulunamadı"
+    "conversationFoundNothing": "Bulunamadı",
+    "history": "Geçmiş",
+    "historyEmpty": "Sesli konuşmaların burada tutulur — ne söylendiği ve birine geri dönmenin yolu.",
+    "historyCount": "{{count}} konuşma",
+    "historyForgetAll": "Hepsini unut",
+    "historyForgetAllConfirm": "Kayıtlı tüm konuşmalar unutulsun mu?",
+    "historyForgetConfirm": "Bu konuşma unutulsun mu?",
+    "historyUntitled": "Başlıksız",
+    "historyTurns": "{{count}} tur",
+    "historyResume": "Buradan devam et",
+    "historyYou": "Sen:",
+    "historyAssistant": "O:"
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

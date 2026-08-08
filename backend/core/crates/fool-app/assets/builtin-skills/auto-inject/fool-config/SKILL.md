@@ -532,8 +532,15 @@ Writing these by hand replaces the whole structure and loses whatever else it he
 ### Internal bookkeeping — never write
 
 `window.bounds`, `guid.lastAssistantId`, `system.firstRunGreeted`,
-`voice.boundConversationId`, `voice.summaryModelId`,
-`migration.providersMigrated_v1`, `migration.assistantsMigrated_v1`.
+`system.lastSeenVersion`, `voice.boundConversationId`, `voice.summaryModelId`,
+`migration.providersMigrated_v1`, `migration.assistantsMigrated_v1`,
+`fool.voice.conversations`.
+
+`fool.voice.conversations` holds the transcripts of spoken conversations — one
+entry per conversation, with the turns as they were actually said. The runtime
+appends to it as it hears things, and the user reads and deletes them in the
+Voice Assistant's History tab. Never write it: an entry put there by hand would
+show up in that list as something the user said and did not.
 
 `fool.voice.memory` is the exception on this list: it is meant to be read, and
 written carefully. It holds the two documents The Fool remembers a user by —

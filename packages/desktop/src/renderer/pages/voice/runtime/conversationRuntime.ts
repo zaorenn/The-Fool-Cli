@@ -17,6 +17,8 @@ import {
 } from '@/common/realtime';
 import { createHoldGate } from '@/common/voice/holdToTalkGate';
 import { describeSpokenTurns, worthRemembering, type SpokenTurn } from '@/common/voice/sessionSummary';
+import { appendTurn, resumedTurns, startConversation, type VoiceConversation } from '@/common/voice/conversationLog';
+import { saveConversation } from '@renderer/services/voice/session/conversationStore';
 import { claimManualVoiceSession } from '@renderer/hooks/voice/useFoolVoiceSession';
 import { AdaptiveVad, type VadEvent } from '@renderer/services/voice/AdaptiveVad';
 import {
@@ -203,6 +205,20 @@ class ConversationRuntime {
    * one place both are visible.
    */
   private spoken: SpokenTurn[] = [];
+
+  /**
+   * The same conversation, as it is being written down.
+   *
+   * Kept beside `spoken` rather than derived from it at the end, because the
+   * end is exactly when it is least likely to arrive: a conversation is far
+   * more often closed by the window going away or the machine being shut down
+   * than by anybody pressing stop. Saved on every finished turn, so what
+   * survives a crash is everything up to the crash.
+   */
+  private saved: VoiceConversation | null = null;
+
+  /** What a resumed conversation carries in, until the session opens. */
+  private carried: SpokenTurn[] = [];
 
   constructor() {
     this.listenForHoldKey();
@@ -504,6 +520,7 @@ class ConversationRuntime {
       settings,
       interfaceLanguage: this.interfaceLanguage,
       voices: this.voices,
+      carried: this.carried,
       onEvent: this.handleEvent,
       // The same tools the socket providers are given, run by the same code. A
       // local conversation that could not look at the screen or do anything on
@@ -603,6 +620,7 @@ class ConversationRuntime {
           // this app rather than one per feature.
           wakePhrase: settings.activation.wakePhrase.phrase,
           memory: peekVoiceMemory(),
+          carried: this.carried,
           voices: this.voices,
         }),
         language: realtime.language,
@@ -699,7 +717,29 @@ class ConversationRuntime {
     if (line.length === 0) return;
     this.spoken.push({ role, text: line });
     if (this.spoken.length > MAX_REMEMBERED_TURNS) this.spoken = this.spoken.slice(-MAX_REMEMBERED_TURNS);
+
+    // Written down as it is said, not at the end. A spoken conversation is
+    // usually ended by the window closing rather than by anyone pressing stop,
+    // and a transcript that only exists at teardown is a transcript that is
+    // usually not there. Failures are the store's to swallow — nothing about
+    // saving history is worth interrupting the conversation for.
+    this.saved = appendTurn(this.saved ?? startConversation(crypto.randomUUID(), Date.now()), { role, text: line });
+    void saveConversation(this.saved).catch(() => {});
   }
+
+  /**
+   * Opens the next conversation carrying the end of an earlier one.
+   *
+   * The tail, not the whole thing: this becomes context for the session about
+   * to start, and a long transcript pushed in whole would crowd out what is
+   * about to be said. Deliberately a *new* conversation rather than an
+   * append to the old one — the old one happened, and rewriting it days later
+   * would make the list lie about when things were said.
+   */
+  resume = (conversation: VoiceConversation): void => {
+    this.carried = resumedTurns(conversation);
+    void this.start();
+  };
 
   /**
    * Writes the line this conversation leaves behind, whichever way it was held.
@@ -724,6 +764,14 @@ class ConversationRuntime {
     // pipeline is holding, and closing it throws that away.
     this.rememberThisConversation();
     this.spoken = [];
+    // The transcript is already saved — every turn wrote itself as it finished.
+    // All that is left is to mark when it ended, and to make sure the next
+    // conversation starts as a new one rather than appending to this.
+    if (this.saved && this.saved.turns.length > 0) {
+      void saveConversation({ ...this.saved, endedAtMs: Date.now() }).catch(() => {});
+    }
+    this.saved = null;
+    this.carried = [];
     this.microphone?.stop();
     this.microphone = null;
     this.client?.disconnect();

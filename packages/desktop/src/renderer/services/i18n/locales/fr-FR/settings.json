@@ -1640,7 +1640,18 @@
     "conversationCannotHold": "Je ne peux prendre un fichier que pendant une conversation locale.",
     "conversationSkillNeedsTarget": "J'ai le nom mais pas l'adresse — trouve-la d'abord, puis enregistre.",
     "conversationFinding": "Recherche…",
-    "conversationFoundNothing": "Rien trouvé"
+    "conversationFoundNothing": "Rien trouvé",
+    "history": "Historique",
+    "historyEmpty": "Vos conversations parlées sont conservées ici : ce qui a été dit, et de quoi y revenir.",
+    "historyCount": "{{count}} conversations",
+    "historyForgetAll": "Tout oublier",
+    "historyForgetAllConfirm": "Oublier toutes les conversations enregistrées ?",
+    "historyForgetConfirm": "Oublier cette conversation ?",
+    "historyUntitled": "Sans titre",
+    "historyTurns": "{{count}} tours",
+    "historyResume": "Reprendre ici",
+    "historyYou": "Vous :",
+    "historyAssistant": "Lui :"
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

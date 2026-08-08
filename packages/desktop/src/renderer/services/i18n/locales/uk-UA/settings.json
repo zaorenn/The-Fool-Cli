@@ -1641,7 +1641,18 @@
     "conversationCannotHold": "Файл я можу прийняти лише під час локальної розмови.",
     "conversationSkillNeedsTarget": "Назва є, а адреси немає — спершу знайдіть її, потім зберігайте.",
     "conversationFinding": "Шукаю…",
-    "conversationFoundNothing": "Нічого не знайдено"
+    "conversationFoundNothing": "Нічого не знайдено",
+    "history": "Історія",
+    "historyEmpty": "Голосові розмови зберігаються тут — що було сказано і як до них повернутися.",
+    "historyCount": "Розмов: {{count}}",
+    "historyForgetAll": "Забути все",
+    "historyForgetAllConfirm": "Забути всі збережені розмови?",
+    "historyForgetConfirm": "Забути цю розмову?",
+    "historyUntitled": "Без назви",
+    "historyTurns": "реплік: {{count}}",
+    "historyResume": "Продовжити звідси",
+    "historyYou": "Ви:",
+    "historyAssistant": "Він:"
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",
