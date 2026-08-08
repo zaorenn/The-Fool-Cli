@@ -87,6 +87,7 @@ import { registerPwa } from './services/registerPwa';
 
 import { ipcBridge } from '@/common';
 import { repairAllCronJobTimeZonesOnce } from '@renderer/pages/cron/repairCronJobTimeZone';
+import { startAppToolChannel } from '@renderer/services/appTools/appToolChannel';
 import { bootstrapRendererConfig } from '@renderer/services/bootstrapRenderer';
 
 // Components and utilities
@@ -316,6 +317,14 @@ const Main = () => {
   useEffect(() => {
     if (!ready) return;
     void repairAllCronJobTimeZonesOnce();
+  }, [ready]);
+
+  // The channel an agent calls back into this application through. Started once
+  // the backend is reachable, because the first thing it does is tell the
+  // backend what this application can do.
+  useEffect(() => {
+    if (!ready) return;
+    return startAppToolChannel();
   }, [ready]);
 
   if (!ready || !configReady) {

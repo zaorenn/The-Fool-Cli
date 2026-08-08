@@ -599,6 +599,35 @@ export const conversation = {
   },
 };
 
+/**
+ * The channel an agent calls back into this application through.
+ *
+ * The same shape as `conversation.confirmation` and for the same reason: the
+ * request goes out over the socket, the answer comes back over HTTP. Top-level
+ * rather than under `conversation` because the catalogue belongs to the
+ * application as a whole — it is registered once at startup, not per chat.
+ *
+ * `catalogue` is what this application says it can do. It is registered from
+ * here rather than defined in the backend because the schemas live beside the
+ * handlers that implement them, in this process.
+ */
+export const appTools = {
+  request: wsEmitter<{
+    conversation_id: string;
+    call_id: string;
+    name: string;
+    arguments?: Record<string, unknown>;
+  }>('app.tool.request'),
+  result: httpPost<void, { call_id: string; ok: boolean; content: string }>(
+    () => '/api/app-tools/result',
+    (p) => p
+  ),
+  catalogue: httpPost<void, { tools: { name: string; description: string; inputSchema: Record<string, unknown> }[] }>(
+    () => '/api/app-tools/catalogue',
+    (p) => p
+  ),
+};
+
 export const runtime = {
   statusChanged: wsEmitter<IRuntimeStatusEvent>('runtime.statusChanged'),
 };
