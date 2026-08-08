@@ -119,6 +119,9 @@ class AutoUpdaterService extends EventEmitter {
     timer: ReturnType<typeof setTimeout>;
   } | null = null;
   private _downloadedUpdateVersion: string | undefined;
+  /** When the current download's first progress arrived, for the speed it reports. */
+  private _downloadStartedAt: number | null = null;
+  private _slowestBytesPerSecond: number | null = null;
   /** Stores registered autoUpdater event handlers for cleanup and test access */
   private readonly _autoUpdaterHandlers = new Map<string, (...args: unknown[]) => void>();
   private readonly _nativeAutoUpdaterHandlers = new Map<string, (...args: unknown[]) => void>();
@@ -408,6 +411,14 @@ class AutoUpdaterService extends EventEmitter {
         return;
       }
       log.debug(`Download progress: ${progress.percent.toFixed(2)}%`);
+      // Kept so the finished download can report how it went. Nothing in this
+      // app has ever recorded the speed of an update that arrived, which is why
+      // "it downloads at fifty kilobits" has never been checkable.
+      this._downloadStartedAt ??= Date.now();
+      this._slowestBytesPerSecond =
+        this._slowestBytesPerSecond === null
+          ? progress.bytesPerSecond
+          : Math.min(this._slowestBytesPerSecond, progress.bytesPerSecond);
       this.broadcastStatus({
         status: 'downloading',
         progress: {
@@ -424,7 +435,15 @@ class AutoUpdaterService extends EventEmitter {
         log.debug('[auto-update] Ignoring update-downloaded after cancellation');
         return;
       }
-      log.info('Update downloaded');
+      const elapsedMs = this._downloadStartedAt ? Date.now() - this._downloadStartedAt : 0;
+      log.info('Update downloaded', {
+        version: info.version,
+        elapsedMs,
+        slowestBytesPerSecond: this._slowestBytesPerSecond ?? undefined,
+        feed: buildUpdateFeedOptions().provider,
+      });
+      this._downloadStartedAt = null;
+      this._slowestBytesPerSecond = null;
       this._activeDownloadPromise = null;
       this._activeDownloadCancellationToken = null;
       this._downloadedUpdateVersion = info.version;

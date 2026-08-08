@@ -377,6 +377,9 @@ const attemptDownload = async (
 ): Promise<DownloadAttempt> => {
   let receivedBytes = 0;
   let totalBytes: number | undefined;
+  /** Reads that took over a second, and the worst of them — see the loop below. */
+  let stalledReads = 0;
+  let slowestReadMs = 0;
 
   const startedAt = Date.now();
   let lastEmitAt = 0;
@@ -430,7 +433,18 @@ const attemptDownload = async (
 
     let doneReading = false;
     while (!doneReading) {
+      // Timed around the read alone. A read that takes a long time is the
+      // network or the server; a fast read followed by a slow write is this
+      // process's own event loop being busy, which is the failure mode that
+      // looks exactly like a slow connection and is the one worth knowing
+      // about. Fifty kilobits on a fast link is far more likely to be the
+      // second than the first.
+      const readStartedAt = Date.now();
       const { done, value } = await reader.read();
+      const readMs = Date.now() - readStartedAt;
+      if (readMs > 1_000) stalledReads += 1;
+      if (readMs > slowestReadMs) slowestReadMs = readMs;
+
       doneReading = done;
       if (doneReading) break;
       if (!value) continue;
@@ -454,6 +468,20 @@ const attemptDownload = async (
       stream.on('error', reject);
     });
 
+    // Measured, and written down, because "it downloads at fifty kilobits" is
+    // otherwise unfalsifiable from here: nothing in this app has ever recorded
+    // how fast an update actually arrived, or which host it arrived from. Both
+    // are needed to tell a slow link apart from a slow reader, and the second
+    // is the one this code could be at fault for. One line per download.
+    const elapsedMs = Math.max(1, Date.now() - startedAt);
+    log.info('[update-download] Finished', {
+      bytes: receivedBytes,
+      elapsedMs,
+      kilobytesPerSecond: Math.round(receivedBytes / elapsedMs),
+      host: new URL(url).hostname,
+      stalls: stalledReads,
+      slowestReadMs: slowestReadMs,
+    });
     return { ok: true, isAbort: false, message: '', receivedBytes, totalBytes };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
