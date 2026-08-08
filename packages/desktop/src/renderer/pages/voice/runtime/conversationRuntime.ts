@@ -35,6 +35,7 @@ import {
   rememberVoiceSession,
 } from '@renderer/services/voice/session/voiceMemoryStore';
 import { peekVoiceSettings, subscribeVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
+import { guardSpokenSentence } from '@renderer/services/voice/session/spokenOutput';
 import type { ConversationFile } from '@/common/voice/conversationFiles';
 import { LocalVoicePipeline } from '../localPipeline';
 import { PcmAudioOutput, PcmMicrophone } from '../pcmAudio';
@@ -296,7 +297,18 @@ class ConversationRuntime {
 
   // --------------------------------------------------------------- activities
 
+  /**
+   * How many tools have come back since the user last spoke.
+   *
+   * The other half of the claim gate. A socket provider speaks its own audio,
+   * so this runtime cannot refuse a sentence before it is heard the way the
+   * local pipeline can — but it can stop the rest of a false claim and refuse
+   * to write it down, which is the difference between a slip and a record.
+   */
+  private toolsRanThisTurn = 0;
+
   private updateActivity = (id: string, patch: Partial<ConversationActivity>): void => {
+    if (patch.state === 'completed') this.toolsRanThisTurn += 1;
     const current = this.snapshot.activities;
     const existing = current.find((item) => item.id === id);
     const next = !existing
@@ -309,6 +321,19 @@ class ConversationRuntime {
     this.emit({ activities: next });
     this.publishActivities();
   };
+
+  /**
+   * Whether this reply claims something it has not earned.
+   *
+   * `remembered` is measured the same way the local pipeline measures it — the
+   * length of what is actually written down — so the two surfaces cannot
+   * disagree about whether there was anything to recall.
+   */
+  private refuses(text: string): boolean {
+    const memory = peekVoiceMemory();
+    const remembered = memory.user.trim().length + memory.agent.trim().length;
+    return guardSpokenSentence(text, { toolsRan: this.toolsRanThisTurn, remembered }).speak === false;
+  }
 
   /**
    * Puts the same list on the notch, oldest first.
@@ -397,6 +422,10 @@ class ConversationRuntime {
       case 'ready':
         break;
       case 'user-transcript': {
+        // A new thing asked is a new turn, and the evidence starts again with
+        // it. Counting across turns would let a tool from five minutes ago
+        // vouch for a claim made now.
+        if (event.final) this.toolsRanThisTurn = 0;
         const heard = event.final ? event.text : `${this.snapshot.userTranscript}${event.text}`;
         this.emit({
           userTranscript: heard,
@@ -428,6 +457,15 @@ class ConversationRuntime {
       }
       case 'assistant-transcript': {
         if (this.standby || (event.final && event.text.length === 0)) break;
+        // The one gate every spoken surface passes through. A speech-to-speech
+        // provider has already begun saying this, so the best that can be done
+        // is stop the rest of it and keep it out of the record — a claim nobody
+        // can read back later is not one the assistant gets to stand behind.
+        if (event.final && this.refuses(event.text)) {
+          this.output?.flush();
+          publishVoiceReply('');
+          break;
+        }
         const next = event.final ? event.text : `${this.snapshot.assistantTranscript}${event.text}`;
         this.emit({ assistantTranscript: next });
         // A short line, not the whole stream. The notch is a strip a few
