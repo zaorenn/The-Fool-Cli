@@ -2,6 +2,18 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.3.8
+
+### The spoken assistant actually finishing what it starts
+
+- **A conversation no longer breaks after it does something for you.** Running a skill you had taught it left a result in the history with no record of the request it answered, and the model server rejects a whole conversation over that — so the skill worked once and every turn after it failed silently. This was introduced in 2.3.6 and is the cause of "it opens, does the thing, and then stops responding".
+- **It no longer hangs up while the agent is still working.** The clock that catches a reply going nowhere was started at the beginning of a turn and only stopped by the first spoken word. Ask for something the assistant hands straight to the agent without speaking first, and two minutes later the conversation was abandoned mid-task. Work in progress now counts as progress.
+- **"Yes, I remember — what was it again?" is refused.** The check asked whether anything at all was in the memory, and there usually is; the question that matters is whether _this_ is remembered. Claiming to remember and asking to be reminded in one breath is hollow however full the memory is.
+
+### Fixes
+
+- The notch shows a short line about what is happening, not the assistant's entire reply as it is written. When the agent's own output came through it was rendering raw fragments — a stray backtick, `Command`, `tool`, `for` — one per line, telling you nothing.
+
 ## 2.3.7
 
 ### Fixes
