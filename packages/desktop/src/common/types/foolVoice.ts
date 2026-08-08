@@ -465,6 +465,23 @@ export type FoolVoiceSettings = {
    */
   realtime: {
     providerId: 'openai-realtime' | 'gemini-live' | 'local-s2s' | 'local-pipeline';
+    /**
+     * Whether a spoken conversation runs on the agent runtime rather than on the
+     * renderer's own loop.
+     *
+     * The renderer's loop was written when there was nothing else: eighteen
+     * tools, four tool rounds, twelve turns of history and no compaction, while
+     * the capable runtime sat one process away and was handed only the jobs the
+     * conversation could not do itself. On the agent runtime a spoken
+     * conversation gets the same tools, context handling and skills as a typed
+     * one.
+     *
+     * Off until the measurement in
+     * `docs/specs/2026-08-08-one-harness-measurements.md` says the move costs
+     * nothing. A flag that opens on an argument rather than a number is how the
+     * slower path ships.
+     */
+    useAgentRuntime: boolean;
     /** Empty means the provider's own default, which is what most users want. */
     model: string;
     /**
@@ -764,6 +781,8 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     // hold a conversation with nothing bought and no key entered, and the
     // models it needs are the ones the voice settings already install.
     providerId: 'local-pipeline',
+    // Off until measured — see the field's own note.
+    useAgentRuntime: false,
     model: '',
     localEndpoint: '',
     visionModel: '',
@@ -988,6 +1007,7 @@ const settingsSchema = z
     realtime: z
       .object({
         providerId: z.enum(['openai-realtime', 'gemini-live', 'local-s2s', 'local-pipeline']).default('local-pipeline'),
+        useAgentRuntime: z.boolean().default(false),
         model: z.string().max(256).default(''),
         // Empty is the LM Studio default rather than an invalid URL, so the
         // field can be cleared to get back to it.
