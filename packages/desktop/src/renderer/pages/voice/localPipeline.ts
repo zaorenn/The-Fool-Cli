@@ -19,6 +19,7 @@ import {
   unbackedClaimCorrection,
 } from '@/common/voice/actionClaims';
 import { isBackchannel } from '@/common/voice/backchannel';
+import { concernsFor, describeTurn } from '@/common/voice/turnMetrics';
 import { isHallucinatedTranscript } from '@/common/voice/hallucinations';
 import { refersToScreen } from '@/common/voice/screenIntent';
 import { describeSpokenTurns, worthRemembering, type SpokenTurn } from '@/common/voice/sessionSummary';
@@ -376,6 +377,9 @@ export class LocalVoicePipeline {
    * noticed, and the turn loop is where history is safe to touch.
    */
   private pendingCorrection: string | null = null;
+
+  /** When this turn first put sound in the speaker, for the only latency felt. */
+  private firstAudioAt: number | null = null;
   private ready: Extract<LocalReadiness, { ok: true }> | null = null;
   /** Aborts a reply the user has genuinely taken the floor from. */
   private inFlight: AbortController | null = null;
@@ -1051,8 +1055,17 @@ export class LocalVoicePipeline {
     readiness: Extract<LocalReadiness, { ok: true }>,
     controller: AbortController
   ): Promise<void> {
+    // Measured because every claim about speed here was unfalsifiable: nobody
+    // had recorded how many round trips a request takes, how far the prompt had
+    // grown, or how long somebody waits before hearing anything. One line a
+    // turn, and a louder one when a turn is bad enough that the user noticed.
+    const turnStartedAt = Date.now();
+    this.firstAudioAt = null;
+
     let toolsRan = 0;
+    let rounds = 0;
     for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
+      rounds += 1;
       const calls = await this.streamReply(readiness, controller, toolsRan);
       if (controller.signal.aborted) return;
 
@@ -1073,6 +1086,18 @@ export class LocalVoicePipeline {
       toolsRan += calls.length;
       if (controller.signal.aborted) return;
     }
+
+    const metrics = {
+      rounds,
+      promptChars: this.history.reduce((total, turn) => total + (turn.content?.length ?? 0), 0),
+      toFirstAudioMs: this.firstAudioAt === null ? null : this.firstAudioAt - turnStartedAt,
+      totalMs: Date.now() - turnStartedAt,
+      toolCalls: toolsRan,
+    };
+    const concerns = concernsFor(metrics);
+    const line = `[voice-turn] ${describeTurn(metrics)}`;
+    if (concerns.length > 0) console.warn(`${line} concerns=${concerns.join(',')}`);
+    else console.info(line);
 
     this.options.onEvent({ kind: 'phase', phase: 'listening' });
   }
@@ -1159,6 +1184,9 @@ export class LocalVoicePipeline {
             return [];
           }
           this.voice ??= this.resolveVoice(readiness);
+          // The first sentence to reach the speaker is the moment the user
+          // stops waiting, whatever the rest of the reply goes on to do.
+          this.firstAudioAt ??= Date.now();
           this.queueForSpeech(sentence, controller);
         }
         this.startDraining(controller);
