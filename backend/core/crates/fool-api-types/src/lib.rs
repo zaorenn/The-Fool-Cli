@@ -6,6 +6,7 @@ mod acp_prompt_hook;
 mod agent_build_extra;
 mod agent_discovery;
 mod agent_error;
+mod app_tool;
 mod assistant;
 mod auth;
 mod channel;
@@ -53,6 +54,9 @@ pub use agent_discovery::{
 pub use agent_error::{
     AgentErrorCode, AgentErrorOwnership, AgentErrorResolution, AgentErrorResolutionKind, AgentErrorResolutionTarget,
     AgentStreamErrorData,
+};
+pub use app_tool::{
+    APP_TOOL_REQUEST_EVENT, APP_TOOLS_MCP_SERVER_NAME, AppToolRequest, AppToolResult, AppToolsMcpConfig,
 };
 pub use assistant::{
     AssistantAgentResponse, AssistantCapabilitiesResponse, AssistantDefaultListRequest, AssistantDefaultListResponse,
