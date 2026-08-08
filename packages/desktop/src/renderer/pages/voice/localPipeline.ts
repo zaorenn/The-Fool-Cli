@@ -1148,6 +1148,11 @@ export class LocalVoicePipeline {
           const refusal = this.refuse(sentence, toolsRan);
           if (refusal) {
             this.pendingCorrection = refusal;
+            // Taken off the screen as well as kept out of the speaker. The
+            // partial text is published as it streams, so by the time a
+            // sentence is whole enough to judge, the user is already reading
+            // it — and a lie they read is a lie they believed.
+            this.options.onEvent({ kind: 'assistant-transcript', text: '', final: true });
             return [];
           }
           this.voice ??= this.resolveVoice(readiness);
@@ -1161,6 +1166,7 @@ export class LocalVoicePipeline {
     const tailRefusal = tail.length > 0 ? this.refuse(tail, toolsRan) : null;
     if (tailRefusal) {
       this.pendingCorrection = tailRefusal;
+      this.options.onEvent({ kind: 'assistant-transcript', text: '', final: true });
       return [];
     }
     if (tail.length > 0) {

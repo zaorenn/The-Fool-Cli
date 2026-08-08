@@ -27,15 +27,6 @@
  */
 
 /**
- * Claims that the thing is already true.
- *
- * Written as explicit alternations rather than a loose stem match, because the
- * near-misses are all real speech: `açacağım` is a promise, `açayım mı` is a
- * question, and `açtım` is the claim. A pattern relaxed enough to catch every
- * conjugation catches the first two as well, and refusing a question the
- * assistant was right to ask is a worse failure than the one being prevented.
- */
-/**
  * Word boundaries that understand the alphabets this app speaks.
  *
  * `\b` is defined against `[A-Za-z0-9_]`, so it does not fire beside `ş`, `ı`,
@@ -45,17 +36,57 @@
  */
 const edged = (body: string): RegExp => new RegExp(`(?<!\\p{L})(?:${body})(?!\\p{L})`, 'iu');
 
+/**
+ * Turkish with its diacritics folded away.
+ *
+ * Transcription drops them constantly — Whisper writes "Simdi caliyor" as often
+ * as "Şimdi çalıyor" — and a small local model asked to answer in Turkish does
+ * the same. Matching only the properly accented spellings left the guard off
+ * for a large share of real turns. A test against the pipeline caught that; a
+ * test of the patterns alone, written in tidy Turkish, never would have.
+ *
+ * Both the text and the patterns are folded, so neither side carries two
+ * spellings of every word.
+ */
+const FOLD: Record<string, string> = {
+  ş: 's',
+  Ş: 's',
+  ç: 'c',
+  Ç: 'c',
+  ı: 'i',
+  İ: 'i',
+  ğ: 'g',
+  Ğ: 'g',
+  ö: 'o',
+  Ö: 'o',
+  ü: 'u',
+  Ü: 'u',
+};
+
+const fold = (text: string): string => text.replace(/[şŞçÇıİğĞöÖüÜ]/g, (character) => FOLD[character] ?? character);
+
+/**
+ * Claims that the thing is already true.
+ *
+ * Written as explicit alternations rather than a loose stem match, because the
+ * near-misses are all real speech: `açacağım` is a promise, `açayım mı` is a
+ * question, and `açtım` is the claim. A pattern relaxed enough to catch every
+ * conjugation catches the first two as well, and refusing a question the
+ * assistant was right to ask is a worse failure than the one being prevented.
+ *
+ * Written folded, because that is what they are matched against.
+ */
 const COMPLETED: readonly RegExp[] = [
   // ── Turkish ──────────────────────────────────────────────────────────────
   // Playing, in the sense of "it is playing now".
-  edged('(şimdi|şu ?an(da)?|artık)\\s+çal[ıi]yor'),
-  edged('çalmaya başladı'),
-  edged('oynatmaya başladım'),
+  edged('(simdi|su ?an(da)?|artik)\\s+caliyor'),
+  edged('calmaya basladi'),
+  edged('oynatmaya basladim'),
   // First person past: opened, sent, did, saved, downloaded, installed, set up.
-  edged('açtım|gönderdim|yaptım|hallettim|kaydettim|indirdim|kurdum|başlattım|ayarladım|oluşturdum|sildim|kapattım'),
+  edged('actim|gonderdim|yaptim|hallettim|kaydettim|indirdim|kurdum|baslattim|ayarladim|olusturdum|sildim|kapattim'),
   // Passive past: it was opened, it was sent.
-  edged('açıldı|gönderildi|kaydedildi|indirildi|kuruldu|oluşturuldu|tamamlandı'),
-  edged('tamamdır|oldu bitti'),
+  edged('acildi|gonderildi|kaydedildi|indirildi|kuruldu|olusturuldu|tamamlandi'),
+  edged('tamamdir|oldu bitti'),
 
   // ── English ──────────────────────────────────────────────────────────────
   edged("(it'?s|it is|now)\\s+playing"),
@@ -78,9 +109,9 @@ const COMPLETED: readonly RegExp[] = [
  * assistant builds on what they just said while still holding nothing.
  */
 const RECALLED: readonly RegExp[] = [
-  edged('hatırlıyorum|hatırladım|anımsıyorum'),
-  edged('(evet|tabii|elbette)[,.]?\\s*(bir şeyler\\s*)?hatırl'),
-  edged('daha önce (söylemiştin|bahsetmiştin|demiştin)'),
+  edged('hatirliyorum|hatirladim|animsiyorum'),
+  edged('(evet|tabii|elbette)[,.]?\\s*(bir seyler\\s*)?hatirl\\w*'),
+  edged('daha once (soylemistin|bahsetmistin|demistin)'),
   edged('i remember( that| it| you)?'),
   edged('you (told|mentioned) me (that|it|this|before)'),
 ];
@@ -93,12 +124,12 @@ const RECALLED: readonly RegExp[] = [
  * first clause is what the user actually hears as the promise.
  */
 const UNDER_WAY: readonly RegExp[] = [
-  /\b(açıyorum|arıyorum|bakıyorum|yapıyorum|başlatıyorum|indiriyorum|hallediyorum|ilgileniyorum)\b/i,
-  /\bbir (saniye|dakika)\b/i,
-  /\b(hemen|şimdi) (bak|aç|yap|dene)[ıi]yorum\b/i,
-  /\bi'?m (opening|searching|looking|starting|downloading|working|checking)\b/i,
-  /\b(one|just a) (moment|second)\b/i,
-  /\blet me (look|check|open|try)\b/i,
+  edged('aciyorum|ariyorum|bakiyorum|yapiyorum|baslatiyorum|indiriyorum|hallediyorum|ilgileniyorum'),
+  edged('bir (saniye|dakika)'),
+  edged('(hemen|simdi) (bak|ac|yap|dene)iyorum'),
+  edged("i'?m (opening|searching|looking|starting|downloading|working|checking)"),
+  edged('(one|just a) (moment|second)'),
+  edged('let me (look|check|open|try)'),
 ];
 
 /** Questions are never claims — "shall I open it?" must survive untouched. */
@@ -117,8 +148,10 @@ export const claimsCompletedAction = (reply: string): boolean => {
   const text = reply.trim();
   if (text.length === 0) return false;
   if (ASKING.test(text)) return false;
-  if (UNDER_WAY.some((pattern) => pattern.test(text))) return false;
-  return COMPLETED.some((pattern) => pattern.test(text));
+
+  const folded = fold(text);
+  if (UNDER_WAY.some((pattern) => pattern.test(folded))) return false;
+  return COMPLETED.some((pattern) => pattern.test(folded));
 };
 
 /**
@@ -133,7 +166,7 @@ export const claimsCompletedAction = (reply: string): boolean => {
 export const claimsRecall = (reply: string): boolean => {
   const text = reply.trim();
   if (text.length === 0) return false;
-  return RECALLED.some((pattern) => pattern.test(text));
+  return RECALLED.some((pattern) => pattern.test(fold(text)));
 };
 
 /**
