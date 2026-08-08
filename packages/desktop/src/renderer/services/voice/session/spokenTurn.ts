@@ -5,6 +5,7 @@
  */
 
 import { ipcBridge } from '@/common';
+import { prefaceWithInstructions } from '@/common/voice/pendingInstructions';
 import { createIncrementalSentenceDetector } from '@renderer/services/voice/narration/incrementalSentences';
 
 /**
@@ -26,6 +27,14 @@ export type SpokenTurnInput = {
   said: string;
   /** Called with each finished sentence, in the order it was written. */
   onSentence: (sentence: string) => void;
+  /**
+   * Instructions set out loud since the last turn.
+   *
+   * A session's system prompt is built once, so a rule the user sets mid
+   * conversation cannot be written into it. It rides ahead of what they said
+   * instead — see `common/voice/pendingInstructions.ts`.
+   */
+  instructions?: readonly string[];
   /** Aborting cancels the model as well as the speaker. */
   signal?: AbortSignal;
 };
@@ -64,6 +73,7 @@ const textOf = (content: unknown): string => {
  */
 export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnResult> => {
   const { conversationId, said, onSentence, signal } = input;
+  const instructions = input.instructions ?? [];
 
   const sentences = createIncrementalSentenceDetector();
   let spoken = '';
@@ -173,7 +183,10 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
       .invoke({ conversation_id: conversationId })
       .catch((): undefined => undefined);
 
-    const accepted = await ipcBridge.conversation.sendMessage.invoke({ conversation_id: conversationId, input: said });
+    const accepted = await ipcBridge.conversation.sendMessage.invoke({
+      conversation_id: conversationId,
+      input: prefaceWithInstructions(said, instructions),
+    });
     turnId = accepted?.turn_id ?? '';
   } catch (error) {
     finish({ ok: false, reason: 'send-failed', detail: error instanceof Error ? error.message : undefined });

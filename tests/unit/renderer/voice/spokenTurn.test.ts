@@ -141,3 +141,36 @@ describe('runSpokenTurn', () => {
     expect(stop).not.toHaveBeenCalled();
   });
 });
+
+describe('runSpokenTurn and instructions set out loud', () => {
+  beforeEach(() => {
+    streamListeners.length = 0;
+    completedListeners.length = 0;
+    sendMessage.mockClear();
+    sendMessage.mockResolvedValue({ msg_id: 'm1', turn_id: 'turn-9', runtime: {} });
+  });
+
+  it('puts a rule set mid-conversation ahead of what was said', async () => {
+    const turn = runSpokenTurn({
+      conversationId: 'c1',
+      said: 'what is the weather',
+      onSentence: () => undefined,
+      instructions: ['Answer in English.'],
+    });
+    await settle();
+    emit({ type: 'finish' });
+    await turn;
+
+    const sent = sendMessage.mock.calls[0]?.[0] as { input: string };
+    expect(sent.input.indexOf('Answer in English.')).toBeLessThan(sent.input.indexOf('what is the weather'));
+  });
+
+  it('sends what was said unchanged when nothing is pending', async () => {
+    const turn = runSpokenTurn({ conversationId: 'c1', said: 'hello', onSentence: () => undefined });
+    await settle();
+    emit({ type: 'finish' });
+    await turn;
+
+    expect((sendMessage.mock.calls[0]?.[0] as { input: string }).input).toBe('hello');
+  });
+});
