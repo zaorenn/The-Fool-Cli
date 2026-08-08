@@ -2,6 +2,13 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.3.7
+
+### Fixes
+
+- The guard that stops the assistant claiming it did something now works on Turkish as it is actually written. Transcription drops the accents constantly — "Simdi caliyor" arrives as often as "Şimdi çalıyor" — and only the accented spellings were being recognised, so for a large share of real turns the guard was simply off.
+- A refused sentence is taken off the screen as well as kept out of the speaker. The reply is written out as it is generated, so by the time a sentence can be judged you have already read it, and a lie you read is a lie you believed.
+
 ## 2.3.6
 
 ### It does the thing, or it says so
