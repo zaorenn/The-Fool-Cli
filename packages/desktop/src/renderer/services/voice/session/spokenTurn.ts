@@ -7,6 +7,7 @@
 import { ipcBridge } from '@/common';
 import { prefaceWithInstructions } from '@/common/voice/pendingInstructions';
 import { createIncrementalSentenceDetector } from '@renderer/services/voice/narration/incrementalSentences';
+import { guardSpokenSentence } from './spokenOutput';
 
 /**
  * One spoken turn, run by the agent runtime and spoken as it is written.
@@ -35,6 +36,21 @@ export type SpokenTurnInput = {
    * instead — see `common/voice/pendingInstructions.ts`.
    */
   instructions?: readonly string[];
+  /**
+   * How much is in the memory, so a claim to recall can be checked.
+   *
+   * The other half of the evidence — how many tools ran — is counted from the
+   * stream, because only this function sees it.
+   */
+  remembered?: number;
+  /**
+   * Called with a sentence that was refused before it could be spoken.
+   *
+   * The correction is written to the model, not the user: it goes back as the
+   * next thing the model is asked about, and the sentence itself is never
+   * queued for the speaker.
+   */
+  onRefused?: (correction: string) => void;
   /** Aborting cancels the model as well as the speaker. */
   signal?: AbortSignal;
 };
@@ -74,6 +90,17 @@ const textOf = (content: unknown): string => {
 export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnResult> => {
   const { conversationId, said, onSentence, signal } = input;
   const instructions = input.instructions ?? [];
+  const remembered = input.remembered ?? 0;
+
+  /**
+   * How many tools came back this turn.
+   *
+   * Counted here because this is the only place that sees the stream. Every
+   * message that is not text and not a terminal marker is the agent doing
+   * something — a tool call, a file read — which is exactly what makes a claim
+   * to have done something true.
+   */
+  let toolsRan = 0;
 
   const sentences = createIncrementalSentenceDetector();
   let spoken = '';
@@ -96,20 +123,32 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
 
   /** Whatever is still in the detector when the turn ends is still owed. */
   const sayTheRest = (): void => {
-    const rest = sentences.flush().trim();
-    if (rest.length > 0) {
-      spoken += spoken.length > 0 ? ` ${rest}` : rest;
-      onSentence(rest);
+    offer(sentences.flush());
+  };
+
+  /**
+   * Puts one sentence in front of the gate, and speaks it only if it passes.
+   *
+   * In front of the speaker rather than after the reply: a reply is spoken a
+   * sentence at a time while the rest is still being written, so checking the
+   * finished text would catch a false claim only after the user had heard it.
+   */
+  const offer = (sentence: string): void => {
+    const trimmed = sentence.trim();
+    if (trimmed.length === 0) return;
+
+    const verdict = guardSpokenSentence(trimmed, { toolsRan, remembered });
+    if (verdict.speak === false) {
+      input.onRefused?.(verdict.correction);
+      return;
     }
+
+    spoken += spoken.length > 0 ? ` ${trimmed}` : trimmed;
+    onSentence(trimmed);
   };
 
   const say = (delta: string): void => {
-    for (const sentence of sentences.push(delta)) {
-      const trimmed = sentence.trim();
-      if (trimmed.length === 0) continue;
-      spoken += spoken.length > 0 ? ` ${trimmed}` : trimmed;
-      onSentence(trimmed);
-    }
+    for (const sentence of sentences.push(delta)) offer(sentence);
   };
 
   // Subscribed before the message is sent: a short turn can finish before this
@@ -133,7 +172,12 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
       }
       if (message.status === 'error') {
         finish({ ok: false, reason: 'run-failed', detail: textOf(message.data) });
+        return;
       }
+      // Anything else on this channel is the agent doing something rather than
+      // saying something: a tool call, a file read, a step. That is precisely
+      // what makes "I have done it" true rather than a lie.
+      toolsRan += 1;
     })
   );
 

@@ -174,3 +174,46 @@ describe('runSpokenTurn and instructions set out loud', () => {
     expect((sendMessage.mock.calls[0]?.[0] as { input: string }).input).toBe('hello');
   });
 });
+
+describe('runSpokenTurn and the claim gate', () => {
+  beforeEach(() => {
+    streamListeners.length = 0;
+    completedListeners.length = 0;
+    sendMessage.mockClear();
+    sendMessage.mockResolvedValue({ msg_id: 'm1', turn_id: 'turn-9', runtime: {} });
+  });
+
+  it('never speaks a claim that no tool backs', async () => {
+    const spoken: string[] = [];
+    const refused: string[] = [];
+    const turn = runSpokenTurn({
+      conversationId: 'c1',
+      said: 'favori şarkımı aç',
+      onSentence: (s) => spoken.push(s),
+      onRefused: (c) => refused.push(c),
+    });
+    await settle();
+
+    emit({ type: 'content', data: 'Şimdi çalıyor.' });
+    emit({ type: 'finish' });
+    await turn;
+
+    expect(spoken).toEqual([]);
+    expect(refused).toHaveLength(1);
+  });
+
+  it('speaks the same claim once a tool has come back', async () => {
+    const spoken: string[] = [];
+    const turn = runSpokenTurn({ conversationId: 'c1', said: 'favori şarkımı aç', onSentence: (s) => spoken.push(s) });
+    await settle();
+
+    // A step on the stream is the agent doing something, which is what makes
+    // the claim true rather than a lie.
+    emit({ type: 'tool_call', data: { name: 'app_skill_do' } });
+    emit({ type: 'content', data: 'Şimdi çalıyor.' });
+    emit({ type: 'finish' });
+    await turn;
+
+    expect(spoken).toEqual(['Şimdi çalıyor.']);
+  });
+});
