@@ -119,10 +119,19 @@ range, on local models.
 
 Done so far is the honesty floor — it no longer lies about what it did, and a taught skill
 really runs. **Not started:** typed-chat parity (same tools, skills and memory as voice),
-PDF form filling (`pdfjs-dist` is installed for reading; writing needs `pdf-lib` and the user
-has now explicitly asked for form filling, so that dependency is authorised), downloading and
-installing applications, and measured context/latency work. Measure before optimising: nobody
-has yet recorded turn counts or prompt sizes against a small local model.
+PDF form filling (see the correction below), downloading and installing applications, and
+measured context/latency work. Measure before optimising: nobody has yet recorded turn counts
+or prompt sizes against a small local model.
+
+**Correction, and a warning about this document.** Two earlier versions of this handover said
+`pdfjs-dist@5.5.207` was already installed, so PDF _reading_ would need no new dependency.
+That is false. Checked on 8 August: neither `pdfjs-dist` nor `pdf-lib` appears in
+`dependencies`, `devDependencies` or `node_modules`. **Both reading and writing need a
+dependency that is not there.** The claim was inherited from a previous session and repeated
+here without being verified — by me, in the rewrite that was supposed to make this document
+trustworthy. Check what this file asserts about the tree before planning around it; the user
+has authorised the PDF dependency, so adding one is the first step of that work rather than a
+decision still outstanding.
 
 ---
 
@@ -152,8 +161,9 @@ code that has been measured and found fast.
 ### Asked for, not started
 
 - **PDF by voice** — summarise, translate, fill a form by asking for each value aloud.
-  `pdfjs-dist@5.5.207` is already installed so reading needs nothing new. **Writing a filled
-  form does** — `pdf-lib` or similar — and adding a dependency is the user's call.
+  **Nothing is installed for this** — not `pdfjs-dist`, not `pdf-lib` (verified 8 August; two
+  earlier handovers claimed otherwise). Reading and writing both need a dependency, and the
+  user has authorised one, so adding it is step one rather than a decision to take.
 - **Learning a skill by watching** — ask for an app it does not know, watch which one the user
   opens, remember it. The local-skills machinery from `612a5187b` is the half that exists, and
   `app_find_video` is the shape the other half should take.
