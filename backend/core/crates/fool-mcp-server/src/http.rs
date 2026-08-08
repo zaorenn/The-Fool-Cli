@@ -107,7 +107,7 @@ async fn serve_connection(mut stream: TcpStream, token: String, resolver: Arc<dy
         let raw = String::from_utf8_lossy(&buffer[..position]).into_owned();
         let headers = raw.to_ascii_lowercase();
 
-        if !headers.contains(&format!("authorization: bearer {}", token.to_ascii_lowercase())) {
+        if !authorized(&raw, &token) {
             let _ = stream
                 .write_all(b"HTTP/1.1 401 Unauthorized\r\ncontent-length: 0\r\n\r\n")
                 .await;
@@ -138,6 +138,40 @@ async fn serve_connection(mut stream: TcpStream, token: String, resolver: Arc<dy
         let _ = stream.write_all(&payload).await;
         return;
     }
+}
+
+/// Whether the request carries the bearer token, exactly.
+///
+/// The header *name* is matched without regard to case, as HTTP requires; the
+/// token itself is compared byte for byte. An earlier version lowercased the
+/// whole header line before looking for the token, which silently made every
+/// token case-insensitive — harmless for a hex uuid, and a quiet loss of half
+/// the entropy the day somebody generates a mixed-case one.
+///
+/// The comparison does not short-circuit on the first differing byte. A timing
+/// signal on loopback is a remote worry rather than a present one, but this is
+/// the code that stands between an unauthorised caller and every tool the
+/// application owns, and the cost of not leaking is one loop.
+fn authorized(raw_headers: &str, token: &str) -> bool {
+    let expected = format!("Bearer {token}");
+    raw_headers
+        .lines()
+        .filter_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            name.trim().eq_ignore_ascii_case("authorization").then(|| value.trim())
+        })
+        .any(|value| constant_time_eq(value.as_bytes(), expected.as_bytes()))
+}
+
+fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {
+    if left.len() != right.len() {
+        return false;
+    }
+    let mut difference = 0_u8;
+    for (a, b) in left.iter().zip(right.iter()) {
+        difference |= a ^ b;
+    }
+    difference == 0
 }
 
 fn find_header_end(buffer: &[u8]) -> Option<usize> {

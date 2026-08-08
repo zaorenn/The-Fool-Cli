@@ -97,3 +97,25 @@ fn the_path_is_the_second_word_of_the_request_line() {
     assert_eq!(request_path("POST /mcp/c1 HTTP/1.1\r\nhost: x"), "/mcp/c1");
     assert_eq!(request_path(""), "/");
 }
+
+#[test]
+fn the_header_name_is_case_insensitive_and_the_token_is_not() {
+    let headers = "POST /mcp/c1 HTTP/1.1\r\nAuthorization: Bearer AbC\r\nhost: 127.0.0.1";
+    assert!(authorized(headers, "AbC"));
+    // The token itself is compared byte for byte: a different case is a
+    // different token, which is the whole point of generating one.
+    assert!(!authorized(headers, "abc"));
+    assert!(!authorized(headers, "ABC"));
+}
+
+#[test]
+fn a_request_with_no_authorization_header_is_refused() {
+    let headers = "POST /mcp/c1 HTTP/1.1\r\nhost: 127.0.0.1";
+    assert!(!authorized(headers, "AbC"));
+}
+
+#[test]
+fn a_token_that_is_merely_a_prefix_is_refused() {
+    let headers = "POST /mcp/c1 HTTP/1.1\r\nauthorization: Bearer secret-value";
+    assert!(!authorized(headers, "secret"));
+}
