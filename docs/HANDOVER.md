@@ -1,9 +1,8 @@
-# Handover — 2.3.5 is out
+# Handover — 2.3.6 is out
 
-Written 8 August 2026. `main` in `C:/Fool-AionUI` at `7cc4b564f`, version `2.3.5`, tree clean,
-pushed. **[v2.3.5](https://github.com/zaorenn/The-Fool-Cli/releases/tag/v2.3.5) is published**,
-non-draft, both assets uploaded, and the live feed answers with it. Nothing is sitting
-unreleased.
+Written 8 August 2026. `main` in `C:/Fool-AionUI` at `d0d765027`, version 2.3.6, tree clean,
+pushed. **[v2.3.6](https://github.com/zaorenn/The-Fool-Cli/releases/tag/v2.3.6) is published**,
+non-draft, both assets uploaded, live feed answers with it. Nothing is sitting unreleased.
 
 ---
 
@@ -76,6 +75,54 @@ shuts it down entirely.
 ### Download measurement — `9b55c012d`
 
 See the open item below; this is the instrumentation, not a fix.
+
+---
+
+## What shipped in 2.3.6, and the principle behind it
+
+Three fixes to one failure: the assistant saying a thing had happened when it had not.
+
+**The rule was already there and did not hold.** `TOOL_RULES` has carried 'never say you
+have done something unless a tool told you it was done' — named as the most damaging thing
+it can do — for as long as the persona has existed. It was still watched saying "Şimdi
+çalıyor" with an empty activity list. **Do not answer this class of bug with another rule.**
+A model that has decided it finished a task will say so in whatever words the prompt has not
+forbidden. The fix has to be mechanical.
+
+- `b6a92afd5` — a sentence claiming a completed action, on a turn where no tool ran, is never
+  queued for the speaker. The gate is **before** the speaker, not after the reply: a reply is
+  said a sentence at a time while the rest is still being written, so checking the finished
+  text would catch the lie only after the user had heard it. The model is handed back its own
+  sentence and gets one more round, bounded by the tool-round budget so it cannot circle.
+  Same guard covers claiming to remember on an empty memory.
+- `1da098c0e` — "I cannot" is not offered as a way out. The first version of the correction
+  said "call the tool or say you cannot", and a model just caught lying takes the second every
+  time; a user told "I can't play your song" is barely better off. Now: call the tool, or hand
+  the whole request to `app_ask_jester`. Inability only after something has failed.
+- `6ef2bbaff` — a taught skill runs without consulting the model at all. "Play my favourite
+  song" was failing at the last step for a reason unrelated to the skill: it existed, the
+  address was in it, and the only thing in between was a small local model choosing to call
+  `app_skill_do`. It did, most of the time. Matched by `findLocalSkill` against the trigger,
+  the same function the tool uses.
+
+**Unicode boundaries matter here.** `` is defined against ASCII, so `/şimdi/` matches
+nothing at all, silently — in every locale this app speaks except English. The first detector
+missed its own target sentence for exactly this reason; a test caught it.
+
+## The standing goal
+
+The user has asked for the app to keep going until it is genuinely a JARVIS-class assistant:
+every request actually carried out rather than narrated, voice and typed chat at the same
+capability, context-optimised and fast on 8 GB of VRAM, able to write decent code, fill PDF
+forms, download and install applications, and to specialise as it is used. Claude Code's
+range, on local models.
+
+Done so far is the honesty floor — it no longer lies about what it did, and a taught skill
+really runs. **Not started:** typed-chat parity (same tools, skills and memory as voice),
+PDF form filling (`pdfjs-dist` is installed for reading; writing needs `pdf-lib` and the user
+has now explicitly asked for form filling, so that dependency is authorised), downloading and
+installing applications, and measured context/latency work. Measure before optimising: nobody
+has yet recorded turn counts or prompt sizes against a small local model.
 
 ---
 
