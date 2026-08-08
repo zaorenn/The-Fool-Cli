@@ -12,7 +12,12 @@ import {
   type SpokenVoice,
 } from '@/common/realtime';
 import { synthesisProviderFor, type FoolVoiceSettings, type VoiceModel } from '@/common/types/foolVoice';
-import { isUnbackedClaim, unbackedClaimCorrection } from '@/common/voice/actionClaims';
+import {
+  emptyRecallCorrection,
+  isEmptyRecall,
+  isUnbackedClaim,
+  unbackedClaimCorrection,
+} from '@/common/voice/actionClaims';
 import { isBackchannel } from '@/common/voice/backchannel';
 import { isHallucinatedTranscript } from '@/common/voice/hallucinations';
 import { refersToScreen } from '@/common/voice/screenIntent';
@@ -982,6 +987,27 @@ export class LocalVoicePipeline {
    * there is, run what was asked for, go back — until a round produces no tool
    * calls, which is the round that ends the turn.
    */
+  /**
+   * Whether this sentence may be said, and what to tell the model if not.
+   *
+   * Both refusals are the same shape — a sentence asserting something that is
+   * not backed by anything — and they are checked in one place so a new kind
+   * cannot be added to one path and forgotten on the other.
+   *
+   * What backs a recollection is the memory and whatever an earlier
+   * conversation carried in. Both empty and a claim made means there was
+   * nothing to recall.
+   */
+  private refuse(sentence: string, toolsRan: number): string | null {
+    if (isUnbackedClaim(sentence, toolsRan)) return unbackedClaimCorrection(sentence);
+
+    const memory = peekVoiceMemory();
+    const remembered = memory.user.trim().length + memory.agent.trim().length + (this.options.carried?.length ?? 0);
+    if (isEmptyRecall(sentence, remembered)) return emptyRecallCorrection(sentence);
+
+    return null;
+  }
+
   private async speakReply(
     readiness: Extract<LocalReadiness, { ok: true }>,
     controller: AbortController
@@ -1083,8 +1109,9 @@ export class LocalVoicePipeline {
           // a sentence at a time while the rest is still being written —
           // checking the finished reply would catch the lie only after the user
           // had already heard it.
-          if (isUnbackedClaim(sentence, toolsRan)) {
-            this.pendingCorrection = unbackedClaimCorrection(sentence);
+          const refusal = this.refuse(sentence, toolsRan);
+          if (refusal) {
+            this.pendingCorrection = refusal;
             return [];
           }
           this.voice ??= this.resolveVoice(readiness);
@@ -1095,8 +1122,9 @@ export class LocalVoicePipeline {
     }
 
     const tail = detector.flush().trim();
-    if (tail.length > 0 && isUnbackedClaim(tail, toolsRan)) {
-      this.pendingCorrection = unbackedClaimCorrection(tail);
+    const tailRefusal = tail.length > 0 ? this.refuse(tail, toolsRan) : null;
+    if (tailRefusal) {
+      this.pendingCorrection = tailRefusal;
       return [];
     }
     if (tail.length > 0) {

@@ -161,9 +161,16 @@ describe('unbackedClaimCorrection', () => {
 
     expect(correction).toContain('"Şimdi çalıyor."');
     expect(correction).toContain('called no tool');
-    // Both ways out are offered: do it, or admit it. Leaving only one would
-    // make a model that genuinely cannot act repeat the lie instead.
     expect(correction).toMatch(/call the tool/i);
-    expect(correction).toMatch(/cannot/i);
+  });
+
+  it('sends it to the agent rather than letting it plead inability', () => {
+    // Almost nothing here is genuinely impossible — the agent drives the real
+    // machine. A model allowed to say "I can't" will take that exit instead of
+    // doing the work, and the user is no better off than being lied to.
+    const correction = unbackedClaimCorrection('Şimdi çalıyor.');
+
+    expect(correction).toContain('app_ask_jester');
+    expect(correction).toMatch(/only say you cannot .* after a tool/i);
   });
 });

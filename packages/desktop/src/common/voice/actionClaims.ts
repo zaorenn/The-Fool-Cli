@@ -175,5 +175,11 @@ export const unbackedClaimCorrection = (reply: string): string =>
   [
     `You just said: "${reply.trim()}"`,
     'That claims something has been done, and you called no tool this turn, so it has not been done and what you said is not true.',
-    'Do not repeat it. Either call the tool that actually does it now, or tell them plainly that you cannot and why.',
+    'Do not repeat it and do not apologise. Call the tool that actually does it, now.',
+    // "I cannot" is deliberately not offered as a way out. Almost nothing the
+    // user asks for is genuinely impossible here — `app_ask_jester` drives the
+    // real machine — so a model allowed to plead inability will take that exit
+    // instead of the work, and the user is no better off than being lied to.
+    'If no specific tool fits, hand the whole request to `app_ask_jester`, which can do anything on this computer.',
+    'Only say you cannot do something after a tool has come back and told you it failed.',
   ].join(' ');
