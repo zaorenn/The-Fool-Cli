@@ -16,10 +16,40 @@ handler, and the answer comes back over HTTP. It is a second instance of the pat
 already uses, which is why the risk was low and the generic half (`fool-mcp-server`) was extracted
 rather than written twice.
 
-**What it does not do yet.** The spoken turn still runs its own loop in the renderer; moving it is the
-next plan. Nothing here decides whether a tool is *allowed* to run. And a hosted CLI agent (Claude
-Code, Codex) cannot reach the server yet — that needs the stdio bridge subcommand, so the design's
-claim that typed chat gains these tools "for free" is true of the embedded agent only, today.
+**What it does not do yet.** Nothing here decides whether a tool is *allowed* to run. And a hosted CLI
+agent (Claude Code, Codex) cannot reach the server yet — that needs the stdio bridge subcommand, so
+the design's claim that typed chat gains these tools "for free" is true of the embedded agent only,
+today.
+
+## The spoken turn has moved, behind a flag that is shut
+
+The second half — `docs/specs/2026-08-09-spoken-turn-on-foolrs-plan.md`, tasks 1 to 6 of 8. With
+`realtime.useAgentRuntime` on, a spoken conversation opens an ordinary agent conversation carrying
+the persona, memory and taught skills as its system prompt, streams the answer back sentence by
+sentence, and cancels the model — not just the speaker — when the user talks over it.
+`localPipeline` keeps the microphone, the sentence queue and the barge-in flush; what it no longer
+does, in that mode, is think.
+
+Three things in it are worth knowing rather than rediscovering:
+
+- **A rule set out loud can no longer be written into the system prompt**, because an agent session
+  builds one once. It rides ahead of the next message instead
+  (`common/voice/pendingInstructions.ts`). Agreeing to a rule and then ignoring it until next session
+  would be the failure the old code existed to prevent.
+- **The claim gate is now one function** (`renderer/services/voice/session/spokenOutput.ts`) and every
+  surface passes through it: the agent path refuses a sentence *before* it is queued and hands the
+  model back its own words for exactly one more round; the socket providers, which speak their own
+  audio, get the rest of the claim flushed and keep it out of the record. That is weaker for
+  speech-to-speech and it is weaker on purpose — it is the most that can be done when the audio is
+  already leaving the speaker.
+- **The flag is off**, and it stays off until the numbers in
+  `docs/specs/2026-08-09-spoken-turn-tasks.md` are taken.
+
+**Tasks 7 and 8 cannot be finished without you.** Task 7 is the measurement, and it needs LM Studio
+up with `gemma-4-e4b` (the endpoint was not answering on 9 August) and a person to speak the ten
+sentences — time to first audio cannot be recorded from a script, and nobody should pretend
+otherwise. Task 8 deletes the renderer's loop and is gated on Task 7 passing; deleting it first
+would be exactly the recklessness the gate exists to prevent.
 
 **The Rust suite is not a usable feedback loop, and this is a finding rather than an aside.**
 `cargo test --workspace` builds and links **171 separate test binaries**, most of which boot a whole
@@ -33,6 +63,21 @@ figure to beat is the one above.
 twin **fail under load and pass in isolation**: `taskkill` races the child, which has already exited,
 and the error is Windows saying there is no such task. Seen three times on 8 August. Do not go
 looking for a real bug there.
+
+**Three Rust tests genuinely fail on Windows, on a clean tree.** A full run reported 6186 passed and
+37 failed; 34 of those passed when their crates were run alone, and three did not. They are
+reproducible, they are nothing to do with the branch — `git diff main...HEAD` touches neither crate —
+and they are all one shape: paths.
+
+| Test                                                            | What it says                                              |
+| --------------------------------------------------------------- | ----------------------------------------------------------- |
+| `fool-file` `service::tests::build_dir_tree_sync_relative_paths` | got `folder\file.txt`, wanted `folder/file.txt`           |
+| `fool-file` `service::tests::list_workspace_files_sync_relative_paths` | got `src\main.rs`, wanted `src/main.rs`             |
+| `fool-conversation` `create_rejects_unavailable_workspace_with_trailing_whitespace_in_request` | a trailing-space workspace is accepted here, not rejected |
+
+Either the code should normalise separators and Windows was never checked, or the tests were written
+on a machine where `/` is the only separator. Somebody has to decide which; until then a green Rust
+run is not achievable on this machine and "the suite passes" is not a claim anyone can make.
 
 **Two known gaps, written down rather than discovered later.**
 
