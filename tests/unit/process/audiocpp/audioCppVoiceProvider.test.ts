@@ -9,7 +9,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AudioCppSpeechRequest } from '@process/services/fool-voice/audiocpp/AudioCppClient';
-import { AudioCppVoiceProvider } from '@process/services/fool-voice/audiocpp/AudioCppVoiceProvider';
+import {
+  AUDIOCPP_IDLE_SHUTDOWN_MS,
+  AudioCppVoiceProvider,
+} from '@process/services/fool-voice/audiocpp/AudioCppVoiceProvider';
 import { AUDIOCPP_CHATTERBOX_MODEL_ID, AUDIOCPP_QWEN3_MODEL_ID } from '@/common/types/foolVoice';
 
 /**
@@ -261,5 +264,44 @@ describe('AudioCppVoiceProvider', () => {
 
     expect(spawnedWith.map((spawn) => spawn.modelIds)).toEqual([['qwen3-tts'], ['pocket']]);
     expect(shutdowns).toBe(1);
+  });
+
+  /**
+   * The server used to be stopped only when the app closed or a model was
+   * deleted, so one spoken sentence left it holding its weights for the rest of
+   * the session — gigabytes of graphics memory on an otherwise idle machine.
+   */
+  it('lets the card go when nobody has spoken for a while', async () => {
+    vi.useFakeTimers();
+    try {
+      const provider = providerFor([{ id: 'jarvis', text: 'Reference clip.' }]);
+      await provider.synthesize('tts-audiocpp-pocket', 'cloned:jarvis', 'en', 1, 'One.', undefined, undefined, 'cpu');
+      expect(shutdowns).toBe(0);
+
+      // A pause shorter than the timeout is not idleness.
+      await vi.advanceTimersByTimeAsync(AUDIOCPP_IDLE_SHUTDOWN_MS - 1000);
+      expect(shutdowns).toBe(0);
+
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(shutdowns).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not unload while someone is still talking to it', async () => {
+    vi.useFakeTimers();
+    try {
+      const provider = providerFor([{ id: 'jarvis', text: 'Reference clip.' }]);
+      await provider.synthesize('tts-audiocpp-pocket', 'cloned:jarvis', 'en', 1, 'One.', undefined, undefined, 'cpu');
+      await vi.advanceTimersByTimeAsync(AUDIOCPP_IDLE_SHUTDOWN_MS - 5000);
+      // Speaking again restarts the countdown; the last thing said wins.
+      await provider.synthesize('tts-audiocpp-pocket', 'cloned:jarvis', 'en', 1, 'Two.', undefined, undefined, 'cpu');
+      await vi.advanceTimersByTimeAsync(AUDIOCPP_IDLE_SHUTDOWN_MS - 5000);
+
+      expect(shutdowns).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

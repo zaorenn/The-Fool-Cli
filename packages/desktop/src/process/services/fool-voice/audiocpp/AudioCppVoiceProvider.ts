@@ -47,6 +47,14 @@ export type AudioCppClientHandle = {
   synthesize: (request: AudioCppSpeechRequest) => Promise<AudioCppSpeechResult>;
 };
 
+/**
+ * How long the server may sit loaded with nobody speaking.
+ *
+ * Long enough that a pause in a conversation does not cost a reload, short
+ * enough that walking away frees the card within a couple of minutes.
+ */
+export const AUDIOCPP_IDLE_SHUTDOWN_MS = 120_000;
+
 export type AudioCppVoiceProviderDeps = {
   installation: AudioCppInstallation;
   /** Directory holding the user's cloned voices, shared with the sherpa provider. */
@@ -80,6 +88,22 @@ export class AudioCppVoiceProvider {
    * ignored. Comparing signatures is what notices that.
    */
   private runtimeSignature = '';
+
+  /**
+   * Lets the server go when nobody is speaking.
+   *
+   * It was only ever stopped when the app closed or a model was deleted, so one
+   * spoken sentence left a process holding its weights for the rest of the
+   * session — several gigabytes of graphics memory, on an idle machine, with
+   * nothing running and nothing to show for it. Reported as "the app eats 8 GB
+   * of VRAM while doing nothing", and that is exactly what it was.
+   *
+   * Timed from the last synthesis rather than from the end of a conversation:
+   * the provider does not know what a conversation is, and a pause in one is
+   * not a reason to unload. Speaking again after the timeout costs one model
+   * load, which is the right price for not holding a card hostage.
+   */
+  private idleTimer: ReturnType<typeof setTimeout> | null = null;
 
   public constructor(deps: AudioCppVoiceProviderDeps) {
     this.deps = {
@@ -179,8 +203,27 @@ export class AudioCppVoiceProvider {
     return this.runtime.ensureRunning();
   }
 
+  /** Restarts the idle countdown; the last speech to finish wins. */
+  private touch(): void {
+    if (this.idleTimer !== null) clearTimeout(this.idleTimer);
+    this.idleTimer = setTimeout(() => {
+      this.idleTimer = null;
+      void this.shutdown().catch(() => {
+        // Nothing to tell anybody: the next synthesis starts a fresh server
+        // either way, and a failure here has no user standing behind it.
+      });
+    }, AUDIOCPP_IDLE_SHUTDOWN_MS);
+    // Node keeps the process alive for a pending timer; this one must never be
+    // the reason a quit hangs.
+    this.idleTimer.unref?.();
+  }
+
   /** Stops the server, so the weights it holds open can be deleted or replaced. */
   public async shutdown(): Promise<void> {
+    if (this.idleTimer !== null) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
     const runtime = this.runtime;
     this.runtime = null;
     this.runtimeSignature = '';
@@ -261,6 +304,10 @@ export class AudioCppVoiceProvider {
     // wants, and a round-trip through Float32 would cost a copy of every sample
     // for no change in the bytes.
     const buffer = Buffer.from(result.wav);
+    // Counted from the last thing said rather than from the start of it: a long
+    // reply is not idleness, and neither is the pause afterwards while somebody
+    // works out what to say back.
+    this.touch();
     return {
       audio: {
         encoding: 'base64',
