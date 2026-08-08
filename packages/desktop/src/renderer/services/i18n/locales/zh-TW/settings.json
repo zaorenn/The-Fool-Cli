@@ -1653,7 +1653,8 @@
     "historyTurns": "{{count}} 輪",
     "historyResume": "從這裡繼續",
     "historyYou": "你：",
-    "historyAssistant": "它："
+    "historyAssistant": "它：",
+    "spokenConversationName": "語音對話"
   },
   "themeCustomizer": {
     "title": "自訂主題",

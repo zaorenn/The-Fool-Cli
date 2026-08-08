@@ -1651,7 +1651,8 @@
     "historyTurns": "{{count}} tours",
     "historyResume": "Reprendre ici",
     "historyYou": "Vous :",
-    "historyAssistant": "Lui :"
+    "historyAssistant": "Lui :",
+    "spokenConversationName": "Conversation vocale"
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

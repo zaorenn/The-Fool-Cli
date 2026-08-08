@@ -1816,6 +1816,14 @@ export interface ICreateConversationParams {
     workspace?: string;
     custom_workspace?: boolean;
     default_files?: string[];
+    /**
+     * The session's own system prompt, read at session build by
+     * `FoolrsBuildExtra` — see `fool-conversation/src/session_context.rs`.
+     *
+     * A spoken conversation sets it to the persona, the memory and the taught
+     * skills, which it used to reassemble in the renderer on every single turn.
+     */
+    system_prompt?: string;
     cli_path?: string;
     gateway?: {
       host?: string;

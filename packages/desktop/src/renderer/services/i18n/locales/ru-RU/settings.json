@@ -1651,7 +1651,8 @@
     "historyTurns": "реплик: {{count}}",
     "historyResume": "Продолжить отсюда",
     "historyYou": "Вы:",
-    "historyAssistant": "Он:"
+    "historyAssistant": "Он:",
+    "spokenConversationName": "Голосовой разговор"
   },
   "themeCustomizer": {
     "title": "Настроить тему",

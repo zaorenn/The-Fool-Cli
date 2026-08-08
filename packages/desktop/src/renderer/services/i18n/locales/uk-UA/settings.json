@@ -1652,7 +1652,8 @@
     "historyTurns": "реплік: {{count}}",
     "historyResume": "Продовжити звідси",
     "historyYou": "Ви:",
-    "historyAssistant": "Він:"
+    "historyAssistant": "Він:",
+    "spokenConversationName": "Голосова розмова"
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",

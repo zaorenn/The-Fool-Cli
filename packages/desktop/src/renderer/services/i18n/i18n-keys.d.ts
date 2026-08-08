@@ -2808,6 +2808,7 @@ export type I18nKey =
   | 'settings.voice.speechThreshold'
   | 'settings.voice.speechThresholdHint'
   | 'settings.voice.speechToText'
+  | 'settings.voice.spokenConversationName'
   | 'settings.voice.spokenSummary'
   | 'settings.voice.stopTest'
   | 'settings.voice.summaryChecking'

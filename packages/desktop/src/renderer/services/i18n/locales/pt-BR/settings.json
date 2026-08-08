@@ -1654,7 +1654,8 @@
     "historyTurns": "{{count}} turnos",
     "historyResume": "Continuar daqui",
     "historyYou": "Você:",
-    "historyAssistant": "Ele:"
+    "historyAssistant": "Ele:",
+    "spokenConversationName": "Conversa por voz"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

@@ -1651,7 +1651,8 @@
     "historyTurns": "{{count}} tur",
     "historyResume": "Buradan devam et",
     "historyYou": "Sen:",
-    "historyAssistant": "O:"
+    "historyAssistant": "O:",
+    "spokenConversationName": "Sesli sohbet"
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

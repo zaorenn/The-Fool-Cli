@@ -1653,7 +1653,8 @@
     "historyTurns": "{{count}}턴",
     "historyResume": "여기서 이어가기",
     "historyYou": "나:",
-    "historyAssistant": "상대:"
+    "historyAssistant": "상대:",
+    "spokenConversationName": "음성 대화"
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",

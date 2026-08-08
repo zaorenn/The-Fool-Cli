@@ -1651,7 +1651,8 @@
     "historyTurns": "{{count}} نوبت",
     "historyResume": "از اینجا ادامه بده",
     "historyYou": "شما:",
-    "historyAssistant": "او:"
+    "historyAssistant": "او:",
+    "spokenConversationName": "گفت‌وگوی صوتی"
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",

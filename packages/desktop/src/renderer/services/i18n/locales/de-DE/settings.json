@@ -1651,7 +1651,8 @@
     "historyTurns": "{{count}} Beiträge",
     "historyResume": "Hier weitermachen",
     "historyYou": "Du:",
-    "historyAssistant": "Es:"
+    "historyAssistant": "Es:",
+    "spokenConversationName": "Gesprochene Unterhaltung"
   },
   "themeCustomizer": {
     "title": "Design anpassen",
