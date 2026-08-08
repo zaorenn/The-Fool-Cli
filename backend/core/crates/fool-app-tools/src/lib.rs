@@ -6,6 +6,10 @@
 //! guarantees is that every call gets exactly one answer, including when the
 //! answer is that there wasn't one.
 
+pub mod catalogue;
+pub mod host;
 pub mod pending;
 
+pub use catalogue::Catalogue;
+pub use host::{AppToolHost, AppToolHosts};
 pub use pending::{PendingCalls, PendingError};
