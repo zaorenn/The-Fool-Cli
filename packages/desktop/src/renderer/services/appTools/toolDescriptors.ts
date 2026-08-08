@@ -14,6 +14,21 @@ export type ToolDescriptor = {
 };
 
 /**
+ * Tools that exist for a conversation happening out loud, and mean nothing to
+ * an agent.
+ *
+ * `app_standby` and `app_resume` are floor control: they tell a voice to go
+ * quiet and come back. Run with an agent's host they do nothing at all and
+ * return success, which is the one failure this application has spent releases
+ * making impossible — a tool that reports work it did not do.
+ *
+ * `app_ask_jester` hands a request to an agent. Offered to an agent it is a way
+ * of delegating to itself, and nothing in the chain counts how deep it has
+ * gone.
+ */
+const SPOKEN_ONLY: ReadonlySet<string> = new Set(['app_standby', 'app_resume', 'app_ask_jester']);
+
+/**
  * The application's own tools, in the shape MCP asks for.
  *
  * Derived from `REALTIME_TOOLS` rather than written again. Those descriptions
@@ -22,7 +37,7 @@ export type ToolDescriptor = {
  * description while calling another implementation.
  */
 export const describeAppTools = (): ToolDescriptor[] =>
-  REALTIME_TOOLS.map((tool) => ({
+  REALTIME_TOOLS.filter((tool) => !SPOKEN_ONLY.has(tool.name)).map((tool) => ({
     name: tool.name,
     description: tool.description,
     inputSchema: tool.parameters as unknown as Record<string, unknown>,
