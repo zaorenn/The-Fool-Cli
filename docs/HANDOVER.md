@@ -21,6 +21,19 @@ next plan. Nothing here decides whether a tool is *allowed* to run. And a hosted
 Code, Codex) cannot reach the server yet — that needs the stdio bridge subcommand, so the design's
 claim that typed chat gains these tools "for free" is true of the embedded agent only, today.
 
+**The Rust suite is not a usable feedback loop, and this is a finding rather than an aside.**
+`cargo test --workspace` builds and links **171 separate test binaries**, most of which boot a whole
+application. On this machine it ran for over an hour and had reached 78 of them. Nothing was wrong —
+it was grinding, not stuck — but a suite nobody can afford to run is a suite that stops being run,
+and this project already has one test-count problem (see the vitest note further down). There is no
+recorded baseline for how long it should take. Both belong to the product sub-project, and the
+figure to beat is the one above.
+
+`capability::cli_process::tests::spawn_allows_cwd_with_whitespace_in_any_segment` and its `_for_sdk`
+twin **fail under load and pass in isolation**: `taskkill` races the child, which has already exited,
+and the error is Windows saying there is no such task. Seen three times on 8 August. Do not go
+looking for a real bug there.
+
 **Two known gaps, written down rather than discovered later.**
 
 - **A session started before the renderer registers sees no app tools, permanently.** An MCP client
