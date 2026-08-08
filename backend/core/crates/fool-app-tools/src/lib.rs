@@ -9,7 +9,9 @@
 pub mod catalogue;
 pub mod host;
 pub mod pending;
+pub mod routes;
 
 pub use catalogue::Catalogue;
 pub use host::{AppToolHost, AppToolHosts};
 pub use pending::{PendingCalls, PendingError};
+pub use routes::{AppToolsState, router};
