@@ -1,8 +1,19 @@
-# Handover — 2.3.7 is out
+# Handover — 2.3.9 is out
 
-Written 8 August 2026. `main` in `C:/Fool-AionUI` at `f1a5d29f1`, version 2.3.7, tree clean,
-pushed. **[v2.3.7](https://github.com/zaorenn/The-Fool-Cli/releases/tag/v2.3.7) is published**,
-non-draft, both assets uploaded, live feed answers with it. Nothing is sitting unreleased.
+Written 8 August 2026. `main` in `C:/Fool-AionUI` at `f3af355e4`, version 2.3.9, tree clean,
+pushed. **[v2.3.9](https://github.com/zaorenn/The-Fool-Cli/releases/tag/v2.3.9) is published**,
+non-draft, both assets uploaded, live feed answers with it. **Nothing is sitting unreleased.**
+
+Seven releases went out in one session, 2.3.4 through 2.3.9. What each contains, verified by
+`git merge-base --is-ancestor` rather than from memory:
+
+| In    | From                                                                                        |
+| ----- | ------------------------------------------------------------------------------------------- |
+| 2.3.8 | the guard that stops it claiming work it did not do (`b6a92afd5`, `1da098c0e`, `6ef2bbaff`) |
+| 2.3.9 | idle VRAM release, local-model advice, one-step agent connection                            |
+
+Read `docs/ROADMAP.md` next. It holds an honest read of the competition and eight prompts to
+hand back, in the order that makes the later ones measurable rather than hopeful.
 
 ---
 
@@ -18,8 +29,8 @@ lied twice.
 | The feed the updater fetches | `releases/latest/download/latest.yml` → **HTTP 200**, version 2.3.7, matching hash                                  |
 | Release state                | `draft=false  prerelease=false`, both assets `uploaded`                                                             |
 | Staged `foolcore`            | rebuilt; no `VCRUNTIME140` import, no build-machine username, and the new catalogue row genuinely inside the binary |
-| Packaged `CHANGELOG.md`      | present in `resources/`, opening on the 2.3.7 section                                                               |
-| Test suite                   | **4586 passed, 3 skipped, exit 0** — twice, once directly and once inside `just push`                               |
+| Packaged `CHANGELOG.md`      | present in `resources/`, opening on the 2.3.9 section                                                               |
+| Test suite                   | **4649 passed, 3 skipped, exit 0** — twice, once directly and once inside `just push`                               |
 
 The installer is **unsigned**. electron-builder prints `signing with signtool.exe` for every
 executable it touches and then prints `NOT signed (NotSigned)` at the end; the second line is
@@ -218,7 +229,7 @@ targeted formatter instead (`bunx oxfmt <paths>`), or check that file afterwards
 **The test suite reports a short count under load.** 4474, 4477, 4478, with
 `Error: [vitest-pool]: Worker forks emitted error` and **no `FAIL` line** — it reads exactly
 like tests silently vanishing. It is resource exhaustion from vitest's default parallelism. The
-true figure is **4586 passed, 3 skipped, exit 0**, which `bunx vitest run --maxWorkers=2` gives
+true figure is **4649 passed, 3 skipped, exit 0**, which `bunx vitest run --maxWorkers=2` gives
 reliably. Four tests "failed" once inside `just push` while a 330 MB release asset was
 uploading; the same command on a quiet machine passed. If a count ever does look wrong, settle
 it with `bunx vitest list` against the working tree and against `HEAD`, then diff.
