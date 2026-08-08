@@ -2,6 +2,19 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.3.6
+
+### It does the thing, or it says so
+
+- **A taught skill runs the moment you ask for it.** "Play my favourite song" was failing at the last step for a reason that had nothing to do with the skill: it existed, the address was in it, and the only thing in between was the model choosing to reach for it — which it did most of the time. It no longer has a say. The phrase you taught it with runs the skill directly, instantly, with no round trip to think about a decision you already made.
+- **It can no longer tell you it has done something it has not done.** Saying "it's playing now" with nothing playing was the worst thing this app did, and the rule forbidding it had been in the assistant's instructions all along. A sentence claiming a finished action, on a turn where no tool ran, is now never spoken at all — it is handed back to the assistant, which gets one more attempt to actually do it.
+- **The same for claiming to remember.** "Yes, I remember something — what was it again?" with an empty memory is worse than admitting the blank, because you answer it: you repeat yourself to jog a memory that was never there.
+- **And it cannot get out of it by saying it cannot.** Almost nothing you ask for here is impossible — there is an agent that drives the whole machine. Caught having claimed something falsely, it now either does the work or hands the request to that agent. "I can't" is only allowed after something has actually been tried and failed.
+
+### Fixes
+
+- Past conversations are reachable while you are having one. The History tab was offered only when the assistant was idle, which put "what did I say last time" behind ending the conversation you wanted it for.
+
 ## 2.3.5
 
 ### The spoken assistant
