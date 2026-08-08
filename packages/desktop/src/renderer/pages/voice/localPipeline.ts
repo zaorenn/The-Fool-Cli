@@ -1213,6 +1213,14 @@ export class LocalVoicePipeline {
    */
   private async runTools(calls: readonly WireToolCall[], controller: AbortController): Promise<void> {
     const run = this.options.runTool;
+    // A tool that is running is progress, and the silent-reply clock must not
+    // be counting against it. That clock is armed once a turn and cleared by
+    // the first spoken character — so a model that calls a tool immediately,
+    // saying nothing first, never cleared it, and two minutes later the turn
+    // was abandoned while the agent was still legitimately working. From
+    // outside: the conversation closing before the answer arrived.
+    this.markVisibleReply();
+
     for (const call of calls) {
       if (controller.signal.aborted) return;
       this.options.onEvent({ kind: 'phase', phase: 'acting' });
@@ -1235,6 +1243,11 @@ export class LocalVoicePipeline {
       });
       this.trimHistory();
     }
+
+    // Re-armed for the generation that follows. Suspending the clock for the
+    // length of a tool is right; leaving it off afterwards would mean a model
+    // that calls one tool and then deliberates for ever is never bounded again.
+    if (!controller.signal.aborted) this.watchForSilentReply(controller);
   }
 
   /**
