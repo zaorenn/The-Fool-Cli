@@ -18,6 +18,7 @@ import {
 import { createHoldGate } from '@/common/voice/holdToTalkGate';
 import { describeSpokenTurns, worthRemembering, type SpokenTurn } from '@/common/voice/sessionSummary';
 import { appendTurn, resumedTurns, startConversation, type VoiceConversation } from '@/common/voice/conversationLog';
+import { notchLine } from '@/common/voice/notchLine';
 import { saveConversation } from '@renderer/services/voice/session/conversationStore';
 import { claimManualVoiceSession } from '@renderer/hooks/voice/useFoolVoiceSession';
 import { AdaptiveVad, type VadEvent } from '@renderer/services/voice/AdaptiveVad';
@@ -429,7 +430,11 @@ class ConversationRuntime {
         if (this.standby || (event.final && event.text.length === 0)) break;
         const next = event.final ? event.text : `${this.snapshot.assistantTranscript}${event.text}`;
         this.emit({ assistantTranscript: next });
-        publishVoiceReply(next);
+        // A short line, not the whole stream. The notch is a strip a few
+        // centimetres wide over whatever the user is doing; handed the entire
+        // reply it grew into a wall of text, and handed the agent's own output
+        // it became a list of markdown fragments.
+        publishVoiceReply(notchLine(next));
         if (event.final) this.record('assistant', next);
         break;
       }

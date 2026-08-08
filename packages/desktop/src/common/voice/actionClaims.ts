@@ -176,7 +176,45 @@ export const claimsRecall = (reply: string): boolean => {
  * this conversation. Nothing held and a claim made is the failure; something
  * held is the assistant doing its job.
  */
-export const isEmptyRecall = (reply: string, remembered: number): boolean => remembered === 0 && claimsRecall(reply);
+/**
+ * Asking to be reminded of the thing it has just claimed to remember.
+ *
+ * "Yes, I remember — what was it again?" This is hollow whatever the memory
+ * holds, which is why it is checked separately from {@link isEmptyRecall}:
+ * counting the memory's length answers "is anything remembered", and the
+ * question here is "is *this* remembered". A memory full of other things made
+ * the length check pass and let the sentence straight through, which is how it
+ * was still being said in 2.3.7.
+ *
+ * Someone who remembers does not need reminding. The two together are proof
+ * enough on their own.
+ */
+const ASKS_TO_BE_REMINDED: readonly RegExp[] = [
+  edged('tekrar (soyler|soylermisin|hatirlatir|anlatir)\\w*'),
+  edged('(ne|neydi|nasil)(ydi)? (oldugunu|soylemistin|demistin)'),
+  edged('bana (tekrar|yeniden) (soyle|hatirlat)\\w*'),
+  edged('remind me'),
+  edged('what was it( again)?'),
+  edged('tell me again'),
+];
+
+export const asksToBeReminded = (reply: string): boolean => {
+  const folded = fold(reply.trim());
+  return ASKS_TO_BE_REMINDED.some((pattern) => pattern.test(folded));
+};
+
+/**
+ * Whether a claimed recollection is empty.
+ *
+ * Two ways it can be. Nothing remembered at all is the obvious one. The other
+ * is claiming to remember and asking to be reminded in the same breath, which
+ * is hollow however much the memory holds — and is the form this actually takes
+ * in practice, because the memory is rarely completely empty.
+ */
+export const isEmptyRecall = (reply: string, remembered: number): boolean => {
+  if (!claimsRecall(reply)) return false;
+  return remembered === 0 || asksToBeReminded(reply);
+};
 
 export const emptyRecallCorrection = (reply: string): string =>
   [

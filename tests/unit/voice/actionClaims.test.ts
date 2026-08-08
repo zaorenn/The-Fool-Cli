@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  asksToBeReminded,
   claimsCompletedAction,
   claimsRecall,
   emptyRecallCorrection,
@@ -172,5 +173,28 @@ describe('unbackedClaimCorrection', () => {
 
     expect(correction).toContain('app_ask_jester');
     expect(correction).toMatch(/only say you cannot .* after a tool/i);
+  });
+});
+
+describe('claiming to remember and asking to be reminded', () => {
+  // Watched in 2.3.7, with the guard already shipped: the memory held other
+  // things, so the length check passed and the sentence went straight through.
+  const seen =
+    'Hımm... favori şarkın mı? Evet, hatırlıyorum, bu konuda konuşmuştuk ve bana söylemiştin de. Ama tam olarak ne olduğunu tekrar söyler misin?';
+
+  it('recognises the request to be reminded', () => {
+    expect(asksToBeReminded(seen)).toBe(true);
+    expect(asksToBeReminded('Remind me what it was.')).toBe(true);
+    expect(asksToBeReminded('Favori şarkını açıyorum.')).toBe(false);
+  });
+
+  it('is hollow however much the memory holds', () => {
+    // Someone who remembers does not need reminding. Counting the memory
+    // answers "is anything remembered"; the question is "is *this* remembered".
+    expect(isEmptyRecall(seen, 4000)).toBe(true);
+  });
+
+  it('still lets a real recollection through', () => {
+    expect(isEmptyRecall('Evet, hatırlıyorum — Bunny Girl.', 4000)).toBe(false);
   });
 });
