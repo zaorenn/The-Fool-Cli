@@ -27,8 +27,15 @@ Nobody else has that last one, and this session is what it cost to get it.
 
 Where The Fool is behind, plainly:
 
-1. **No sub-agents.** Prime Agent's model — spawn children, run them in
-   parallel, watch each one's conversation — is a real capability gap.
+1. **Sub-agents cannot be watched.** ~~No sub-agents.~~ **This was wrong when it
+   was written.** `foolrs-agent/src/spawn_tool.rs` spawns up to five children in
+   parallel, each with its own context and up to two hundred turns, and
+   `fool-team` is a whole multi-agent system on top with role prompts, a task
+   board, a mailbox and a scheduler. The real gap is one line in
+   `spawner.rs`: children run with a `NullSink`, so their output is discarded
+   and nobody can watch them work. That is a stream to connect, not a subsystem
+   to build — and prompt 4 below, written from the wrong premise, would have
+   rebuilt what already exists.
 2. **Typed chat is a second-class citizen.** Voice got the skills, the guard,
    the memory rules. The chat window did not.
 3. **Nothing is measured.** No turn counts, no prompt sizes, no latency figures
@@ -72,10 +79,15 @@ exists. Do it first.
 
 ### 4 — Sub-agents you can watch
 
-> Alt-ajan sistemi ekle: bir isteği paralel çalışan çocuklara bölebilsin, her
-> birinin konuşmasını Claude Code'daki gibi ayrı ayrı görebilelim, ve biri
-> takılırsa diğerlerini öldürmesin. Prime Agent'ın modeline bak ama IPython
-> kernel'ini alma — bizim araç şemamız küçük yerel modeller için güvenlik ağı.
+**Rewritten**, because the original asked for a system that already exists. See
+the correction above.
+
+> Alt-ajanlar zaten var (`foolrs-agent/src/spawn_tool.rs`, beşe kadar paralel,
+> her biri 200 tura kadar) ama `spawner.rs` onları `NullSink` ile çalıştırıyor,
+> yani çıktıları çöpe gidiyor. Bunu gerçek bir stream'e bağla: her alt-ajanın
+> konuşması Claude Code'daki gibi ayrı ayrı izlenebilsin, biri takılırsa
+> diğerlerini öldürmesin. Yeni bir alt-ajan sistemi yazma — var olanı görünür
+> yap.
 
 ### 5 — Spotify, uçtan uca
 
