@@ -2,6 +2,14 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.3.10
+
+### Setup
+
+- **A Setup tab, first in Settings, with no text fields in it.** Connecting a model used to mean a conversation with the built-in agent, which works and asks you to describe something you have usually already done. It looks at your computer instead and offers one action per row — use it, sign in, or install — never a choice between two, because ranking "sign in" against "install" is not a decision a first-time user can make.
+- **No ports, no addresses, no keys typed by hand.** Every address the app needs is already in its own tables. Asking someone for `http://127.0.0.1:20128/v1` is asking them to fail in a way that produces no error at all — just a provider that never lists a model.
+- **Claude Code, Codex and Gemini CLI are found if they are there.** So are OmniRoute, LM Studio and Ollama. A gateway that is running with nothing loaded is told apart from one that is not installed, because those need opposite advice and only one of the two mistakes is recoverable.
+
 ## 2.3.9
 
 ### Fixes
