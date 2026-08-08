@@ -1901,5 +1901,29 @@
     "addonDeclined": "没有添加——工作区会在没有它们的情况下打开",
     "addonUnknownTool": "这个页面请求了“{{tool}}”，但这个工作区没有声明它",
     "addonNotInstalled": "“{{name}}”尚未安装，这部分还不能运行"
+  },
+  "setup": {
+    "title": "设置",
+    "lede": "这台电脑上已经有的东西。",
+    "recheck": "重新检查",
+    "looking": "正在检查你的电脑…",
+    "agentsTitle": "编程代理",
+    "gatewaysTitle": "本地模型",
+    "step": {
+      "use": "就绪",
+      "sign-in": "登录",
+      "install": "未安装"
+    },
+    "gateway": {
+      "ready": "就绪",
+      "running-empty": "未加载模型",
+      "absent": "未安装"
+    },
+    "readyHint": "已在这台电脑上找到，无需其他操作。",
+    "loadAModel": "正在运行，但还没有加载模型。",
+    "copy": "复制",
+    "copied": "已复制",
+    "copyFailed": "无法复制",
+    "learnMore": "了解更多"
   }
 }

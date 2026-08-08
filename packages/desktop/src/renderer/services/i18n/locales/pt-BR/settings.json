@@ -1903,5 +1903,29 @@
     "addonDeclined": "Não adicionadas — o espaço vai abrir sem elas",
     "addonUnknownTool": "Esta página pediu “{{tool}}”, que este espaço não declara",
     "addonNotInstalled": "“{{name}}” não está instalado, esta parte ainda não pode rodar"
+  },
+  "setup": {
+    "title": "Configuração",
+    "lede": "O que já está neste computador.",
+    "recheck": "Verificar de novo",
+    "looking": "Verificando seu computador…",
+    "agentsTitle": "Agentes de código",
+    "gatewaysTitle": "Modelos locais",
+    "step": {
+      "use": "Pronto",
+      "sign-in": "Entrar",
+      "install": "Não instalado"
+    },
+    "gateway": {
+      "ready": "Pronto",
+      "running-empty": "Nenhum modelo carregado",
+      "absent": "Não instalado"
+    },
+    "readyHint": "Encontrado neste computador. Nada mais a fazer.",
+    "loadAModel": "Está em execução, mas nenhum modelo foi carregado.",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "copyFailed": "Não foi possível copiar",
+    "learnMore": "Saiba mais"
   }
 }

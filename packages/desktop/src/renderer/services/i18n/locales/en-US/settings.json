@@ -1900,5 +1900,29 @@
     "addonDeclined": "Left them out — the workspace will open without them",
     "addonUnknownTool": "This page asked for “{{tool}}”, which this workspace does not declare",
     "addonNotInstalled": "“{{name}}” is not installed, so this part cannot run yet"
+  },
+  "setup": {
+    "title": "Setup",
+    "lede": "What is already on this computer.",
+    "recheck": "Check again",
+    "looking": "Looking at your computer…",
+    "agentsTitle": "Coding agents",
+    "gatewaysTitle": "Local models",
+    "step": {
+      "use": "Ready",
+      "sign-in": "Sign in",
+      "install": "Not installed"
+    },
+    "gateway": {
+      "ready": "Ready",
+      "running-empty": "No model loaded",
+      "absent": "Not installed"
+    },
+    "readyHint": "Found on this computer. Nothing else to do.",
+    "loadAModel": "It is running, but no model is loaded yet.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyFailed": "Could not copy",
+    "learnMore": "Learn more"
   }
 }

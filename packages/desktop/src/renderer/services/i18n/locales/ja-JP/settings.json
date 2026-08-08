@@ -1902,5 +1902,29 @@
     "addonDeclined": "追加しませんでした。ワークスペースはそのまま開きます",
     "addonUnknownTool": "このページは「{{tool}}」を求めましたが、このワークスペースは宣言していません",
     "addonNotInstalled": "「{{name}}」が入っていないため、この部分はまだ動きません"
+  },
+  "setup": {
+    "title": "セットアップ",
+    "lede": "このパソコンにすでにあるもの。",
+    "recheck": "再確認",
+    "looking": "パソコンを確認しています…",
+    "agentsTitle": "コーディングエージェント",
+    "gatewaysTitle": "ローカルモデル",
+    "step": {
+      "use": "準備完了",
+      "sign-in": "サインイン",
+      "install": "未インストール"
+    },
+    "gateway": {
+      "ready": "準備完了",
+      "running-empty": "モデル未読み込み",
+      "absent": "未インストール"
+    },
+    "readyHint": "このパソコンで見つかりました。ほかに必要な操作はありません。",
+    "loadAModel": "起動していますが、まだモデルが読み込まれていません。",
+    "copy": "コピー",
+    "copied": "コピーしました",
+    "copyFailed": "コピーできません",
+    "learnMore": "詳細"
   }
 }

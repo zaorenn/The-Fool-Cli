@@ -18,6 +18,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import AboutModalContent from './contents/AboutModalContent';
 import AgentModalContent from './contents/AgentModalContent';
+import SetupPanel from '../SetupPanel';
 import ExtensionSettingsTabContent from './contents/ExtensionSettingsTabContent';
 import MemoryModalContent from './contents/memory';
 import VoiceSettingsContent from './contents/voice/VoiceSettingsContent';
@@ -57,7 +58,16 @@ const RESIZE_DEBOUNCE_DELAY = 150;
 /**
  * 内置设置标签页类型 / Built-in settings tab type
  */
-export type BuiltinSettingTab = 'model' | 'agent' | 'tools' | 'voice' | 'memory' | 'webui' | 'system' | 'about';
+export type BuiltinSettingTab =
+  | 'setup'
+  | 'model'
+  | 'agent'
+  | 'tools'
+  | 'voice'
+  | 'memory'
+  | 'webui'
+  | 'system'
+  | 'about';
 
 /**
  * 设置标签页类型（内置 + 扩展）/ Settings tab type (built-in + extension)
@@ -193,6 +203,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onCancel, defaul
     // Modal built-in tabs (subset — no display/agent route pages)
     const builtinItems: MenuItem[] = [
       {
+        key: 'setup',
+        label: t('settings.setup.title'),
+        icon: <LinkCloud theme='outline' size='20' fill={iconColors.secondary} />,
+      },
+      {
         key: 'model',
         label: t('settings.model'),
         icon: <LinkCloud theme='outline' size='20' fill={iconColors.secondary} />,
@@ -320,6 +335,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onCancel, defaul
   // Render built-in tab content (conditional)
   const renderBuiltinContent = () => {
     switch (activeTab) {
+      case 'setup':
+        return <SetupPanel />;
       case 'model':
         return <ModelModalContent />;
       case 'agent':

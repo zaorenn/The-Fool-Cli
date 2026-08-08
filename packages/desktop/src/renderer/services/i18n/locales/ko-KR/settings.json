@@ -1902,5 +1902,29 @@
     "addonDeclined": "추가하지 않았습니다 — 워크스페이스는 그대로 열립니다",
     "addonUnknownTool": "이 페이지가 “{{tool}}”을(를) 요청했지만 이 워크스페이스는 선언하지 않았습니다",
     "addonNotInstalled": "“{{name}}”이(가) 설치되지 않아 이 부분은 아직 동작할 수 없습니다"
+  },
+  "setup": {
+    "title": "설정",
+    "lede": "이 컴퓨터에 이미 있는 것.",
+    "recheck": "다시 확인",
+    "looking": "컴퓨터를 확인하는 중…",
+    "agentsTitle": "코딩 에이전트",
+    "gatewaysTitle": "로컬 모델",
+    "step": {
+      "use": "준비됨",
+      "sign-in": "로그인",
+      "install": "설치되지 않음"
+    },
+    "gateway": {
+      "ready": "준비됨",
+      "running-empty": "모델이 로드되지 않음",
+      "absent": "설치되지 않음"
+    },
+    "readyHint": "이 컴퓨터에서 찾았습니다. 더 할 일이 없습니다.",
+    "loadAModel": "실행 중이지만 아직 모델이 로드되지 않았습니다.",
+    "copy": "복사",
+    "copied": "복사됨",
+    "copyFailed": "복사할 수 없음",
+    "learnMore": "자세히"
   }
 }

@@ -1900,5 +1900,29 @@
     "addonDeclined": "Nicht hinzugefügt — der Workspace öffnet sich ohne sie",
     "addonUnknownTool": "Diese Seite wollte „{{tool}}“, was dieser Workspace nicht angibt",
     "addonNotInstalled": "„{{name}}“ ist nicht installiert, dieser Teil läuft noch nicht"
+  },
+  "setup": {
+    "title": "Einrichtung",
+    "lede": "Was bereits auf diesem Computer ist.",
+    "recheck": "Erneut prüfen",
+    "looking": "Computer wird geprüft…",
+    "agentsTitle": "Code-Agenten",
+    "gatewaysTitle": "Lokale Modelle",
+    "step": {
+      "use": "Bereit",
+      "sign-in": "Anmelden",
+      "install": "Nicht installiert"
+    },
+    "gateway": {
+      "ready": "Bereit",
+      "running-empty": "Kein Modell geladen",
+      "absent": "Nicht installiert"
+    },
+    "readyHint": "Auf diesem Computer gefunden. Nichts weiter zu tun.",
+    "loadAModel": "Läuft, aber es ist noch kein Modell geladen.",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "copyFailed": "Konnte nicht kopieren",
+    "learnMore": "Mehr erfahren"
   }
 }

@@ -1900,5 +1900,29 @@
     "addonDeclined": "Eklenmedi — workspace onlarsız açılacak",
     "addonUnknownTool": "Bu sayfa “{{tool}}” istedi ama bu workspace onu tanımlamıyor",
     "addonNotInstalled": "“{{name}}” kurulu değil, bu kısım henüz çalışamaz"
+  },
+  "setup": {
+    "title": "Kurulum",
+    "lede": "Bu bilgisayarda zaten ne var.",
+    "recheck": "Tekrar bak",
+    "looking": "Bilgisayarına bakılıyor…",
+    "agentsTitle": "Kod ajanları",
+    "gatewaysTitle": "Yerel modeller",
+    "step": {
+      "use": "Hazır",
+      "sign-in": "Giriş yap",
+      "install": "Kurulu değil"
+    },
+    "gateway": {
+      "ready": "Hazır",
+      "running-empty": "Model yüklü değil",
+      "absent": "Kurulu değil"
+    },
+    "readyHint": "Bu bilgisayarda bulundu. Yapman gereken bir şey yok.",
+    "loadAModel": "Çalışıyor ama henüz bir model yüklenmemiş.",
+    "copy": "Kopyala",
+    "copied": "Kopyalandı",
+    "copyFailed": "Kopyalanamadı",
+    "learnMore": "Daha fazla"
   }
 }

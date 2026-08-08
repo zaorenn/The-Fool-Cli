@@ -1902,5 +1902,29 @@
     "addonDeclined": "沒有新增——工作區會在沒有它們的情況下開啟",
     "addonUnknownTool": "這個頁面請求了「{{tool}}」，但這個工作區沒有宣告它",
     "addonNotInstalled": "「{{name}}」尚未安裝，這部分還不能執行"
+  },
+  "setup": {
+    "title": "設定",
+    "lede": "這台電腦上已經有的東西。",
+    "recheck": "重新檢查",
+    "looking": "正在檢查你的電腦…",
+    "agentsTitle": "程式代理",
+    "gatewaysTitle": "本機模型",
+    "step": {
+      "use": "就緒",
+      "sign-in": "登入",
+      "install": "未安裝"
+    },
+    "gateway": {
+      "ready": "就緒",
+      "running-empty": "未載入模型",
+      "absent": "未安裝"
+    },
+    "readyHint": "已在這台電腦上找到，不需其他操作。",
+    "loadAModel": "正在執行，但還沒有載入模型。",
+    "copy": "複製",
+    "copied": "已複製",
+    "copyFailed": "無法複製",
+    "learnMore": "瞭解更多"
   }
 }
