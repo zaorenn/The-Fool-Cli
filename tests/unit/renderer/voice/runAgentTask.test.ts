@@ -195,13 +195,13 @@ describe('runAgentTask', () => {
     const memory = rememberMeaning(
       { ...EMPTY_VOICE_MEMORY, introduced: true },
       'my desktop',
-      'C:\\Users\\sarhen\\Desktop'
+      'C:\\Users\\example\\Desktop'
     );
     const running = runAgentTask({ request: 'masaüstüme koy', settings: settingsWith(), memory });
     await settle();
 
     const sent = sendMessage.mock.calls[0][0] as { input: string };
-    expect(sent.input).toContain('C:\\Users\\sarhen\\Desktop');
+    expect(sent.input).toContain('C:\\Users\\example\\Desktop');
     expect(sent.input.trimEnd().endsWith('masaüstüme koy')).toBe(true);
 
     stream({ conversation_id: 'conv-1', type: 'finish', data: '' });

@@ -211,7 +211,7 @@ without the VC++ redistributable, i.e. exactly a first-time user's machine — a
 build machine's username into a public download. Verify, do not assume:
 
 ```bash
-node -e "const s=require('fs').readFileSync('resources/bundled-foolcore/win32-x64/foolcore.exe').toString('latin1'); console.log(/VCRUNTIME140/i.test(s), /sarhen/i.test(s))"
+node -e "const s=require('fs').readFileSync('resources/bundled-foolcore/win32-x64/foolcore.exe').toString('latin1'); const u=process.env.USERNAME||process.env.USER||''; console.log(/VCRUNTIME140/i.test(s), u.length>0 && new RegExp(u,'i').test(s))"
 ```
 
 Both must print `false`. Both did for the binary in this release.

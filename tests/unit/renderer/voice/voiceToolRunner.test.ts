@@ -329,11 +329,11 @@ describe('what it is told to remember', () => {
     const result = await runVoiceTool(host, {
       callId: 'call-1',
       name: 'app_remember',
-      argumentsJson: JSON.stringify({ word: 'my desktop', means: 'C:\\Users\\sarhen\\Desktop' }),
+      argumentsJson: JSON.stringify({ word: 'my desktop', means: 'C:\\Users\\example\\Desktop' }),
     });
 
     expect(result.ok).toBe(true);
-    expect(rememberedMeanings).toEqual(['my desktop=C:\\Users\\sarhen\\Desktop']);
+    expect(rememberedMeanings).toEqual(['my desktop=C:\\Users\\example\\Desktop']);
     expect(rememberedFacts).toEqual([]);
   });
 

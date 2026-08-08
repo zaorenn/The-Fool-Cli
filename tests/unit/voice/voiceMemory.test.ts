@@ -107,9 +107,9 @@ describe('rememberFact', () => {
 
 describe('rememberMeaning', () => {
   it('keeps what one of their own words stands for, apart from the facts', () => {
-    const memory = rememberMeaning(introduced(), 'my desktop', 'C:\\Users\\sarhen\\Desktop');
+    const memory = rememberMeaning(introduced(), 'my desktop', 'C:\\Users\\example\\Desktop');
 
-    expect(readSection(memory.user, MEMORY_SECTIONS.meanings)).toEqual(['"my desktop" — C:\\Users\\sarhen\\Desktop']);
+    expect(readSection(memory.user, MEMORY_SECTIONS.meanings)).toEqual(['"my desktop" — C:\\Users\\example\\Desktop']);
     expect(facts(memory)).toHaveLength(0);
   });
 
@@ -235,11 +235,11 @@ describe('buildMemoryInstructions', () => {
 
 describe('buildAgentBriefing', () => {
   it('sends the memory with the job, because the agent has never met them', () => {
-    const memory = rememberMeaning(introduced(), 'my desktop', 'C:\\Users\\sarhen\\Desktop');
+    const memory = rememberMeaning(introduced(), 'my desktop', 'C:\\Users\\example\\Desktop');
 
     const briefing = buildAgentBriefing(memory, 'put the report on my desktop');
 
-    expect(briefing).toContain('C:\\Users\\sarhen\\Desktop');
+    expect(briefing).toContain('C:\\Users\\example\\Desktop');
     expect(briefing.trimEnd().endsWith('put the report on my desktop')).toBe(true);
   });
 
