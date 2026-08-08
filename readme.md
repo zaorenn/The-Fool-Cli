@@ -7,44 +7,85 @@
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-c8102e?style=flat-square&labelColor=1d0d13"></a>
   <img alt="Platform" src="https://img.shields.io/badge/Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-1d0d13?style=flat-square">
   <img alt="Speech runs on device" src="https://img.shields.io/badge/speech%20runs-on%20device-c8102e?style=flat-square&labelColor=1d0d13">
+  <img alt="Works with local models" src="https://img.shields.io/badge/works%20with-local%20models-c8102e?style=flat-square&labelColor=1d0d13">
 </p>
 
 <p align="center">
   <b>English</b> · <a href="./docs/readme/readme_tr.md">Türkçe</a>
 </p>
 
+<p align="center">
+  <i>An agent harness you can talk to. Your machine, your models, your voice.</i>
+</p>
+
 ---
 
-## What it is
+## The one-paragraph version
 
-A desktop app that puts an AI agent in front of your actual machine — your files, your terminal, your tools — and lets you **talk to it out loud**.
+The Fool is a desktop **agent harness**: it puts a real agent in front of your actual computer — your files, your terminal, your browser, your applications — and lets you drive it by **speaking to it**. The speech stack runs on your device. The model can too. It hosts the agents you already use over ACP rather than replacing them, so Claude Code or Codex does the heavy work inside a harness that has a voice, a memory, a skill library and a face.
 
-The speech stack runs **on your device**. Wake word, transcription, synthesis and voice cloning are local models, not API calls. You can point the app at a local LLM too and never touch the network at all, or bring your own API key when you want a bigger model.
-
-> **Alpha.** Windows is the developed and tested target today. macOS and Linux build, but are not yet exercised the same way.
+> **Alpha.** Windows is the developed and tested target today. macOS and Linux build, but are not exercised the same way.
 
 <br>
 
-## Voice, properly
+## Why this one
 
-Most "voice AI" is a microphone button that posts to a transcription API. This isn't that.
+Most "AI desktop apps" are a chat box with a microphone button. The three things below are what separate this from that, and each is a decision you can go and read in the code.
 
-|                                |                                                                                                              |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| 🎙 **Wake word**               | Say the phrase you configured and it starts listening. No hotkey, no window focus.                           |
-| ⌨️ **Push-to-talk**            | A global shortcut that works from any window, including when the app is hidden.                              |
-| 🗣 **Read back, not read out** | Replies get summarised into a short spoken briefing instead of the model reading code and tool output aloud. |
-| 👤 **Voice cloning**           | Give it a clean 5–30 second reference clip and it will answer in that voice.                                 |
-| 📺 **Caption window**          | A floating overlay showing the conversation, so a spoken exchange doesn't need the main window.              |
-| 🖥 **Screen-aware turns**      | When the model can see images, a spoken turn can carry your current screen with it.                          |
+### 1. It cannot tell you it did something it did not do
 
-Engines: **Kokoro**, **Piper** and **ZipVoice** for synthesis, **Whisper** for recognition — all through `sherpa-onnx`, all offline.
+This is the failure that ruins an assistant. You ask for your favourite song, it says _"playing it now"_, and nothing is playing. You believe something untrue and find out later.
+
+The prompt has always forbidden this. Prompts do not hold. So the app checks instead:
+
+```text
+ you: "play my favourite song"
+        │
+        ▼
+ model writes: "It's playing now."      ← claims a finished action
+        │
+        ▼
+ harness: did any tool run this turn?   ← no
+        │
+        ▼
+ the sentence is never spoken, never shown
+        │
+        ▼
+ the model is handed its own sentence back, and must either
+ call the tool or hand the whole job to the agent
+```
+
+The same guard covers _"yes, I remember that"_ said over a memory holding nothing about it. **Refusing to lie is a feature with a test suite**, not a sentence in a system prompt.
+
+### 2. Speech that is genuinely local
+
+|                              |                                                                                                         |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------- |
+| 🎙 **Wake word**             | Say your phrase and it listens. No hotkey, no focus, no window.                                         |
+| ⌨️ **Push-to-talk**          | Right Ctrl, global — works from your editor, your browser, a full-screen game.                          |
+| 🧠 **Local thinking**        | Point it at LM Studio and the whole loop — hearing, thinking, speaking — never leaves the machine.      |
+| 👤 **Your own voice**        | Five to thirty seconds of clean reference audio and it answers in that voice.                           |
+| 🗣 **Briefed, not read out** | Replies are summarised into something worth hearing rather than code and tool output recited.           |
+| 📺 **The notch**             | A floating strip that says what is happening right now, over whatever you are doing.                    |
+| 🖥 **Screen-aware**          | "What does this error mean" makes it _look_ — and it never describes a screen it has not actually seen. |
+
+Engines: **Pocket**, **Supertonic**, **Chatterbox** and **Qwen3-TTS** through audio.cpp; **Kokoro**, **Piper** and **ZipVoice** through `sherpa-onnx`; **Whisper** for recognition. All offline, all on device.
+
+### 3. It gets better the more you use it
+
+|                              |                                                                                                                                       |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 🧩 **Teach it out loud**     | _"When I say play my favourite song, open this."_ Bound instantly, and it runs with **no model round trip** afterwards.               |
+| 📓 **A memory you can read** | Two markdown documents you can open and edit in Settings, not an opaque vector store.                                                 |
+| 📜 **Rules that stick**      | _"Answer in English even when I speak Turkish."_ Placed last in the prompt so it wins — and written down only if you ask.             |
+| 💬 **Conversations kept**    | Every spoken conversation is saved as it happens, with its transcript, and you can carry on from any of them.                         |
+| 🔍 **Withdrawable**          | Everything it taught itself is listed with the real address or program in full. A capability you cannot see is one you cannot revoke. |
 
 <br>
 
-## Agents
+## The harness
 
-The Fool is a host, not a single agent. It ships with **The Fool CLI** built in, and speaks to others over ACP.
+The Fool is a host, not a single agent.
 
 ```mermaid
 flowchart LR
@@ -58,26 +99,44 @@ flowchart LR
   B --> M["Models<br/><i>local or API</i>"]
 ```
 
-**The Jester** is the built-in butler. It sets up model providers, skills, MCP servers and themes for you — it holds a config skill that talks straight to the backend, so it does the configuration rather than telling you where to click. On a first launch it introduces itself and walks you through setup.
+**On a large codebase, the agent is the agent.** The Fool does not re-implement code understanding — it hosts the tool you already trust for that over ACP and gives it a project root, a live file explorer, scheduled runs and a voice. What the harness adds is everything _around_ the agent: request routing, skills that answer instantly without waking a model, a memory that survives restarts, and the guarantee that what you were told happened actually happened.
+
+**The Jester** is the built-in butler. It creates model providers, installs skills, adds MCP servers and writes themes — it holds a config skill that talks straight to the backend, so it _does_ the configuration rather than telling you where to click.
 
 <br>
 
-## What else it does
+## Make it yours
 
-- **Local models.** Installed LM Studio models are discovered and listed automatically — no manual entry.
-- **Skills and MCP.** Built-in skills for documents, spreadsheets, slides and scheduling, plus any MCP server you add.
+|                                  |                                                                                                                       |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 🪟 **Every window is shapeable** | Voice page, chat, Fool's Hub and the app frame each have their own layout, presets and axes.                          |
+| 🎞 **Motion without CSS**        | Choose what moves, how it arrives and how fast; watch it play on a real element, then keep it.                        |
+| 🤖 **Designed by another AI**    | Copy the app's own spec into whichever assistant you use, describe a look, drop the answer in. No key leaves.         |
+| 🧳 **Workspaces are files**      | Layout, persona, agent and model under one name — send one to a friend and they get the arrangement, never your keys. |
+| 🦾 **JARVIS ships with it**      | A second workspace with its own palette and four layouts, animated, there to be taken apart.                          |
+
+<br>
+
+## Everything else
+
+- **Local models discovered automatically.** Installed LM Studio models are listed without you typing an endpoint.
+- **Skills and MCP.** Built-in skills for documents, spreadsheets, slides and scheduling, plus any MCP server you add — and addons a workspace can declare and install, never without showing you the command first.
 - **Scheduled work.** Cron-style jobs that run whether or not the window is open.
-- **Projects and files.** Point it at a folder and it works inside it, with a live file explorer and previews.
-- **Reachable elsewhere.** A WebUI mode serves the same interface over your network, and an Expo client puts it on your phone.
-- **Themes.** Live colour and corner-radius customisation — and The Jester can build you a theme on request.
+- **Projects and files.** Point it at a folder and it works inside it, with a live explorer and previews.
+- **Reachable elsewhere.** A WebUI mode serves the same interface over your network; an Expo client puts it on your phone.
+- **Quiet updates.** They install without an installer window, bring the app straight back up, and then tell you what changed.
 
 <br>
 
 ## Install
 
-Download the installer for your platform from [**Releases**](https://github.com/zaorenn/The-Fool-Cli/releases/latest).
+Download the installer from [**Releases**](https://github.com/zaorenn/The-Fool-Cli/releases/latest).
 
-Nothing else to install. The backend, the speech runtime and the native modules are all inside the package, and the app updates itself from this repository.
+Nothing else to install — the backend, the speech runtime and the native modules are all inside the package, and the app updates itself from this repository.
+
+> The installer is not code-signed yet, so SmartScreen warns on first run: **More info → Run anyway**.
+
+**To go fully local**, install [LM Studio](https://lmstudio.ai), load a model, and choose it in Settings → Voice. The app finds it by itself.
 
 <br>
 
@@ -92,12 +151,11 @@ node scripts/buildFoolcore.js
 bun run dev
 ```
 
-You need [Bun](https://bun.sh), Node 22–24, and a stable Rust toolchain — on Windows, the MSVC one plus Microsoft C++ Build Tools, which `bun install` also uses to rebuild the native modules. `buildFoolcore.js` compiles the Rust backend and stages it where the app expects it; the backend downloads the Node runtime and agent CLIs it needs on first run. Full notes, including how to iterate on the backend, are in [`docs/contributing/development.md`](docs/contributing/development.md).
-
-To package an installer:
+You need [Bun](https://bun.sh), Node 22–24, and a stable Rust toolchain — on Windows the MSVC one plus Microsoft C++ Build Tools, which `bun install` also uses to rebuild native modules. `buildFoolcore.js` compiles the Rust backend and stages it where the app expects it. Full notes are in [`docs/contributing/development.md`](docs/contributing/development.md).
 
 ```bash
-bun run build-win
+bun run build-win:x64   # package an installer
+bunx vitest run         # the test suite
 ```
 
 <br>
