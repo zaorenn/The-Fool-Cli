@@ -14,7 +14,9 @@ use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::watch;
 
 use crate::host::{HostResolver, McpToolHost};
-use crate::protocol::{INVALID_PARAMS, JsonRpcRequest, JsonRpcResponse, METHOD_NOT_FOUND, PARSE_ERROR, PROTOCOL_VERSION};
+use crate::protocol::{
+    INVALID_PARAMS, JsonRpcRequest, JsonRpcResponse, METHOD_NOT_FOUND, PARSE_ERROR, PROTOCOL_VERSION,
+};
 
 pub const SERVER_NAME: &str = "fool-app-tools";
 pub const SERVER_VERSION: &str = "1.0.0";
@@ -91,7 +93,9 @@ async fn serve_connection(mut stream: TcpStream, token: String, resolver: Arc<dy
     let mut chunk = [0_u8; 8192];
 
     loop {
-        let Ok(read) = stream.read(&mut chunk).await else { return };
+        let Ok(read) = stream.read(&mut chunk).await else {
+            return;
+        };
         if read == 0 {
             return;
         }
@@ -103,7 +107,9 @@ async fn serve_connection(mut stream: TcpStream, token: String, resolver: Arc<dy
             return;
         }
 
-        let Some(position) = find_header_end(&buffer) else { continue };
+        let Some(position) = find_header_end(&buffer) else {
+            continue;
+        };
         let raw = String::from_utf8_lossy(&buffer[..position]).into_owned();
         let headers = raw.to_ascii_lowercase();
 
@@ -115,7 +121,9 @@ async fn serve_connection(mut stream: TcpStream, token: String, resolver: Arc<dy
         }
 
         let Some(host) = resolver.resolve(request_path(&raw)) else {
-            let _ = stream.write_all(b"HTTP/1.1 404 Not Found\r\ncontent-length: 0\r\n\r\n").await;
+            let _ = stream
+                .write_all(b"HTTP/1.1 404 Not Found\r\ncontent-length: 0\r\n\r\n")
+                .await;
             return;
         };
 

@@ -43,7 +43,11 @@ async fn tools_list_answers_with_the_hosts_catalogue() {
 async fn tools_call_returns_the_hosts_text() {
     let response = dispatch(
         Arc::new(EchoHost),
-        request(2, "tools/call", Some(json!({"name": "echo", "arguments": {"say": "hello"}}))),
+        request(
+            2,
+            "tools/call",
+            Some(json!({"name": "echo", "arguments": {"say": "hello"}})),
+        ),
     )
     .await;
     let result = response.result.unwrap();

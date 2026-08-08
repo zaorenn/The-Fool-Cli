@@ -17,7 +17,12 @@ impl EventBroadcaster for SpyBroadcaster {
 
 impl SpyBroadcaster {
     fn first(&self) -> WebSocketMessage<Value> {
-        self.sent.lock().expect("spy lock").first().cloned().expect("nothing sent")
+        self.sent
+            .lock()
+            .expect("spy lock")
+            .first()
+            .cloned()
+            .expect("nothing sent")
     }
 
     fn count(&self) -> usize {
@@ -88,7 +93,12 @@ async fn calling_a_tool_broadcasts_a_request_and_returns_the_answer() {
 async fn a_tool_that_fails_hands_back_its_own_message() {
     let pending = Arc::new(PendingCalls::new(Duration::from_secs(5)));
     let spy = Arc::new(SpyBroadcaster::default());
-    let host = AppToolHost::new(catalogue_offering("app_theme"), pending.clone(), spy.clone(), "c1".into());
+    let host = AppToolHost::new(
+        catalogue_offering("app_theme"),
+        pending.clone(),
+        spy.clone(),
+        "c1".into(),
+    );
 
     let call = tokio::spawn(async move { host.call_tool("app_theme", json!({"action": "set"})).await });
     once_sent(&spy).await;

@@ -1,4 +1,38 @@
-# Handover — 2.3.9 is out
+# Handover — 2.3.9 is out, and one harness has started
+
+## The branch in progress: `feat/one-harness`
+
+Branched from `main` in `C:/Fool-AionUI`. **Not released, not merged, not pushed.** The version on
+`main` is still 2.3.10 and nothing a user can install has changed.
+
+This is the first of eight sub-projects agreed after an honest read of the competition. The design is
+`docs/specs/2026-08-08-one-harness-design.md`, the plan is `…-plan.md`, and the numbers so far are in
+`…-measurements.md`. The other seven, in order, are listed in §11 of the design.
+
+**What it does.** The application's own capabilities — looking at the screen, the theme, the
+settings, the memory, the taught skills — are now MCP tools any agent can call. A call arrives at an
+in-process MCP server, is broadcast to the renderer, runs through the existing `runVoiceTool`
+handler, and the answer comes back over HTTP. It is a second instance of the pattern `fool-team`
+already uses, which is why the risk was low and the generic half (`fool-mcp-server`) was extracted
+rather than written twice.
+
+**What it does not do yet.** The spoken turn still runs its own loop in the renderer; moving it is the
+next plan. Nothing here decides whether a tool is *allowed* to run. And a hosted CLI agent (Claude
+Code, Codex) cannot reach the server yet — that needs the stdio bridge subcommand, so the design's
+claim that typed chat gains these tools "for free" is true of the embedded agent only, today.
+
+**Two known gaps, written down rather than discovered later.**
+
+- **A session started before the renderer registers sees no app tools, permanently.** An MCP client
+  calls `tools/list` once. The catalogue is re-declared on `realtime.reconnected`, which covers a
+  backend restart, but a session created in that first moment never asks again. The fix is
+  `notifications/tools/list_changed`; it is not written.
+- **The two refusal sentences a model may repeat are English** (`fool-app-tools/src/host.rs`). Every
+  locale relies on the model translating them.
+
+---
+
+## The released state
 
 Written 8 August 2026. `main` in `C:/Fool-AionUI` at `f3af355e4`, version 2.3.9, tree clean,
 pushed. **[v2.3.9](https://github.com/zaorenn/The-Fool-Cli/releases/tag/v2.3.9) is published**,
