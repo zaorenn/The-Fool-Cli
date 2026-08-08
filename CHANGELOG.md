@@ -2,6 +2,20 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.3.5
+
+### The spoken assistant
+
+- Spoken conversations are kept. There is a History tab beside the Voice Assistant's settings: every conversation you have out loud is listed there, newest first, and opening one shows the whole transcript — both sides, so you can tell a mis-hearing from a bad answer. Until now a conversation left one summarised line in the memory and everything actually said went with the window.
+- Carry on from an earlier one. It opens a new conversation holding the end of the old one, so it knows what "it" and "that one" refer to without answering a question you asked yesterday. The old conversation stays as it was — resuming does not rewrite when things were said.
+- Each turn is written down as it is said, not when the conversation ends. A spoken conversation is far more often ended by closing the window than by pressing stop, so a transcript that only existed at the end was usually not there at all. What survives a crash is everything up to the crash.
+- Teaching it "play my favourite song" works. It could see the song on your screen and still had no address for it — looking at the screen gives a title, and your browser's address bar is behind this window. It now searches the name, resolves the first result to an address that actually plays, tells you what it found, and saves it only once you agree. The refusal when it has no address says which part is missing, instead of the flat "that is not something the voice can do" that taught it the tool was broken.
+
+### Fixes
+
+- A voice you are not using no longer sits in memory. Every model you had downloaded was loaded at once and held for as long as the app ran — several gigabytes of graphics memory, in Qwen3's case, and choosing a different voice released none of it. Only the voice being spoken with is loaded now, and switching away frees the last one. The first sentence after a switch takes a moment longer, which is the trade.
+- Updates now record how fast they arrived. Some machines report the installer coming down at a fraction of their real speed; nothing had ever measured it, so there was nothing to look at. Each download writes its throughput and its source to the log.
+
 ## 2.3.4
 
 ### The spoken assistant

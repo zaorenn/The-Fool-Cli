@@ -112,7 +112,18 @@ handing it a file by dropping one on the window · `426c17c03` silent install.
   only the setting is missing. Genuinely small, and it has been on the list two sessions now.
 - **A Turkish TTS voice with real prosody.** Measure before shipping: the bar is Pocket's
   0.43 s.
-- **Some users download the installer at about 50 kbps on a fast connection.** Not diagnosed.
+- **Some users download the installer at about 50 kbps on a fast connection.** **Measured, and
+  it is not our download loop.** On this machine, pulling the first 25 MB of the published
+  2.3.4 asset: `curl` managed 9.7 MB/s, and the app's own read/write loop — the exact loop from
+  `attemptDownload`, run standalone against the same bytes — managed **14.7 MB/s**, with no read
+  taking over 141 ms. The loop is faster than curl, so the code that was the obvious suspect is
+  exonerated. Both download paths now log throughput, host and read stalls on completion, so the
+  next report arrives with numbers instead of an impression. What is still open is which of the
+  remaining candidates it is: GitHub asset throughput from the affected region, or an event loop
+  busy enough to starve the stream on a slower machine — the stall counter distinguishes those
+  two, which is why it is there. **Do not "fix" this by guessing.**
+
+  Older note, still true, on what was ruled out by reading rather than measuring:
   What has been ruled out, so it is not re-checked: differential download is not involved
   (`differentialPackage: false`, no `.blockmap` is produced or uploaded, so electron-updater
   cannot be doing ranged block requests); no Electron command-line switch touches networking;
