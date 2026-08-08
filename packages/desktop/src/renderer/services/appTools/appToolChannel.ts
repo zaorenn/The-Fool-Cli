@@ -66,9 +66,18 @@ const succeeded = (result: Record<string, unknown>): boolean => result.ok !== fa
  * every request gets exactly one answer.
  */
 export const startAppToolChannel = (): (() => void) => {
-  void ipcBridge.appTools.catalogue.invoke({ tools: describeAppTools() });
+  const register = (): void => {
+    void ipcBridge.appTools.catalogue.invoke({ tools: describeAppTools() });
+  };
 
-  return ipcBridge.appTools.request.on(async (request: AppToolRequest) => {
+  register();
+  // The catalogue lives in the backend's memory, so a backend that restarted
+  // has forgotten it — and an agent would then be told this application can do
+  // nothing, silently. `realtime.reconnected` exists for exactly this: the
+  // caller re-declares its state.
+  const stopReconnect = ipcBridge.realtime.reconnected.on(register);
+
+  const stopRequests = ipcBridge.appTools.request.on(async (request: AppToolRequest) => {
     try {
       const result = await runVoiceTool(agentToolHost(request.conversation_id), {
         callId: request.call_id,
@@ -91,4 +100,9 @@ export const startAppToolChannel = (): (() => void) => {
       });
     }
   });
+
+  return () => {
+    stopReconnect();
+    stopRequests();
+  };
 };

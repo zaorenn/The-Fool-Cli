@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 type Listener = (message: unknown) => void | Promise<void>;
 
 const listeners: Listener[] = [];
+const reconnectListeners: (() => void)[] = [];
 const postResult = vi.fn(async () => undefined);
 const postCatalogue = vi.fn(async () => undefined);
 const runVoiceTool = vi.fn(async () => ({ ok: true, screen: 'a browser' }) as Record<string, unknown>);
@@ -28,6 +29,17 @@ vi.mock('@/common', () => ({
       result: { invoke: postResult },
       catalogue: { invoke: postCatalogue },
     },
+    realtime: {
+      reconnected: {
+        on: (callback: () => void) => {
+          reconnectListeners.push(callback);
+          return () => {
+            const index = reconnectListeners.indexOf(callback);
+            if (index >= 0) reconnectListeners.splice(index, 1);
+          };
+        },
+      },
+    },
   },
 }));
 
@@ -45,6 +57,7 @@ const request = (callId: string, name = 'app_look_at_screen'): Record<string, un
 describe('startAppToolChannel', () => {
   beforeEach(() => {
     listeners.length = 0;
+    reconnectListeners.length = 0;
     postResult.mockClear();
     postCatalogue.mockClear();
     runVoiceTool.mockClear();
@@ -93,9 +106,21 @@ describe('startAppToolChannel', () => {
     expect(postResult).toHaveBeenCalledTimes(1);
   });
 
-  it('stops answering once it is torn down', async () => {
+  it('registers again when the backend comes back', () => {
+    // The catalogue lives in the backend's memory. A backend that restarted has
+    // forgotten it, and an agent would be told this application can do nothing.
+    startAppToolChannel();
+    postCatalogue.mockClear();
+
+    reconnectListeners.forEach((listener) => listener());
+
+    expect(postCatalogue).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops answering once it is torn down', () => {
     const stop = startAppToolChannel();
     stop();
     expect(listeners).toHaveLength(0);
+    expect(reconnectListeners).toHaveLength(0);
   });
 });
