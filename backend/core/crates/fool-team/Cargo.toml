@@ -11,6 +11,7 @@ fool-api-types.workspace = true
 fool-realtime.workspace = true
 fool-ai-agent.workspace = true
 fool-team-prompts.workspace = true
+fool-mcp-server.workspace = true
 fool-auth.workspace = true
 axum.workspace = true
 tokio.workspace = true
