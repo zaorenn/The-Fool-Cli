@@ -44,6 +44,13 @@ pub struct AgentFactoryDeps {
     /// run through `SessionAgentTask` (direct-CLI) instead of the ACP manager, so
     /// the spawner is unconditionally wired — there is no fallback to the ACP path.
     pub session_spawner: Arc<dyn fool_process::Spawner>,
+    /// Where the application's own tool server is listening.
+    ///
+    /// Held here rather than read from the request, because the token is this
+    /// process's own and a client that could name the port could also name a
+    /// different one. `None` for tests and for any composition that has no
+    /// application to call back into.
+    pub app_tools_mcp: Option<fool_api_types::AppToolsMcpConfig>,
 }
 
 /// Build a production agent factory that dispatches to concrete agent types.

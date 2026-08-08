@@ -92,6 +92,7 @@ fn make_factory(
         backend_binary_path: Arc::new(PathBuf::from("/tmp/foolrs-test/foolcore")),
         mcp_server_repo: None,
         session_spawner,
+        app_tools_mcp: None,
     })
 }
 

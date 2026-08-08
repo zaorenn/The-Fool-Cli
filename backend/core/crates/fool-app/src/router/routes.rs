@@ -17,6 +17,7 @@ use fool_ai_agent::{
     RuntimeTokenScope, RuntimeTokenService, TEAM_RUNTIME_TOKEN_SESSION_GENERATION, agent_routes, remote_agent_routes,
 };
 use fool_api_types::ErrorResponse;
+use fool_app_tools::router as app_tools_routes;
 use fool_assets::{AssetRouterState, asset_routes};
 use fool_assistant::assistant_routes;
 use fool_auth::{
@@ -335,6 +336,13 @@ pub fn create_router_with_all_state(services: &AppServices, states: ModuleStates
     let shell_authenticated =
         shell_routes(states.shell).route_layer(from_fn_with_state(auth_mw_state.clone(), auth_middleware));
 
+    // The channel an agent calls back into the application through. Behind the
+    // same auth as everything else: the renderer answering a tool call is an
+    // authenticated client like any other, and an unauthenticated caller could
+    // otherwise answer a call it never received.
+    let app_tools_authenticated = app_tools_routes(services.app_tools.clone())
+        .route_layer(from_fn_with_state(auth_mw_state.clone(), auth_middleware));
+
     // Assistant routes protected by auth middleware (T1a skeleton: all
     // handlers return 500 "not implemented"; T1b wires real service)
     let assistant_authenticated =
@@ -376,7 +384,8 @@ pub fn create_router_with_all_state(services: &AppServices, states: ModuleStates
         .merge(cron_authenticated)
         .merge(office_authenticated)
         .merge(shell_authenticated)
-        .merge(assistant_authenticated);
+        .merge(assistant_authenticated)
+        .merge(app_tools_authenticated);
 
     // Conditionally merge WeChat login SSE route (feature-gated)
     #[cfg(feature = "weixin")]

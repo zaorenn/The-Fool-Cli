@@ -3,12 +3,20 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use std::time::Duration;
+
+use tokio::net::TcpListener;
+use tokio::sync::watch;
+
 use crate::config::{AppConfig, IdentityMode, derive_encryption_key};
 use fool_ai_agent::{
     AcpSessionSyncService, AcpSkillManager, ActiveLeaseRegistry, AgentFactoryDeps, AgentRegistry, IWorkerTaskManager,
     RuntimeTokenService, WorkerTaskManagerImpl, build_agent_factory,
 };
+use fool_api_types::AppToolsMcpConfig;
+use fool_app_tools::{AppToolHosts, AppToolsState, Catalogue, PendingCalls};
 use fool_auth::{CookieConfig, JwtService, QrTokenStore, resolve_jwt_secret};
+use fool_mcp_server::serve_http;
 use fool_common::OnConversationDelete;
 use fool_conversation::{ConversationService, runtime_state::ConversationRuntimeStateService};
 use fool_db::{
@@ -29,6 +37,11 @@ pub struct AppServices {
     pub qr_token_store: Arc<QrTokenStore>,
     pub ws_manager: Arc<WebSocketManager>,
     pub event_bus: Arc<BroadcastEventBus>,
+    /// The channel an agent calls back into the application through.
+    ///
+    /// Held here so the router can mount its two endpoints and the agent
+    /// factory can tell a session where to find it.
+    pub app_tools: AppToolsState,
     pub worker_task_manager: Arc<dyn IWorkerTaskManager>,
     pub active_lease_registry: Arc<ActiveLeaseRegistry>,
     pub runtime_token_service: Arc<RuntimeTokenService>,
@@ -132,6 +145,7 @@ impl AppServices {
 
         let provider_repo = Arc::new(SqliteProviderRepository::new(database.pool().clone()));
         let event_bus = Arc::new(BroadcastEventBus::new(256));
+        let (app_tools, app_tools_mcp) = start_app_tools(event_bus.clone()).await?;
         // User-configured MCP servers — injected into ACP `session/new`
         // so the agent gets the operator's tools (ELECTRON-1JG fix).
         let mcp_server_repo: Arc<dyn IMcpServerRepository> =
@@ -218,6 +232,7 @@ impl AppServices {
             backend_binary_path: backend_binary_path.clone(),
             mcp_server_repo: Some(mcp_server_repo),
             session_spawner,
+            app_tools_mcp: Some(app_tools_mcp),
         });
 
         // Agent factory is now wired. Future extension/custom agents
@@ -256,6 +271,7 @@ impl AppServices {
             qr_token_store: Arc::new(QrTokenStore::new()),
             ws_manager: Arc::new(WebSocketManager::new()),
             event_bus,
+            app_tools,
             worker_task_manager,
             active_lease_registry,
             runtime_token_service,
@@ -380,4 +396,38 @@ mod tests {
 
         services.database.close().await;
     }
+}
+
+/// Brings up the channel an agent calls back into the application through.
+///
+/// Bound on an ephemeral loopback port with a token generated here, so the
+/// address is not guessable and never leaves this process except into the
+/// sessions the factory builds.
+async fn start_app_tools(broadcaster: Arc<BroadcastEventBus>) -> anyhow::Result<(AppToolsState, AppToolsMcpConfig)> {
+    /// Long enough for a screen capture and a model to describe what it saw;
+    /// short enough that a wedged renderer does not hold a spoken conversation
+    /// open for minutes. The deadline is what turns "no answer" into a sentence
+    /// the assistant can say instead of a silence it cannot explain.
+    const DEADLINE: Duration = Duration::from_secs(60);
+
+    let catalogue = Arc::new(Catalogue::new());
+    let pending = Arc::new(PendingCalls::new(DEADLINE));
+    let token = uuid::Uuid::now_v7().to_string();
+
+    let listener = TcpListener::bind("127.0.0.1:0").await?;
+    let port = listener.local_addr()?.port();
+
+    // The sender is held for the life of the process: the server stops when the
+    // application does, and there is nothing else that should stop it.
+    let (shutdown_tx, shutdown_rx) = watch::channel(false);
+    std::mem::forget(shutdown_tx);
+
+    let hosts = Arc::new(AppToolHosts::new(catalogue.clone(), pending.clone(), broadcaster));
+    tokio::spawn(serve_http(listener, token.clone(), hosts, shutdown_rx));
+    tracing::info!(port, "startup: app tools MCP server listening");
+
+    Ok((
+        AppToolsState { catalogue, pending },
+        AppToolsMcpConfig { port, token },
+    ))
 }

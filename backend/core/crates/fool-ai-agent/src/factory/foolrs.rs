@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use fool_api_types::{
-    FoolrsBuildExtra, ModelImageInputCapability, ModelOpenAiApiMode, ModelSettings, SessionMcpServer,
+    APP_TOOLS_MCP_SERVER_NAME, AppToolsMcpConfig, FoolrsBuildExtra, ModelImageInputCapability, ModelOpenAiApiMode,
+    ModelSettings, SessionMcpServer,
     SessionMcpTransport, TEAM_MCP_SERVER_NAME, TeamMcpStdioConfig,
 };
 use fool_common::ProviderWithModel;
@@ -63,7 +64,7 @@ pub(super) async fn build(
         });
     }
 
-    let mut extra_mcp_servers = resolve_mcp_servers(&overrides);
+    let mut extra_mcp_servers = resolve_mcp_servers(&overrides, deps.app_tools_mcp.as_ref(), &ctx.conversation_id);
     if let Some(repo) = deps.mcp_server_repo.as_ref() {
         for (name, config) in load_user_mcp_servers(
             repo.as_ref(),
@@ -752,11 +753,48 @@ async fn ensure_stdio_launch(
     Ok((resolved.program.to_string_lossy().into_owned(), final_args, final_env))
 }
 
-fn resolve_mcp_servers(overrides: &FoolrsBuildExtra) -> HashMap<String, McpServerConfig> {
+fn resolve_mcp_servers(
+    overrides: &FoolrsBuildExtra,
+    app_tools: Option<&AppToolsMcpConfig>,
+    conversation_id: &str,
+) -> HashMap<String, McpServerConfig> {
+    let mut servers = HashMap::new();
     if let Some(cfg) = &overrides.team_mcp_stdio_config {
-        return team_mcp_to_config(cfg);
+        servers.extend(team_mcp_to_config(cfg));
     }
-    HashMap::new()
+    if let Some(cfg) = app_tools {
+        servers.extend(app_tools_to_config(cfg, conversation_id));
+    }
+    servers
+}
+
+/// The application's own capabilities, over HTTP rather than a stdio bridge.
+///
+/// `foolrs` is embedded in the same process as the server, so there is nothing
+/// to proxy: a bridge would exist only to be spawned and killed. A hosted CLI
+/// agent still needs one and gets it separately.
+///
+/// The conversation is named in the path, which is how one listener serves
+/// every conversation and a call still knows which one it belongs to.
+fn app_tools_to_config(cfg: &AppToolsMcpConfig, conversation_id: &str) -> HashMap<String, McpServerConfig> {
+    let mut headers = HashMap::new();
+    headers.insert("Authorization".to_owned(), format!("Bearer {}", cfg.token));
+
+    let server = McpServerConfig {
+        transport: TransportType::StreamableHttp,
+        command: None,
+        args: None,
+        env: None,
+        url: Some(format!("http://127.0.0.1:{}/mcp/{}", cfg.port, conversation_id)),
+        headers: Some(headers),
+        // Never deferred: these are the tools a spoken conversation reaches for
+        // first, and a deferred server would make the model search before it
+        // could look at the screen.
+        deferred: Some(false),
+        startup_timeout_ms: None,
+    };
+
+    HashMap::from([(APP_TOOLS_MCP_SERVER_NAME.to_owned(), server)])
 }
 
 fn team_mcp_to_config(cfg: &TeamMcpStdioConfig) -> HashMap<String, McpServerConfig> {
@@ -1864,7 +1902,7 @@ mod tests {
             ..Default::default()
         };
 
-        let result = resolve_mcp_servers(&overrides);
+        let result = resolve_mcp_servers(&overrides, None, "conversation-7");
         assert_eq!(result.len(), 1);
         assert!(result.contains_key(TEAM_MCP_SERVER_NAME));
 
@@ -1887,14 +1925,14 @@ mod tests {
             ..Default::default()
         };
 
-        let result = resolve_mcp_servers(&overrides);
+        let result = resolve_mcp_servers(&overrides, None, "conversation-7");
         assert!(result.is_empty());
     }
 
     #[test]
     fn resolve_mcp_servers_empty_when_no_config() {
         let overrides = FoolrsBuildExtra::default();
-        let result = resolve_mcp_servers(&overrides);
+        let result = resolve_mcp_servers(&overrides, None, "conversation-7");
         assert!(result.is_empty());
     }
 
@@ -2038,3 +2076,7 @@ mod tests {
         assert_eq!(overrides.system_prompt.as_deref(), Some("Be concise."));
     }
 }
+
+#[cfg(test)]
+#[path = "app_tools_test.rs"]
+mod app_tools_test;
