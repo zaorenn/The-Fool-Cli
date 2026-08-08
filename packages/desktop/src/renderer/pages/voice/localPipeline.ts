@@ -916,16 +916,19 @@ export class LocalVoicePipeline {
       // ordinary turn, which is every other sentence they say.
       const taught = this.options.runTool ? findLocalSkill(peekLocalSkills(), heard) : null;
       if (taught) {
-        await this.runTools(
-          [
-            {
-              id: newId(),
-              type: 'function',
-              function: { name: 'app_skill_do', arguments: JSON.stringify({ name: taught.name }) },
-            },
-          ],
-          controller
-        );
+        const call = {
+          id: newId(),
+          type: 'function' as const,
+          function: { name: 'app_skill_do', arguments: JSON.stringify({ name: taught.name }) },
+        };
+        // The assistant turn carrying the call goes in first. `runTools` pushes
+        // a `tool` message answering it, and a server handed a `tool` message
+        // whose call appears nowhere in the history rejects the whole request —
+        // so leaving this out ran the skill once and then broke every turn
+        // after it. From outside, that is a conversation that does the thing
+        // and then stops responding.
+        this.history.push({ role: 'assistant', content: '', tool_calls: [call] });
+        await this.runTools([call], controller);
         if (controller.signal.aborted) return;
         // Straight back to listening. The tool says what it did on the notch
         // and in the activity list; making the model narrate a thing that has

@@ -875,6 +875,49 @@ describe('LocalVoicePipeline acting on the computer', () => {
       expect(fetchMock.mock.calls.length).toBe(before);
     });
 
+    it('leaves a history the server will still accept on the next turn', async () => {
+      readyCatalog();
+      speakOnce();
+      transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'favori sarkimi ac' } });
+      taughtSkills.push({
+        id: 'favori sarkim',
+        name: 'Favori sarkim',
+        when: 'favori sarkimi ac',
+        action: { kind: 'open-url', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+      });
+
+      const events: NormalizedRealtimeEvent[] = [];
+      const { pipeline, fetchMock } = await connectWithTools(
+        events,
+        [() => ({ ok: true, body: sseBody(['Tabii.']) }) as unknown as Response],
+        async () => ({ ok: true })
+      );
+
+      // The skill turn, then an ordinary one after it.
+      pipeline.pushAudio(toBase64(pcmOf([1, 2])), 'speech-started');
+      pipeline.pushAudio('', 'utterance-ended');
+      await settle();
+      transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'saat kac' } });
+      pipeline.pushAudio(toBase64(pcmOf([3, 4])), 'speech-started');
+      pipeline.pushAudio('', 'utterance-ended');
+      await settle();
+
+      // Every `tool` message must answer a `tool_calls` that is actually in the
+      // history. A server handed an orphan rejects the whole request, which ran
+      // the skill once and then broke every turn after it — a conversation that
+      // does the thing and then stops responding.
+      const chat = fetchMock.mock.calls.find((call) => !String(call[0]).endsWith('/models') && call[1]);
+      const sent = JSON.parse((chat![1] as { body: string }).body).messages as {
+        role: string;
+        tool_call_id?: string;
+        tool_calls?: { id: string }[];
+      }[];
+      const offered = new Set(sent.flatMap((message) => (message.tool_calls ?? []).map((c) => c.id)));
+      const answered = sent.filter((message) => message.role === 'tool').map((message) => message.tool_call_id);
+      expect(answered.length).toBeGreaterThan(0);
+      expect(answered.filter((id) => !offered.has(id!))).toEqual([]);
+    });
+
     it('never speaks a claim that something happened when nothing ran', async () => {
       readyCatalog();
       speakOnce();
