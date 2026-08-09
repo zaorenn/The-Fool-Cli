@@ -2726,6 +2726,7 @@ export type I18nKey =
   | 'settings.voice.conversationProviderDescription.codex'
   | 'settings.voice.conversationProviderLocal'
   | 'settings.voice.conversationProviderMissing'
+  | 'settings.voice.conversationProviderName.agent'
   | 'settings.voice.conversationProviderName.gemini-live'
   | 'settings.voice.conversationProviderName.local-pipeline'
   | 'settings.voice.conversationProviderName.local-s2s'

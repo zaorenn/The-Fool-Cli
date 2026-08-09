@@ -25,6 +25,14 @@ import styles from './MaterialStudio.module.css';
  */
 
 export type DialGroupsProps = {
+  /**
+   * The dials the worn material actually feels.
+   *
+   * A blur slider on an opaque material moves a number nothing reads, and a
+   * control that does nothing does not just fail on its own — it makes the user
+   * doubt every other control on the page.
+   */
+  available: ReadonlySet<DialKey>;
   value: (key: DialKey) => number;
   /** While the slider is moving: show it, do not keep it. */
   onMove: (key: DialKey, value: number) => void;
@@ -34,12 +42,17 @@ export type DialGroupsProps = {
 
 const single = (value: number | number[]): number => (Array.isArray(value) ? value[0] : value);
 
-const DialGroups: React.FC<DialGroupsProps> = ({ value, onMove, onSettle }) => {
+const DialGroups: React.FC<DialGroupsProps> = ({ available, value, onMove, onSettle }) => {
   const { t } = useTranslation();
+
+  const groups = DIAL_GROUPS.map((group) => ({
+    ...group,
+    dials: group.dials.filter((key) => available.has(key)),
+  })).filter((group) => group.dials.length > 0);
 
   return (
     <Collapse bordered={false}>
-      {DIAL_GROUPS.map((group) => (
+      {groups.map((group) => (
         <Collapse.Item key={group.id} name={group.id} header={t(`settings.material.group.${group.id}`)}>
           <div className='grid gap-14px'>
             {group.dials.map((key) => {

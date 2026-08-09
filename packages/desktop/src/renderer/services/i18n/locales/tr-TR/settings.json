@@ -1508,7 +1508,8 @@
       "openai-realtime": "ChatGPT (OpenAI Realtime)",
       "gemini-live": "Gemini Live",
       "local-s2s": "Yerel gerçek zamanlı sunucu",
-      "local-pipeline": "Bu bilgisayarda"
+      "local-pipeline": "Bu bilgisayarda",
+      "agent": "Ajan çalışma zamanı"
     },
     "conversationVoice": "Ses",
     "conversationLanguage": "Dil",

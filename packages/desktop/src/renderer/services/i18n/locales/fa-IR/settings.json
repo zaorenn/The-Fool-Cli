@@ -1508,7 +1508,8 @@
       "openai-realtime": "ChatGPT (OpenAI Realtime)",
       "gemini-live": "Gemini Live",
       "local-s2s": "سرور بی‌درنگ محلی",
-      "local-pipeline": "روی همین رایانه"
+      "local-pipeline": "روی همین رایانه",
+      "agent": "زمان اجرای عامل"
     },
     "conversationVoice": "صدا",
     "conversationLanguage": "زبان",

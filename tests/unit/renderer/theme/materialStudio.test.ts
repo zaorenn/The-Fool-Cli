@@ -8,6 +8,8 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_ACCENT,
   MATERIAL_TOKEN_KEYS,
+  SURFACE_STYLES,
+  SURFACE_STYLE_IDS,
   hexToHsl,
   paletteRamp,
   type MaterialTokenKey,
@@ -57,6 +59,45 @@ describe('the panel offers every dial, once', () => {
       const spec = dialSpec(key);
       expect(spec.max).toBeGreaterThan(spec.min);
       expect(spec.step).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('a material only offers what it can feel', () => {
+  /// The rule this enforces: a control that does nothing is worse than a
+  /// missing control, because the user drags it, sees nothing happen, and stops
+  /// trusting every other control on the page.
+  it('names only dials the panel knows how to draw', () => {
+    for (const style of SURFACE_STYLE_IDS) {
+      for (const key of SURFACE_STYLES[style].dials) {
+        expect(listed, `${style} declares ${key}`).toContain(key);
+      }
+    }
+  });
+
+  it('never offers blur or sheen on a material with an opaque surface', () => {
+    for (const style of ['neu', 'clay', 'brutal', 'minimal'] as const) {
+      const dials = new Set<string>(SURFACE_STYLES[style].dials);
+      expect(dials.has('blur'), `${style} blur`).toBe(false);
+      expect(dials.has('alpha'), `${style} alpha`).toBe(false);
+      expect(dials.has('saturation'), `${style} saturation`).toBe(false);
+      expect(dials.has('sheen'), `${style} sheen`).toBe(false);
+    }
+  });
+
+  it('offers them on the three that are see-through', () => {
+    for (const style of ['glass', 'liquid', 'aurora'] as const) {
+      expect(new Set<string>(SURFACE_STYLES[style].dials).has('blur'), style).toBe(true);
+    }
+  });
+
+  it('never offers a shadow on the material whose shadow is none', () => {
+    expect(new Set<string>(SURFACE_STYLES.minimal.dials).has('depth')).toBe(false);
+  });
+
+  it('gives every material something to move', () => {
+    for (const style of SURFACE_STYLE_IDS) {
+      expect(SURFACE_STYLES[style].dials.length, style).toBeGreaterThan(6);
     }
   });
 });

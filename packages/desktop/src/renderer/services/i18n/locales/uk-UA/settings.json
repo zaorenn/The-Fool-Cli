@@ -1509,7 +1509,8 @@
       "openai-realtime": "ChatGPT (OpenAI Realtime)",
       "gemini-live": "Gemini Live",
       "local-s2s": "Локальний realtime-сервер",
-      "local-pipeline": "На цьому комп’ютері"
+      "local-pipeline": "На цьому комп’ютері",
+      "agent": "Середовище агента"
     },
     "conversationVoice": "Голос",
     "conversationLanguage": "Мова",

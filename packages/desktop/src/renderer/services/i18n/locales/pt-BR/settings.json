@@ -1511,7 +1511,8 @@
       "openai-realtime": "ChatGPT (OpenAI Realtime)",
       "gemini-live": "Gemini Live",
       "local-s2s": "Servidor local em tempo real",
-      "local-pipeline": "Neste computador"
+      "local-pipeline": "Neste computador",
+      "agent": "Runtime do agente"
     },
     "conversationVoice": "Voz",
     "conversationLanguage": "Idioma",

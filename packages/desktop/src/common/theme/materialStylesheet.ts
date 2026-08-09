@@ -292,6 +292,36 @@ export const materialStylesheet = (
   border-color: var(--color-border-1) !important;
 }`,
 
+    // Movement, on the components the application is actually built from.
+    //
+    // `lift`, `press` and `bounce` used to reach `.fool-surface` alone, which is
+    // a handful of hand-tagged elements — so on nine screens out of ten those
+    // three sliders moved a number and nothing else. A dial that does nothing is
+    // worse than a missing one: the user drags it, sees nothing, and stops
+    // trusting the rest of the page.
+    `${CONTROLS},
+${SURFACES} {
+  transition:
+    transform var(--fool-motion, 220ms) var(--fool-ease-material, ease),
+    box-shadow var(--fool-motion, 220ms) ease,
+    border-color var(--fool-motion, 220ms) ease;
+}`,
+
+    tokens.lift > 0
+      ? `.arco-card:hover,
+.arco-btn:hover:not(:disabled),
+.arco-tag:hover {
+  transform: translateY(calc(var(--fool-lift) * -0.6)) !important;
+}`
+      : '',
+
+    tokens.press > 0
+      ? `.arco-btn:active:not(:disabled),
+.arco-card:active {
+  transform: translateY(var(--fool-press)) !important;
+}`
+      : '',
+
     // What goes on the accent is decided by contrast, not by Arco's assumption
     // that white always works. It does not: on a yellow accent it disappears.
     `.arco-btn-primary,

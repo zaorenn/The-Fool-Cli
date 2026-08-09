@@ -511,6 +511,20 @@ export class LocalVoicePipeline {
     return CAPTURE_SAMPLE_RATE;
   }
 
+  /**
+   * Which brain is answering, once `connect` has decided.
+   *
+   * Worth exposing because the two are not close: on the agent runtime this is
+   * the same conversation, the same model and the same tools as typed chat, and
+   * on the fallback it is a small local model with a handful of app tools. The
+   * fallback is silent by design — a conversation that cannot open a session
+   * should still answer — and a silent fallback the user cannot see is how
+   * somebody spends an evening deciding the assistant has got worse.
+   */
+  get thinksOnAgentRuntime(): boolean {
+    return this.agentConversationId !== null;
+  }
+
   async connect(): Promise<void> {
     const readiness = await checkLocalReadiness(this.options.settings);
     if (readiness.ok === false) throw new Error(`LOCAL_${readiness.reason.toUpperCase().replaceAll('-', '_')}`);

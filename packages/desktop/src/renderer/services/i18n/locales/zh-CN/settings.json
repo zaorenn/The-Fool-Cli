@@ -1509,7 +1509,8 @@
       "openai-realtime": "ChatGPT（OpenAI Realtime）",
       "gemini-live": "Gemini Live",
       "local-s2s": "本地实时服务器",
-      "local-pipeline": "在这台电脑上"
+      "local-pipeline": "在这台电脑上",
+      "agent": "智能体运行时"
     },
     "conversationVoice": "音色",
     "conversationLanguage": "语言",

@@ -7,14 +7,14 @@
 import React, { useCallback } from 'react';
 import { Button, Typography } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
-import { isDark, type MaterialTokenKey, type SurfaceStyleId } from '@/common/theme/surfaceStyle';
+import { SURFACE_STYLES, isDark, type MaterialTokenKey, type SurfaceStyleId } from '@/common/theme/surfaceStyle';
 import type { SurfaceStyleChoice } from '@/common/theme/surfaceChoice';
 import { applySurfaceChoice, useSurfaceStyle } from '@renderer/hooks/config/useSurfaceStyle';
 import AccentPicker from './AccentPicker';
 import BackgroundPicker from './BackgroundPicker';
 import DialGroups from './DialGroups';
 import MaterialCards from './MaterialCards';
-import { accentAxisValue, accentWithAxis, isAccentAxis, type DialKey } from './dials';
+import { ACCENT_AXES, accentAxisValue, accentWithAxis, isAccentAxis, type DialKey } from './dials';
 import styles from './MaterialStudio.module.css';
 
 /**
@@ -121,7 +121,15 @@ const MaterialStudio: React.FC = () => {
         </div>
       </div>
 
-      <DialGroups value={valueOf} onMove={move} onSettle={settle} />
+      {/* Only the dials this material can feel. The three axes of the colour are
+          always among them: the accent is not the material's, it is the one
+          thing everything else is derived from. */}
+      <DialGroups
+        available={new Set<DialKey>([...ACCENT_AXES, ...SURFACE_STYLES[choice.style].dials])}
+        value={valueOf}
+        onMove={move}
+        onSettle={settle}
+      />
     </section>
   );
 };

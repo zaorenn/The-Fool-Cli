@@ -143,7 +143,32 @@ export type SurfaceStyle = StyleGround & {
   id: SurfaceStyleId;
   /** The dials this material sets when it is chosen. */
   tokens: MaterialTokens;
+  /**
+   * The dials that do something on this material, and only those.
+   *
+   * A blur slider on a material with an opaque surface moves a number nothing
+   * reads. It is worse than a missing control: the user drags it, watches
+   * nothing happen, and now doubts every other control on the page. So a
+   * material declares what it can actually feel, and the panel shows that.
+   *
+   * Everything not named here is still a real number — it is simply not this
+   * material's, and choosing one that uses it brings the dial back.
+   */
+  dials: readonly MaterialTokenKey[];
 };
+
+/** Dials every material feels, whatever it is made of. */
+const UNIVERSAL: readonly MaterialTokenKey[] = [
+  'radius',
+  'tint',
+  'weight',
+  'tracking',
+  'leading',
+  'gap',
+  'lift',
+  'press',
+  'bounce',
+];
 
 const material = (values: Partial<MaterialTokens>): MaterialTokens => ({
   ...(Object.fromEntries(MATERIAL_TOKEN_KEYS.map((key) => [key, MATERIAL_SPECS[key].fallback])) as MaterialTokens),
@@ -154,6 +179,7 @@ export const SURFACE_STYLES: Record<SurfaceStyleId, SurfaceStyle> = {
   // Everything out of one piece of dough: nothing is cut out, nothing floats.
   neu: {
     id: 'neu',
+    dials: [...UNIVERSAL, 'depth', 'spread', 'inner'],
     ground: [93, 12],
     groundTint: 0.16,
     wash: 88,
@@ -162,6 +188,7 @@ export const SURFACE_STYLES: Record<SurfaceStyleId, SurfaceStyle> = {
   // A pane needs a world behind it, so this style paints one.
   glass: {
     id: 'glass',
+    dials: [...UNIVERSAL, 'edge', 'depth', 'spread', 'blur', 'alpha', 'saturation', 'sheen'],
     ground: [92, 12],
     groundTint: 0.2,
     wash: 66,
@@ -183,6 +210,7 @@ export const SURFACE_STYLES: Record<SurfaceStyleId, SurfaceStyle> = {
   // gives a little when it is touched.
   liquid: {
     id: 'liquid',
+    dials: [...UNIVERSAL, 'edge', 'depth', 'spread', 'inner', 'blur', 'alpha', 'saturation', 'sheen'],
     ground: [91, 14],
     groundTint: 0.24,
     wash: 64,
@@ -206,6 +234,7 @@ export const SURFACE_STYLES: Record<SurfaceStyleId, SurfaceStyle> = {
   // Thick, soft, and coloured by its own shadow.
   clay: {
     id: 'clay',
+    dials: [...UNIVERSAL, 'depth', 'spread', 'inner'],
     ground: [90, 16],
     groundTint: 0.45,
     wash: 86,
@@ -225,6 +254,7 @@ export const SURFACE_STYLES: Record<SurfaceStyleId, SurfaceStyle> = {
   // The ground is the subject; surfaces are dark windows onto it.
   aurora: {
     id: 'aurora',
+    dials: [...UNIVERSAL, 'edge', 'depth', 'spread', 'blur', 'alpha', 'saturation', 'ambient'],
     forcedDark: true,
     ground: [10, 8],
     groundTint: 0.3,
@@ -248,6 +278,7 @@ export const SURFACE_STYLES: Record<SurfaceStyleId, SurfaceStyle> = {
   // Paper and ink. The shadow does not blur and the motion does not ease.
   brutal: {
     id: 'brutal',
+    dials: [...UNIVERSAL, 'edge', 'depth'],
     ground: [94, 12],
     groundTint: 0.5,
     wash: 90,
@@ -268,6 +299,7 @@ export const SURFACE_STYLES: Record<SurfaceStyleId, SurfaceStyle> = {
   // A line, a gap, and nothing else.
   minimal: {
     id: 'minimal',
+    dials: [...UNIVERSAL, 'edge'],
     ground: [96, 10],
     groundTint: 0.08,
     wash: 94,

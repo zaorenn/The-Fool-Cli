@@ -585,6 +585,18 @@ class ConversationRuntime {
     await pipeline.connect();
     this.local = pipeline;
 
+    // Which brain actually answered, rather than which class holds the
+    // microphone. This said "local pipeline" whatever happened — when every
+    // word came from the same agent as typed chat, and when it had quietly
+    // fallen back to a small local model because no session could be opened.
+    // One label for two very different things is a label that means nothing,
+    // and it is how somebody spends an evening deciding the assistant got worse.
+    this.emit({
+      providerName: pipeline.thinksOnAgentRuntime
+        ? this.t('settings.voice.conversationProviderName.agent')
+        : this.t('settings.voice.conversationProviderName.local-pipeline'),
+    });
+
     // Anything changed from here on reaches the conversation that is already
     // running. The pipeline was handed one copy of the settings above and would
     // otherwise keep it for the whole session, so "switch to a male voice" —

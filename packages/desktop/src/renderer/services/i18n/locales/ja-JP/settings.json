@@ -1510,7 +1510,8 @@
       "openai-realtime": "ChatGPT（OpenAI Realtime）",
       "gemini-live": "Gemini Live",
       "local-s2s": "ローカルのリアルタイムサーバー",
-      "local-pipeline": "このコンピューター上"
+      "local-pipeline": "このコンピューター上",
+      "agent": "エージェントランタイム"
     },
     "conversationVoice": "声",
     "conversationLanguage": "言語",
