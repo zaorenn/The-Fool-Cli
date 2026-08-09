@@ -1656,7 +1656,8 @@
     "historyAssistant": "它：",
     "spokenConversationName": "語音對話",
     "conversationAgentRuntime": "使用代理執行環境",
-    "conversationAgentRuntimeHint": "實驗性。語音對話與聊天使用同一執行環境思考。在數據表明不會更慢之前保持關閉。"
+    "conversationAgentRuntimeHint": "實驗性。語音對話與聊天使用同一執行環境思考。在數據表明不會更慢之前保持關閉。",
+    "conversationCouldNotDoIt": "這件事我沒能做到。"
   },
   "themeCustomizer": {
     "title": "自訂主題",

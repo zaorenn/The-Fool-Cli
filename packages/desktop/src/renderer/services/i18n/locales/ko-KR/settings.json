@@ -1656,7 +1656,8 @@
     "historyAssistant": "상대:",
     "spokenConversationName": "음성 대화",
     "conversationAgentRuntime": "에이전트 런타임 사용",
-    "conversationAgentRuntimeHint": "실험적 기능. 음성 대화가 채팅과 같은 런타임으로 생각합니다. 느려지지 않는다는 수치가 나올 때까지 꺼져 있습니다."
+    "conversationAgentRuntimeHint": "실험적 기능. 음성 대화가 채팅과 같은 런타임으로 생각합니다. 느려지지 않는다는 수치가 나올 때까지 꺼져 있습니다.",
+    "conversationCouldNotDoIt": "그건 하지 못했습니다."
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",

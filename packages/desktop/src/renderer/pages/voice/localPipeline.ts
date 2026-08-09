@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import i18next from 'i18next';
 import { ipcBridge } from '@/common';
 import {
   buildPersonaInstructions,
@@ -255,6 +256,19 @@ type Turn =
  * interrupt by talking — they would hear nothing to interrupt.
  */
 const MAX_TOOL_ROUNDS = 4;
+
+/**
+ * What is said when the claim gate refused everything the model produced.
+ *
+ * Read through `i18next` at the moment it is needed rather than captured once:
+ * this runs outside the component tree, and the language can change mid
+ * conversation because the user can change it *by speaking*.
+ */
+const couldNotDoIt = (): string => {
+  const fallback = 'I could not do that.';
+  const translated = i18next.t('settings.voice.conversationCouldNotDoIt', { defaultValue: fallback });
+  return typeof translated === 'string' && translated.length > 0 ? translated : fallback;
+};
 
 /**
  * How many sentences may be in the engine at once.
@@ -1346,6 +1360,9 @@ export class LocalVoicePipeline {
     const memory = peekVoiceMemory();
     const remembered = memory.user.trim().length + memory.agent.trim().length;
 
+    /** Whether anything at all reached the speaker, across every round. */
+    let spokeAnything = false;
+
     const turn = async (said: string, instructions: readonly string[]): Promise<string | null> => {
       let refusal: string | null = null;
       const result = await runSpokenTurn({
@@ -1354,6 +1371,7 @@ export class LocalVoicePipeline {
         instructions,
         remembered,
         onSentence: (sentence) => {
+          spokeAnything = true;
           this.markProgress(controller);
           this.queueForSpeech(sentence, controller);
         },
@@ -1379,6 +1397,16 @@ export class LocalVoicePipeline {
     // again, and a user waiting through three rounds of it is worse off than
     // one told nothing.
     if (refusal !== null && !controller.signal.aborted) await turn(refusal, []);
+
+    // The hole the gate left, reported from a real conversation: when the second
+    // round is refused too, nothing has ever reached the speaker and the user
+    // hears **silence**. That is the one outcome this application must not
+    // produce — it is indistinguishable from a crash, and it is what the whole
+    // guarantee exists to avoid. Refusing to lie is not permission to say
+    // nothing, so it says the true thing instead.
+    if (!spokeAnything && !controller.signal.aborted) {
+      this.queueForSpeech(couldNotDoIt(), controller);
+    }
 
     if (controller.signal.aborted) return;
     await this.whileSpeaking(controller);

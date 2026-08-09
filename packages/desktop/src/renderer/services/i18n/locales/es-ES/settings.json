@@ -1654,7 +1654,8 @@
     "historyAssistant": "Él:",
     "spokenConversationName": "Conversación hablada",
     "conversationAgentRuntime": "Usar el motor del agente",
-    "conversationAgentRuntimeHint": "Experimental. La conversación hablada piensa con el mismo motor que el chat. Desactivado hasta que los números digan que no es más lento."
+    "conversationAgentRuntimeHint": "Experimental. La conversación hablada piensa con el mismo motor que el chat. Desactivado hasta que los números digan que no es más lento.",
+    "conversationCouldNotDoIt": "No he podido hacer eso."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

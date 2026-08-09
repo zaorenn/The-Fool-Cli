@@ -1654,7 +1654,8 @@
     "historyAssistant": "Lui :",
     "spokenConversationName": "Conversation vocale",
     "conversationAgentRuntime": "Utiliser le moteur de l'agent",
-    "conversationAgentRuntimeHint": "Expérimental. La conversation vocale réfléchit avec le même moteur que le chat. Désactivé tant que les mesures ne montrent pas l'absence de ralentissement."
+    "conversationAgentRuntimeHint": "Expérimental. La conversation vocale réfléchit avec le même moteur que le chat. Désactivé tant que les mesures ne montrent pas l'absence de ralentissement.",
+    "conversationCouldNotDoIt": "Je n'ai pas pu le faire."
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

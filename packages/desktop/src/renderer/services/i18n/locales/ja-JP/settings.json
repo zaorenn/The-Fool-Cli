@@ -1656,7 +1656,8 @@
     "historyAssistant": "相手:",
     "spokenConversationName": "音声での会話",
     "conversationAgentRuntime": "エージェントのランタイムを使う",
-    "conversationAgentRuntimeHint": "実験的機能。音声会話がチャットと同じランタイムで考えます。遅くならないと数値が示すまでは無効です。"
+    "conversationAgentRuntimeHint": "実験的機能。音声会話がチャットと同じランタイムで考えます。遅くならないと数値が示すまでは無効です。",
+    "conversationCouldNotDoIt": "それはできませんでした。"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",

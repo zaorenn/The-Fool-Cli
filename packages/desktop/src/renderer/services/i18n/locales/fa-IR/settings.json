@@ -1654,7 +1654,8 @@
     "historyAssistant": "او:",
     "spokenConversationName": "گفت‌وگوی صوتی",
     "conversationAgentRuntime": "استفاده از زمان اجرای عامل",
-    "conversationAgentRuntimeHint": "آزمایشی. گفت‌وگوی صوتی با همان زمان اجرای گفت‌وگوی نوشتاری فکر می‌کند. تا وقتی اعداد نگویند کندتر نیست، خاموش است."
+    "conversationAgentRuntimeHint": "آزمایشی. گفت‌وگوی صوتی با همان زمان اجرای گفت‌وگوی نوشتاری فکر می‌کند. تا وقتی اعداد نگویند کندتر نیست، خاموش است.",
+    "conversationCouldNotDoIt": "نتوانستم این کار را انجام دهم."
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",

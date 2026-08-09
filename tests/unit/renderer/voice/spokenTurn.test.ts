@@ -217,3 +217,40 @@ describe('runSpokenTurn and the claim gate', () => {
     expect(spoken).toEqual(['Şimdi çalıyor.']);
   });
 });
+
+describe('a turn where the gate refuses everything', () => {
+  beforeEach(() => {
+    streamListeners.length = 0;
+    completedListeners.length = 0;
+    sendMessage.mockClear();
+    sendMessage.mockResolvedValue({ msg_id: 'm1', turn_id: 'turn-9', runtime: {} });
+  });
+
+  it('speaks nothing and reports the refusal, so the caller can say something true', async () => {
+    // Reported from a real conversation: ask for something the model cannot do,
+    // it claims it did, the gate refuses it, and the user hears **silence** —
+    // which is indistinguishable from a crash and is the one outcome this
+    // application must never produce. The turn's job is to report the refusal;
+    // saying the true thing instead is the caller's, and `localPipeline` does it.
+    const spoken: string[] = [];
+    const refusals: string[] = [];
+
+    const turn = runSpokenTurn({
+      conversationId: 'c1',
+      said: 'Bana Tokyo’ya uçak bileti al.',
+      onSentence: (sentence) => spoken.push(sentence),
+      onRefused: (correction) => refusals.push(correction),
+      remembered: 0,
+    });
+    await settle();
+
+    // A completed-action claim with no tool behind it.
+    emit({ type: 'content', data: 'Tamam, bileti aldım.' });
+    emit({ type: 'finish' });
+    await turn;
+
+    expect(spoken).toEqual([]);
+    expect(refusals).toHaveLength(1);
+    expect(refusals[0]).toContain('bileti aldım');
+  });
+});

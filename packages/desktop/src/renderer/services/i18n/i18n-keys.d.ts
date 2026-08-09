@@ -2558,6 +2558,7 @@ export type I18nKey =
   | 'settings.voice.conversationCheckAgain'
   | 'settings.voice.conversationConnectProvider'
   | 'settings.voice.conversationContinueWithJester'
+  | 'settings.voice.conversationCouldNotDoIt'
   | 'settings.voice.conversationDelegated'
   | 'settings.voice.conversationEndpoint'
   | 'settings.voice.conversationError.GEMINI_CONNECTION_CLOSING'

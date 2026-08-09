@@ -198,3 +198,31 @@ describe('claiming to remember and asking to be reminded', () => {
     expect(isEmptyRecall('Evet, hatırlıyorum — Bunny Girl.', 4000)).toBe(false);
   });
 });
+
+describe('claims the detector used to miss', () => {
+  it('catches a purchase, which is the costliest claim it can make', () => {
+    // Reported from a real conversation: asked to buy a plane ticket, the model
+    // said it had, no tool ran, and the sentence was spoken to the user.
+    expect(claimsCompletedAction('Tamam, bileti aldım.')).toBe(true);
+    expect(claimsCompletedAction('Rezervasyonu yaptım.')).toBe(true);
+    expect(claimsCompletedAction('Siparişi verdim.')).toBe(true);
+    expect(claimsCompletedAction("I've booked it for you.")).toBe(true);
+  });
+
+  it('catches the other completions that were missing', () => {
+    expect(claimsCompletedAction('Buldum, işte burada.')).toBe(true);
+    expect(claimsCompletedAction('Listeye ekledim.')).toBe(true);
+    expect(claimsCompletedAction('Şarkıyı çaldım.')).toBe(true);
+  });
+
+  it('still lets "understood" through, which is not a claim about the world', () => {
+    // `aldim` on its own is how somebody says "got it". Refusing that would
+    // call the assistant a liar for agreeing, which is the false positive this
+    // file says is worse than a miss.
+    expect(claimsCompletedAction('Anladım, aldım.')).toBe(false);
+  });
+
+  it('still lets a question through', () => {
+    expect(claimsCompletedAction('Bileti alayım mı?')).toBe(false);
+  });
+});

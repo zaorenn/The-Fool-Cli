@@ -1654,7 +1654,8 @@
     "historyAssistant": "Он:",
     "spokenConversationName": "Голосовой разговор",
     "conversationAgentRuntime": "Использовать среду агента",
-    "conversationAgentRuntimeHint": "Экспериментально. Голосовой разговор думает той же средой, что и чат. Выключено, пока измерения не покажут, что это не медленнее."
+    "conversationAgentRuntimeHint": "Экспериментально. Голосовой разговор думает той же средой, что и чат. Выключено, пока измерения не покажут, что это не медленнее.",
+    "conversationCouldNotDoIt": "Я не смог этого сделать."
   },
   "themeCustomizer": {
     "title": "Настроить тему",

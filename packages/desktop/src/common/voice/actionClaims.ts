@@ -84,6 +84,13 @@ const COMPLETED: readonly RegExp[] = [
   edged('oynatmaya basladim'),
   // First person past: opened, sent, did, saved, downloaded, installed, set up.
   edged('actim|gonderdim|yaptim|hallettim|kaydettim|indirdim|kurdum|baslattim|ayarladim|olusturdum|sildim|kapattim'),
+  edged('buldum|ekledim|yazdim|caldim|oynattim|gosterdim|kopyaladim|tasidim|degistirdim|guncelledim'),
+  // Buying and booking, which is the costliest thing it can claim and was the
+  // one missing: reported from a real conversation where "bileti aldım" was
+  // spoken with no tool behind it. `aldim` alone is left out on purpose — it is
+  // also how somebody says "got it, understood", and refusing that would call
+  // the assistant a liar for agreeing.
+  edged('satin aldim|(bilet|rezervasyon|siparis)\\w*\\s+(aldim|yaptim|verdim)'),
   // Passive past: it was opened, it was sent.
   edged('acildi|gonderildi|kaydedildi|indirildi|kuruldu|olusturuldu|tamamlandi'),
   edged('tamamdir|oldu bitti'),
@@ -94,6 +101,8 @@ const COMPLETED: readonly RegExp[] = [
   edged('i\\s+(opened|sent|started|saved|downloaded|installed|created|deleted|closed)\\s+(it|that|them)'),
   edged("(it'?s|it is|that'?s)\\s+(open|sent|done|saved|installed|ready)"),
   edged('has been (opened|sent|saved|installed|created)'),
+  edged("i'?(ve| have)\\s+(bought|booked|ordered|purchased|found|added|written|played)"),
+  edged('i\\s+(bought|booked|ordered|purchased|found|added|played)\\s+(it|that|them|you)'),
 ];
 
 /**
