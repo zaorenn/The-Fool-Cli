@@ -2,6 +2,60 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.4.0
+
+The first release this project's own CI has built. Every `Build and Release` run since 2.3.4 stopped before it started — five lint errors in the quality gate, so the build pipeline was skipped every time and the installers on those releases were made by hand. That is fixed, which is why this entry exists at all.
+
+### One harness behind every conversation
+
+- **The spoken assistant thinks on the same runtime typed chat does.** It had its own small loop with a handful of app tools; talking to it and typing to it were two different assistants with two different memories and two different sets of abilities. Now a spoken conversation opens a real session — same context handling, same tools, same skills — and this app keeps what it was always good at, which is sound. The old loop is still there, silently, for a machine that cannot open a session.
+- **An agent can ask the application to do something.** Looking at the screen, opening a page, changing the colours, remembering a fact: these were the voice's private tools. They are now offered to every agent that runs here, over a channel that waits for a real answer and fails rather than hanging when none comes. A tool an agent cannot honestly carry out is withheld instead of advertised.
+- **A skill you taught out loud is known to every agent.** Teaching one meant teaching the voice, and only the voice.
+
+### Nothing it says about its work is unbacked
+
+- **No sentence reaches the speaker without evidence behind it.** "It's playing now", said with nothing running, is the most damaging thing this assistant can do, and a rule in the prompt does not stop it — a model that has decided it finished will say so in whatever words the prompt did not forbid. The check now sits in front of the speaker rather than after the reply, so a false claim is caught before it is heard, and it covers every way of talking to the app rather than one of them.
+- **A claim is caught by its grammar rather than by a word list**, in each of the thirteen languages.
+- **What counts as evidence is a tool that finished, not a tool that started.** A task handed to the agent comes back the moment it is accepted; counting that would let "I've booked your flight" through with the booking still running.
+
+### A delegated task no longer stops the conversation
+
+- **Ask for something real and keep talking.** Handing a job to the agent used to hold the spoken turn open for as long as the job ran — minutes, on a real desktop — so the conversation could not go anywhere else and a second request had to queue behind the first. The task is accepted, the conversation carries on, and the finish arrives later as something the assistant volunteers.
+- **It waits for a gap.** Never over an answer, never over you, and never on top of the previous one. Two jobs finishing while a third is being discussed is the normal case once delegating is cheap.
+- **"What did it say?" has an answer.** The spoken line is short on purpose; the result goes into the conversation at the same moment, so you can ask.
+
+### The voice, in the places it was thin
+
+- **It says something into a silence instead of leaving you there.** Twenty seconds of nothing from something that was talking a moment ago reads as a crash, so people ask again and the same job runs twice. It fills the gap the way a person does, less often the longer it goes, and never over real speech.
+- **A turn that did work says what it did, not what it wrote.**
+- **The model that answers can be changed mid-conversation.** It was resolved once, when the conversation opened, so "switch to the bigger model" was agreed to out loud and then ignored for the rest of the session. Asking for a model that is not loaded is now refused by name rather than confirmed.
+- **An assistant you write, kept under a name you chose.** The four presets are the four things this was built for; anything else went into one box and lasted until you wanted the other one back. Keep as many as you like, put one back on with a click or by saying its name.
+- **A rule set out loud binds the next turn** rather than the next conversation.
+- **One memory, read by every conversation** — and one that can be argued with and taken back.
+
+### What the app is made of, chosen in about ten clicks
+
+- **Seven materials, and the whole interface is made of the one you pick.** Not a colour scheme: the thickness of a surface, how light falls on it, how hard an edge is. A colour picker derives the rest of the palette from one choice, and twenty-five dials are there for anyone who wants them.
+- **It can be changed by saying so.** "Make it calmer", "warmer", "like an old terminal" — the same words work typed.
+- **A first run that ends with a working, chosen-looking app** without opening settings once.
+
+### Safety, and being able to undo
+
+- **One decision about every tool call, and its default is to ask.** Allow always saves keystrokes; it does not move the floor. There is a floor no session mode can approve past, and an unanswered question refuses rather than waiting for ever.
+- **A conversation can be confined to a directory it cannot write outside of**, chosen per conversation.
+- **A write or an edit can be taken back**, to what the file looked like before that turn touched it — that turn, not everything since.
+
+### Setup
+
+- **An agent that needs a login opens one.** Connecting Claude Code showed `claude login` as a line to copy: find a terminal, paste, come back — and the middle step is where people stop. It opens the sign-in in a visible terminal instead. The command is still there, and only appears if that failed.
+
+### Also
+
+- **Read a PDF form, fill a copy, and never touch the original.**
+- **One task in, one result out, and an exit code that means it** — the CLI is usable from a script.
+- **You can watch the children work** when an agent spawns them.
+- **The build machine's account name is out of the shipped binary.**
+
 ## 2.3.10
 
 ### Setup

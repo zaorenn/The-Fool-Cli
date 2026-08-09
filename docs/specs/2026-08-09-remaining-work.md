@@ -113,11 +113,11 @@ model quoting the user or writing code that contains "I created the file".
 
 ### 2.2 The claim detector is a verb list
 
-**Partly addressed, and only partly.** The gate now weighs tool *results* rather
+**Partly addressed, and only partly.** The gate now weighs tool _results_ rather
 than the number of calls: a result that says only `accepted` does not back a
 completed-action claim (`backsCompletedAction`). That closes the hole delegation
 would otherwise have opened. It does **not** answer the criticism below, which is
-about how a claim is *detected* rather than about what backs it.
+about how a claim is _detected_ rather than about what backs it.
 
 It catches a completed-action claim by matching conjugations, per language. Two
 holes were found by hand in one session (`aldım` missing from Turkish; a `\w`
@@ -148,7 +148,7 @@ builder's own log line is not evidence of a signature.
 ### 3.2 The release job has never built anything — **fixed**
 
 This entry was wrong about the cause, so it is rewritten rather than ticked.
-Releases *have* gone out — 2.3.4 to 2.3.10 are published, with `latest.yml` and
+Releases _have_ gone out — 2.3.4 to 2.3.10 are published, with `latest.yml` and
 an installer on each. What had never happened is CI producing them: every `Build
 and Release` run since 2.3.4 stopped at **Code Quality**, on **five oxlint
 errors**, so `Build Pipeline` was skipped every time and the artefacts were
@@ -236,7 +236,7 @@ the result is written into the conversation at the moment it is spoken, so "what
 did it say?" has an answer.
 
 One thing it opened, closed in the same change: the claim gate weighed the
-*number* of tools that ran, so an accepted task would have backed "I've booked
+_number_ of tools that ran, so an accepted task would have backed "I've booked
 your flight" with the booking still running. It now weighs results that report
 completion — see `backsCompletedAction`.
 
