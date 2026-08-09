@@ -90,6 +90,26 @@ pub(crate) struct Cli {
     #[arg(long)]
     pub(crate) json_stream: bool,
 
+    /// Run one prompt and exit instead of opening the REPL.
+    ///
+    /// The prompt is read from stdin when none is given on the command line,
+    /// which is how a benchmark harness or a CI job drives this: pipe the task
+    /// in, read the answer out, judge by the exit code.
+    ///
+    /// Long form only. `-p` has meant `--provider` here since before this
+    /// existed, and taking it would turn `-p anthropic` into a run whose prompt
+    /// is the word "anthropic" — a silent change of meaning, which is worse
+    /// than a flag someone has to type in full.
+    #[arg(long = "print")]
+    pub(crate) print: bool,
+
+    /// How a one-shot run reports itself: `text` (default) or `json`.
+    ///
+    /// `json` writes exactly one object to stdout and nothing else, so a caller
+    /// parses a result instead of scraping a transcript.
+    #[arg(long, value_name = "FORMAT")]
+    pub(crate) output_format: Option<String>,
+
     /// Output compaction level: off, safe (default), full
     #[arg(long)]
     pub(crate) compaction: Option<String>,

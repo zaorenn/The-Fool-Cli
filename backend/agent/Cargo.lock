@@ -1140,6 +1140,7 @@ dependencies = [
  "foolrs-skills",
  "foolrs-tools",
  "foolrs-types",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",
