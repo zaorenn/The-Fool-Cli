@@ -42,13 +42,25 @@ Where The Fool is behind, plainly:
    the tool result, and streaming it as well would put five answers on top of
    the parent's own.
 2. **Typed chat is a second-class citizen.** Voice got the skills, the guard,
-   the memory rules. The chat window did not.
+   the memory rules. The chat window did not. **Mostly closed.** Typed chat and
+   the spoken session now run on the same agent and reach the same application
+   tools through one MCP channel, and both read the same memory — what the user
+   said out loud on Monday is known when they type on Tuesday. What is still
+   voice-only is the spoken persona itself, which is correct, and the claim gate
+   for hosted CLI agents, which needs the stdio bridge below.
 3. **Nothing is measured.** No turn counts, no prompt sizes, no latency figures
-   against a small local model. "Fast" is currently an aspiration.
+   against a small local model. "Fast" is currently an aspiration. **Partly
+   closed.** `docs/specs/2026-08-08-one-harness-measurements.md` has the channel
+   cost (median 3.254 ms) and the turn cost (8,912 prompt tokens, 3–5 s to first
+   token) measured against `gemma-4-e4b` on this machine. Time to first _audio_
+   is still not measured, and no latency claim should be made until it is.
 4. **Setup still asks too much.** The logic to detect agents and gateways
    landed today; the one-click panel it feeds does not exist.
 5. **No self-improvement loop.** The memory is written when asked. Nothing
-   reviews a finished session and proposes what to keep.
+   reviews a finished session and proposes what to keep. **Partly closed.** A
+   write is now proposed rather than performed, and every write can be rolled
+   back; the end-of-session review that decides what is worth keeping is still
+   not there.
 
 ---
 
@@ -85,7 +97,7 @@ exists. Do it first.
 ### 4 — Sub-agents you can watch
 
 **Rewritten**, because the original asked for a system that already exists. See
-the correction above.
+the correction above. **Done** — `output/labelled_sink.rs`.
 
 > Alt-ajanlar zaten var (`foolrs-agent/src/spawn_tool.rs`, beşe kadar paralel,
 > her biri 200 tura kadar) ama `spawner.rs` onları `NullSink` ile çalıştırıyor,
@@ -103,12 +115,23 @@ the correction above.
 
 ### 6 — PDF forms, uçtan uca
 
+**Done** — `process/pdf/pdfDocument.ts`. The filled form is written to a copy
+beside the original, never over it, and a value the document never offered is
+skipped and reported rather than silently added as a new option, which is what
+`pdf-lib` does if nobody checks.
+
 > `pdfForm.ts` alan adlarını ve doğrulamayı hallediyor, `pdf-lib` kurulu.
 > Belgeyi okuyup dolu kopyayı yazan kısmı main process'te tamamla: sesli olarak
 > her alanı sorsun, cevabı yazsın, formda olmayan alana asla yazmasın, ve
 > dolmayan alan kaldıysa bunu açıkça söylesin.
 
 ### 7 — A session that reviews itself
+
+**Half done.** Snapshots and proposals exist (`common/voice/memorySnapshots.ts`,
+`memoryProposal.ts`), so a memory write can be undone and nothing is written
+without being offered first. What does not exist is the review that runs on its
+own at the end of a session — today a proposal is made when the model decides to
+make one.
 
 > Prime Agent'ın `/refine` fikrini al: bir konuşma bittiğinde ne öğrenildiğini
 > kanıtıyla önersin, kullanıcı onaylarsa hafızaya yazsın, ve **her yazma geri

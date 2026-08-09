@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { userInfo } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -94,6 +94,32 @@ describe('what ships in the download', () => {
    * tool description is not only a privacy problem — it is an instruction, and
    * a model handed one applies it confidently to a user it has never met.
    */
+  /**
+   * The half the source scan cannot see.
+   *
+   * `file!()` bakes an absolute source path into every panic message and every
+   * `#[track_caller]` site, and most of those paths point into the Cargo
+   * registry under the builder's home directory. The check above reads source
+   * text and found nothing wrong, while the binary beside it carried the
+   * builder's account name 4,684 times — shipped to every install, read by
+   * nothing.
+   *
+   * Skipped when no binary is staged. A developer who has not built the backend
+   * is not the person this is protecting against, and failing their test run
+   * for it teaches them to ignore this file.
+   */
+  it('carries no trace of whoever built it in the compiled backend', () => {
+    const binary = resolve(ROOT, 'resources/bundled-foolcore/win32-x64/foolcore.exe');
+    if (!existsSync(binary)) return;
+
+    const compiled = readFileSync(binary);
+
+    expect(
+      compiled.includes(Buffer.from(buildUser, 'latin1')),
+      `the build machine's user (${buildUser}) in foolcore.exe`
+    ).toBe(false);
+  });
+
   it('gives the model no example path to mistake for the user’s own', () => {
     const tools = readFileSync(resolve(ROOT, 'packages/desktop/src/common/realtime/index.ts'), 'utf8');
 

@@ -37,6 +37,7 @@ const {
   statSync,
   writeFileSync,
 } = require('fs');
+const { homedir, userInfo } = require('os');
 const path = require('path');
 
 const projectRoot = path.resolve(__dirname, '..');
@@ -72,6 +73,71 @@ if (process.platform === 'win32') {
   buildEnv.RUSTFLAGS = [buildEnv.RUSTFLAGS, '-C target-feature=+crt-static'].filter(Boolean).join(' ');
 }
 
+/**
+ * Keep the machine that built it out of the binary.
+ *
+ * `file!()` bakes an absolute source path into every panic message and every
+ * `#[track_caller]` site, and the paths are not only this repository's — most of
+ * them point into the Cargo registry under the builder's home directory. A
+ * release build measured before this went in carried the account name of the
+ * machine that produced it 4,684 times. Nothing reads those paths at runtime;
+ * they are shipped to tens of thousands of installs for no purpose, and they say
+ * who made the build and where they keep their files.
+ *
+ * Remapped rather than stripped, so a panic still names the file it came from —
+ * `/src/crates/fool-app/src/main.rs` locates the code exactly as well as the
+ * absolute path did, and tells nobody anything about the machine.
+ */
+const anonymisedPaths = [
+  ['--remap-path-prefix', `${homedir()}=/build`],
+  ['--remap-path-prefix', `${projectRoot}=/src`],
+]
+  .map(([flag, value]) => `${flag}=${value}`)
+  .join(' ');
+buildEnv.RUSTFLAGS = [buildEnv.RUSTFLAGS, anonymisedPaths].filter(Boolean).join(' ');
+
+/**
+ * Remove the build account's name from the staged binary.
+ *
+ * The remapping above deals with the compiler's own record of where the source
+ * was — 4,684 references down to 84 on the build that measured it. The last few
+ * do not come from source paths at all: a dependency that writes
+ * `env!("CARGO_MANIFEST_DIR")` into a string is reading an environment variable,
+ * and no compiler flag rewrites that. For a crate in the registry, that variable
+ * holds the builder's home directory.
+ *
+ * So the remainder is taken out of the bytes. The name is replaced with the same
+ * number of `x` characters, which keeps every offset in the file exactly where
+ * it was — the alternative, shortening a string inside a linked executable,
+ * would move everything after it. What is left reads
+ * `C:\Users\xxxxxx\.cargo\registry\…`: still a path, still useless to anyone,
+ * and no longer anybody's name.
+ *
+ * These strings are never opened. They exist to be printed in a panic message,
+ * and a panic that names `/build/…` locates the code just as well.
+ */
+function scrubBuildUser(binaryPath) {
+  const name = userInfo().username;
+  // A one or two character account name would match arbitrary byte sequences
+  // all over an 88 MB executable. Nothing is worth corrupting a binary over.
+  if (name.length < 3) return 0;
+
+  const contents = readFileSync(binaryPath);
+  const needle = Buffer.from(`\\${name}\\`, 'latin1');
+  const replacement = Buffer.from(`\\${'x'.repeat(name.length)}\\`, 'latin1');
+
+  let found = 0;
+  let at = contents.indexOf(needle);
+  while (at !== -1) {
+    replacement.copy(contents, at);
+    found += 1;
+    at = contents.indexOf(needle, at + needle.length);
+  }
+
+  if (found > 0) writeFileSync(binaryPath, contents);
+  return found;
+}
+
 const runtimeKey = `${process.platform}-${arch}`;
 const stageDir = path.join(projectRoot, 'resources', 'bundled-foolcore', runtimeKey);
 const staged = path.join(stageDir, binaryName);
@@ -101,6 +167,11 @@ if (skipCompile) {
   copyFileSync(built, staged);
   console.log(`[foolcore] staged ${staged} (${(statSync(staged).size / 1048576).toFixed(1)} MB)`);
 }
+
+// Both paths, not only the one that compiled. A binary staged by some other
+// means has never been through this, and a privacy guarantee that depends on
+// which branch ran is not one.
+console.log(`[foolcore] scrubbed ${scrubBuildUser(staged)} references to the build account`);
 
 /**
  * Find a `managed-resources` tree to stage.
