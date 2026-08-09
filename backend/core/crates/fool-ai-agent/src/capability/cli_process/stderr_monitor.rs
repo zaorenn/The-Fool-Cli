@@ -81,6 +81,21 @@ pub(super) fn force_kill(pid: u32, process_group_id: Option<u32>) -> Result<(), 
                 debug!(pid, "Process already exited before taskkill");
                 Ok(())
             }
+            Ok(output) if !process_exists(pid) => {
+                // `taskkill` said something this does not recognise, but the
+                // process is gone, which is the whole of what was wanted.
+                //
+                // Reached often in practice: a child that exits between the
+                // decision to kill it and the kill itself makes `taskkill`
+                // answer 255 with a message about there being no such task —
+                // and that message is in the operating system's language, so no
+                // amount of matching on English text will catch it. Asking
+                // whether the process still exists is the only check that
+                // survives being run in Turkish.
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                debug!(pid, %stderr, "taskkill complained, but the process is gone");
+                Ok(())
+            }
             Ok(output) => {
                 let stderr = String::from_utf8_lossy(&output.stderr);
                 let code = output.status.code();
@@ -103,12 +118,37 @@ pub(super) fn force_kill(pid: u32, process_group_id: Option<u32>) -> Result<(), 
     }
 }
 
+/// Whether a process with this id is still running.
+///
+/// Asked of the system rather than inferred from a message, because every
+/// message `taskkill` produces is translated and this check has to work in
+/// every language the machine might be installed in. The pid is looked for in
+/// `tasklist`'s own output: a number is a number in every locale, where
+/// "no tasks are running" is not.
+#[cfg(windows)]
+fn process_exists(pid: u32) -> bool {
+    let Ok(output) = std::process::Command::new("tasklist")
+        .args(["/NH", "/FI", &format!("PID eq {pid}")])
+        .output()
+    else {
+        // The check itself failed, so nothing can be concluded. Saying "still
+        // running" keeps the original error rather than inventing a success.
+        return true;
+    };
+
+    String::from_utf8_lossy(&output.stdout).contains(&pid.to_string())
+}
+
 #[cfg(windows)]
 fn taskkill_output_is_missing_process(output: &std::process::Output) -> bool {
     if output.status.code() == Some(128) {
         return true;
     }
 
+    // Kept as a fast path for the English case. It is deliberately *not* the
+    // only check: this exact heuristic is why the suite has a test that fails
+    // on a Turkish Windows and passes on an English one, which is the same
+    // mistake as matching `` against a language that is not ASCII.
     let stderr = String::from_utf8_lossy(&output.stderr).to_ascii_lowercase();
     stderr.contains("no running instance") || stderr.contains("not found")
 }
