@@ -11,6 +11,7 @@ mod tool;
 pub mod tool_search;
 pub mod view_image;
 pub mod web_fetch;
+pub mod web_search;
 pub mod write;
 
 pub use tool::{Tool, ToolExecutionOutput, truncate_utf8};
