@@ -6,7 +6,7 @@ use fool_mcp_server::{HostResolver, McpToolHost, ToolDescriptor};
 use fool_realtime::EventBroadcaster;
 use serde_json::Value;
 
-use crate::catalogue::Catalogue;
+use crate::catalogue::{Catalogue, CataloguePart};
 use crate::pending::PendingCalls;
 
 /// What a model is told when the application does not answer.
@@ -28,6 +28,13 @@ const NOT_OFFERED: &str = "This application has no such tool; the action was not
 /// anything about it.
 pub struct AppToolHost {
     catalogue: Arc<Catalogue>,
+    /// Which half of the catalogue this host advertises.
+    ///
+    /// Both halves *run* every tool: the split is about what is described in
+    /// the prompt, not about what is permitted. A model that reaches the
+    /// deferred half through `ToolSearch` must not then be told the tool does
+    /// not exist.
+    part: CataloguePart,
     pending: Arc<PendingCalls>,
     broadcaster: Arc<dyn EventBroadcaster>,
     conversation_id: String,
@@ -40,11 +47,22 @@ impl AppToolHost {
         broadcaster: Arc<dyn EventBroadcaster>,
         conversation_id: String,
     ) -> Self {
+        Self::for_part(catalogue, pending, broadcaster, conversation_id, CataloguePart::Core)
+    }
+
+    pub fn for_part(
+        catalogue: Arc<Catalogue>,
+        pending: Arc<PendingCalls>,
+        broadcaster: Arc<dyn EventBroadcaster>,
+        conversation_id: String,
+        part: CataloguePart,
+    ) -> Self {
         Self {
             catalogue,
             pending,
             broadcaster,
             conversation_id,
+            part,
         }
     }
 }
@@ -52,7 +70,7 @@ impl AppToolHost {
 #[async_trait]
 impl McpToolHost for AppToolHost {
     async fn list_tools(&self) -> Vec<ToolDescriptor> {
-        self.catalogue.tools()
+        self.catalogue.tools_in(self.part)
     }
 
     async fn call_tool(&self, name: &str, arguments: Value) -> Result<String, String> {
@@ -106,15 +124,23 @@ impl AppToolHosts {
 
 impl HostResolver for AppToolHosts {
     fn resolve(&self, path: &str) -> Option<Arc<dyn McpToolHost>> {
-        let conversation_id = path.strip_prefix("/mcp/")?.trim_end_matches('/');
+        let rest = path.strip_prefix("/mcp/")?.trim_end_matches('/');
+        // `/mcp/rest/<conversation>` is the deferred half; anything else is the
+        // core one, so an older client that knows only `/mcp/<conversation>`
+        // keeps working and simply sees every tool.
+        let (part, conversation_id) = match rest.strip_prefix("rest/") {
+            Some(id) => (CataloguePart::Rest, id),
+            None => (CataloguePart::Core, rest),
+        };
         if conversation_id.is_empty() {
             return None;
         }
-        Some(Arc::new(AppToolHost::new(
+        Some(Arc::new(AppToolHost::for_part(
             self.catalogue.clone(),
             self.pending.clone(),
             self.broadcaster.clone(),
             conversation_id.to_owned(),
+            part,
         )))
     }
 }

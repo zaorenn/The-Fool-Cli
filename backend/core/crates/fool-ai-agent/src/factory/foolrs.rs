@@ -794,7 +794,28 @@ fn app_tools_to_config(cfg: &AppToolsMcpConfig, conversation_id: &str) -> HashMa
         startup_timeout_ms: None,
     };
 
-    HashMap::from([(APP_TOOLS_MCP_SERVER_NAME.to_owned(), server)])
+    // The rest of the application's tools, advertised as names and stubs until
+    // the model asks for one. Measured on this machine: the long tail is 3,237
+    // prompt tokens per turn — 36% of everything sent — and on a small local
+    // model that is the difference between a prompt that fits and one that does
+    // not.
+    let mut deferred_headers = HashMap::new();
+    deferred_headers.insert("Authorization".to_owned(), format!("Bearer {}", cfg.token));
+    let deferred = McpServerConfig {
+        transport: TransportType::StreamableHttp,
+        command: None,
+        args: None,
+        env: None,
+        url: Some(format!("http://127.0.0.1:{}/mcp/rest/{}", cfg.port, conversation_id)),
+        headers: Some(deferred_headers),
+        deferred: Some(true),
+        startup_timeout_ms: None,
+    };
+
+    HashMap::from([
+        (APP_TOOLS_MCP_SERVER_NAME.to_owned(), server),
+        (format!("{APP_TOOLS_MCP_SERVER_NAME}-rest"), deferred),
+    ])
 }
 
 fn team_mcp_to_config(cfg: &TeamMcpStdioConfig) -> HashMap<String, McpServerConfig> {

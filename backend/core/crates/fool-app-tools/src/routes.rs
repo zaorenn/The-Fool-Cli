@@ -20,6 +20,10 @@ pub struct AppToolsState {
 #[derive(Deserialize)]
 pub struct CatalogueBody {
     pub tools: Vec<ToolDescriptor>,
+    /// The few that stay in the prompt. Absent means "no split yet", and
+    /// everything is treated as core rather than as nothing.
+    #[serde(default)]
+    pub core: Vec<String>,
 }
 
 /// One path to say what the application can do, one to answer a call.
@@ -35,6 +39,7 @@ pub fn router(state: AppToolsState) -> Router {
 
 async fn register_catalogue(State(state): State<AppToolsState>, Json(body): Json<CatalogueBody>) {
     state.catalogue.replace(body.tools);
+    state.catalogue.set_core(body.core);
 }
 
 async fn receive_result(State(state): State<AppToolsState>, Json(result): Json<AppToolResult>) {

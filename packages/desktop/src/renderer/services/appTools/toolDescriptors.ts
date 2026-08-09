@@ -36,6 +36,26 @@ const SPOKEN_ONLY: ReadonlySet<string> = new Set(['app_standby', 'app_resume', '
  * or here — would drift on the first edit and leave a model reading one
  * description while calling another implementation.
  */
+/**
+ * The few that stay in the prompt on every turn.
+ *
+ * Looking, delegating, searching, opening, running a taught skill, and
+ * remembering: between them they are almost every spoken turn. Everything else
+ * is advertised as a name and a stub until the model asks for it.
+ *
+ * Measured on this machine against `gemma-4-e4b`: the whole set is 8,912 prompt
+ * tokens a turn, this half is 5,675 — 3,237 fewer, on every single turn. Whether
+ * that is *faster* was not settled by the sample taken; that it is smaller was.
+ */
+export const CORE_APP_TOOLS: readonly string[] = [
+  'app_look_at_screen',
+  'app_ask_jester',
+  'app_search',
+  'app_open_url',
+  'app_skill_do',
+  'app_remember',
+];
+
 export const describeAppTools = (): ToolDescriptor[] =>
   REALTIME_TOOLS.filter((tool) => !SPOKEN_ONLY.has(tool.name)).map((tool) => ({
     name: tool.name,

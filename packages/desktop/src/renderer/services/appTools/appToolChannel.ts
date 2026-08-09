@@ -9,7 +9,7 @@ import { ipcBridge } from '@/common';
 import { judge } from '@renderer/services/permissions/permissionStore';
 import { runVoiceTool } from '@renderer/pages/voice/runtime/toolRunner';
 import type { ToolHost } from '@renderer/pages/voice/runtime/types';
-import { describeAppTools } from './toolDescriptors';
+import { CORE_APP_TOOLS, describeAppTools } from './toolDescriptors';
 
 /** An agent asking the application to do something only it can do. */
 type AppToolRequest = {
@@ -94,7 +94,7 @@ const succeeded = (result: Record<string, unknown>): boolean => result.ok !== fa
  */
 export const startAppToolChannel = (): (() => void) => {
   const register = (): void => {
-    void ipcBridge.appTools.catalogue.invoke({ tools: describeAppTools() });
+    void ipcBridge.appTools.catalogue.invoke({ tools: describeAppTools(), core: [...CORE_APP_TOOLS] });
   };
 
   register();

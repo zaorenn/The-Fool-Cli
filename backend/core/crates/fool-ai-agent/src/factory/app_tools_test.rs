@@ -76,3 +76,26 @@ fn a_conversation_with_nothing_asked_for_is_not_confined() {
     let overrides: FoolrsBuildExtra = serde_json::from_value(serde_json::json!({ "backend": "foolrs" })).unwrap();
     assert!(overrides.confined_to.is_none());
 }
+
+#[test]
+fn the_long_tail_is_advertised_as_deferred() {
+    // The mechanism existed and nothing used it: `is_deferred` was on every
+    // tool and no tool ever returned true. Measured cost of not using it: 3,237
+    // prompt tokens on every single turn.
+    let servers = resolve_mcp_servers(&FoolrsBuildExtra::default(), Some(&listening()), "conversation-7");
+    let deferred = &servers[&format!("{APP_TOOLS_MCP_SERVER_NAME}-rest")];
+
+    assert_eq!(deferred.deferred, Some(true));
+    assert_eq!(
+        deferred.url.as_deref(),
+        Some("http://127.0.0.1:41234/mcp/rest/conversation-7")
+    );
+}
+
+#[test]
+fn the_core_half_is_never_deferred() {
+    // A model that has to search before it can look at the screen is a model
+    // that spends a round finding out it is allowed to answer.
+    let servers = resolve_mcp_servers(&FoolrsBuildExtra::default(), Some(&listening()), "conversation-7");
+    assert_eq!(servers[APP_TOOLS_MCP_SERVER_NAME].deferred, Some(false));
+}

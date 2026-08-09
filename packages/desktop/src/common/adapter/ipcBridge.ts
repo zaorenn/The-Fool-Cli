@@ -622,7 +622,21 @@ export const appTools = {
     () => '/api/app-tools/result',
     (p) => p
   ),
-  catalogue: httpPost<void, { tools: { name: string; description: string; inputSchema: Record<string, unknown> }[] }>(
+  catalogue: httpPost<
+    void,
+    {
+      tools: { name: string; description: string; inputSchema: Record<string, unknown> }[];
+      /**
+       * The few that stay in the prompt on every turn.
+       *
+       * The rest are advertised through a deferred server — name and stub until
+       * the model asks for one. Absent means no split, and everything is
+       * treated as core: an application that quietly advertised nothing would
+       * be one that can suddenly do nothing.
+       */
+      core?: string[];
+    }
+  >(
     () => '/api/app-tools/catalogue',
     (p) => p
   ),
