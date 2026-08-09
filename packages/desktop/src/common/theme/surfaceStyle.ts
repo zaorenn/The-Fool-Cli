@@ -51,6 +51,15 @@ export type MaterialSpec = {
  * "clear" is choosing between two of somebody else's opinions.
  */
 export type MaterialTokens = {
+  /**
+   * How round a corner is, in pixels.
+   *
+   * A material rather than a layout decision, however much it looks like one:
+   * brutal with rounded corners is not brutal, and clay with square ones is not
+   * clay. The layout's own radius still governs an application wearing no
+   * material at all.
+   */
+  radius: number;
   /** Thickness of the line around a surface, in pixels. */
   edge: number;
   /** How far a surface stands off the ground. Feeds every shadow. */
@@ -90,6 +99,7 @@ export type MaterialTokens = {
 export type MaterialTokenKey = keyof MaterialTokens;
 
 export const MATERIAL_SPECS: Record<MaterialTokenKey, MaterialSpec> = {
+  radius: { min: 0, max: 36, step: 1, fallback: 12 },
   edge: { min: 0, max: 4, step: 1, fallback: 0 },
   depth: { min: 0, max: 30, step: 1, fallback: 12 },
   spread: { min: 0.3, max: 2.2, step: 0.1, fallback: 1 },
@@ -147,7 +157,7 @@ export const SURFACE_STYLES: Record<SurfaceStyleId, SurfaceStyle> = {
     ground: [93, 12],
     groundTint: 0.16,
     wash: 88,
-    tokens: material({ depth: 12, inner: 0.6, lift: 6, press: 1 }),
+    tokens: material({ radius: 20, depth: 12, inner: 0.6, lift: 6, press: 1 }),
   },
   // A pane needs a world behind it, so this style paints one.
   glass: {
@@ -156,6 +166,7 @@ export const SURFACE_STYLES: Record<SurfaceStyleId, SurfaceStyle> = {
     groundTint: 0.2,
     wash: 66,
     tokens: material({
+      radius: 18,
       depth: 10,
       spread: 1.2,
       inner: 0.4,
@@ -176,6 +187,7 @@ export const SURFACE_STYLES: Record<SurfaceStyleId, SurfaceStyle> = {
     groundTint: 0.24,
     wash: 64,
     tokens: material({
+      radius: 26,
       depth: 14,
       spread: 1.3,
       inner: 0.9,
@@ -198,6 +210,7 @@ export const SURFACE_STYLES: Record<SurfaceStyleId, SurfaceStyle> = {
     groundTint: 0.45,
     wash: 86,
     tokens: material({
+      radius: 30,
       depth: 16,
       inner: 1,
       weight: 780,
@@ -217,6 +230,7 @@ export const SURFACE_STYLES: Record<SurfaceStyleId, SurfaceStyle> = {
     groundTint: 0.3,
     wash: 60,
     tokens: material({
+      radius: 22,
       depth: 12,
       spread: 1.4,
       inner: 0.3,
@@ -238,6 +252,7 @@ export const SURFACE_STYLES: Record<SurfaceStyleId, SurfaceStyle> = {
     groundTint: 0.5,
     wash: 90,
     tokens: material({
+      radius: 0,
       edge: 1,
       depth: 14,
       inner: 0,
@@ -257,6 +272,7 @@ export const SURFACE_STYLES: Record<SurfaceStyleId, SurfaceStyle> = {
     groundTint: 0.08,
     wash: 94,
     tokens: material({
+      radius: 8,
       depth: 0,
       inner: 0,
       weight: 640,

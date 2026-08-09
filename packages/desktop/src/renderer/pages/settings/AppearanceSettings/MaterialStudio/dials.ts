@@ -12,12 +12,11 @@
  * the material and this is a fact about the panel — the spoken tool moves the
  * same dials and has no groups, no order and no `°`.
  *
- * Seven groups, twenty-five dials, and every number has exactly one control in
- * the application. Corners, air, text size, speed and surface contrast are not
- * here: they belong to the layout section directly below this one and were
- * built first. Two sliders writing one value is how a setting ends up with two
- * answers, so the groups below are the material's own, and the shape's stay
- * where they were.
+ * Seven groups, and every number the material has appears exactly once. Air,
+ * text size and speed are not here: they belong to the layout section directly
+ * below this one and were built first. The corner is, though — brutal with
+ * rounded corners is not brutal, so it had to become part of the material
+ * rather than a shape laid over it.
  */
 
 import {
@@ -67,6 +66,7 @@ const FORMATS: Record<DialKey, DialFormat> = {
   accentSaturation: 'percent',
   accentLightness: 'percent',
   tint: 'ratio',
+  radius: 'pixels',
   edge: 'pixels',
   depth: 'number',
   spread: 'times',
@@ -126,7 +126,7 @@ export type DialGroup = {
  */
 export const DIAL_GROUPS: readonly DialGroup[] = [
   { id: 'colour', dials: ['accentHue', 'accentSaturation', 'accentLightness', 'tint'] },
-  { id: 'form', dials: ['edge'] },
+  { id: 'form', dials: ['radius', 'edge'] },
   { id: 'depth', dials: ['depth', 'spread', 'inner'] },
   { id: 'glass', dials: ['blur', 'alpha', 'saturation', 'sheen'] },
   { id: 'type', dials: ['weight', 'tracking', 'leading'] },

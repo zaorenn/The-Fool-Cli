@@ -16,6 +16,8 @@
  */
 
 html[data-fool-style] {
+  /* A fallback only. The worn material publishes its own corner into this name
+     with `!important`, which is what lets brutal be square and clay be round. */
   --fool-radius-material: var(--fool-radius, 12px);
   --fool-ease-material: cubic-bezier(
     calc(0.2 - var(--fool-bounce, 0) * 0.1),

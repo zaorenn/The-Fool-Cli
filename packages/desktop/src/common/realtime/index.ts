@@ -142,6 +142,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
         dial: {
           type: 'string',
           enum: [
+            'radius',
             'depth',
             'blur',
             'alpha',
@@ -161,7 +162,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
             'tint',
           ],
           description:
-            "For 'dial'. depth is shadow, alpha is see-through, lift is how far it rises when pointed at, ambient is background movement, gap is space between things, weight is heading thickness.",
+            "For 'dial'. radius is how round the corners are, depth is shadow, alpha is see-through, lift is how far it rises when pointed at, ambient is background movement, gap is space between things, weight is heading thickness.",
         },
         direction: {
           type: 'string',

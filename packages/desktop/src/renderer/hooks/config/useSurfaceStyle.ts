@@ -24,7 +24,8 @@ import {
   surfaceChoiceVariables,
   type SurfaceStyleChoice,
 } from '@/common/theme/surfaceChoice';
-import { SURFACE_STYLES, isDark, type MaterialTokens, type SurfaceStyleId } from '@/common/theme/surfaceStyle';
+import { materialStylesheet } from '@/common/theme/materialStylesheet';
+import { SURFACE_STYLES, type MaterialTokens, type SurfaceStyleId } from '@/common/theme/surfaceStyle';
 
 export const SURFACE_STYLE_CONFIG_KEY = 'ui.surfaceStyle' as const;
 
@@ -35,20 +36,47 @@ export const peekSurfaceChoice = (): SurfaceStyleChoice =>
 /** Whether the room is dark, as the document already knows it. */
 const prefersDark = (): boolean => document.documentElement.getAttribute('data-theme') === 'dark';
 
+/** The stylesheet the material writes into the application's own tokens. */
+const MATERIAL_STYLE_ID = 'fool-material';
+
+/**
+ * Puts the generated sheet last in the head.
+ *
+ * Re-appended on every write rather than edited in place, because a theme
+ * preset's stylesheet is re-appended when the theme changes and everything here
+ * is `!important` — between two important declarations the later one wins, so
+ * "last" is the whole mechanism.
+ */
+const publish = (css: string): void => {
+  const existing = document.getElementById(MATERIAL_STYLE_ID) as HTMLStyleElement | null;
+  const element = existing ?? document.createElement('style');
+  element.id = MATERIAL_STYLE_ID;
+  element.textContent = css;
+  document.head.appendChild(element);
+};
+
 /**
  * Writes a choice onto a document.
  *
- * Exported so the settings panel can preview onto its own element without the
- * rest of the application changing under the user while they are deciding.
+ * Two halves, and the second is the one that matters. The inline variables are
+ * what `materials.css` reads; the stylesheet is what the rest of the
+ * application reads, because almost nothing on screen is an element somebody
+ * can add a class to — it is Arco's components and a hundred utility classes
+ * pointing at the app's own tokens. Writing only the first half is how this
+ * layer spent its first version changing six boxes and nothing else.
+ *
+ * A `target` other than the document gets the variables alone: an element
+ * preview cannot own a document-wide stylesheet, and does not need one.
  */
 export const applySurfaceChoice = (
   choice: SurfaceStyleChoice,
   target: HTMLElement = document.documentElement
 ): void => {
-  const dark = isDark(choice.style, prefersDark());
+  const dark = prefersDark();
   for (const [name, value] of surfaceChoiceVariables(choice, dark)) {
     target.style.setProperty(name, value);
   }
+  if (target === document.documentElement) publish(materialStylesheet(choice, dark));
   // The attribute is what `materials.css` selects on. Set last, so a page never
   // renders a material against the variables of the one before it.
   target.setAttribute('data-fool-style', choice.style);
@@ -59,6 +87,7 @@ export const clearSurfaceChoice = (target: HTMLElement = document.documentElemen
   for (const [name] of surfaceChoiceVariables(defaultSurfaceChoice(), false)) {
     target.style.removeProperty(name);
   }
+  if (target === document.documentElement) document.getElementById(MATERIAL_STYLE_ID)?.remove();
   target.removeAttribute('data-fool-style');
 };
 
