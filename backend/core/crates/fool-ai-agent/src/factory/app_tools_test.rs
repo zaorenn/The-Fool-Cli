@@ -60,3 +60,19 @@ fn the_team_server_and_the_app_server_can_both_be_present() {
     assert!(servers.contains_key(TEAM_MCP_SERVER_NAME));
     assert!(servers.contains_key(APP_TOOLS_MCP_SERVER_NAME));
 }
+
+#[test]
+fn a_conversation_can_be_confined_by_what_the_user_asked_for() {
+    // Safe to take from the request because it can only ever narrow: the
+    // default is the real machine, which is what this product exists to act on.
+    let overrides: FoolrsBuildExtra =
+        serde_json::from_value(serde_json::json!({ "backend": "foolrs", "confined_to": "D:/project" })).unwrap();
+
+    assert_eq!(overrides.confined_to.as_deref(), Some("D:/project"));
+}
+
+#[test]
+fn a_conversation_with_nothing_asked_for_is_not_confined() {
+    let overrides: FoolrsBuildExtra = serde_json::from_value(serde_json::json!({ "backend": "foolrs" })).unwrap();
+    assert!(overrides.confined_to.is_none());
+}

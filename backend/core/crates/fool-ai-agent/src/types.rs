@@ -163,6 +163,10 @@ pub struct FoolrsResolvedConfig {
     pub runtime_env: Vec<(String, String)>,
     /// Prompt dump directory when development prompt dumps are enabled.
     pub prompt_dump_dir: Option<PathBuf>,
+    /// A directory this conversation may not write outside of, when the user
+    /// asked for one. `None` is the real machine, which is the default because
+    /// it is what this product exists to act on.
+    pub confined_to: Option<String>,
 }
 
 #[cfg(test)]

@@ -244,9 +244,19 @@ impl FoolrsAgentManager {
                 .join("checkpoints"),
         )));
 
+        // Confined only when the user asked for it. The default is the real
+        // machine, because that is what this product is for — a sandbox nobody
+        // wants is a sandbox everybody turns off, learning to ignore the dialog
+        // on the way.
+        let confinement = match config_extra.confined_to.as_deref().map(str::trim) {
+            Some(root) if !root.is_empty() => foolrs_tools::confinement::Confinement::within(root),
+            _ => foolrs_tools::confinement::Confinement::None,
+        };
+
         let mut bootstrap = AgentBootstrap::new(config, &workspace, sink)
             .runtime_env(runtime_env)
             .checkpoints(checkpoints.clone())
+            .confined_to(confinement)
             .skill_dirs(config_extra.skill_dirs.clone());
         if let Some(session) = resume_session {
             info!(

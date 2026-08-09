@@ -575,6 +575,7 @@ mod foolrs_config_option_tests {
             bedrock_config: None,
             runtime_env: Vec::new(),
             prompt_dump_dir: None,
+            confined_to: None,
         }
     }
 

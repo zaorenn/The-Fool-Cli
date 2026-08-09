@@ -42,6 +42,7 @@ fn make_test_config() -> FoolrsResolvedConfig {
         bedrock_config: None,
         runtime_env: Vec::new(),
         prompt_dump_dir: None,
+        confined_to: None,
     }
 }
 

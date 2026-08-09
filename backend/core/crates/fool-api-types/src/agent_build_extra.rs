@@ -94,6 +94,13 @@ pub struct FoolrsBuildExtra {
     pub session_mode: Option<String>,
     #[serde(default)]
     pub team_mcp_stdio_config: Option<TeamMcpStdioConfig>,
+    /// A directory this conversation may not write outside of.
+    ///
+    /// Chosen by the user, per conversation, and safe to take from the request
+    /// because it can only ever *narrow* what is allowed: the default is the
+    /// real machine, which is what the product is for.
+    #[serde(default)]
+    pub confined_to: Option<String>,
     #[serde(default)]
     pub mcp_server_ids: Option<Vec<String>>,
     #[serde(default)]

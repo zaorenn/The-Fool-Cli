@@ -214,6 +214,7 @@ pub(super) async fn build(
         bedrock_config,
         runtime_env: ctx.runtime_env,
         prompt_dump_dir: crate::dev_prompt_dump::dump_dir_for_data_dir(&deps.data_dir, deps.dump_prompts),
+        confined_to: overrides.confined_to.clone(),
     };
 
     if let Some(system_prompt) = config.system_prompt.as_deref()
