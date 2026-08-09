@@ -41,7 +41,9 @@ const { runSpokenTurn } = await import('@renderer/services/voice/session/spokenT
 
 /** One streamed message, as the backend broadcasts it. */
 const emit = (message: StreamMessage): void => {
-  for (const listener of [...streamListeners]) listener({ conversation_id: 'c1', position: 'left', ...message });
+  // Snapshot: a listener may unsubscribe itself while the message is delivered.
+  const listeners = [...streamListeners];
+  for (const listener of listeners) listener({ conversation_id: 'c1', position: 'left', ...message });
 };
 
 /** Lets the turn's own listeners run before the test looks at the result. */
@@ -96,7 +98,8 @@ describe('runSpokenTurn', () => {
     const turn = runSpokenTurn({ conversationId: 'c1', said: 'hello', onSentence: (s) => spoken.push(s) });
     await settle();
 
-    for (const listener of [...streamListeners]) {
+    const listeners = [...streamListeners];
+    for (const listener of listeners) {
       listener({ conversation_id: 'c1', position: 'right', type: 'content', data: 'hello.' });
     }
     emit({ type: 'finish' });
@@ -171,7 +174,8 @@ describe('runSpokenTurn and instructions set out loud', () => {
     emit({ type: 'finish' });
     await turn;
 
-    expect((sendMessage.mock.calls[0]?.[0] as { input: string }).input).toBe('hello');
+    const [[sent]] = sendMessage.mock.calls as [{ input: string }][];
+    expect(sent.input).toBe('hello');
   });
 });
 

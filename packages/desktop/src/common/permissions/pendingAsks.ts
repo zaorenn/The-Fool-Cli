@@ -99,7 +99,9 @@ export class PendingAsks {
 
   /** Everything this conversation left outstanding is refused. */
   conversationEnded(conversationId: string): void {
-    for (const [id, entry] of [...this.waiting.entries()]) {
+    // Snapshot first: settling removes the entry from the map being walked.
+    const outstanding = [...this.waiting.entries()];
+    for (const [id, entry] of outstanding) {
       if (entry.conversationId === conversationId) this.waiting.get(id)?.settle('deny');
     }
   }

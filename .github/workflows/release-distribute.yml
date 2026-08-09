@@ -15,6 +15,10 @@ name: Distribute Release Assets
 #   - AWS_ROLE_ARN
 #   - AWS_S3_BUCKET
 # Do NOT hardcode these values in this file.
+#
+# A fork without a mirror bucket has none of those secrets. The job then reports
+# that it is not configured and stops, rather than failing every release with a
+# red cross that means nothing.
 
 on:
   release:
@@ -42,7 +46,22 @@ jobs:
     # Skip prereleases: manual dispatch always runs, automatic event runs only when not a prerelease.
     if: github.event_name == 'workflow_dispatch' || github.event.release.prerelease == false
     steps:
+      - name: Check the mirror is configured
+        id: mirror
+        env:
+          AWS_REGION_SECRET: ${{ secrets.AWS_REGION }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN }}
+          AWS_S3_BUCKET_SECRET: ${{ secrets.AWS_S3_BUCKET }}
+        run: |
+          if [ -n "$AWS_REGION_SECRET" ] && [ -n "$AWS_ROLE_ARN_SECRET" ] && [ -n "$AWS_S3_BUCKET_SECRET" ]; then
+            echo "configured=true" >> $GITHUB_OUTPUT
+          else
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "No mirror bucket is configured (AWS_REGION / AWS_ROLE_ARN / AWS_S3_BUCKET). Nothing to distribute." >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Extract version from tag
+        if: steps.mirror.outputs.configured == 'true'
         id: version
         env:
           EVENT_TAG: ${{ github.event.release.tag_name }}
@@ -59,12 +78,14 @@ jobs:
           echo "Tag: $TAG / Version: $VERSION"
 
       - name: Configure AWS credentials (OIDC)
+        if: steps.mirror.outputs.configured == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Guard against same-version overwrite
+        if: steps.mirror.outputs.configured == 'true'
         env:
           S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
           VERSION: ${{ steps.version.outputs.version }}
@@ -87,6 +108,7 @@ jobs:
           fi
 
       - name: Download release assets from GitHub
+        if: steps.mirror.outputs.configured == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -106,6 +128,7 @@ jobs:
           ls -la dist
 
       - name: Validate updater metadata
+        if: steps.mirror.outputs.configured == 'true'
         id: metadata
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -143,6 +166,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Upload assets
+        if: steps.mirror.outputs.configured == 'true'
         env:
           S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
           VERSION: ${{ steps.version.outputs.version }}
@@ -154,6 +178,7 @@ jobs:
           echo "Uploaded release ${VERSION}"
 
       - name: Upload updater metadata
+        if: steps.mirror.outputs.configured == 'true'
         env:
           S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
         run: |
@@ -168,6 +193,7 @@ jobs:
           echo "Uploaded updater metadata"
 
       - name: Summary
+        if: steps.mirror.outputs.configured == 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
           TAG: ${{ steps.version.outputs.tag }}
