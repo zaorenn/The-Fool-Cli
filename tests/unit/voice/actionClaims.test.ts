@@ -226,3 +226,57 @@ describe('claims the detector used to miss', () => {
     expect(claimsCompletedAction('Bileti alayım mı?')).toBe(false);
   });
 });
+
+/**
+ * The grammatical rule, rather than another verb in the list.
+ *
+ * The list grew a word at a time and every addition arrived the same way:
+ * somebody was lied to, the word was noted, the word was added. There are as
+ * many verbs as there are things a person can ask for, so the list was always
+ * one conversation behind. Turkish marks a finished first-person action in the
+ * word itself, so the suffix is the rule and the exemptions are the closed set.
+ */
+describe('a finished action, by its grammar', () => {
+  it('catches verbs nobody thought to write down', () => {
+    for (const said of [
+      'Faturayı ödedim.',
+      'Toplantıyı iptal ettim.',
+      'Dosyayı yükledim.',
+      'Işıkları söndürdüm.',
+      'Numarayı çevirdim.',
+      'Bilgisayarı yeniden başlattım.',
+      'Randevuyu erteledim.',
+    ]) {
+      expect(claimsCompletedAction(said), said).toBe(true);
+    }
+  });
+
+  it('leaves a denial alone', () => {
+    // "yapmadım" is the opposite of a claim, and a rule that reads the suffix
+    // without the negation in front of it calls an honest answer a lie.
+    for (const said of ['Hayır, açmadım.', 'Onu göndermedim.', 'Hiçbir şey yapmadım.', 'Bulamadım.']) {
+      expect(claimsCompletedAction(said), said).toBe(false);
+    }
+  });
+
+  it('leaves something that was under way alone', () => {
+    for (const said of ['Bakıyordum ama bulamadım henüz.', 'Onu deniyordum.']) {
+      expect(claimsCompletedAction(said), said).toBe(false);
+    }
+  });
+
+  it('leaves the speaker talking about themselves alone', () => {
+    // Understanding, hearing and seeing are not changes to the world, and this
+    // is the list that is allowed to exist because it does not grow.
+    for (const said of ['Anladım.', 'Tamam, aldım.', 'Seni duydum.', 'Ne demek istediğini anladım.']) {
+      expect(claimsCompletedAction(said), said).toBe(false);
+    }
+  });
+
+  it('applies the same rule to English regular verbs', () => {
+    expect(claimsCompletedAction('I cancelled the meeting.')).toBe(true);
+    expect(claimsCompletedAction('I uploaded the file.')).toBe(true);
+    expect(claimsCompletedAction('I wanted to check first.')).toBe(false);
+    expect(claimsCompletedAction('I tried but it did not work.')).toBe(false);
+  });
+});

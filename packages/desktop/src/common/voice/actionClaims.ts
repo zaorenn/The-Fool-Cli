@@ -145,13 +145,110 @@ const UNDER_WAY: readonly RegExp[] = [
 const ASKING = /[?？]\s*$/;
 
 /**
+ * The grammar, instead of the vocabulary.
+ *
+ * The list above grew a verb at a time, and every addition arrived the same
+ * way: somebody was lied to, the word was noted, the word was added. That does
+ * not converge. There are as many verbs as there are things a person might ask
+ * for, and the list is always one conversation behind.
+ *
+ * Turkish marks this in the word itself. First person singular past is
+ * `-dım/-dim/-dum/-düm` and its voiceless pair `-tım/-tim/-tum/-tüm`, which fold
+ * to four endings — and *every* claim of a finished action wears one. So the
+ * rule is the suffix, and what is enumerated instead is the small, closed set
+ * that does not grow: the verbs that describe the speaker's own mind rather than
+ * the world.
+ *
+ * Two forms are excluded by their shape rather than by a list. A negated past
+ * (`yapmadım`, "I did not do it") is the opposite of a claim, and a past
+ * continuous (`yapıyordum`, "I was doing it") is not finished.
+ */
+const FIRST_PERSON_PAST = /(dim|dum|tim|tum)$/;
+const NEGATED_PAST = /(ma|me)(dim|dum)$/;
+const WAS_DOING = /yordu/;
+
+/**
+ * Past tenses that report a state of mind, not a change to the world.
+ *
+ * This is the list that is allowed to exist, because it is finite: a person has
+ * a fixed handful of ways to say they understood, heard, saw or thought, and no
+ * new feature will add one. Everything outside it is treated as a claim about
+ * the world and has to be backed by a tool.
+ *
+ * `aldim` is here for a reason worth keeping: it is also how somebody says
+ * "got it". The costly reading — a ticket, an order, a purchase — is caught by
+ * its own pattern above, where the object makes the meaning unambiguous.
+ */
+const ABOUT_THE_SPEAKER: ReadonlySet<string> = new Set([
+  'anladim',
+  'aldim',
+  'duydum',
+  'gordum',
+  'dusundum',
+  'sandim',
+  'zannettim',
+  'istedim',
+  'unuttum',
+  'hissettim',
+  'begendim',
+  'sevdim',
+  'bildim',
+  'tanidim',
+  'ogrendim',
+  'dedim',
+  'soyledim',
+  'sordum',
+  'baktim',
+]);
+
+/** English regular past, with the same exemption for verbs about the speaker. */
+const ENGLISH_PAST = /(?<!\p{L})i\s+(?:just\s+)?(\p{L}+ed)(?!\p{L})/iu;
+const ENGLISH_ABOUT_THE_SPEAKER: ReadonlySet<string> = new Set([
+  'wanted',
+  'wondered',
+  'remembered',
+  'noticed',
+  'realized',
+  'realised',
+  'assumed',
+  'guessed',
+  'liked',
+  'needed',
+  'tried',
+  'looked',
+  'asked',
+  'hoped',
+  'expected',
+  'understood',
+]);
+
+/** Whether any word in the reply is a first-person past claim about the world. */
+const claimsByGrammar = (folded: string): boolean => {
+  // Folded first, then lowered, in that order. `fold` already sends `İ` and `ı`
+  // to `i`, so what is left for `toLowerCase` is ordinary ASCII and it cannot
+  // reach for the Turkish dotless-i rule that would otherwise split a word from
+  // its own capitalised form.
+  const turkish = folded.split(/[^\p{L}]+/u).some((raw) => {
+    const word = raw.toLowerCase();
+    if (word.length < 5 || !FIRST_PERSON_PAST.test(word)) return false;
+    if (NEGATED_PAST.test(word) || WAS_DOING.test(word)) return false;
+    return !ABOUT_THE_SPEAKER.has(word);
+  });
+  if (turkish) return true;
+
+  const english = ENGLISH_PAST.exec(folded);
+  return english !== null && !ENGLISH_ABOUT_THE_SPEAKER.has(english[1].toLowerCase());
+};
+
+/**
  * Whether this reply asserts that something has already been done.
  *
- * Deliberately conservative: anything ambiguous is treated as not a claim. The
- * cost of a miss is the failure this file is named after, which is bad; the
- * cost of a false positive is refusing a true sentence and calling the
- * assistant a liar in front of the user, which is worse and much harder to
- * explain.
+ * Read together with its caller: this is consulted only for a turn in which no
+ * tool came back, so the question is never "is this sentence true" but "could
+ * this sentence possibly be true, given that nothing ran". That is what lets
+ * the grammatical rule be as broad as it is — the cost of catching one sentence
+ * too many is a single extra round in a turn that had nothing to show for
+ * itself anyway.
  */
 export const claimsCompletedAction = (reply: string): boolean => {
   const text = reply.trim();
@@ -160,7 +257,8 @@ export const claimsCompletedAction = (reply: string): boolean => {
 
   const folded = fold(text);
   if (UNDER_WAY.some((pattern) => pattern.test(folded))) return false;
-  return COMPLETED.some((pattern) => pattern.test(folded));
+  if (COMPLETED.some((pattern) => pattern.test(folded))) return true;
+  return claimsByGrammar(folded);
 };
 
 /**
