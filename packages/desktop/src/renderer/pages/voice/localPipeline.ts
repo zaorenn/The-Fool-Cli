@@ -79,8 +79,20 @@ export type LocalReadiness =
 
 export const LOCAL_LLM_DEFAULT_ENDPOINT = 'http://127.0.0.1:1234/v1';
 
-/** Enough of the conversation to stay coherent, short enough to stay fast. */
-const MAX_HISTORY_TURNS = 12;
+/**
+ * How much of the conversation is carried verbatim.
+ *
+ * This was twelve, and the number was measured in *messages* rather than
+ * exchanges — a turn that calls a tool spends three of them, so a conversation
+ * that used its tools forgot everything past roughly the fourth question. What
+ * the user experienced was an assistant that lost the thread of its own work.
+ *
+ * Sixty is not a guess about the model's context: it is what a spoken
+ * conversation actually is. People do not say long paragraphs out loud, and
+ * sixty messages of speech is a long conversation and a small number of tokens.
+ * The one before it is not dropped either — see {@link LocalVoicePipeline.trimHistory}.
+ */
+const MAX_HISTORY_TURNS = 60;
 /** The rate the transcriber accepts; {@link VoicePcm16Wav} admits no other. */
 const CAPTURE_SAMPLE_RATE = 16000;
 const WAV_HEADER_BYTES = 44;
@@ -1669,7 +1681,29 @@ export class LocalVoicePipeline {
     while (kept.length > 0 && (kept[0].role === 'tool' || (kept[0].role === 'assistant' && kept[0].tool_calls))) {
       kept = kept.slice(1);
     }
-    this.history = [system, ...kept];
+
+    /**
+     * What was cut, in a sentence, rather than gone.
+     *
+     * Dropping the middle of a conversation outright is why somebody has to say
+     * "the file I mentioned earlier" twice. The summary is not a transcript and
+     * is not meant to be: it is enough for the model to know a subject was
+     * already discussed, and to ask rather than assume.
+     */
+    const dropped = rest.slice(0, rest.length - kept.length);
+    const summary = describeSpokenTurns(
+      dropped
+        .filter((message) => message.role === 'user' || message.role === 'assistant')
+        .filter((message) => typeof message.content === 'string' && message.content.trim().length > 0)
+        .map(
+          (message): SpokenTurn => ({
+            role: message.role === 'user' ? 'user' : 'assistant',
+            text: String(message.content),
+          })
+        )
+    );
+
+    this.history = summary ? [system, { role: 'system', content: summary }, ...kept] : [system, ...kept];
   }
 }
 
