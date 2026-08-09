@@ -1318,6 +1318,7 @@ dependencies = [
  "futures",
  "glob",
  "lru",
+ "reqwest",
  "serde",
  "serde_json",
  "tempfile",

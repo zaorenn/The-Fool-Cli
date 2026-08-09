@@ -23,6 +23,7 @@ use foolrs_tools::read::ReadTool;
 use foolrs_tools::registry::ToolRegistry;
 use foolrs_tools::tool_search::ToolSearchTool;
 use foolrs_tools::view_image::ViewImageTool;
+use foolrs_tools::web_fetch::WebFetchTool;
 use foolrs_tools::write::WriteTool;
 use tracing::info;
 
@@ -257,6 +258,9 @@ impl AgentBootstrap {
         registry.register(Box::new(GrepTool::new(workspace_path.to_path_buf())));
         registry.register(Box::new(GlobTool::new(workspace_path.to_path_buf())));
         registry.register(Box::new(ViewImageTool::new()));
+        // Reading a public page. Nothing inside this machine or this network —
+        // see `web_fetch::check_url`, which refuses before a request is made.
+        registry.register(Box::new(WebFetchTool::new()));
 
         registry
     }
