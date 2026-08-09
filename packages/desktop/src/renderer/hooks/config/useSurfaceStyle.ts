@@ -25,6 +25,11 @@ import {
   type SurfaceStyleChoice,
 } from '@/common/theme/surfaceChoice';
 import { materialStylesheet } from '@/common/theme/materialStylesheet';
+import {
+  SURFACE_BACKGROUND_CONFIG_KEY,
+  sanitizeSurfaceBackground,
+  type SurfaceBackground,
+} from '@/common/theme/surfaceBackground';
 import { SURFACE_STYLES, type MaterialTokens, type SurfaceStyleId } from '@/common/theme/surfaceStyle';
 
 export const SURFACE_STYLE_CONFIG_KEY = 'ui.surfaceStyle' as const;
@@ -32,6 +37,10 @@ export const SURFACE_STYLE_CONFIG_KEY = 'ui.surfaceStyle' as const;
 /** What is stored right now, repaired. */
 export const peekSurfaceChoice = (): SurfaceStyleChoice =>
   sanitizeSurfaceChoice(configService.get(SURFACE_STYLE_CONFIG_KEY));
+
+/** The picture behind it, repaired. */
+export const peekSurfaceBackground = (): SurfaceBackground =>
+  sanitizeSurfaceBackground(configService.get(SURFACE_BACKGROUND_CONFIG_KEY));
 
 /** Whether the room is dark, as the document already knows it. */
 const prefersDark = (): boolean => document.documentElement.getAttribute('data-theme') === 'dark';
@@ -76,7 +85,7 @@ export const applySurfaceChoice = (
   for (const [name, value] of surfaceChoiceVariables(choice, dark)) {
     target.style.setProperty(name, value);
   }
-  if (target === document.documentElement) publish(materialStylesheet(choice, dark));
+  if (target === document.documentElement) publish(materialStylesheet(choice, dark, peekSurfaceBackground()));
   // The attribute is what `materials.css` selects on. Set last, so a page never
   // renders a material against the variables of the one before it.
   target.setAttribute('data-fool-style', choice.style);
@@ -111,10 +120,13 @@ export const useWornSurfaceStyle = (): void => {
     const wear = (): void => applySurfaceChoice(peekSurfaceChoice());
     wear();
     const stop = configService.subscribe(SURFACE_STYLE_CONFIG_KEY, wear);
+    // The picture is stored apart from the material and changes without it.
+    const stopBackground = configService.subscribe(SURFACE_BACKGROUND_CONFIG_KEY, wear);
     const observer = new MutationObserver(wear);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     return () => {
       stop();
+      stopBackground();
       observer.disconnect();
     };
   }, []);

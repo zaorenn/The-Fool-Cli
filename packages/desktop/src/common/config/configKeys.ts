@@ -6,6 +6,7 @@ import type { WorkspaceLibrary } from '@/common/config/workspaces';
 import type { Rule } from '@/common/permissions/types';
 import type { LocalSkill } from '@/common/voice/localSkills';
 import type { SurfaceStyleChoice } from '@/common/theme/surfaceChoice';
+import type { SurfaceBackground } from '@/common/theme/surfaceBackground';
 
 export type ConfigKeyMap = {
   language: string;
@@ -38,6 +39,14 @@ export type ConfigKeyMap = {
    * surface follows it without being rewritten.
    */
   'ui.surfaceStyle': SurfaceStyleChoice | undefined;
+  /**
+   * A picture behind the application, how much of it shows, and its blur.
+   *
+   * Its own key rather than a field of the material: a photograph is not a
+   * material, it survives changing one, and it is the one value here big enough
+   * that reading it should be a deliberate act rather than a side effect.
+   */
+  'ui.surfaceBackground': SurfaceBackground | undefined;
   /** Things the user taught the assistant to do by itself. */
   'voice.localSkills': LocalSkill[] | undefined;
   /**

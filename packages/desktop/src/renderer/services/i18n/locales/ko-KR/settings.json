@@ -1960,6 +1960,11 @@
     "accent": "강조 색",
     "accentHint": "고른 색에서 팔레트 전체가 만들어집니다: 강조색, 바탕, 카드, 선, 글자.",
     "accentSuggestions": "미리 준비된 색",
+    "backgroundChoose": "이미지 선택",
+    "backgroundClear": "제거",
+    "backgroundOpacity": "얼마나 보일지",
+    "backgroundBlur": "흐림",
+    "backgroundHint": "원하는 이미지, 4K까지. 저장 전에 줄이고 팔레트는 이미지에서 가져옵니다 — 색은 위에서 언제든 바꿀 수 있습니다.",
     "previewTitle": "이것이 표면입니다",
     "previewBody": "앱의 모든 화면이 이것으로 되어 있습니다.",
     "group": {

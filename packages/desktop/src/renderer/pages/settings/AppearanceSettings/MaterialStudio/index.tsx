@@ -11,6 +11,7 @@ import { isDark, type MaterialTokenKey, type SurfaceStyleId } from '@/common/the
 import type { SurfaceStyleChoice } from '@/common/theme/surfaceChoice';
 import { applySurfaceChoice, useSurfaceStyle } from '@renderer/hooks/config/useSurfaceStyle';
 import AccentPicker from './AccentPicker';
+import BackgroundPicker from './BackgroundPicker';
 import DialGroups from './DialGroups';
 import MaterialCards from './MaterialCards';
 import { accentAxisValue, accentWithAxis, isAccentAxis, type DialKey } from './dials';
@@ -100,6 +101,10 @@ const MaterialStudio: React.FC = () => {
         tint={tokens.tint}
         onChange={(accent) => void setAccent(accent)}
       />
+
+      {/* Under the colour, because it answers the same question with a picture
+          instead of a swatch — and choosing one answers the colour too. */}
+      <BackgroundPicker accent={choice.accent} onAccent={(hex) => void setAccent(hex)} />
 
       {/* Real elements wearing the real thing, for the part of the application
           that is not on screen while somebody is on this page. */}

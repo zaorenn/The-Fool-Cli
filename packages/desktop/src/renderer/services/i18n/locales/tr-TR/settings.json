@@ -1958,6 +1958,11 @@
     "accent": "Vurgu rengi",
     "accentHint": "Seçtiğin renkten uyumlu bir palet kuruluyor: vurgu, zemin, kart, çizgi ve yazı.",
     "accentSuggestions": "Hazır renkler",
+    "backgroundChoose": "Görsel seç",
+    "backgroundClear": "Kaldır",
+    "backgroundOpacity": "Ne kadar görünsün",
+    "backgroundBlur": "Bulanıklık",
+    "backgroundHint": "İstediğin görsel, 4K'ya kadar. Saklanmadan önce küçültülüyor ve palet ondan çıkarılıyor — rengi yukarıdan yine değiştirebilirsin.",
     "previewTitle": "Bu bir yüzey",
     "previewBody": "Uygulamadaki her sayfa bunlardan yapılmış.",
     "group": {

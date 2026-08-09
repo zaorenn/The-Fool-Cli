@@ -1958,6 +1958,11 @@
     "accent": "Akzentfarbe",
     "accentHint": "Aus der gewählten Farbe entsteht die ganze Palette: Akzent, Grund, Karte, Linie und Schrift.",
     "accentSuggestions": "Fertige Farben",
+    "backgroundChoose": "Bild wählen",
+    "backgroundClear": "Entfernen",
+    "backgroundOpacity": "Wie viel zu sehen ist",
+    "backgroundBlur": "Unschärfe",
+    "backgroundHint": "Jedes Bild, bis 4K. Es wird vor dem Speichern verkleinert, und die Palette kommt daraus — die Farbe oben kannst du weiterhin ändern.",
     "previewTitle": "Das ist eine Fläche",
     "previewBody": "Aus diesen besteht jede Seite der App.",
     "group": {

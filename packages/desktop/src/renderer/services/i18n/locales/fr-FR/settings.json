@@ -1958,6 +1958,11 @@
     "accent": "Couleur d’accent",
     "accentHint": "Toute une palette est construite à partir de la couleur choisie : accent, fond, carte, trait et texte.",
     "accentSuggestions": "Couleurs prêtes",
+    "backgroundChoose": "Choisir une image",
+    "backgroundClear": "Retirer",
+    "backgroundOpacity": "Ce qui transparaît",
+    "backgroundBlur": "Flou",
+    "backgroundHint": "N’importe quelle image, jusqu’à la 4K. Elle est réduite avant d’être conservée et la palette en est tirée — la couleur au-dessus reste la vôtre.",
     "previewTitle": "Ceci est une surface",
     "previewBody": "Chaque page de l’application est faite de celles-ci.",
     "group": {

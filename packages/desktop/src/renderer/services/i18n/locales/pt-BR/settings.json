@@ -1961,6 +1961,11 @@
     "accent": "Cor de destaque",
     "accentHint": "Uma paleta inteira é construída a partir da cor escolhida: destaque, fundo, cartão, linha e texto.",
     "accentSuggestions": "Cores prontas",
+    "backgroundChoose": "Escolher imagem",
+    "backgroundClear": "Remover",
+    "backgroundOpacity": "O quanto aparece",
+    "backgroundBlur": "Desfoque",
+    "backgroundHint": "Qualquer imagem, até 4K. É reduzida antes de ser guardada, e a paleta vem dela — a cor acima continua sua.",
     "previewTitle": "Isto é uma superfície",
     "previewBody": "Cada página do aplicativo é feita destas.",
     "group": {

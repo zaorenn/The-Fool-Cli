@@ -1959,6 +1959,11 @@
     "accent": "强调色",
     "accentHint": "应用会从你选的颜色推导出整套配色：强调色、底色、卡片、描边和文字。",
     "accentSuggestions": "预设颜色",
+    "backgroundChoose": "选择图片",
+    "backgroundClear": "移除",
+    "backgroundOpacity": "显示程度",
+    "backgroundBlur": "模糊",
+    "backgroundHint": "任意图片，最高 4K。保存前会先缩小，配色从图片中取得——你仍然可以在上面改颜色。",
     "previewTitle": "这是一个表面",
     "previewBody": "应用里的每个页面都由它们构成。",
     "group": {

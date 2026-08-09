@@ -1958,6 +1958,11 @@
     "accent": "Color de acento",
     "accentHint": "Del color que elijas se construye toda la paleta: acento, fondo, tarjeta, línea y texto.",
     "accentSuggestions": "Colores listos",
+    "backgroundChoose": "Elegir imagen",
+    "backgroundClear": "Quitar",
+    "backgroundOpacity": "Cuánto se ve",
+    "backgroundBlur": "Desenfoque",
+    "backgroundHint": "Cualquier imagen, hasta 4K. Se reduce antes de guardarla y la paleta sale de ella; el color de arriba sigue siendo tuyo.",
     "previewTitle": "Esto es una superficie",
     "previewBody": "Cada página de la aplicación está hecha de ellas.",
     "group": {

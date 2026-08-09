@@ -32,6 +32,7 @@
  */
 
 import { colorVariables, parseHexColor } from '@/common/config/themeOverrides';
+import { defaultSurfaceBackground, hasBackgroundImage, type SurfaceBackground } from '@/common/theme/surfaceBackground';
 import { resolveTokens, type SurfaceStyleChoice } from '@/common/theme/surfaceChoice';
 import { derivePalette, effectiveAlpha, isDark, surfaceVariables, type Palette } from '@/common/theme/surfaceStyle';
 
@@ -185,14 +186,68 @@ const CONTROLS = [
 ].join(',\n');
 
 /**
+ * A picture behind the application, under the material's own light.
+ *
+ * Three layers, and the order is the whole trick. The picture goes on `body` in
+ * a fixed pseudo-element so it stays put while a page scrolls and cannot be
+ * clipped by whichever container happens to scroll. `#root` sits over it
+ * carrying two things: the material's own wash — the gradients that make glass
+ * glass — and a scrim of the ground at whatever opacity was *not* asked for.
+ * At full opacity the scrim vanishes and the photograph is the app; at zero it
+ * is opaque and the picture is gone. The blur is a real blur on the picture
+ * rather than a `backdrop-filter` on the root, because the second makes the
+ * application's root a containing block and quietly breaks everything fixed
+ * inside it.
+ */
+const backgroundLayer = (choice: SurfaceStyleChoice, prefersDark: boolean, background: SurfaceBackground): string => {
+  const tokens = resolveTokens(choice);
+  const { ground } = derivePalette(choice.accent, choice.style, prefersDark, tokens.tint);
+  const channels = parseHexColor(ground);
+  const veil = channels
+    ? `rgb(${channels.red} ${channels.green} ${channels.blue} / ${(1 - background.opacity).toFixed(3)})`
+    : 'transparent';
+  // The picture is grown by the blur radius on every side, so a blurred edge is
+  // never a visible border of grey.
+  const bleed = Math.max(0, Math.round(background.blur * 2.5));
+
+  return `body::before {
+  content: '';
+  position: fixed;
+  inset: -${bleed}px;
+  z-index: 0;
+  background-image: url("${background.image}");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(${background.blur}px);
+  pointer-events: none;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+  background:
+    var(--fool-page-wash, none),
+    linear-gradient(${veil}, ${veil}) !important;
+  color: var(--fool-ink) !important;
+}`;
+};
+
+/**
  * The whole material, as a stylesheet.
  *
  * @param choice what is being worn
  * @param prefersDark whether the document says the room is dark
+ * @param background the picture behind it, if there is one
  */
-export const materialStylesheet = (choice: SurfaceStyleChoice, prefersDark: boolean): string => {
+export const materialStylesheet = (
+  choice: SurfaceStyleChoice,
+  prefersDark: boolean,
+  background: SurfaceBackground = defaultSurfaceBackground()
+): string => {
   const tokens = resolveTokens(choice);
   const alpha = effectiveAlpha(choice.style, tokens.alpha);
+  const picture = hasBackgroundImage(background) ? backgroundLayer(choice, prefersDark, background) : '';
   const declarations = materialTokens(choice, prefersDark)
     .map(([name, value]) => `  ${name}: ${value} !important;`)
     .join('\n');
@@ -200,10 +255,17 @@ export const materialStylesheet = (choice: SurfaceStyleChoice, prefersDark: bool
   return [
     `${ROOT_SELECTORS} {\n${declarations}\n}`,
 
-    // Presets paint the shell with a literal colour, which no variable reaches.
-    // This is also where a material's ground actually lands: the washes behind
-    // glass, the aurora, the clay tint.
-    `html, body, #root {
+    // The ground goes on exactly one element. Painting the same translucent
+    // wash onto `html`, `body` and `#root` stacks it three times, and three
+    // coats of a 55% accent over the whole window is the stain the first
+    // version of this put behind everything.
+    `html, body {
+  background: var(--fool-ground) !important;
+  color: var(--fool-ink) !important;
+}`,
+
+    picture ||
+      `#root {
   background: var(--fool-page-bg) !important;
   color: var(--fool-ink) !important;
 }`,
@@ -240,9 +302,17 @@ export const materialStylesheet = (choice: SurfaceStyleChoice, prefersDark: bool
   border-color: transparent !important;
 }`,
 
+    // Colour only, and no background. A blanket `background-color !important`
+    // here painted over every button that carries its own — which is what wiped
+    // the nine colour swatches in the picker and left a row of empty rings.
+    `.arco-btn-secondary:not([style*='background']),
+.arco-btn-default:not([style*='background']) {
+  background-color: var(--color-fill-2) !important;
+}`,
+
     `.arco-btn-secondary,
-.arco-btn-default {
-  background-color: var(--fool-surface-bg) !important;
+.arco-btn-default,
+.arco-btn-text {
   color: var(--fool-ink) !important;
 }`,
 

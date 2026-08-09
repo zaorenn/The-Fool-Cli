@@ -1958,6 +1958,11 @@
     "accent": "Accent colour",
     "accentHint": "A whole palette is built from the colour you pick: accent, ground, card, line and ink.",
     "accentSuggestions": "Ready-made colours",
+    "backgroundChoose": "Choose a picture",
+    "backgroundClear": "Remove",
+    "backgroundOpacity": "How much shows",
+    "backgroundBlur": "Blur",
+    "backgroundHint": "Any picture, up to 4K. It is reduced before it is kept, and the palette is taken from it — you can still change the colour above.",
     "previewTitle": "This is a surface",
     "previewBody": "Every page in the app is made of these.",
     "group": {

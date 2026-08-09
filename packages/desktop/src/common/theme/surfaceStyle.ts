@@ -458,7 +458,10 @@ export const derivePalette = (
   const ground = hslToHex({ h: accent.h, s: groundS, l: groundL });
 
   const lightInk = relativeLuminance(ground) < 0.4;
-  const cardL = lightInk ? Math.min(30, groundL + 6) : Math.min(99, groundL + 5);
+  // A card has to be visibly a card. Six points of lightness over a dark ground
+  // is a difference you can measure and not one you can see, and it is why the
+  // first dark material read as one flat sheet of mud with text on it.
+  const cardL = lightInk ? Math.min(34, groundL + 11) : Math.min(99, groundL + 5);
 
   return {
     // The colour the user picked, byte for byte. Everything else here goes

@@ -1960,6 +1960,11 @@
     "accent": "アクセントカラー",
     "accentHint": "選んだ色から配色一式が組み立てられます：アクセント、地色、カード、罫線、文字。",
     "accentSuggestions": "用意された色",
+    "backgroundChoose": "画像を選ぶ",
+    "backgroundClear": "削除",
+    "backgroundOpacity": "どれだけ見せるか",
+    "backgroundBlur": "ぼかし",
+    "backgroundHint": "好きな画像を、4K まで。保存前に縮小され、配色は画像から取られます——色は上でいつでも変えられます。",
     "previewTitle": "これが面です",
     "previewBody": "アプリのどのページもこれでできています。",
     "group": {
