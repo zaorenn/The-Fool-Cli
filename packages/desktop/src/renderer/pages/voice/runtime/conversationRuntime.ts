@@ -368,6 +368,19 @@ class ConversationRuntime {
   }
 
   /**
+   * The newest thing this turn is doing, in the words the tool reported.
+   *
+   * Only a step still running: a completed one is something that *was* being
+   * done, and saying "still opening the browser" about a browser that is open
+   * is exactly the kind of small lie this application is built against.
+   */
+  private newestStep(): string | null {
+    const running = this.snapshot.activities.find((item) => item.state === 'running');
+    const said = (running?.detail || running?.label || '').trim();
+    return said.length > 0 ? said : null;
+  }
+
+  /**
    * Puts the same list on the notch, oldest first.
    *
    * It is read top to bottom, and it sits beside the reply so the user can watch
@@ -621,6 +634,10 @@ class ConversationRuntime {
       // local conversation that could not look at the screen or do anything on
       // the computer was the difference the user could feel between the two.
       runTool: (call) => this.runTool(call),
+      // The newest thing the turn is doing, so a line said into a silence can
+      // name it. The activity list already holds it; nothing else had ever read
+      // it back out.
+      currentStep: () => this.newestStep(),
     });
     await pipeline.connect();
     this.local = pipeline;

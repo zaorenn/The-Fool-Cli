@@ -5,7 +5,13 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ScreenSightError, describeScreen } from '@renderer/services/voice/screenSight';
+import {
+  beginScreenLook,
+  describeScreen,
+  forgetScreenLook,
+  ScreenSightError,
+  takeScreenLook,
+} from '@renderer/services/voice/screenSight';
 
 /**
  * Looking at the screen, and the two ways it quietly fails.
@@ -147,5 +153,101 @@ describe('describeScreen', () => {
     // photograph everything the user had not agreed to share.
     expect(windowOnly).toHaveBeenCalled();
     expect(screen).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * "Look at my screen", without being kept waiting for it.
+ *
+ * The capture and the model that reads it used to start only after the
+ * conversation had spent a whole turn deciding to ask for them. Neither depends
+ * on that decision — so the photograph is taken the moment the user's words
+ * point at a screen, and the answer is usually in hand before the tool call
+ * that wants it exists.
+ */
+describe('a look started before anything asked for one', () => {
+  beforeEach(() => {
+    forgetScreenLook();
+  });
+
+  it('hands the running look to whoever asks next', async () => {
+    stubCapture(captureOf(1_000));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: 'Bir hata mesajı var.' } }] }),
+      })) as unknown as typeof fetch
+    );
+
+    beginScreenLook(REQUEST);
+    const taken = takeScreenLook();
+
+    expect(taken).not.toBeNull();
+    await expect(taken).resolves.toBe('Bir hata mesajı var.');
+  });
+
+  /// One slot, not a queue: two looks would be two photographs of two moments,
+  /// and the later answer would be about a screen that had moved on.
+  it('does not start a second look while one is in flight', async () => {
+    stubCapture(captureOf(1_000));
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: 'Aynı ekran.' } }] }),
+    }));
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    beginScreenLook(REQUEST);
+    beginScreenLook(REQUEST);
+    await takeScreenLook();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('has nothing to hand over when none was started', () => {
+    expect(takeScreenLook()).toBeNull();
+  });
+
+  it('gives the look away once, so the next question gets a fresh photograph', async () => {
+    stubCapture(captureOf(1_000));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: 'Bir şey.' } }] }),
+      })) as unknown as typeof fetch
+    );
+
+    beginScreenLook(REQUEST);
+    expect(takeScreenLook()).not.toBeNull();
+    expect(takeScreenLook()).toBeNull();
+  });
+
+  /// A conversation that has ended must not hand its screenshot to the next one.
+  it('drops what is in flight when the conversation ends', async () => {
+    stubCapture(captureOf(1_000));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: 'Bir şey.' } }] }),
+      })) as unknown as typeof fetch
+    );
+
+    beginScreenLook(REQUEST);
+    forgetScreenLook();
+
+    expect(takeScreenLook()).toBeNull();
+  });
+
+  /// A look that failed is not an answer, and must not become one — but it must
+  /// not become an unhandled rejection either, which in a conversation is a
+  /// crash in a window nobody is looking at.
+  it('does not reject into nowhere when the look fails and nobody takes it', async () => {
+    stubCapture(null);
+    beginScreenLook(REQUEST);
+    const taken = takeScreenLook();
+
+    await expect(taken).rejects.toBeInstanceOf(ScreenSightError);
   });
 });

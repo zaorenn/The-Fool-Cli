@@ -20,6 +20,8 @@ import {
   isUnbackedClaim,
   unbackedClaimCorrection,
 } from '@/common/voice/actionClaims';
+import { mayAskForNoDeliberation, noDeliberation, refusedTheField, rememberRefusal } from '@/common/realtime/reasoning';
+import { beginScreenLook, forgetScreenLook } from '@renderer/services/voice/screenSight';
 import { isBackchannel } from '@/common/voice/backchannel';
 import { concernsFor, describeTurn } from '@/common/voice/turnMetrics';
 import { isHallucinatedTranscript } from '@/common/voice/hallucinations';
@@ -71,6 +73,13 @@ export type LocalPipelineOptions = {
    * at all, which is how the pipeline behaves in tests.
    */
   runTool?: (call: LocalToolCall) => Promise<unknown>;
+  /**
+   * What the turn is doing right now, in words worth saying out loud.
+   *
+   * Asked only when a filler is about to be said, which is rarely. The runtime
+   * owns the activity list this reads from, and this file owns none of it.
+   */
+  currentStep?: () => string | null;
 };
 
 /** What the local stack needs before a conversation can start. */
@@ -724,6 +733,9 @@ export class LocalVoicePipeline {
   close(): void {
     this.closed = true;
     this.interrupt();
+    // A photograph taken for a question nobody is going to ask now. Kept, it
+    // would be handed to the next conversation as though it were of its screen.
+    forgetScreenLook();
     this.utterance = [];
     this.waiting = [];
     this.history = [];
@@ -818,6 +830,26 @@ export class LocalVoicePipeline {
       // An aside that cannot be rendered is not worth reporting: it was filling
       // a silence, and failing to fill it leaves exactly the silence.
     }
+  }
+
+  /**
+   * Starts looking at the screen before anything has asked to.
+   *
+   * The user's own sentence is the question — it is what they actually said,
+   * where the model's later rewording of it is a paraphrase — so the look that
+   * comes back answers what was asked rather than what was inferred.
+   */
+  private beginLookingAtScreen(question: string): void {
+    const realtime = this.options.settings.realtime;
+    beginScreenLook({
+      question,
+      endpoint: normalizeEndpoint(realtime.localEndpoint),
+      model: realtime.visionModel.trim() || realtime.model.trim(),
+      language: realtime.language,
+      // The display, not this window: they said "look at my screen", and a
+      // photograph of the app they are talking to answers nobody's question.
+      source: 'screen',
+    });
   }
 
   /**
@@ -1089,6 +1121,11 @@ export class LocalVoicePipeline {
       // them the instruction names something that cannot happen.
       if (this.options.runTool && refersToScreen(heard)) {
         this.history.push({ role: 'system', content: LOOK_FIRST });
+        // And the photograph is taken now, in parallel with the turn that is
+        // about to ask for it. Neither the capture nor the model that reads it
+        // depends on that decision, and waiting for it is the whole of why
+        // "look at my screen" felt like being put on hold.
+        this.beginLookingAtScreen(heard);
       }
       this.trimHistory();
 
@@ -1268,20 +1305,44 @@ export class LocalVoicePipeline {
     controller: AbortController,
     toolsRan = 0
   ): Promise<WireToolCall[]> {
-    const response = await fetch(`${readiness.endpoint}/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: this.thinkingModelId(readiness),
-        messages: this.history,
-        stream: true,
-        temperature: 0.8,
-        // Only when there is something to run them: a server handed tools it is
-        // then never allowed to use spends its turn describing what it would do.
-        ...(this.options.runTool ? { tools: WIRE_TOOLS } : {}),
-      }),
-    });
+    const ask = (skipDeliberation: boolean): Promise<Response> =>
+      fetch(`${readiness.endpoint}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: this.thinkingModelId(readiness),
+          messages: this.history,
+          stream: true,
+          temperature: 0.8,
+          // The whole of "the first message takes forever". This model writes
+          // its entire deliberation into `reasoning_content` before it says a
+          // character, and the app rightly refuses to read that aloud — so from
+          // the room it is silence. Measured on the real request: 6,538 ms to
+          // the first word without this, 177 ms with, and the same tool chosen.
+          // See `common/realtime/reasoning.ts` for the nine switches that do
+          // nothing.
+          ...(skipDeliberation ? noDeliberation(readiness.endpoint) : {}),
+          // Only when there is something to run them: a server handed tools it is
+          // then never allowed to use spends its turn describing what it would do.
+          ...(this.options.runTool ? { tools: WIRE_TOOLS } : {}),
+        }),
+      });
+
+    let response = await ask(true);
+    // A server that does not take the field says so, once. Asking again without
+    // it costs one round trip on the first turn of a conversation and nothing
+    // afterwards; not asking at all costs every turn four minutes.
+    // Only a 400 is read: that is the one status `refusedTheField` can be true
+    // for, and every other failure should reach the caller untouched rather
+    // than having its body consumed to answer a question about this field.
+    if (!response.ok && response.status === 400 && mayAskForNoDeliberation(readiness.endpoint)) {
+      const complaint = await response.text().catch((): string => '');
+      if (refusedTheField(response.status, complaint)) {
+        rememberRefusal(readiness.endpoint);
+        response = await ask(false);
+      }
+    }
     if (!response.ok || !response.body) throw new Error('LOCAL_LLM_FAILED');
 
     const detector = createIncrementalSentenceDetector();
@@ -1490,7 +1551,10 @@ export class LocalVoicePipeline {
         // in a room is indistinguishable from the application having crashed.
         // The line is looked up here because this is where the translation
         // lives; when to say one is `thinkingAloud`'s decision.
-        fillerLine: (key) => i18next.t(key as never, { defaultValue: '' }) as string,
+        fillerLine: (key, values) => i18next.t(key as never, { defaultValue: '', ...values }) as string,
+        // What the turn is doing, in the agent's own words, so a filler can name
+        // it instead of saying "still working on it" about nothing.
+        currentStep: () => this.options.currentStep?.() ?? null,
         signal: controller.signal,
       });
 

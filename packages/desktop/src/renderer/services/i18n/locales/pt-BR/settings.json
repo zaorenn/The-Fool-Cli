@@ -1666,23 +1666,32 @@
       "thinking": {
         "0": "Hmm, deixa eu pensar.",
         "1": "Um momento.",
-        "2": "Vou dar uma olhada."
+        "2": "Vou dar uma olhada.",
+        "3": "Deixa eu ver.",
+        "4": "Só um instante."
       },
       "working": {
         "0": "Ainda estou nisso.",
         "1": "Estou trabalhando nisso.",
-        "2": "Quase lá."
+        "2": "Quase lá.",
+        "3": "Quase lá.",
+        "4": "Falta pouco."
       },
       "still": {
         "0": "Esse está demorando um pouco.",
         "1": "Ainda rolando, só um pouco.",
-        "2": "Acho que está quase."
+        "2": "Acho que está quase.",
+        "3": "Ainda rodando.",
+        "4": "Esse vai demorar."
       },
       "aside": {
         "0": "A propósito, {{what}} terminou.",
         "1": "Ah, {{what}} acabou de terminar.",
-        "2": "Aquela outra coisa, {{what}}, está pronta."
-      }
+        "2": "Aquela outra coisa, {{what}}, está pronta.",
+        "3": "Ah, e {{what}} ficou pronto.",
+        "4": "E também, {{what}} terminou."
+      },
+      "doing": "Ainda {{what}}."
     },
     "conversationTaskAccepted": "Já comecei. Está rodando em segundo plano — diga brevemente que está cuidando disso e siga a conversa.",
     "conversationAsideFailed": "Aliás, {{what}} não pôde ser concluído. {{why}}",

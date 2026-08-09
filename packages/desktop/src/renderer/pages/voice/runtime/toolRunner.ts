@@ -40,7 +40,7 @@ import {
   forgetVoiceRule,
   rememberVoiceRule,
 } from '@renderer/services/voice/session/voiceMemoryStore';
-import { describeScreen } from '@renderer/services/voice/screenSight';
+import { describeScreen, takeScreenLook } from '@renderer/services/voice/screenSight';
 import { peekVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import { applySurfaceIntent, readSurfaceIntent, type SurfaceIntent } from '@/common/theme/surfaceIntent';
 import { defaultSurfaceChoice, type SurfaceStyleChoice } from '@/common/theme/surfaceChoice';
@@ -176,6 +176,19 @@ export const applyThemeAction = async (
  * text-only, and a picture sent to one is refused rather than ignored.
  */
 export const lookAtScreen = async (question: string): Promise<string> => {
+  // Started the moment the user's words pointed at a screen, which is a whole
+  // model round trip before this call exists. Usually already answered.
+  const alreadyLooking = takeScreenLook();
+  if (alreadyLooking) {
+    try {
+      return await alreadyLooking;
+    } catch {
+      // It failed for a reason this call is about to run into as well — but it
+      // may also have been a capture that lost a race with a screen lock, and
+      // one more attempt costs a second rather than an answer.
+    }
+  }
+
   const realtime = peekVoiceSettings().realtime;
   return describeScreen({
     question,

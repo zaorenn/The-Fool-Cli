@@ -1663,23 +1663,32 @@
       "thinking": {
         "0": "Hmm, let me think.",
         "1": "One moment.",
-        "2": "Give me a second."
+        "2": "Give me a second.",
+        "3": "Let me see.",
+        "4": "Just a moment."
       },
       "working": {
         "0": "Still on it.",
         "1": "I'm working on it.",
-        "2": "Almost there."
+        "2": "Almost there.",
+        "3": "Getting there.",
+        "4": "Nearly."
       },
       "still": {
         "0": "This one is taking a while.",
         "1": "Still going, bear with me.",
-        "2": "Nearly done, I think."
+        "2": "Nearly done, I think.",
+        "3": "Still going.",
+        "4": "This is a long one."
       },
       "aside": {
         "0": "By the way — {{what}} is finished.",
         "1": "Oh, {{what}} just finished.",
-        "2": "That other thing, {{what}}, is done."
-      }
+        "2": "That other thing, {{what}}, is done.",
+        "3": "Oh, and {{what}} is done.",
+        "4": "Also, {{what}} finished."
+      },
+      "doing": "Still {{what}}."
     },
     "conversationTaskAccepted": "I've started it. It runs in the background — tell them briefly that you are on it, and carry on the conversation.",
     "conversationAsideFailed": "By the way, {{what}} could not be finished. {{why}}",

@@ -1663,23 +1663,32 @@
       "thinking": {
         "0": "Mmm, déjame pensar.",
         "1": "Un momento.",
-        "2": "Voy a mirarlo."
+        "2": "Voy a mirarlo.",
+        "3": "Déjame ver.",
+        "4": "Un momento."
       },
       "working": {
         "0": "Sigo en ello.",
         "1": "Estoy trabajando en ello.",
-        "2": "Ya casi."
+        "2": "Ya casi.",
+        "3": "Casi está.",
+        "4": "Ya casi."
       },
       "still": {
         "0": "Esto está tardando un poco.",
         "1": "Sigue en marcha, un poco de paciencia.",
-        "2": "Creo que ya casi está."
+        "2": "Creo que ya casi está.",
+        "3": "Sigue en marcha.",
+        "4": "Esto va para largo."
       },
       "aside": {
         "0": "Por cierto, {{what}} ha terminado.",
         "1": "Ah, {{what}} acaba de terminar.",
-        "2": "Lo otro, {{what}}, ya está."
-      }
+        "2": "Lo otro, {{what}}, ya está.",
+        "3": "Ah, y {{what}} ya está.",
+        "4": "Además, {{what}} ha terminado."
+      },
+      "doing": "Sigo {{what}}."
     },
     "conversationTaskAccepted": "Ya he empezado. Se ejecuta en segundo plano: di brevemente que te estás ocupando y sigue la conversación.",
     "conversationAsideFailed": "Por cierto, {{what}} no se ha podido terminar. {{why}}",

@@ -7,6 +7,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   ASIDE_NAME_MAX,
+  chooseVariant,
+  STEP_WORDS_MAX,
+  worthSaying,
   BETWEEN_ASIDES_MS,
   FIRST_GAP_MS,
   MAX_FILLERS,
@@ -81,8 +84,8 @@ describe('what it says', () => {
 describe('which line', () => {
   /// The same sentence three times is worse than silence — it is what a
   /// machine sounds like.
-  it('cycles through the variants rather than repeating one', () => {
-    const keys = [0, 1, 2].map((n) => fillerKey('thinking', n));
+  it('has a distinct line for every variant', () => {
+    const keys = Array.from({ length: VARIANTS_PER_KIND }, (_, n) => fillerKey('thinking', n));
     expect(new Set(keys).size).toBe(VARIANTS_PER_KIND);
   });
 
@@ -155,5 +158,72 @@ describe('naming the task that finished', () => {
     expect(short.length).toBeLessThanOrEqual(ASIDE_NAME_MAX + 1);
     expect(short.endsWith('…')).toBe(true);
     expect(long.startsWith(short.slice(0, -1))).toBe(true);
+  });
+});
+
+/**
+ * The same three sentences, always in the same order.
+ *
+ * That is what the rotation produced, and it is what the user heard: a pattern
+ * learned by the second conversation, which sounds like a machine pretending
+ * not to be one. Chosen instead — and never the same twice running, because the
+ * repeat is the only thing anybody notices.
+ */
+describe('choosing which line to say', () => {
+  it('never says the same one twice running', () => {
+    for (let previous = 0; previous < VARIANTS_PER_KIND; previous += 1) {
+      for (let step = 0; step < 40; step += 1) {
+        const chosen = chooseVariant(previous, step / 40);
+        expect(chosen, `previous ${previous} at roll ${step / 40}`).not.toBe(previous);
+        expect(chosen).toBeGreaterThanOrEqual(0);
+        expect(chosen).toBeLessThan(VARIANTS_PER_KIND);
+      }
+    }
+  });
+
+  it('can reach every other line, so none of them is dead', () => {
+    const reachable = new Set(Array.from({ length: 40 }, (_, step) => chooseVariant(2, step / 40)));
+    expect(reachable).toEqual(new Set([0, 1, 3, 4]));
+  });
+
+  it('takes the whole range when nothing has been said yet', () => {
+    const reachable = new Set(Array.from({ length: 40 }, (_, step) => chooseVariant(-1, step / 40)));
+    expect(reachable.size).toBe(VARIANTS_PER_KIND);
+  });
+
+  /// A roll of exactly 1 is not what Math.random returns, but a caller passing
+  /// one must not produce a key that names a line nobody wrote.
+  it('stays in range at the very top of the roll', () => {
+    expect(chooseVariant(-1, 1)).toBeLessThan(VARIANTS_PER_KIND);
+    expect(chooseVariant(0, 1)).toBeLessThan(VARIANTS_PER_KIND);
+  });
+});
+
+/**
+ * Saying what it is doing, when what it is doing is worth saying.
+ *
+ * A tool's own name read aloud — "browser_navigate" — is worse than "still on
+ * it": ugly, and meaningless to the person hearing it.
+ */
+describe('whether a step can be said out loud', () => {
+  it('says a phrase a person would use', () => {
+    expect(worthSaying('reading the third result')).toBe(true);
+    expect(worthSaying('opening the browser')).toBe(true);
+  });
+
+  it('refuses a machine name', () => {
+    expect(worthSaying('browser_navigate')).toBe(false);
+    expect(worthSaying('mcp.playwright.click')).toBe(false);
+    expect(worthSaying('readFileSync')).toBe(false);
+  });
+
+  it('refuses nothing, and refuses a paragraph', () => {
+    expect(worthSaying('   ')).toBe(false);
+    expect(worthSaying('a'.repeat(STEP_WORDS_MAX + 1))).toBe(false);
+  });
+
+  /// A single ordinary word is a phrase, not an identifier.
+  it('allows a plain word', () => {
+    expect(worthSaying('searching')).toBe(true);
   });
 });

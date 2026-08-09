@@ -18,6 +18,8 @@
  * talking to.
  */
 
+import { mayAskForNoDeliberation, noDeliberation, refusedTheField, rememberRefusal } from '@/common/realtime/reasoning';
+
 const DESCRIBE_TIMEOUT_MS = 120_000;
 
 /**
@@ -123,9 +125,8 @@ export const describeScreen = async (request: ScreenSightRequest): Promise<strin
   const timeout = AbortSignal.timeout(DESCRIBE_TIMEOUT_MS);
   const signal = request.signal ? AbortSignal.any([request.signal, timeout]) : timeout;
 
-  let response: Response;
-  try {
-    response = await fetch(`${request.endpoint}/chat/completions`, {
+  const ask = (skipDeliberation: boolean): Promise<Response> =>
+    fetch(`${request.endpoint}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal,
@@ -143,9 +144,30 @@ export const describeScreen = async (request: ScreenSightRequest): Promise<strin
         ],
         temperature: DESCRIBE_TEMPERATURE,
         max_tokens: DESCRIBE_MAX_TOKENS,
+        // The reason `max_tokens` had to be raised to 1,200: the model was
+        // spending its whole budget deliberating and reporting a screen it had
+        // genuinely read as empty. Asked not to deliberate it answers at once,
+        // and the budget is room for sentences again.
+        ...(skipDeliberation ? noDeliberation(request.endpoint) : {}),
       }),
     });
+
+  let response: Response;
+  try {
+    response = await ask(true);
+    // Only a 400 is inspected: it is the one status the field can be refused
+    // with, and a body read here cannot be read again below.
+    if (!response.ok && response.status === 400 && mayAskForNoDeliberation(request.endpoint)) {
+      const complaint = await response.text().catch((): string => '');
+      if (refusedTheField(response.status, complaint)) {
+        rememberRefusal(request.endpoint);
+        response = await ask(false);
+      } else {
+        throw new ScreenSightError('model-refused', complaint.slice(0, 300) || `HTTP ${response.status}`);
+      }
+    }
   } catch (error) {
+    if (error instanceof ScreenSightError) throw error;
     throw new ScreenSightError('model-refused', error instanceof Error ? error.message : undefined);
   }
 
@@ -163,4 +185,68 @@ export const describeScreen = async (request: ScreenSightRequest): Promise<strin
   // budget is the fix, and the caller cannot know that from a generic error.
   if (text.length === 0) throw new ScreenSightError('no-description');
   return text;
+};
+
+/**
+ * A look started before anything asked for one.
+ *
+ * "Ekranıma bak" used to cost two model round trips in a row: the conversation
+ * had to finish a turn deciding to call the tool, and only then was the screen
+ * captured and sent. The user sat through both, watching a screen they had
+ * already asked about.
+ *
+ * Neither the capture nor the picture depends on that decision. The moment the
+ * words plainly point at a screen — which `refersToScreen` already works out,
+ * one line before the turn begins — the photograph is taken and the question is
+ * put to the model that reads it, in parallel with the turn that is about to
+ * ask for exactly this. By the time the tool call arrives the answer is usually
+ * already in hand.
+ *
+ * One slot, not a queue. Two looks in flight would mean two screenshots of two
+ * different moments, and the one that came back second would answer a question
+ * about a screen that had moved on.
+ */
+
+/** How long a look started ahead of the request stays worth using. */
+export const LOOK_AHEAD_TTL_MS = 45_000;
+
+type StartedLook = { startedAt: number; answer: Promise<string> };
+
+let started: StartedLook | null = null;
+
+/**
+ * Starts looking now, for a request that has not been made yet.
+ *
+ * Does nothing when a look is already in flight: the second caller wants the
+ * same screen as the first, and the first has a head start.
+ */
+export const beginScreenLook = (request: ScreenSightRequest): void => {
+  if (started !== null && Date.now() - started.startedAt < LOOK_AHEAD_TTL_MS) return;
+
+  const answer = describeScreen(request);
+  // Nobody may ever await this. An unhandled rejection in a conversation is a
+  // crash in a window the user is not looking at.
+  void answer.catch((): undefined => undefined);
+  started = { startedAt: Date.now(), answer };
+};
+
+/**
+ * The look already under way, if there is one worth having.
+ *
+ * Handed over rather than shared: whoever takes it owns it, and the next
+ * question about the screen deserves a fresh photograph.
+ */
+export const takeScreenLook = (): Promise<string> | null => {
+  if (started === null) return null;
+
+  const taken = started;
+  started = null;
+  // A picture of the screen as it was a minute ago is not an answer about the
+  // screen. Past the window it is thrown away rather than reported.
+  return Date.now() - taken.startedAt > LOOK_AHEAD_TTL_MS ? null : taken.answer;
+};
+
+/** Drops anything in flight, for a conversation that has ended or been cut off. */
+export const forgetScreenLook = (): void => {
+  started = null;
 };

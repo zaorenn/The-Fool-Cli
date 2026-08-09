@@ -8,7 +8,7 @@ import { ipcBridge } from '@/common';
 import { prefaceWithInstructions } from '@/common/voice/pendingInstructions';
 import { createIncrementalSentenceDetector } from '@renderer/services/voice/narration/incrementalSentences';
 import { isSayable, registerFor, stripForSpeech } from '@/common/voice/spokenRegister';
-import { fillerFor, fillerKey } from '@/common/voice/thinkingAloud';
+import { chooseVariant, DOING_KEY, fillerFor, fillerKey, worthSaying } from '@/common/voice/thinkingAloud';
 import { guardSpokenSentence } from './spokenOutput';
 
 /**
@@ -61,7 +61,17 @@ export type SpokenTurnInput = {
    * decision this module owns. Absent, nothing is said into a silence — which
    * is what every caller did before this existed.
    */
-  fillerLine?: (key: string) => string;
+  fillerLine?: (key: string, values?: Record<string, unknown>) => string;
+  /**
+   * What the turn is doing right now, in words a person would use.
+   *
+   * Read at the moment a filler is about to be said rather than pushed, because
+   * most of them are never said. When it answers with something worth saying,
+   * the filler names it — "still reading the third result" instead of "still
+   * working on it", which is the difference between a progress bar and somebody
+   * telling you where they have got to.
+   */
+  currentStep?: () => string | null;
   /** Aborting cancels the model as well as the speaker. */
   signal?: AbortSignal;
 };
@@ -211,6 +221,8 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
   const startedAt = Date.now();
   let lastSoundAt = startedAt;
   let fillersSaid = 0;
+  /** The variant just said, so the next one is never the same. */
+  let lastVariant = -1;
   const fillerTimer =
     input.fillerLine === undefined
       ? null
@@ -227,11 +239,25 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
           });
           if (kind === null) return;
 
-          const line = input.fillerLine?.(fillerKey(kind, fillersSaid))?.trim() ?? '';
+          // What it is actually doing beats any canned line — but only when the
+          // step is something a person would say. A tool's own name read aloud
+          // is worse than "still on it": ugly, and meaningless to the listener.
+          const step = kind === 'thinking' ? null : (input.currentStep?.() ?? null);
+          const naming = step !== null && worthSaying(step);
+
+          const variant = naming ? -1 : chooseVariant(lastVariant);
+          const line =
+            (naming
+              ? input.fillerLine?.(DOING_KEY, { what: step.trim() })
+              : input.fillerLine?.(fillerKey(kind, variant))
+            )?.trim() ?? '';
           if (line.length === 0) return;
+          // Only a chosen line updates what was chosen last; a named step is not
+          // one of the variants and must not make the next choice avoid one.
+          if (!naming) lastVariant = variant;
           fillersSaid += 1;
           lastSoundAt = Date.now();
-          console.info('[spokenTurn] filling a silence:', kind);
+          console.info('[spokenTurn] filling a silence:', naming ? 'doing' : kind);
           onSentence(line);
         }, 700);
 

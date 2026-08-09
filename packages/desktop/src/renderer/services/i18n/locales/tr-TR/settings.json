@@ -1663,23 +1663,32 @@
       "thinking": {
         "0": "Hmm, bir düşüneyim.",
         "1": "Bir saniye.",
-        "2": "Bakıyorum."
+        "2": "Bakıyorum.",
+        "3": "Bir bakayım.",
+        "4": "Dur bakalım."
       },
       "working": {
         "0": "Hâlâ üzerinde çalışıyorum.",
         "1": "Devam ediyorum.",
-        "2": "Az kaldı."
+        "2": "Az kaldı.",
+        "3": "Geliyor.",
+        "4": "Neredeyse tamam."
       },
       "still": {
         "0": "Bu biraz uzun sürüyor.",
         "1": "Hâlâ sürüyor, biraz sabret.",
-        "2": "Sanırım bitmek üzere."
+        "2": "Sanırım bitmek üzere.",
+        "3": "Devam ediyor.",
+        "4": "Bu uzun sürecek galiba."
       },
       "aside": {
         "0": "Bu arada, {{what}} bitti.",
         "1": "Ha bir de, {{what}} tamamlandı.",
-        "2": "Şu diğer iş, {{what}}, bitti."
-      }
+        "2": "Şu diğer iş, {{what}}, bitti.",
+        "3": "Ha, {{what}} da bitti.",
+        "4": "Bir de {{what}} tamam."
+      },
+      "doing": "Hâlâ {{what}}."
     },
     "conversationTaskAccepted": "Başlattım. Arka planda çalışıyor — kısaca üstlendiğini söyle ve sohbete devam et.",
     "conversationAsideFailed": "Bu arada, {{what}} tamamlanamadı. {{why}}",

@@ -101,15 +101,72 @@ export const fillerFor = (state: ThinkingState): ThinkingKind | null => {
 };
 
 /**
- * The i18n key for a kind, given how many have already been said.
+ * How many lines each kind has to choose from.
  *
- * Several lines per kind, cycled, because the same sentence three times is
- * worse than silence — it is what a machine sounds like.
+ * Five rather than three, and chosen rather than cycled. Three in a fixed
+ * rotation is a pattern a person hears by the second conversation — the same
+ * three sentences, always in the same order — which is worse than one sentence,
+ * because it sounds like a machine pretending not to be one.
  */
-export const VARIANTS_PER_KIND = 3;
+export const VARIANTS_PER_KIND = 5;
 
-export const fillerKey = (kind: ThinkingKind, saidSoFar: number): string =>
-  `settings.voice.thinkingAloud.${kind}.${saidSoFar % VARIANTS_PER_KIND}`;
+/**
+ * Which line to say, given the one just said.
+ *
+ * Random, but never the same twice running: at five variants a fair coin
+ * repeats often enough to be noticed, and the repeat is the only thing anybody
+ * notices. `previous` is `-1` for the first of a conversation.
+ */
+export const chooseVariant = (previous: number, roll: number = Math.random()): number => {
+  const count = VARIANTS_PER_KIND;
+  if (previous < 0 || previous >= count) return Math.min(count - 1, Math.floor(roll * count));
+
+  // Pick out of the others, then shift past the one just used, so every
+  // remaining line is equally likely and the previous one is impossible.
+  const among = Math.min(count - 2, Math.floor(roll * (count - 1)));
+  return among >= previous ? among + 1 : among;
+};
+
+export const fillerKey = (kind: ThinkingKind, variant: number): string =>
+  `settings.voice.thinkingAloud.${kind}.${((variant % VARIANTS_PER_KIND) + VARIANTS_PER_KIND) % VARIANTS_PER_KIND}`;
+
+/**
+ * The line for a filler that can name what is actually happening.
+ *
+ * The module has always claimed it "says what it is doing when it knows", and
+ * it never did: `fillerFor` returned a kind and the caller spoke a canned
+ * sentence, so a turn that had opened a browser and was typing into it said
+ * "still working on it" — true, and indistinguishable from the same words said
+ * about nothing. Naming the step is the difference between a progress bar and
+ * somebody telling you where they have got to.
+ *
+ * Its own key rather than a variant of `working`, because the sentence has a
+ * hole in it and the others do not.
+ */
+export const DOING_KEY = 'settings.voice.thinkingAloud.doing';
+
+/**
+ * How much of a step's own words survive into a spoken line.
+ *
+ * A tool reports things like "browser_navigate" and "reading the third result";
+ * the first is not worth saying and the second is. Anything longer than this is
+ * a sentence of its own and belongs in the activity list, not in a filler.
+ */
+export const STEP_WORDS_MAX = 48;
+
+/**
+ * Whether a step is worth naming out loud.
+ *
+ * Machine names are not: "browser_navigate" read aloud is worse than "still on
+ * it", because it is both ugly and meaningless to the person hearing it.
+ */
+export const worthSaying = (step: string): boolean => {
+  const line = step.trim();
+  if (line.length === 0 || line.length > STEP_WORDS_MAX) return false;
+  // An identifier rather than a phrase: no spaces and shaped like code.
+  if (!line.includes(' ') && /[_.]|[a-z][A-Z]/.test(line)) return false;
+  return true;
+};
 
 /**
  * How long a gap has to be before a finished task may be mentioned in it.

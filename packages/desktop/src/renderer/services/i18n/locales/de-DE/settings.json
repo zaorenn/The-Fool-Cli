@@ -1663,23 +1663,32 @@
       "thinking": {
         "0": "Hmm, lass mich kurz überlegen.",
         "1": "Einen Moment.",
-        "2": "Ich schaue nach."
+        "2": "Ich schaue nach.",
+        "3": "Lass mich mal sehen.",
+        "4": "Einen Moment."
       },
       "working": {
         "0": "Bin noch dran.",
         "1": "Ich arbeite daran.",
-        "2": "Gleich fertig."
+        "2": "Gleich fertig.",
+        "3": "Fast fertig.",
+        "4": "Gleich."
       },
       "still": {
         "0": "Das dauert etwas länger.",
         "1": "Läuft noch, hab Geduld.",
-        "2": "Fast fertig, denke ich."
+        "2": "Fast fertig, denke ich.",
+        "3": "Läuft noch.",
+        "4": "Das dauert."
       },
       "aside": {
         "0": "Übrigens — {{what}} ist fertig.",
         "1": "Ach, {{what}} ist gerade fertig geworden.",
-        "2": "Die andere Sache, {{what}}, ist erledigt."
-      }
+        "2": "Die andere Sache, {{what}}, ist erledigt.",
+        "3": "Ach, und {{what}} ist fertig.",
+        "4": "Und {{what}} ist auch durch."
+      },
+      "doing": "Immer noch {{what}}."
     },
     "conversationTaskAccepted": "Ich habe angefangen. Es läuft im Hintergrund — sag kurz, dass du dich darum kümmerst, und führe das Gespräch weiter.",
     "conversationAsideFailed": "Übrigens, {{what}} konnte nicht abgeschlossen werden. {{why}}",

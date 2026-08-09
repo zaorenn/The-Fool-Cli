@@ -1663,23 +1663,32 @@
       "thinking": {
         "0": "Hmm, laisse-moi réfléchir.",
         "1": "Un instant.",
-        "2": "Je regarde."
+        "2": "Je regarde.",
+        "3": "Laisse-moi voir.",
+        "4": "Un instant."
       },
       "working": {
         "0": "J’y suis toujours.",
         "1": "Je travaille dessus.",
-        "2": "Presque fini."
+        "2": "Presque fini.",
+        "3": "Presque.",
+        "4": "Ça arrive."
       },
       "still": {
         "0": "Celui-là prend un peu de temps.",
         "1": "Ça continue, encore un peu de patience.",
-        "2": "Bientôt fini, je crois."
+        "2": "Bientôt fini, je crois.",
+        "3": "Toujours en cours.",
+        "4": "Celui-là va être long."
       },
       "aside": {
         "0": "Au fait — {{what}} est terminé.",
         "1": "Ah, {{what}} vient de se terminer.",
-        "2": "L’autre chose, {{what}}, est faite."
-      }
+        "2": "L’autre chose, {{what}}, est faite.",
+        "3": "Ah, et {{what}} est fini.",
+        "4": "Et {{what}} vient de se terminer."
+      },
+      "doing": "Toujours {{what}}."
     },
     "conversationTaskAccepted": "J'ai commencé. Ça tourne en arrière-plan — dis brièvement que tu t'en occupes et poursuis la conversation.",
     "conversationAsideFailed": "Au fait, {{what}} n'a pas pu être terminé. {{why}}",
