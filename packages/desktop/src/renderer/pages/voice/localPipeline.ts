@@ -1399,6 +1399,19 @@ export class LocalVoicePipeline {
         onSentence: (sentence) => {
           spokeAnything = true;
           this.markProgress(controller);
+          // The three lines the local turn loop does around its own
+          // `queueForSpeech`, and which this path was written without.
+          //
+          // Merging two harnesses into one moved the thinking and left these
+          // behind. `this.voice` is resolved in exactly one place — the local
+          // loop — and `queueForSpeech` renders nothing without it, so every
+          // sentence the agent wrote was queued against a speaker that had
+          // never been chosen. The transcript event is from the same block,
+          // which is why the reply could not be read on the page either: not
+          // two bugs, one missing paragraph.
+          this.voice ??= this.resolveVoice(this.ready);
+          this.firstAudioAt ??= Date.now();
+          this.options.onEvent({ kind: 'assistant-transcript', text: sentence, final: false });
           this.queueForSpeech(sentence, controller);
         },
         // Kept rather than spoken. The point of refusing is that the user never
