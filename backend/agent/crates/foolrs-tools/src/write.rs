@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 
 use async_trait::async_trait;
 use serde_json::{Value, json};
@@ -8,10 +8,12 @@ use foolrs_protocol::events::ToolCategory;
 use foolrs_types::tool::{JsonSchema, ToolResult};
 
 use crate::Tool;
+use crate::checkpoint::CheckpointStore;
 use crate::file_cache::{FileStateCache, update_cache_after_write};
 
 pub struct WriteTool {
     file_cache: Option<Arc<RwLock<FileStateCache>>>,
+    checkpoints: Option<Arc<Mutex<CheckpointStore>>>,
 }
 
 impl WriteTool {
@@ -25,7 +27,18 @@ impl WriteTool {
     ///
     /// Pass `None` to disable cache integration (legacy behavior).
     pub fn new(file_cache: Option<Arc<RwLock<FileStateCache>>>) -> Self {
-        Self { file_cache }
+        Self {
+            file_cache,
+            checkpoints: None,
+        }
+    }
+
+    /// Copies a file aside before overwriting it, so the turn can be undone.
+    ///
+    /// Optional, like the cache above: the CLI and the tests run without one.
+    pub fn with_checkpoints(mut self, checkpoints: Arc<Mutex<CheckpointStore>>) -> Self {
+        self.checkpoints = Some(checkpoints);
+        self
     }
 }
 
@@ -93,6 +106,18 @@ impl Tool for WriteTool {
                     };
                 }
             }
+        }
+
+        // Before anything is changed, and refusing if it cannot be done. A
+        // checkpoint that silently did not happen is worse than none at all,
+        // because the user believes there is a way back.
+        if let Some(store) = &self.checkpoints
+            && let Err(error) = store.lock().expect("checkpoint store").take_current(path)
+        {
+            return ToolResult {
+                content: format!("{error}; nothing was written"),
+                is_error: true,
+            };
         }
 
         // Write atomically: write to temp file, then rename

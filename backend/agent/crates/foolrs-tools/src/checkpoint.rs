@@ -59,6 +59,12 @@ const MAX_FILE_BYTES: u64 = 16 * 1024 * 1024;
 pub struct CheckpointStore {
     root: PathBuf,
     kept: Vec<Checkpoint>,
+    /// The turn everything is currently being attributed to.
+    ///
+    /// A tool's `execute` is handed its arguments and nothing else, so it cannot
+    /// know which turn it belongs to. The engine sets this as a turn begins and
+    /// the tools ask for it, which keeps the turn out of every tool signature.
+    current_turn: String,
 }
 
 impl CheckpointStore {
@@ -66,7 +72,27 @@ impl CheckpointStore {
         Self {
             root: root.into(),
             kept: Vec::new(),
+            current_turn: String::new(),
         }
+    }
+
+    /// Called by the engine as a turn begins.
+    pub fn begin_turn(&mut self, turn_id: impl Into<String>) {
+        self.current_turn = turn_id.into();
+    }
+
+    /// Copies a file aside, attributing it to the turn in progress.
+    ///
+    /// A store that has not been told about a turn attributes to `"unknown"`
+    /// rather than refusing: the copy is worth having even when the label is
+    /// poor, and refusing here would stop the agent writing at all.
+    pub fn take_current(&mut self, original: &Path) -> Result<&Checkpoint, CheckpointError> {
+        let turn = if self.current_turn.is_empty() {
+            "unknown".to_string()
+        } else {
+            self.current_turn.clone()
+        };
+        self.take(&turn, original)
     }
 
     /// Copies a file aside before this turn changes it.

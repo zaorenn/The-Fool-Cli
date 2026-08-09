@@ -114,3 +114,27 @@ fn a_file_too_large_to_copy_is_recorded_without_one() {
     // says plainly that this one cannot be undone.
     assert!(taken.copy.is_none());
 }
+
+#[test]
+fn the_engine_says_which_turn_a_copy_belongs_to() {
+    let (dir, mut store) = workspace();
+    let file = dir.path().join("notes.txt");
+    fs::write(&file, "before").expect("write");
+
+    store.begin_turn("turn-7");
+    store.take_current(&file).expect("checkpoint");
+
+    assert_eq!(store.turns(), vec!["turn-7".to_string()]);
+}
+
+#[test]
+fn a_copy_taken_before_any_turn_is_still_kept() {
+    let (dir, mut store) = workspace();
+    let file = dir.path().join("notes.txt");
+    fs::write(&file, "before").expect("write");
+
+    // Poorly labelled beats absent: refusing here would stop the agent writing
+    // at all, and the copy is worth having either way.
+    store.take_current(&file).expect("checkpoint");
+    assert_eq!(store.turns(), vec!["unknown".to_string()]);
+}

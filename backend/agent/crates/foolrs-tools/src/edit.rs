@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use std::path::Path;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 
 use async_trait::async_trait;
 use serde_json::{Value, json};
@@ -9,6 +9,7 @@ use foolrs_protocol::events::ToolCategory;
 use foolrs_types::tool::{JsonSchema, ToolResult};
 
 use crate::Tool;
+use crate::checkpoint::CheckpointStore;
 use crate::file_cache::{FileStateCache, file_mtime_ms, update_cache_after_write};
 
 #[derive(Clone, Copy)]
@@ -116,6 +117,7 @@ fn convert_line_endings(text: &str, line_ending: LineEnding) -> Cow<'_, str> {
 
 pub struct EditTool {
     file_cache: Option<Arc<RwLock<FileStateCache>>>,
+    checkpoints: Option<Arc<Mutex<CheckpointStore>>>,
 }
 
 impl EditTool {
@@ -128,7 +130,16 @@ impl EditTool {
     ///
     /// Pass `None` to disable all cache-related guards (legacy behavior).
     pub fn new(file_cache: Option<Arc<RwLock<FileStateCache>>>) -> Self {
-        Self { file_cache }
+        Self {
+            file_cache,
+            checkpoints: None,
+        }
+    }
+
+    /// Copies a file aside before changing it, so the turn can be undone.
+    pub fn with_checkpoints(mut self, checkpoints: Arc<Mutex<CheckpointStore>>) -> Self {
+        self.checkpoints = Some(checkpoints);
+        self
     }
 }
 
@@ -281,6 +292,21 @@ impl Tool for EditTool {
         } else {
             content.replacen(selected.old_string.as_ref(), new_string.as_ref(), 1)
         };
+
+        // Before the change, and refusing if the copy cannot be made: a
+        // checkpoint that silently did not happen is worse than none, because
+        // the user believes there is a way back.
+        if let Some(store) = &self.checkpoints
+            && let Err(error) = store
+                .lock()
+                .expect("checkpoint store")
+                .take_current(Path::new(file_path))
+        {
+            return ToolResult {
+                content: format!("{error}; nothing was changed"),
+                is_error: true,
+            };
+        }
 
         if let Err(e) = std::fs::write(file_path, &new_content) {
             return ToolResult {
