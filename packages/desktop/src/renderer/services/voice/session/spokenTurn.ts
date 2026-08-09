@@ -164,6 +164,23 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
   // that appears to hang forever.
   unsubscribers.push(
     ipcBridge.conversation.responseStream.on((message) => {
+      try {
+        readStreamed(message);
+      } catch (error) {
+        // An exception in here used to die inside Electron's own listener
+        // wrapper, with nothing on the page and nothing in the log that names
+        // this turn. What the user saw was a conversation that answered on
+        // screen and never said a word — the reply is written by a different
+        // listener, so only the speaking half died. A turn that breaks has to
+        // say so.
+        console.error('[spokenTurn] stream listener threw:', message.type, error);
+        finish({ ok: false, reason: 'run-failed', detail: String(error) });
+      }
+    })
+  );
+
+  function readStreamed(message: Parameters<Parameters<typeof ipcBridge.conversation.responseStream.on>[0]>[0]): void {
+    {
       if (message.conversation_id !== conversationId) return;
       // The request comes back on the same channel, on the right of the
       // conversation. Reading it would speak the user's own words back to them.
@@ -197,8 +214,8 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
         console.info('[spokenTurn] not spoken:', message.type, 'status:', message.status ?? '-');
       }
       toolsRan += 1;
-    })
-  );
+    }
+  }
 
   unsubscribers.push(
     ipcBridge.conversation.turnCompleted.on((event) => {
