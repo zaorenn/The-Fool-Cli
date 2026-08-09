@@ -1682,7 +1682,8 @@
       }
     },
     "conversationTaskAccepted": "شروع کردم. در پس‌زمینه در حال اجراست — کوتاه بگو که داری انجامش می‌دهی و گفتگو را ادامه بده.",
-    "conversationAsideFailed": "راستی، {{what}} تمام نشد. {{why}}"
+    "conversationAsideFailed": "راستی، {{what}} تمام نشد. {{why}}",
+    "conversationSettingUnknownModel": "مدلی به نام «{{name}}» بارگذاری نشده است."
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",

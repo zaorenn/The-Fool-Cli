@@ -1683,7 +1683,8 @@
       }
     },
     "conversationTaskAccepted": "我已经开始了。它在后台运行——简短地说你正在处理，然后继续对话。",
-    "conversationAsideFailed": "顺便说一句，{{what}} 没能完成。{{why}}"
+    "conversationAsideFailed": "顺便说一句，{{what}} 没能完成。{{why}}",
+    "conversationSettingUnknownModel": "没有已加载的名为“{{name}}”的模型。"
   },
   "themeCustomizer": {
     "title": "自定义主题",

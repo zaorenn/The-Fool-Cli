@@ -75,7 +75,18 @@ export type LocalPipelineOptions = {
 
 /** What the local stack needs before a conversation can start. */
 export type LocalReadiness =
-  | { ok: true; sttModelId: string; llmModelId: string; endpoint: string; ttsModels: readonly VoiceModel[] }
+  | {
+      ok: true;
+      sttModelId: string;
+      llmModelId: string;
+      /**
+       * Everything the server is offering, so a model chosen mid-conversation
+       * can be checked against it without asking again.
+       */
+      llmModelIds: readonly string[];
+      endpoint: string;
+      ttsModels: readonly VoiceModel[];
+    }
   | { ok: false; reason: 'stt-missing' | 'tts-missing' | 'llm-unreachable' | 'no-llm-model' };
 
 export const LOCAL_LLM_DEFAULT_ENDPOINT = 'http://127.0.0.1:1234/v1';
@@ -218,7 +229,7 @@ export const checkLocalReadiness = async (settings: FoolVoiceSettings): Promise<
     // the reason a conversation refuses to start.
     const wanted = settings.realtime.model.trim();
     const llmModelId = ids.includes(wanted) ? wanted : ids[0];
-    return { ok: true, sttModelId: settings.stt.modelId, llmModelId, endpoint, ttsModels };
+    return { ok: true, sttModelId: settings.stt.modelId, llmModelId, llmModelIds: ids, endpoint, ttsModels };
   } catch {
     return { ok: false, reason: 'llm-unreachable' };
   }
@@ -519,6 +530,22 @@ export class LocalVoicePipeline {
     this.options = { ...this.options, settings: next };
   }
 
+  /**
+   * Which model answers the next turn, asked fresh rather than fixed at connect.
+   *
+   * "Switch to the bigger model" was heard, written down and confirmed out
+   * loud, and then the rest of the conversation went on being answered by
+   * whatever had been loaded when it opened — the assistant agreeing to
+   * something and not doing it, which is worse than refusing. The id is read
+   * from the settings each time and checked against what the server actually
+   * offers, so a name it does not have falls back to the one that is loaded
+   * rather than failing every turn from then on.
+   */
+  private thinkingModelId(readiness: Extract<LocalReadiness, { ok: true }>): string {
+    const wanted = this.options.settings.realtime.model.trim();
+    return readiness.llmModelIds.includes(wanted) ? wanted : readiness.llmModelId;
+  }
+
   /** The rate the microphone must capture at for the transcriber. */
   get inputSampleRate(): number {
     return CAPTURE_SAMPLE_RATE;
@@ -740,7 +767,7 @@ export class LocalVoicePipeline {
         headers: { 'Content-Type': 'application/json' },
         signal: AbortSignal.timeout(SUMMARY_TIMEOUT_MS),
         body: JSON.stringify({
-          model: readiness.llmModelId,
+          model: this.thinkingModelId(readiness),
           stream: false,
           temperature: 0.2,
           max_tokens: 120,
@@ -1246,7 +1273,7 @@ export class LocalVoicePipeline {
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
       body: JSON.stringify({
-        model: readiness.llmModelId,
+        model: this.thinkingModelId(readiness),
         messages: this.history,
         stream: true,
         temperature: 0.8,

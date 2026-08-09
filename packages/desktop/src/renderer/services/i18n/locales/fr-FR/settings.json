@@ -1682,7 +1682,8 @@
       }
     },
     "conversationTaskAccepted": "J'ai commencé. Ça tourne en arrière-plan — dis brièvement que tu t'en occupes et poursuis la conversation.",
-    "conversationAsideFailed": "Au fait, {{what}} n'a pas pu être terminé. {{why}}"
+    "conversationAsideFailed": "Au fait, {{what}} n'a pas pu être terminé. {{why}}",
+    "conversationSettingUnknownModel": "Aucun modèle nommé « {{name}} » n'est chargé."
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

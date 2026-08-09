@@ -1685,7 +1685,8 @@
       }
     },
     "conversationTaskAccepted": "Já comecei. Está rodando em segundo plano — diga brevemente que está cuidando disso e siga a conversa.",
-    "conversationAsideFailed": "Aliás, {{what}} não pôde ser concluído. {{why}}"
+    "conversationAsideFailed": "Aliás, {{what}} não pôde ser concluído. {{why}}",
+    "conversationSettingUnknownModel": "Não há nenhum modelo chamado “{{name}}” carregado."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

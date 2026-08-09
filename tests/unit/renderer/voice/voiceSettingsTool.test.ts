@@ -310,3 +310,59 @@ describe('changing a layout that belongs to another window', () => {
     expect(worn).toEqual([]);
   });
 });
+
+/**
+ * Which model does the thinking, changed without ending the conversation.
+ *
+ * The failure this is written against is the same one the voice setting had:
+ * agreeing out loud and then carrying on exactly as before. A name the server
+ * does not have was written straight into the settings, confirmed, and then
+ * silently ignored by the running pipeline, which falls back to what is loaded.
+ */
+describe('changing the model that thinks', () => {
+  const loaded = ['qwen/qwen3.5-9b', 'qwen/qwen3.5-9b-instruct', 'google/gemma-4-e4b'];
+
+  beforeEach(() => {
+    written.length = 0;
+    settings = structuredClone(DEFAULT_FOOL_VOICE_SETTINGS);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ data: loaded.map((id) => ({ id })) }) }))
+    );
+  });
+
+  it('takes the id the server actually offers', async () => {
+    await applySpokenSetting('thinking_model', 'google/gemma-4-e4b', t);
+    expect(settings.realtime.model).toBe('google/gemma-4-e4b');
+  });
+
+  /// Nobody says "qwen slash qwen three point five dash nine b".
+  it('takes what a person would say out loud', async () => {
+    await applySpokenSetting('thinking_model', 'gemma', t);
+    expect(settings.realtime.model).toBe('google/gemma-4-e4b');
+  });
+
+  it('prefers the plain model over the one with something bolted on its name', async () => {
+    await applySpokenSetting('thinking_model', 'qwen', t);
+    expect(settings.realtime.model).toBe('qwen/qwen3.5-9b');
+  });
+
+  it('refuses a model that is not loaded, by name', async () => {
+    await expect(applySpokenSetting('thinking_model', 'llama', t)).rejects.toThrow(/llama/);
+    expect(written).toEqual([]);
+  });
+
+  /// A server that is still starting is a reason to say so about the model,
+  /// not to make the setting unreachable for the rest of the session.
+  it('takes the name at its word when the server cannot be asked', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('connection refused');
+      })
+    );
+
+    await applySpokenSetting('thinking_model', 'whatever-they-said', t);
+    expect(settings.realtime.model).toBe('whatever-they-said');
+  });
+});

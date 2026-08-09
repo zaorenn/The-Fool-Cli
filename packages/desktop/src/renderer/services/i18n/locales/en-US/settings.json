@@ -1682,7 +1682,8 @@
       }
     },
     "conversationTaskAccepted": "I've started it. It runs in the background — tell them briefly that you are on it, and carry on the conversation.",
-    "conversationAsideFailed": "By the way, {{what}} could not be finished. {{why}}"
+    "conversationAsideFailed": "By the way, {{what}} could not be finished. {{why}}",
+    "conversationSettingUnknownModel": "There is no model called “{{name}}” loaded."
   },
   "themeCustomizer": {
     "title": "Customize theme",

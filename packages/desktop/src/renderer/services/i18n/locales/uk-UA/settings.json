@@ -1683,7 +1683,8 @@
       }
     },
     "conversationTaskAccepted": "Я почав. Завдання виконується у фоні — коротко скажи, що взявся за нього, і продовжуй розмову.",
-    "conversationAsideFailed": "До речі, {{what}} не вдалося завершити. {{why}}"
+    "conversationAsideFailed": "До речі, {{what}} не вдалося завершити. {{why}}",
+    "conversationSettingUnknownModel": "Модель «{{name}}» не завантажена."
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",

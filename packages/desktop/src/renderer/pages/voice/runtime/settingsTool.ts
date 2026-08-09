@@ -12,6 +12,7 @@ import type { SpokenVoice } from '@/common/realtime/personas';
 import { peekLayoutPresets, wearLayout } from '@renderer/hooks/config/useSurfaceLayout';
 import { enterWorkspace, peekWorkspaces } from '@renderer/hooks/config/useWorkspaces';
 import { peekVoiceSettings, writeVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
+import { normalizeEndpoint } from '../localPipeline';
 import type { Translate } from './types';
 
 /**
@@ -149,6 +150,50 @@ const findVoice = (profiles: readonly VoiceProfile[], wanted: string): VoiceProf
   );
 };
 
+/** Lowercased, with everything a person does not say out loud removed. */
+const plainly = (value: string): string => value.toLowerCase().replaceAll(/[^a-z0-9]/g, '');
+
+/**
+ * Which of the server's models the user meant.
+ *
+ * Nobody says "qwen slash qwen three point five dash nine b". They say "the
+ * qwen one", or "nine b", and the transcript arrives with spaces where the
+ * punctuation was — so the comparison is made on letters and digits alone.
+ *
+ * Shortest match wins. Asked for "qwen" with two of them loaded, the base model
+ * is the one meant; the longer id is the one with something extra bolted on its
+ * name, and if that is what was wanted they will say the extra part.
+ */
+export const findThinkingModel = (ids: readonly string[], said: string): string | null => {
+  const wanted = plainly(said);
+  if (wanted.length === 0) return null;
+
+  const exact = ids.find((id) => id === said.trim() || plainly(id) === wanted);
+  if (exact) return exact;
+
+  const matches = ids
+    .filter((id) => plainly(id).includes(wanted) || plainly(id).split('/').includes(wanted))
+    .toSorted((left, right) => left.length - right.length);
+  return matches[0] ?? null;
+};
+
+/**
+ * What the local server currently has, or an empty list if it cannot be asked.
+ *
+ * Empty rather than a throw: a server that cannot be reached is a reason to say
+ * so about the model, not to make the setting unreachable.
+ */
+const loadedModelIds = async (endpoint: string): Promise<string[]> => {
+  try {
+    const response = await fetch(`${endpoint}/models`, { signal: AbortSignal.timeout(4000) });
+    if (!response.ok) return [];
+    const body = (await response.json()) as { data?: { id?: unknown }[] };
+    return (body.data ?? []).map((entry) => entry.id).filter((id): id is string => typeof id === 'string');
+  } catch {
+    return [];
+  }
+};
+
 /** Changes which voice speaks, and the engine that renders it along with it. */
 const applyVoice = async (value: string, t: Translate): Promise<string> => {
   const settings = peekVoiceSettings();
@@ -282,10 +327,27 @@ export const applySpokenSetting = async (setting: string, value: string, t: Tran
       return t('settings.voice.conversationSettingWakePhrase', { phrase });
     }
 
+    /**
+     * Which model does the thinking, changed without ending the conversation.
+     *
+     * Written straight through before, on whatever string the model produced.
+     * A name the server does not have was confirmed out loud and then quietly
+     * ignored for the rest of the session, because the running pipeline falls
+     * back to what is actually loaded — so the user was told they had switched
+     * and had not. The name is matched against the server's own list, and one
+     * that matches nothing is refused by name.
+     */
     case 'thinking_model': {
       if (said.length === 0) bad();
-      await save({ ...settings, realtime: { ...settings.realtime, model: said } });
-      return t('settings.voice.conversationSettingThinkingModel', { name: said });
+      const ids = await loadedModelIds(normalizeEndpoint(settings.realtime.localEndpoint));
+      // No list means the server could not be asked. Refusing then would make
+      // the setting unreachable whenever it is starting up, so the name is
+      // taken at its word — which is what this did for every name before.
+      const chosen = ids.length === 0 ? said : findThinkingModel(ids, said);
+      if (!chosen) throw new Error(t('settings.voice.conversationSettingUnknownModel', { name: said }));
+
+      await save({ ...settings, realtime: { ...settings.realtime, model: chosen } });
+      return t('settings.voice.conversationSettingThinkingModel', { name: chosen });
     }
 
     case 'vision_model': {

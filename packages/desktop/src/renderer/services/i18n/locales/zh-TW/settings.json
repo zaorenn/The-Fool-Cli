@@ -1684,7 +1684,8 @@
       }
     },
     "conversationTaskAccepted": "我已經開始了。它在背景執行——簡短地說你正在處理，然後繼續對話。",
-    "conversationAsideFailed": "順帶一提，{{what}} 沒能完成。{{why}}"
+    "conversationAsideFailed": "順帶一提，{{what}} 沒能完成。{{why}}",
+    "conversationSettingUnknownModel": "沒有已載入名為「{{name}}」的模型。"
   },
   "themeCustomizer": {
     "title": "自訂主題",

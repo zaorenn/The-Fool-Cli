@@ -1682,7 +1682,8 @@
       }
     },
     "conversationTaskAccepted": "Ya he empezado. Se ejecuta en segundo plano: di brevemente que te estás ocupando y sigue la conversación.",
-    "conversationAsideFailed": "Por cierto, {{what}} no se ha podido terminar. {{why}}"
+    "conversationAsideFailed": "Por cierto, {{what}} no se ha podido terminar. {{why}}",
+    "conversationSettingUnknownModel": "No hay ningún modelo llamado «{{name}}» cargado."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

@@ -275,6 +275,81 @@ describe('LocalVoicePipeline', () => {
     return { pipeline, fetchMock };
   };
 
+  /**
+   * "Switch to the bigger model" used to be agreed to and then ignored.
+   *
+   * The model was resolved once, at connect, and frozen for the length of the
+   * conversation — so the setting was written, confirmed out loud, and every
+   * later turn still went to whatever had been loaded when it opened. From
+   * where the user sits that is the assistant saying yes and doing nothing.
+   */
+  describe('the model that answers the next turn', () => {
+    const connectWithTwo = async (events: NormalizedRealtimeEvent[]) => {
+      const fetchMock = vi.fn(async (url: string) =>
+        String(url).endsWith('/models')
+          ? ({
+              ok: true,
+              json: async () => ({ data: [{ id: 'google/gemma-4-e4b' }, { id: 'qwen/qwen3.5-9b' }] }),
+            } as unknown as Response)
+          : ({ ok: true, body: sseBody(['Tamam.']) } as unknown as Response)
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const pipeline = new LocalVoicePipeline({
+        settings: settingsWith({ model: 'google/gemma-4-e4b' }),
+        interfaceLanguage: 'tr',
+        onEvent: (event) => events.push(event),
+      });
+      await pipeline.connect();
+      return { pipeline, fetchMock };
+    };
+
+    const modelOfLastTurn = (fetchMock: ReturnType<typeof vi.fn>): string => {
+      const calls = fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/chat/completions'));
+      const last = calls.at(-1)?.[1] as { body: string };
+      return (JSON.parse(last.body) as { model: string }).model;
+    };
+
+    const sayOneThing = async (pipeline: { pushAudio: (audio: string, event: string) => void }): Promise<void> => {
+      pipeline.pushAudio(toBase64(pcmOf([1])), 'speech-started');
+      pipeline.pushAudio('', 'utterance-ended');
+      await settle();
+    };
+
+    beforeEach(() => {
+      readyCatalog();
+      transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'Merhaba.' } });
+      synthesizeInvoke.mockResolvedValue({
+        ok: true,
+        data: { audio: { dataBase64: pcm16ToWavBase64(pcmOf([1]), 24000), sampleRateHz: 24000 } },
+      });
+    });
+
+    it('follows a model chosen while the conversation is open', async () => {
+      const events: NormalizedRealtimeEvent[] = [];
+      const { pipeline, fetchMock } = await connectWithTwo(events);
+
+      await sayOneThing(pipeline);
+      expect(modelOfLastTurn(fetchMock)).toBe('google/gemma-4-e4b');
+
+      pipeline.updateSettings(settingsWith({ model: 'qwen/qwen3.5-9b' }));
+      await sayOneThing(pipeline);
+      expect(modelOfLastTurn(fetchMock)).toBe('qwen/qwen3.5-9b');
+    });
+
+    /// A stale id in the settings should not be the reason every turn from
+    /// then on fails — the same rule connect applies when it first resolves.
+    it('falls back to what is loaded when the chosen model is not there', async () => {
+      const events: NormalizedRealtimeEvent[] = [];
+      const { pipeline, fetchMock } = await connectWithTwo(events);
+
+      pipeline.updateSettings(settingsWith({ model: 'a-model-nobody-has' }));
+      await sayOneThing(pipeline);
+
+      expect(modelOfLastTurn(fetchMock)).toBe('google/gemma-4-e4b');
+    });
+  });
+
   it('refuses to start with a reason the page can translate', async () => {
     catalogInvoke.mockResolvedValue(okCatalog([TTS_MODEL]));
     const pipeline = new LocalVoicePipeline({

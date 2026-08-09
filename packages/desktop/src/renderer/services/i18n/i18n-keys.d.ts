@@ -2775,6 +2775,7 @@ export type I18nKey =
   | 'settings.voice.conversationSettingThinkingModel'
   | 'settings.voice.conversationSettingUnattendedOff'
   | 'settings.voice.conversationSettingUnattendedOn'
+  | 'settings.voice.conversationSettingUnknownModel'
   | 'settings.voice.conversationSettingUnknownVoice'
   | 'settings.voice.conversationSettingVisionModel'
   | 'settings.voice.conversationSettingVoice'
