@@ -68,6 +68,7 @@ fool-app = { path = "crates/fool-app" }
 foolrs-agent = { path = "../agent/crates/foolrs-agent" }
 foolrs-providers = { path = "../agent/crates/foolrs-providers" }
 foolrs-types = { path = "../agent/crates/foolrs-types" }
+foolrs-tools = { path = "../agent/crates/foolrs-tools" }
 foolrs-protocol = { path = "../agent/crates/foolrs-protocol" }
 foolrs-config = { path = "../agent/crates/foolrs-config" }
 foolrs-mcp = { path = "../agent/crates/foolrs-mcp" }

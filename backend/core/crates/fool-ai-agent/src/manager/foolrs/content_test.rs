@@ -44,7 +44,10 @@ async fn attaches_image_bytes_so_a_vision_model_can_see_them() {
     };
     assert!(image_url.url.starts_with("data:image/png;base64,"));
     image_url.validate().expect("attached image must be a valid data URI");
-    assert_eq!(text_of(&blocks[1]), format!("look at this\n\n[Attached files]\n{image_path}"));
+    assert_eq!(
+        text_of(&blocks[1]),
+        format!("look at this\n\n[Attached files]\n{image_path}")
+    );
 }
 
 #[tokio::test]
@@ -56,14 +59,21 @@ async fn keeps_image_as_path_when_the_model_cannot_take_images() {
         let blocks = build_content_blocks("look at this", std::slice::from_ref(&image_path), capability).await;
 
         assert_eq!(blocks.len(), 1, "{capability:?} must not carry image bytes");
-        assert_eq!(text_of(&blocks[0]), format!("look at this\n\n[Attached files]\n{image_path}"));
+        assert_eq!(
+            text_of(&blocks[0]),
+            format!("look at this\n\n[Attached files]\n{image_path}")
+        );
     }
 }
 
 #[tokio::test]
 async fn skips_attachments_whose_bytes_are_not_the_image_the_name_claims() {
     let dir = TempDir::new().expect("temp dir");
-    let liar = write_file(dir.path(), "not-really.png", b"plain text pretending to be a screenshot");
+    let liar = write_file(
+        dir.path(),
+        "not-really.png",
+        b"plain text pretending to be a screenshot",
+    );
 
     let blocks = build_content_blocks(
         "look at this",

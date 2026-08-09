@@ -3,8 +3,7 @@ use std::sync::Arc;
 
 use fool_api_types::{
     APP_TOOLS_MCP_SERVER_NAME, AppToolsMcpConfig, FoolrsBuildExtra, ModelImageInputCapability, ModelOpenAiApiMode,
-    ModelSettings, SessionMcpServer,
-    SessionMcpTransport, TEAM_MCP_SERVER_NAME, TeamMcpStdioConfig,
+    ModelSettings, SessionMcpServer, SessionMcpTransport, TEAM_MCP_SERVER_NAME, TeamMcpStdioConfig,
 };
 use fool_common::ProviderWithModel;
 use fool_db::IMcpServerRepository;
@@ -1095,8 +1094,20 @@ mod tests {
     async fn a_named_selection_still_excludes_an_unnamed_builtin() {
         let repo = MockMcpRepo {
             rows: vec![
-                make_row("chrome-devtools", "http", r#"{"url":"http://localhost:9333/mcp"}"#, true, true),
-                make_row("mcp-docs", "http", r#"{"url":"http://localhost:54321/mcp"}"#, true, false),
+                make_row(
+                    "chrome-devtools",
+                    "http",
+                    r#"{"url":"http://localhost:9333/mcp"}"#,
+                    true,
+                    true,
+                ),
+                make_row(
+                    "mcp-docs",
+                    "http",
+                    r#"{"url":"http://localhost:54321/mcp"}"#,
+                    true,
+                    false,
+                ),
             ],
         };
         let selected = vec!["mcp_mcp-docs".to_owned()];

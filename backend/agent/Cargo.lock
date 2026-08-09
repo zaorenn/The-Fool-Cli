@@ -12,257 +12,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "foolrs-agent"
-version = "0.2.8"
-dependencies = [
- "foolrs-compact",
- "foolrs-config",
- "foolrs-mcp",
- "foolrs-memory",
- "foolrs-protocol",
- "foolrs-providers",
- "foolrs-skills",
- "foolrs-tools",
- "foolrs-types",
- "anyhow",
- "async-trait",
- "base64",
- "chrono",
- "crossterm",
- "dirs",
- "futures",
- "glob",
- "is-terminal",
- "mockall",
- "rstest",
- "serde",
- "serde_json",
- "serial_test",
- "tempfile",
- "thiserror",
- "tokio",
- "tokio-test",
- "tracing",
- "uuid",
- "wiremock",
- "workspace-hack",
-]
-
-[[package]]
-name = "foolrs-cli"
-version = "0.2.8"
-dependencies = [
- "foolrs-agent",
- "foolrs-compact",
- "foolrs-config",
- "foolrs-mcp",
- "foolrs-memory",
- "foolrs-protocol",
- "foolrs-providers",
- "foolrs-skills",
- "foolrs-tools",
- "foolrs-types",
- "anyhow",
- "clap",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "workspace-hack",
-]
-
-[[package]]
-name = "foolrs-compact"
-version = "0.2.8"
-dependencies = [
- "regex",
- "serde",
- "serde_json",
- "tracing",
- "workspace-hack",
-]
-
-[[package]]
-name = "foolrs-config"
-version = "0.2.8"
-dependencies = [
- "foolrs-compact",
- "foolrs-process",
- "foolrs-types",
- "anyhow",
- "chrono",
- "dirs",
- "glob",
- "reqwest",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror",
- "tokio",
- "tokio-test",
- "toml",
- "tracing",
- "tracing-appender",
- "tracing-subscriber",
- "which",
- "wiremock",
- "workspace-hack",
-]
-
-[[package]]
-name = "foolrs-mcp"
-version = "0.2.8"
-dependencies = [
- "foolrs-config",
- "foolrs-protocol",
- "foolrs-tools",
- "foolrs-types",
- "anyhow",
- "async-trait",
- "futures",
- "reqwest",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "tracing",
- "workspace-hack",
-]
-
-[[package]]
-name = "foolrs-memory"
-version = "0.2.8"
-dependencies = [
- "foolrs-config",
- "chrono",
- "rstest",
- "serde",
- "serde_yaml",
- "serial_test",
- "tempfile",
- "thiserror",
- "tracing",
- "workspace-hack",
-]
-
-[[package]]
-name = "foolrs-process"
-version = "0.2.8"
-dependencies = [
- "libc",
- "tokio",
- "windows-sys 0.61.2",
- "workspace-hack",
-]
-
-[[package]]
-name = "foolrs-protocol"
-version = "0.2.8"
-dependencies = [
- "foolrs-types",
- "rstest",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
- "workspace-hack",
-]
-
-[[package]]
-name = "foolrs-providers"
-version = "0.2.8"
-dependencies = [
- "foolrs-config",
- "foolrs-types",
- "anyhow",
- "async-trait",
- "aws-config",
- "aws-credential-types",
- "aws-sdk-sts",
- "aws-sigv4",
- "base64",
- "chrono",
- "dirs",
- "futures",
- "http 1.4.0",
- "insta",
- "jsonwebtoken",
- "reqwest",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "tokio-test",
- "tracing",
- "tracing-subscriber",
- "url",
- "wiremock",
- "workspace-hack",
-]
-
-[[package]]
-name = "foolrs-skills"
-version = "0.2.8"
-dependencies = [
- "foolrs-config",
- "foolrs-mcp",
- "foolrs-process",
- "foolrs-types",
- "anyhow",
- "async-trait",
- "dirs",
- "futures",
- "glob",
- "libc",
- "notify",
- "regex",
- "rstest",
- "serde",
- "serde_json",
- "serde_yaml",
- "serial_test",
- "tempfile",
- "thiserror",
- "tokio",
- "tracing",
- "unicode-width",
- "workspace-hack",
-]
-
-[[package]]
-name = "foolrs-tools"
-version = "0.2.8"
-dependencies = [
- "foolrs-config",
- "foolrs-process",
- "foolrs-protocol",
- "foolrs-types",
- "anyhow",
- "async-trait",
- "base64",
- "futures",
- "glob",
- "lru",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "tracing",
- "workspace-hack",
-]
-
-[[package]]
-name = "foolrs-types"
-version = "0.2.8"
-dependencies = [
- "async-trait",
- "base64",
- "chrono",
- "serde",
- "serde_json",
- "workspace-hack",
-]
-
-[[package]]
 name = "allocator-api2"
 version = "0.2.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1337,6 +1086,257 @@ name = "foldhash"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
+
+[[package]]
+name = "foolrs-agent"
+version = "0.2.8"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64",
+ "chrono",
+ "crossterm",
+ "dirs",
+ "foolrs-compact",
+ "foolrs-config",
+ "foolrs-mcp",
+ "foolrs-memory",
+ "foolrs-protocol",
+ "foolrs-providers",
+ "foolrs-skills",
+ "foolrs-tools",
+ "foolrs-types",
+ "futures",
+ "glob",
+ "is-terminal",
+ "mockall",
+ "rstest",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "uuid",
+ "wiremock",
+ "workspace-hack",
+]
+
+[[package]]
+name = "foolrs-cli"
+version = "0.2.8"
+dependencies = [
+ "anyhow",
+ "clap",
+ "foolrs-agent",
+ "foolrs-compact",
+ "foolrs-config",
+ "foolrs-mcp",
+ "foolrs-memory",
+ "foolrs-protocol",
+ "foolrs-providers",
+ "foolrs-skills",
+ "foolrs-tools",
+ "foolrs-types",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "workspace-hack",
+]
+
+[[package]]
+name = "foolrs-compact"
+version = "0.2.8"
+dependencies = [
+ "regex",
+ "serde",
+ "serde_json",
+ "tracing",
+ "workspace-hack",
+]
+
+[[package]]
+name = "foolrs-config"
+version = "0.2.8"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "dirs",
+ "foolrs-compact",
+ "foolrs-process",
+ "foolrs-types",
+ "glob",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "tokio-test",
+ "toml",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+ "which",
+ "wiremock",
+ "workspace-hack",
+]
+
+[[package]]
+name = "foolrs-mcp"
+version = "0.2.8"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "foolrs-config",
+ "foolrs-protocol",
+ "foolrs-tools",
+ "foolrs-types",
+ "futures",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "workspace-hack",
+]
+
+[[package]]
+name = "foolrs-memory"
+version = "0.2.8"
+dependencies = [
+ "chrono",
+ "foolrs-config",
+ "rstest",
+ "serde",
+ "serde_yaml",
+ "serial_test",
+ "tempfile",
+ "thiserror",
+ "tracing",
+ "workspace-hack",
+]
+
+[[package]]
+name = "foolrs-process"
+version = "0.2.8"
+dependencies = [
+ "libc",
+ "tokio",
+ "windows-sys 0.61.2",
+ "workspace-hack",
+]
+
+[[package]]
+name = "foolrs-protocol"
+version = "0.2.8"
+dependencies = [
+ "foolrs-types",
+ "rstest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "workspace-hack",
+]
+
+[[package]]
+name = "foolrs-providers"
+version = "0.2.8"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "aws-config",
+ "aws-credential-types",
+ "aws-sdk-sts",
+ "aws-sigv4",
+ "base64",
+ "chrono",
+ "dirs",
+ "foolrs-config",
+ "foolrs-types",
+ "futures",
+ "http 1.4.0",
+ "insta",
+ "jsonwebtoken",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "wiremock",
+ "workspace-hack",
+]
+
+[[package]]
+name = "foolrs-skills"
+version = "0.2.8"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "dirs",
+ "foolrs-config",
+ "foolrs-mcp",
+ "foolrs-process",
+ "foolrs-types",
+ "futures",
+ "glob",
+ "libc",
+ "notify",
+ "regex",
+ "rstest",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "serial_test",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "unicode-width",
+ "workspace-hack",
+]
+
+[[package]]
+name = "foolrs-tools"
+version = "0.2.8"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64",
+ "foolrs-config",
+ "foolrs-process",
+ "foolrs-protocol",
+ "foolrs-types",
+ "futures",
+ "glob",
+ "lru",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "workspace-hack",
+]
+
+[[package]]
+name = "foolrs-types"
+version = "0.2.8"
+dependencies = [
+ "async-trait",
+ "base64",
+ "chrono",
+ "serde",
+ "serde_json",
+ "workspace-hack",
+]
 
 [[package]]
 name = "form_urlencoded"

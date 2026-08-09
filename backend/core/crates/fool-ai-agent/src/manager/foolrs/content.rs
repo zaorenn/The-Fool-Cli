@@ -116,7 +116,9 @@ async fn load_image_attachment(file_path: &str, index: usize) -> Option<ImageUrl
     if media_type != claimed_media_type {
         warn!(
             attachment_index = index,
-            claimed_media_type, actual_media_type = media_type, "Image attachment extension does not match its content; sending its path only"
+            claimed_media_type,
+            actual_media_type = media_type,
+            "Image attachment extension does not match its content; sending its path only"
         );
         return None;
     }

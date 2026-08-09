@@ -222,8 +222,23 @@ impl FoolrsAgentManager {
         let is_resume = resume_session.is_some();
         let provider_label = config.provider_label.clone();
 
+        // Somewhere to keep what a file looked like before this conversation
+        // changed it. Under the conversation's own directory rather than the
+        // workspace: the workspace belongs to the user and an application that
+        // scatters `.checkpoints` folders through their projects has made
+        // itself unwelcome.
+        // `std::sync::Mutex` explicitly: `Mutex` in this file is tokio's, and the
+        // store is touched from inside a synchronous tool call.
+        let checkpoints = Arc::new(std::sync::Mutex::new(foolrs_tools::checkpoint::CheckpointStore::new(
+            config_extra
+                .session_directory
+                .join(&conversation_id)
+                .join("checkpoints"),
+        )));
+
         let mut bootstrap = AgentBootstrap::new(config, &workspace, sink)
             .runtime_env(runtime_env)
+            .checkpoints(checkpoints.clone())
             .skill_dirs(config_extra.skill_dirs.clone());
         if let Some(session) = resume_session {
             info!(

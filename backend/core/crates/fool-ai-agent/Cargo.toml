@@ -38,6 +38,7 @@ which.workspace = true
 foolrs-agent.workspace = true
 foolrs-providers.workspace = true
 foolrs-types.workspace = true
+foolrs-tools.workspace = true
 foolrs-protocol.workspace = true
 foolrs-config.workspace = true
 foolrs-mcp.workspace = true
