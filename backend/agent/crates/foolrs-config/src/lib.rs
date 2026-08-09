@@ -1,3 +1,4 @@
+pub mod context_window;
 // Configuration layer: runtime Config, ProviderCompat, auth, hooks, provider-specific configs.
 
 pub mod auth;

@@ -213,6 +213,20 @@ impl FoolrsAgentManager {
         config.session.directory = config_extra.session_directory.to_string_lossy().into_owned();
         config.compat.image_input = Some(image_input_capability);
 
+        // How much this model can actually read.
+        //
+        // The default is 200,000 tokens and nothing ever set it from the model
+        // in front of it, so on every locally served model the compaction
+        // threshold was never reached: the feature was configured, tested and
+        // inert, and the conversation grew until the model overran its window.
+        // An unknown local model is assumed small, because guessing high kills
+        // the conversation and guessing low only costs some context.
+        let local = foolrs_config::context_window::is_local_endpoint(&config.base_url);
+        let configured = (config.compact.context_window != foolrs_config::compact::DEFAULT_CONTEXT_WINDOW)
+            .then_some(config.compact.context_window);
+        config.compact.context_window =
+            foolrs_config::context_window::context_window_for(&config.model, local, configured);
+
         if let Some(mode) = config_extra.compat_overrides.openai_api_mode {
             config.compat.transport.openai_api_mode = Some(mode);
         }

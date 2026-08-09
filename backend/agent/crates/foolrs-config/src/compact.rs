@@ -89,8 +89,15 @@ impl Default for CompactConfig {
 
 // --- Default value functions ---
 
+/// The window assumed when nothing has been configured and nothing is known.
+///
+/// Public so a caller can tell "the user set 200,000" apart from "nobody set
+/// anything" — the difference decides whether a model's own window may replace
+/// it. See `context_window::context_window_for`.
+pub const DEFAULT_CONTEXT_WINDOW: usize = 200_000;
+
 fn default_context_window() -> usize {
-    200_000
+    DEFAULT_CONTEXT_WINDOW
 }
 fn default_output_reserve() -> usize {
     20_000
