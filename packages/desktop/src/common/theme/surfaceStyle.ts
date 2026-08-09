@@ -424,7 +424,11 @@ export const derivePalette = (
   const cardL = lightInk ? Math.min(30, groundL + 6) : Math.min(99, groundL + 5);
 
   return {
-    accent: hslToHex(accent),
+    // The colour the user picked, byte for byte. Everything else here goes
+    // through integer HSL and drifts a step doing it, which is fine for a
+    // derived grey and not fine for the one thing they chose: a picker that
+    // shows #8f5fdb back as #9061db is reporting a value nobody set.
+    accent: sanitizeAccent(accentHex),
     // 0.42 is where black text stops winning against white on the same colour.
     onAccent: relativeLuminance(hslToHex(accent)) > 0.42 ? hslToHex({ h: accent.h, s: 70, l: 12 }) : '#ffffff',
     ground,

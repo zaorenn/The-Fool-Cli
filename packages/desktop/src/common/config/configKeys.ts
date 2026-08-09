@@ -5,6 +5,7 @@ import type { ThemeOverrides, ThemePalettes } from '@/common/config/themeOverrid
 import type { WorkspaceLibrary } from '@/common/config/workspaces';
 import type { Rule } from '@/common/permissions/types';
 import type { LocalSkill } from '@/common/voice/localSkills';
+import type { SurfaceStyleChoice } from '@/common/theme/surfaceChoice';
 
 export type ConfigKeyMap = {
   language: string;
@@ -27,6 +28,16 @@ export type ConfigKeyMap = {
   'ui.surfaceLayouts': SurfaceLayoutSelection | undefined;
   /** Layouts the user built and named, recalled the same way a palette is. */
   'ui.layoutPresets': LayoutPresetLibrary | undefined;
+  /**
+   * What the application is made of, and the one colour the rest derives from.
+   *
+   * A third question, beside the other two: a theme decides the colours, a
+   * layout decides the composition, and this decides the material — whether a
+   * panel is raised out of the ground, a pane of glass with a lit world behind
+   * it, or paper with a shadow that does not blur. One choice, and every
+   * surface follows it without being rewritten.
+   */
+  'ui.surfaceStyle': SurfaceStyleChoice | undefined;
   /** Things the user taught the assistant to do by itself. */
   'voice.localSkills': LocalSkill[] | undefined;
   /**

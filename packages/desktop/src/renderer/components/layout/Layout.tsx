@@ -51,6 +51,10 @@ import '@renderer/styles/surface-shapes.css';
 // is rewritten to all-`!important` before injection, and that voids keyframes.
 // Inert under every other palette — every rule is scoped to `data-theme-id`.
 import '@renderer/styles/jarvis-cinema.css';
+// What a chosen material does. Here for the same reason as the line above —
+// a theme's `!important` rewrite would void these keyframes — and inert until
+// a material is chosen: every rule is scoped to `data-fool-style`.
+import '@renderer/styles/materials.css';
 
 const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 18, strokeWidth = 4 }) => (
   <svg

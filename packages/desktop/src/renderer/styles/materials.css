@@ -1,0 +1,324 @@
+/**
+ * What a chosen material actually does.
+ *
+ * `surfaceStyle.ts` publishes the numbers as custom properties and the material's
+ * name as `data-fool-style` on the document root. This is the other half: the
+ * rules those select. One recipe — `.fool-surface` — serves all seven, which is
+ * what lets a panel change material without being rewritten.
+ *
+ * The keyframes live here rather than in a theme, deliberately. Theme CSS is
+ * rewritten with `!important` on every declaration before it is injected, and
+ * `!important` on an animation shorthand voids the keyframes it names — so a
+ * breathing ground written as a theme would silently never breathe.
+ *
+ * Nothing here fires unless a material has been chosen: without the attribute
+ * the app draws exactly what it always drew.
+ */
+
+html[data-fool-style] {
+  --fool-radius-material: var(--fool-radius, 12px);
+  --fool-ease-material: cubic-bezier(
+    calc(0.2 - var(--fool-bounce, 0) * 0.1),
+    calc(0.7 + var(--fool-bounce, 0) * 0.9),
+    0.3,
+    calc(1 + var(--fool-bounce, 0) * 0.6)
+  );
+}
+
+/* ---------------------------------------------------------------------------
+ * The one recipe
+ * ------------------------------------------------------------------------ */
+
+html[data-fool-style] .fool-surface {
+  background: var(--fool-surface-bg);
+  border: var(--fool-surface-border);
+  border-radius: var(--fool-radius-material);
+  box-shadow: var(--fool-surface-shadow);
+  backdrop-filter: blur(var(--fool-blur, 0px)) saturate(calc(100% + var(--fool-saturation, 0%)));
+  -webkit-backdrop-filter: blur(var(--fool-blur, 0px)) saturate(calc(100% + var(--fool-saturation, 0%)));
+  color: var(--fool-ink);
+  position: relative;
+  transition:
+    transform var(--fool-motion, 220ms) var(--fool-ease-material),
+    box-shadow var(--fool-motion, 220ms) ease,
+    border-radius var(--fool-motion, 220ms) ease,
+    background var(--fool-motion, 220ms) ease,
+    border-color var(--fool-motion, 220ms) ease;
+}
+
+html[data-fool-style] .fool-page {
+  background: var(--fool-page-bg);
+  color: var(--fool-ink);
+}
+
+html[data-fool-style] .fool-heading {
+  font-weight: var(--fool-weight, 700);
+  letter-spacing: var(--fool-tracking, -0.02em);
+}
+
+html[data-fool-style] .fool-body {
+  line-height: var(--fool-leading, 1.55);
+}
+
+html[data-fool-style] .fool-muted {
+  color: var(--fool-ink-soft);
+}
+
+html[data-fool-style] .fool-accent-bg {
+  background: var(--fool-accent);
+  color: var(--fool-on-accent);
+}
+
+/* ---------------------------------------------------------------------------
+ * Kabartma — everything out of one piece of dough. Nothing is cut out,
+ * nothing floats, and pressing something pushes it into the surface.
+ * ------------------------------------------------------------------------ */
+
+html[data-fool-style='neu'] {
+  --fool-surface-bg: var(--fool-ground);
+  --fool-surface-border: none;
+  --fool-page-bg: var(--fool-ground);
+  --fool-surface-shadow:
+    calc(var(--fool-depth) * 0.5px) calc(var(--fool-depth) * 0.5px) calc(var(--fool-depth) * var(--fool-spread) * 1.1px)
+      rgb(0 0 0 / 0.2),
+    calc(var(--fool-depth) * -0.45px) calc(var(--fool-depth) * -0.45px)
+      calc(var(--fool-depth) * var(--fool-spread) * 1px) rgb(255 255 255 / calc(var(--fool-inner) * 1.5));
+}
+
+html[data-fool-style='neu'] .fool-surface:hover {
+  transform: translateY(calc(var(--fool-lift) * -0.35));
+}
+
+html[data-fool-style='neu'] .fool-surface:active {
+  transform: translateY(var(--fool-press));
+  box-shadow:
+    inset calc(var(--fool-depth) * 0.35px) calc(var(--fool-depth) * 0.35px) calc(var(--fool-depth) * 0.8px)
+      rgb(0 0 0 / 0.28),
+    inset calc(var(--fool-depth) * -0.3px) calc(var(--fool-depth) * -0.3px) calc(var(--fool-depth) * 0.7px)
+      rgb(255 255 255 / 0.85);
+}
+
+/* ---------------------------------------------------------------------------
+ * Cam — a pane needs a world behind it, so the page paints one. Light travels
+ * across the surface when it is pointed at.
+ * ------------------------------------------------------------------------ */
+
+html[data-fool-style='glass'] {
+  --fool-surface-bg: rgb(255 255 255 / calc(var(--fool-alpha) * 0.62));
+  --fool-surface-border: calc(var(--fool-edge) + 1px) solid rgb(255 255 255 / 0.45);
+  --fool-surface-shadow: 0 calc(var(--fool-depth) * 0.7px) calc(var(--fool-depth) * var(--fool-spread) * 2px)
+    rgb(0 0 0 / 0.2);
+  --fool-page-bg:
+    radial-gradient(58% 52% at 14% 10%, color-mix(in oklab, var(--fool-accent) 55%, transparent), transparent 62%),
+    radial-gradient(52% 58% at 88% 22%, color-mix(in oklab, var(--fool-accent) 30%, white), transparent 64%),
+    var(--fool-ground);
+}
+
+html[data-fool-style='liquid'] {
+  --fool-surface-bg: linear-gradient(
+    150deg,
+    rgb(255 255 255 / calc(var(--fool-alpha) * 0.7)),
+    rgb(255 255 255 / calc(var(--fool-alpha) * 0.42))
+  );
+  --fool-surface-border: calc(var(--fool-edge) + 1px) solid rgb(255 255 255 / 0.34);
+  --fool-surface-shadow:
+    0 calc(var(--fool-depth) * 0.9px) calc(var(--fool-depth) * var(--fool-spread) * 2.5px) rgb(0 0 0 / 0.26),
+    inset 0 1px 0 rgb(255 255 255 / calc(var(--fool-inner) * 1.3));
+  --fool-page-bg:
+    radial-gradient(48% 44% at 18% 22%, color-mix(in oklab, var(--fool-accent) 60%, transparent), transparent 62%),
+    radial-gradient(44% 48% at 84% 34%, color-mix(in oklab, var(--fool-accent) 35%, white), transparent 64%),
+    var(--fool-ground);
+}
+
+html[data-fool-style='glass'] .fool-surface::after,
+html[data-fool-style='liquid'] .fool-surface::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent 32%,
+    rgb(255 255 255 / calc(0.28 + var(--fool-sheen) * 0.4)) 46%,
+    transparent 60%
+  );
+  transform: translateX(-125%);
+  transition: transform calc(var(--fool-motion, 220ms) * 3) ease;
+  pointer-events: none;
+}
+
+html[data-fool-style='glass'] .fool-surface:hover::after,
+html[data-fool-style='liquid'] .fool-surface:hover::after {
+  transform: translateX(125%);
+}
+
+html[data-fool-style='glass'] .fool-surface:hover {
+  transform: translateY(calc(var(--fool-lift) * -1));
+}
+
+/* Glass that bends: the shape gives a little when it is touched. */
+html[data-fool-style='liquid'] .fool-surface:hover {
+  transform: translateY(calc(var(--fool-lift) * -0.8)) scale(1.012);
+  border-radius: calc(var(--fool-radius-material) * 1.18);
+}
+
+/* ---------------------------------------------------------------------------
+ * Hamur — thick, soft, coloured by its own shadow, and it squashes.
+ * ------------------------------------------------------------------------ */
+
+html[data-fool-style='clay'] {
+  --fool-surface-bg: var(--fool-card);
+  --fool-surface-border: none;
+  --fool-page-bg: color-mix(in oklab, var(--fool-accent) 22%, var(--fool-ground));
+  --fool-surface-shadow:
+    0 calc(var(--fool-depth) * 0.9px) calc(var(--fool-depth) * var(--fool-spread) * 1.4px)
+      color-mix(in oklab, var(--fool-accent) 30%, transparent),
+    inset 0 calc(var(--fool-depth) * 0.5px) calc(var(--fool-depth) * 0.8px)
+      rgb(255 255 255 / calc(var(--fool-inner) * 1.4)),
+    inset 0 calc(var(--fool-depth) * -0.6px) calc(var(--fool-depth) * 0.9px)
+      color-mix(in oklab, var(--fool-accent) 26%, transparent);
+}
+
+html[data-fool-style='clay'] .fool-surface:hover {
+  transform: translateY(calc(var(--fool-lift) * -0.9)) scale(1.02);
+}
+
+html[data-fool-style='clay'] .fool-surface:active {
+  transform: scale(0.965) translateY(2px);
+}
+
+/* ---------------------------------------------------------------------------
+ * Aurora — the ground is the subject and it never stops moving; surfaces are
+ * dark windows onto it, and their edges light up when pointed at.
+ * ------------------------------------------------------------------------ */
+
+html[data-fool-style='aurora'] {
+  --fool-surface-bg: rgb(12 14 24 / calc(var(--fool-alpha) * 0.5));
+  --fool-surface-border: calc(var(--fool-edge) + 1px) solid color-mix(in oklab, var(--fool-accent) 30%, transparent);
+  --fool-surface-shadow: 0 calc(var(--fool-depth) * 0.6px) calc(var(--fool-depth) * var(--fool-spread) * 2.2px)
+    rgb(4 3 10 / 0.5);
+  --fool-page-bg: var(--fool-ground);
+}
+
+html[data-fool-style='aurora'] .fool-page::before {
+  content: '';
+  position: absolute;
+  inset: -30%;
+  background:
+    radial-gradient(34% 38% at 24% 30%, color-mix(in oklab, var(--fool-accent) 60%, transparent), transparent 60%),
+    radial-gradient(30% 34% at 76% 26%, color-mix(in oklab, var(--fool-accent) 40%, cyan), transparent 60%),
+    radial-gradient(40% 40% at 54% 86%, color-mix(in oklab, var(--fool-accent) 45%, magenta), transparent 62%);
+  filter: blur(42px);
+  opacity: var(--fool-ambient);
+  animation: fool-drift calc(var(--fool-motion, 220ms) * 100) ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+html[data-fool-style='aurora'] .fool-page > * {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-fool-style='aurora'] .fool-surface:hover {
+  border-color: color-mix(in oklab, var(--fool-accent) 75%, transparent);
+  box-shadow:
+    var(--fool-surface-shadow),
+    0 0 calc(var(--fool-depth) * 2px) color-mix(in oklab, var(--fool-accent) 42%, transparent);
+}
+
+@keyframes fool-drift {
+  0% {
+    transform: translate3d(-4%, -3%, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(5%, 4%, 0) scale(1.12);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Brütal — paper and ink. The shadow does not blur, the motion does not ease,
+ * and pressing something sticks it to the page.
+ * ------------------------------------------------------------------------ */
+
+html[data-fool-style='brutal'] {
+  --fool-surface-bg: var(--fool-card);
+  --fool-surface-border: calc(2px + var(--fool-edge)) solid var(--fool-ink);
+  --fool-surface-shadow: calc(var(--fool-depth) * 0.35px) calc(var(--fool-depth) * 0.35px) 0 0 var(--fool-ink);
+  --fool-page-bg: color-mix(in oklab, var(--fool-accent) 26%, var(--fool-ground));
+}
+
+html[data-fool-style='brutal'] .fool-surface {
+  transition-timing-function: steps(2, end);
+}
+
+html[data-fool-style='brutal'] .fool-surface:hover {
+  transform: translate(calc(var(--fool-lift) * -0.4), calc(var(--fool-lift) * -0.4));
+  box-shadow: calc(var(--fool-depth) * 0.55px) calc(var(--fool-depth) * 0.55px) 0 0 var(--fool-ink);
+}
+
+html[data-fool-style='brutal'] .fool-surface:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 0 var(--fool-ink);
+}
+
+/* ---------------------------------------------------------------------------
+ * Sade — a line, a gap, and nothing else. It does not move; the line darkens.
+ * ------------------------------------------------------------------------ */
+
+html[data-fool-style='minimal'] {
+  --fool-surface-bg: var(--fool-card);
+  --fool-surface-border: 1px solid color-mix(in oklab, var(--fool-ink) 15%, transparent);
+  --fool-surface-shadow: none;
+  --fool-page-bg: var(--fool-ground);
+}
+
+html[data-fool-style='minimal'] .fool-surface:hover {
+  border-color: color-mix(in oklab, var(--fool-ink) 36%, transparent);
+}
+
+/* ---------------------------------------------------------------------------
+ * The pulse a voice conversation shows while it is listening.
+ *
+ * Here rather than in the component so it obeys the ambient dial: somebody who
+ * turned the movement off meant this too.
+ * ------------------------------------------------------------------------ */
+
+@keyframes fool-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.1;
+  }
+}
+
+html[data-fool-style] .fool-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in oklab, var(--fool-accent) 42%, transparent);
+  opacity: var(--fool-ambient);
+  animation: fool-pulse calc(var(--fool-motion, 220ms) * 11) ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* A material with no ambient movement asked for none of this. */
+html[data-fool-style] [style*='--fool-ambient: 0'] .fool-pulse::after {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-fool-style] .fool-surface,
+  html[data-fool-style] .fool-surface::after,
+  html[data-fool-style] .fool-page::before,
+  html[data-fool-style] .fool-pulse::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
