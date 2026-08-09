@@ -1658,7 +1658,29 @@
     "conversationAgentRuntimeHint": "The spoken conversation thinks with the same runtime the chat uses, so it can read files, run commands and remember past twelve turns. On by default; turning it off goes back to the small built-in loop. The first sound may take a moment longer.",
     "conversationCouldNotDoIt": "I could not do that.",
     "conversationThemeUnchanged": "That was already how it looked.",
-    "conversationThemeMaterial": "Now {{name}}."
+    "conversationThemeMaterial": "Now {{name}}.",
+    "thinkingAloud": {
+      "thinking": {
+        "0": "Hmm, let me think.",
+        "1": "One moment.",
+        "2": "Give me a second."
+      },
+      "working": {
+        "0": "Still on it.",
+        "1": "I'm working on it.",
+        "2": "Almost there."
+      },
+      "still": {
+        "0": "This one is taking a while.",
+        "1": "Still going, bear with me.",
+        "2": "Nearly done, I think."
+      },
+      "aside": {
+        "0": "By the way — {{what}} is finished.",
+        "1": "Oh, {{what}} just finished.",
+        "2": "That other thing, {{what}}, is done."
+      }
+    }
   },
   "themeCustomizer": {
     "title": "Customize theme",

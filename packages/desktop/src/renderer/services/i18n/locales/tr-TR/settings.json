@@ -1658,7 +1658,29 @@
     "conversationAgentRuntimeHint": "Sesli sohbet, yazılı sohbetin kullandığı çalışma zamanıyla düşünür: dosya okuyabilir, komut çalıştırabilir ve on iki turdan fazlasını hatırlar. Varsayılan olarak açık; kapatırsan eski küçük döngüye döner. İlk ses biraz gecikebilir.",
     "conversationCouldNotDoIt": "Bunu yapamadım.",
     "conversationThemeUnchanged": "Zaten öyleydi.",
-    "conversationThemeMaterial": "Artık {{name}}."
+    "conversationThemeMaterial": "Artık {{name}}.",
+    "thinkingAloud": {
+      "thinking": {
+        "0": "Hmm, bir düşüneyim.",
+        "1": "Bir saniye.",
+        "2": "Bakıyorum."
+      },
+      "working": {
+        "0": "Hâlâ üzerinde çalışıyorum.",
+        "1": "Devam ediyorum.",
+        "2": "Az kaldı."
+      },
+      "still": {
+        "0": "Bu biraz uzun sürüyor.",
+        "1": "Hâlâ sürüyor, biraz sabret.",
+        "2": "Sanırım bitmek üzere."
+      },
+      "aside": {
+        "0": "Bu arada, {{what}} bitti.",
+        "1": "Ha bir de, {{what}} tamamlandı.",
+        "2": "Şu diğer iş, {{what}}, bitti."
+      }
+    }
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

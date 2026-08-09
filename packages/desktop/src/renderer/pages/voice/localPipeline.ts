@@ -1417,6 +1417,11 @@ export class LocalVoicePipeline {
         // Kept rather than spoken. The point of refusing is that the user never
         // hears the claim; the model still has to be told what it did.
         onRefused: (correction) => (refusal ??= correction),
+        // A turn that calls tools can be quiet for twenty seconds, and silence
+        // in a room is indistinguishable from the application having crashed.
+        // The line is looked up here because this is where the translation
+        // lives; when to say one is `thinkingAloud`'s decision.
+        fillerLine: (key) => i18next.t(key as never, { defaultValue: '' }) as string,
         signal: controller.signal,
       });
 

@@ -1660,7 +1660,29 @@
     "conversationAgentRuntimeHint": "음성 대화가 채팅과 같은 런타임에서 생각합니다. 파일을 읽고, 명령을 실행하고, 열두 턴 이전까지 기억합니다. 기본값은 켜짐이며, 끄면 내장된 작은 루프로 돌아갑니다. 첫 소리가 조금 늦어질 수 있습니다.",
     "conversationCouldNotDoIt": "그건 하지 못했습니다.",
     "conversationThemeUnchanged": "이미 그렇게 되어 있었어요.",
-    "conversationThemeMaterial": "이제 {{name}}입니다."
+    "conversationThemeMaterial": "이제 {{name}}입니다.",
+    "thinkingAloud": {
+      "thinking": {
+        "0": "음, 잠깐 생각해 볼게요.",
+        "1": "잠시만요.",
+        "2": "한번 볼게요."
+      },
+      "working": {
+        "0": "아직 하고 있어요.",
+        "1": "작업 중입니다.",
+        "2": "거의 다 됐어요."
+      },
+      "still": {
+        "0": "이건 시간이 좀 걸리네요.",
+        "1": "아직 진행 중이에요, 조금만요.",
+        "2": "곧 끝날 것 같아요."
+      },
+      "aside": {
+        "0": "그런데 {{what}} 끝났어요.",
+        "1": "아, {{what}} 방금 끝났습니다.",
+        "2": "아까 그 {{what}}, 완료됐어요."
+      }
+    }
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",

@@ -1661,7 +1661,29 @@
     "conversationAgentRuntimeHint": "A conversa falada pensa com o mesmo runtime do chat: pode ler arquivos, executar comandos e lembrar de mais de doze turnos. Ativado por padrão; desativá-lo volta ao pequeno laço interno. O primeiro som pode demorar um pouco mais.",
     "conversationCouldNotDoIt": "Não consegui fazer isso.",
     "conversationThemeUnchanged": "Já estava assim.",
-    "conversationThemeMaterial": "Agora {{name}}."
+    "conversationThemeMaterial": "Agora {{name}}.",
+    "thinkingAloud": {
+      "thinking": {
+        "0": "Hmm, deixa eu pensar.",
+        "1": "Um momento.",
+        "2": "Vou dar uma olhada."
+      },
+      "working": {
+        "0": "Ainda estou nisso.",
+        "1": "Estou trabalhando nisso.",
+        "2": "Quase lá."
+      },
+      "still": {
+        "0": "Esse está demorando um pouco.",
+        "1": "Ainda rolando, só um pouco.",
+        "2": "Acho que está quase."
+      },
+      "aside": {
+        "0": "A propósito, {{what}} terminou.",
+        "1": "Ah, {{what}} acabou de terminar.",
+        "2": "Aquela outra coisa, {{what}}, está pronta."
+      }
+    }
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

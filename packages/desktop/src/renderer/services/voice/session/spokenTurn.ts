@@ -8,6 +8,7 @@ import { ipcBridge } from '@/common';
 import { prefaceWithInstructions } from '@/common/voice/pendingInstructions';
 import { createIncrementalSentenceDetector } from '@renderer/services/voice/narration/incrementalSentences';
 import { isSayable, registerFor, stripForSpeech } from '@/common/voice/spokenRegister';
+import { fillerFor, fillerKey } from '@/common/voice/thinkingAloud';
 import { guardSpokenSentence } from './spokenOutput';
 
 /**
@@ -52,6 +53,15 @@ export type SpokenTurnInput = {
    * queued for the speaker.
    */
   onRefused?: (correction: string) => void;
+  /**
+   * The line for a silence, in the user's language.
+   *
+   * Given rather than looked up here, because this file has no `t` and should
+   * not: what a filler says is a translation, and when to say one is the
+   * decision this module owns. Absent, nothing is said into a silence — which
+   * is what every caller did before this existed.
+   */
+  fillerLine?: (key: string) => string;
   /** Aborting cancels the model as well as the speaker. */
   signal?: AbortSignal;
 };
@@ -126,6 +136,7 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
   const finish = (result: SpokenTurnResult): void => {
     if (settled) return;
     settled = true;
+    if (fillerTimer !== null) clearInterval(fillerTimer);
     stopListening();
     settle(result);
   };
@@ -168,6 +179,7 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
     // cannot tell "the text never arrived" apart from "the text arrived, was
     // spoken, and died further down" — and those need opposite fixes.
     console.info('[spokenTurn] speaking:', JSON.stringify(forSpeech.slice(0, 60)));
+    lastSoundAt = Date.now();
     onSentence(forSpeech);
   };
 
@@ -176,9 +188,52 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
     input.onRefused?.(correction);
   };
 
+  /** When text last arrived, which is how a filler knows to keep quiet. */
+  let lastDeltaAt = 0;
+
   const say = (delta: string): void => {
+    if (delta.length > 0) lastDeltaAt = Date.now();
     for (const sentence of sentences.push(delta)) offer(sentence);
   };
+
+  /**
+   * Says something into a long silence, so nobody is left wondering.
+   *
+   * A turn that calls tools can be quiet for twenty seconds. On screen that is
+   * a spinner; in a room it is indistinguishable from the thing having
+   * crashed. The decision of whether and what belongs to `thinkingAloud`; this
+   * only holds the clock and the two facts it needs.
+   *
+   * A filler is not part of `spoken`. It is not an answer, and counting it as
+   * one would let a turn that said nothing but "hmm" report itself as having
+   * spoken.
+   */
+  const startedAt = Date.now();
+  let lastSoundAt = startedAt;
+  let fillersSaid = 0;
+  const fillerTimer =
+    input.fillerLine === undefined
+      ? null
+      : setInterval(() => {
+          if (settled) return;
+          const kind = fillerFor({
+            elapsedMs: Date.now() - startedAt,
+            quietForMs: Date.now() - lastSoundAt,
+            // Text arriving right now is real speech on its way; a filler
+            // over the top of it is worse than the silence it would cover.
+            speaking: Date.now() - lastDeltaAt < 900,
+            toolsRan,
+            saidSoFar: fillersSaid,
+          });
+          if (kind === null) return;
+
+          const line = input.fillerLine?.(fillerKey(kind, fillersSaid))?.trim() ?? '';
+          if (line.length === 0) return;
+          fillersSaid += 1;
+          lastSoundAt = Date.now();
+          console.info('[spokenTurn] filling a silence:', kind);
+          onSentence(line);
+        }, 700);
 
   // Subscribed before the message is sent: a short turn can finish before this
   // would otherwise have started listening, and a completion missed is a turn

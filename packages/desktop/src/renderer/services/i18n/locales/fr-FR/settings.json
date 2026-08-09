@@ -1658,7 +1658,29 @@
     "conversationAgentRuntimeHint": "La conversation vocale réfléchit avec le même moteur que le chat : elle peut lire des fichiers, exécuter des commandes et se souvenir de plus de douze tours. Activé par défaut ; le désactiver ramène la petite boucle intégrée. Le premier son peut mettre un peu plus de temps.",
     "conversationCouldNotDoIt": "Je n'ai pas pu le faire.",
     "conversationThemeUnchanged": "C'était déjà comme ça.",
-    "conversationThemeMaterial": "Maintenant {{name}}."
+    "conversationThemeMaterial": "Maintenant {{name}}.",
+    "thinkingAloud": {
+      "thinking": {
+        "0": "Hmm, laisse-moi réfléchir.",
+        "1": "Un instant.",
+        "2": "Je regarde."
+      },
+      "working": {
+        "0": "J’y suis toujours.",
+        "1": "Je travaille dessus.",
+        "2": "Presque fini."
+      },
+      "still": {
+        "0": "Celui-là prend un peu de temps.",
+        "1": "Ça continue, encore un peu de patience.",
+        "2": "Bientôt fini, je crois."
+      },
+      "aside": {
+        "0": "Au fait — {{what}} est terminé.",
+        "1": "Ah, {{what}} vient de se terminer.",
+        "2": "L’autre chose, {{what}}, est faite."
+      }
+    }
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

@@ -1658,7 +1658,29 @@
     "conversationAgentRuntimeHint": "Das gesprochene Gespräch denkt mit derselben Laufzeit wie der Chat: Es kann Dateien lesen, Befehle ausführen und sich an mehr als zwölf Züge erinnern. Standardmäßig an; beim Ausschalten kehrt die kleine eingebaute Schleife zurück. Der erste Ton kann etwas länger dauern.",
     "conversationCouldNotDoIt": "Das konnte ich nicht tun.",
     "conversationThemeUnchanged": "So sah es schon aus.",
-    "conversationThemeMaterial": "Jetzt {{name}}."
+    "conversationThemeMaterial": "Jetzt {{name}}.",
+    "thinkingAloud": {
+      "thinking": {
+        "0": "Hmm, lass mich kurz überlegen.",
+        "1": "Einen Moment.",
+        "2": "Ich schaue nach."
+      },
+      "working": {
+        "0": "Bin noch dran.",
+        "1": "Ich arbeite daran.",
+        "2": "Gleich fertig."
+      },
+      "still": {
+        "0": "Das dauert etwas länger.",
+        "1": "Läuft noch, hab Geduld.",
+        "2": "Fast fertig, denke ich."
+      },
+      "aside": {
+        "0": "Übrigens — {{what}} ist fertig.",
+        "1": "Ach, {{what}} ist gerade fertig geworden.",
+        "2": "Die andere Sache, {{what}}, ist erledigt."
+      }
+    }
   },
   "themeCustomizer": {
     "title": "Design anpassen",

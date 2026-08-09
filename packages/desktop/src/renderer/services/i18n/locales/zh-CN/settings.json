@@ -1659,7 +1659,29 @@
     "conversationAgentRuntimeHint": "语音对话使用与文字对话相同的运行时思考：可以读取文件、执行命令，并记住十二轮以前的内容。默认开启；关闭后回到内置的小循环。第一声可能会稍慢一些。",
     "conversationCouldNotDoIt": "这件事我没能做到。",
     "conversationThemeUnchanged": "本来就是这样。",
-    "conversationThemeMaterial": "现在是{{name}}。"
+    "conversationThemeMaterial": "现在是{{name}}。",
+    "thinkingAloud": {
+      "thinking": {
+        "0": "嗯，我想一下。",
+        "1": "稍等。",
+        "2": "我看看。"
+      },
+      "working": {
+        "0": "还在做。",
+        "1": "正在处理。",
+        "2": "快好了。"
+      },
+      "still": {
+        "0": "这个花的时间有点长。",
+        "1": "还在跑，再稍等一下。",
+        "2": "我觉得快完了。"
+      },
+      "aside": {
+        "0": "对了，{{what}} 完成了。",
+        "1": "啊，{{what}} 刚刚完成。",
+        "2": "刚才那个 {{what}}，做完了。"
+      }
+    }
   },
   "themeCustomizer": {
     "title": "自定义主题",

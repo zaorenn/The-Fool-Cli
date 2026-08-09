@@ -1660,7 +1660,29 @@
     "conversationAgentRuntimeHint": "語音對話使用與文字對話相同的執行環境思考：可以讀取檔案、執行指令，並記住十二輪以前的內容。預設開啟；關閉後會回到內建的小迴圈。第一聲可能會稍慢一些。",
     "conversationCouldNotDoIt": "這件事我沒能做到。",
     "conversationThemeUnchanged": "本來就是這樣。",
-    "conversationThemeMaterial": "現在是{{name}}。"
+    "conversationThemeMaterial": "現在是{{name}}。",
+    "thinkingAloud": {
+      "thinking": {
+        "0": "嗯，我想一下。",
+        "1": "稍等。",
+        "2": "我看看。"
+      },
+      "working": {
+        "0": "還在做。",
+        "1": "正在處理。",
+        "2": "快好了。"
+      },
+      "still": {
+        "0": "這個花的時間有點久。",
+        "1": "還在跑，再稍等一下。",
+        "2": "我覺得快完了。"
+      },
+      "aside": {
+        "0": "對了，{{what}} 完成了。",
+        "1": "啊，{{what}} 剛剛完成。",
+        "2": "剛才那個 {{what}}，做完了。"
+      }
+    }
   },
   "themeCustomizer": {
     "title": "自訂主題",
