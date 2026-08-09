@@ -1045,12 +1045,41 @@ async fn replace_existing_path(path: &Path) -> Result<(), ExtensionError> {
         Err(e) => return Err(e.into()),
     };
 
-    if metadata.file_type().is_symlink() || metadata.is_file() {
+    let file_type = metadata.file_type();
+    if file_type.is_symlink() {
+        remove_link(path, &file_type).await?;
+    } else if metadata.is_file() {
         tokio::fs::remove_file(path).await?;
     } else {
         tokio::fs::remove_dir_all(path).await?;
     }
 
+    Ok(())
+}
+
+/// Remove a link itself, without following it.
+///
+/// On Windows a link to a *directory* — a directory symlink, or the
+/// junction this crate prefers because a junction needs no privilege — has
+/// to go through `remove_dir`. `remove_file` refuses it with access
+/// denied, which is why a skill that had ever been linked into the user
+/// directory could never be imported over: every later import failed.
+#[cfg(windows)]
+async fn remove_link(path: &Path, file_type: &std::fs::FileType) -> Result<(), ExtensionError> {
+    use std::os::windows::fs::FileTypeExt;
+
+    if file_type.is_symlink_dir() {
+        tokio::fs::remove_dir(path).await?;
+    } else {
+        tokio::fs::remove_file(path).await?;
+    }
+
+    Ok(())
+}
+
+#[cfg(not(windows))]
+async fn remove_link(path: &Path, _file_type: &std::fs::FileType) -> Result<(), ExtensionError> {
+    tokio::fs::remove_file(path).await?;
     Ok(())
 }
 
@@ -1154,14 +1183,10 @@ pub async fn export_skill_with_symlink(skill_path: &Path, target_dir: &Path) -> 
     let target_link = target_dir.join(&skill_name);
     tokio::fs::create_dir_all(target_dir).await?;
 
-    // Remove existing link if present
-    if target_link.exists() {
-        if target_link.is_symlink() || target_link.is_file() {
-            tokio::fs::remove_file(&target_link).await?;
-        } else {
-            tokio::fs::remove_dir_all(&target_link).await?;
-        }
-    }
+    // Remove whatever is there, link included. `exists()` follows a link,
+    // so a dangling one used to look absent here and the export then failed
+    // with "already exists"; `replace_existing_path` looks at the link.
+    replace_existing_path(&target_link).await?;
 
     create_symlink(skill_path, &target_link).await?;
 
@@ -2257,31 +2282,38 @@ async fn create_symlink_for_link(src: &Path, dst: &Path) -> Result<(), Extension
 /// symlinking would otherwise succeed (Linux/macOS CI).
 #[cfg(test)]
 mod test_overrides {
-    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::cell::Cell;
 
-    static FORCE_SYMLINK_FAILURE: AtomicBool = AtomicBool::new(false);
-
-    pub fn should_force_symlink_failure() -> bool {
-        FORCE_SYMLINK_FAILURE.load(Ordering::SeqCst)
+    thread_local! {
+        /// Per-test, not per-process. A process-wide flag here made the
+        /// fallback test knock out the two tests that assert a real link
+        /// is made: they ran on other threads while the flag was up and
+        /// got a copy instead. Each `#[tokio::test]` gets its own thread
+        /// and drives a current-thread runtime, so the guard and the code
+        /// it affects share this cell and nothing else sees it.
+        static FORCE_SYMLINK_FAILURE: Cell<bool> = const { Cell::new(false) };
     }
 
-    /// RAII guard that flips `FORCE_SYMLINK_FAILURE` on creation and
-    /// resets it on drop. Tests using this guard must be marked
-    /// `#[serial_test::serial]` if any other test in the binary also
-    /// flips the flag — at present only one test uses it, so a guard
-    /// is enough.
-    pub struct ForceFailureGuard;
+    pub fn should_force_symlink_failure() -> bool {
+        FORCE_SYMLINK_FAILURE.with(Cell::get)
+    }
+
+    /// RAII guard that forces the symlink primitive to fail for the
+    /// current thread, and restores the previous value on drop.
+    pub struct ForceFailureGuard {
+        previous: bool,
+    }
 
     impl ForceFailureGuard {
         pub fn new() -> Self {
-            FORCE_SYMLINK_FAILURE.store(true, Ordering::SeqCst);
-            Self
+            let previous = FORCE_SYMLINK_FAILURE.replace(true);
+            Self { previous }
         }
     }
 
     impl Drop for ForceFailureGuard {
         fn drop(&mut self) {
-            FORCE_SYMLINK_FAILURE.store(false, Ordering::SeqCst);
+            FORCE_SYMLINK_FAILURE.set(self.previous);
         }
     }
 }
@@ -2901,7 +2933,7 @@ mod tests {
 
         let outcome = import_skills(&paths, &fresh_source).await.unwrap();
 
-        assert_eq!(outcome.imported, vec!["dangling"]);
+        assert_eq!(outcome.imported, vec!["dangling"], "{outcome:?}");
         assert!(outcome.failed.is_empty());
         assert!(!target.is_symlink());
         assert!(target.join(SKILL_MANIFEST_FILE).exists());
@@ -3256,6 +3288,33 @@ mod tests {
 
         let link = target_dir.join("my-skill");
         assert!(link.is_symlink());
+    }
+
+    /// Exporting twice, with the first export's source deleted in between,
+    /// is the shape a user produces by moving a skill folder. The stale
+    /// link has to be taken out of the way rather than tripped over.
+    #[tokio::test]
+    async fn export_skill_replaces_a_dangling_link() {
+        let tmp = TempDir::new().unwrap();
+        let stale_dir = tmp.path().join("stale");
+        create_skill_in_dir(&stale_dir, "my-skill", "Stale");
+        let target_dir = tmp.path().join("exports");
+
+        export_skill_with_symlink(&stale_dir.join("my-skill"), &target_dir)
+            .await
+            .unwrap();
+        std::fs::remove_dir_all(&stale_dir).unwrap();
+
+        let fresh_dir = tmp.path().join("fresh");
+        create_skill_in_dir(&fresh_dir, "my-skill", "Fresh");
+        export_skill_with_symlink(&fresh_dir.join("my-skill"), &target_dir)
+            .await
+            .expect("a dangling link must not block a re-export");
+
+        let link = target_dir.join("my-skill");
+        assert!(link.is_symlink());
+        let manifest = std::fs::read_to_string(link.join(SKILL_MANIFEST_FILE)).unwrap();
+        assert!(manifest.contains("Fresh"), "{manifest}");
     }
 
     // -----------------------------------------------------------------------

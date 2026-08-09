@@ -16,10 +16,12 @@ handler, and the answer comes back over HTTP. It is a second instance of the pat
 already uses, which is why the risk was low and the generic half (`fool-mcp-server`) was extracted
 rather than written twice.
 
-**What it does not do yet.** Nothing here decides whether a tool is _allowed_ to run. And a hosted CLI
-agent (Claude Code, Codex) cannot reach the server yet — that needs the stdio bridge subcommand, so
-the design's claim that typed chat gains these tools "for free" is true of the embedded agent only,
-today.
+**What it does not do yet.** ~~Nothing here decides whether a tool is _allowed_ to run.~~ It does now:
+every call is judged by `permissions/decide.ts` before the handler is reached, so a tool cannot be
+half-run and then denied. What remains true is that a hosted CLI agent (Claude Code, Codex) cannot
+reach the server — that needs the stdio bridge subcommand, so the design's claim that typed chat
+gains these tools "for free" is true of the embedded agent only, today. **This is the one unfinished
+capability on the branch**; everything it needs is described under "What is left".
 
 ## The spoken turn has moved, behind a flag that is shut
 
@@ -261,12 +263,29 @@ network, a fast read followed by a slow write is this process. Wait for a real r
 numbers in it. **Do not "fix" this by guessing** — every plausible fix here is a change to
 code that has been measured and found fast.
 
+### The one unfinished capability: app tools for a hosted CLI agent
+
+`fool-app-tools` serves MCP over HTTP on loopback with a bearer token. The embedded agent reaches it
+because `factory/foolrs.rs` injects the server into its config. Claude Code and Codex cannot: they
+speak MCP over stdio and are spawned as subprocesses.
+
+What it needs, precisely: a `foolcore app-tools-bridge` subcommand reading `Content-Length`-framed
+JSON-RPC from stdin, POSTing each frame to `http://127.0.0.1:{port}{path}` with the bearer token, and
+writing the framed reply back — with no reply written for a notification, which has no `id`. The
+framing readers already exist in `commands/cmd_mcp_bridge.rs` and should be lifted into a shared
+module rather than copied, taking the subcommand name as a parameter so a boundary error names the
+right one. Then the ACP factory has to inject it into `session/new`, the way it already injects the
+team bridge.
+
+It was deliberately **not started** rather than half-built: it is the only remaining gap, and a
+half-finished bridge would be worse than a documented absence.
+
 ### Asked for, not started
 
-- **PDF by voice** — summarise, translate, fill a form by asking for each value aloud.
-  **Nothing is installed for this** — not `pdfjs-dist`, not `pdf-lib` (verified 8 August; two
-  earlier handovers claimed otherwise). Reading and writing both need a dependency, and the
-  user has authorised one, so adding it is step one rather than a decision to take.
+- ~~**PDF by voice**~~ — **done**, `process/pdf/pdfDocument.ts`. Reads a form, writes a filled copy
+  beside the original and never over it, and skips-and-reports a value the form never offered
+  instead of letting `pdf-lib` silently add it as a new option. Translation of a PDF's *body* is
+  still not there; this is forms.
 - **Learning a skill by watching** — ask for an app it does not know, watch which one the user
   opens, remember it. The local-skills machinery from `612a5187b` is the half that exists, and
   `app_find_video` is the shape the other half should take.
