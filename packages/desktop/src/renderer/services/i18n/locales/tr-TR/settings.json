@@ -1655,7 +1655,9 @@
     "spokenConversationName": "Sesli sohbet",
     "conversationAgentRuntime": "Ajan çalışma zamanını kullan",
     "conversationAgentRuntimeHint": "Sesli sohbet, yazılı sohbetin kullandığı çalışma zamanıyla düşünür: dosya okuyabilir, komut çalıştırabilir ve on iki turdan fazlasını hatırlar. Varsayılan olarak açık; kapatırsan eski küçük döngüye döner. İlk ses biraz gecikebilir.",
-    "conversationCouldNotDoIt": "Bunu yapamadım."
+    "conversationCouldNotDoIt": "Bunu yapamadım.",
+    "conversationThemeUnchanged": "Zaten öyleydi.",
+    "conversationThemeMaterial": "Artık {{name}}."
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",
@@ -1936,5 +1938,16 @@
     "always": "Buna her zaman izin ver",
     "deny": "İzin verme",
     "noAlwaysForSending": "Bu her seferinde sorulur. Bu makineden çıkan bir şeye önceden söz verilmez."
+  },
+  "appearance": {
+    "material": {
+      "neu": "Kabartma",
+      "glass": "Cam",
+      "liquid": "Sıvı cam",
+      "clay": "Hamur",
+      "aurora": "Aurora",
+      "brutal": "Brütal",
+      "minimal": "Sade"
+    }
   }
 }

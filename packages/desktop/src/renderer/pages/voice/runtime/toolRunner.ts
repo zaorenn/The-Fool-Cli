@@ -42,6 +42,9 @@ import {
 } from '@renderer/services/voice/session/voiceMemoryStore';
 import { describeScreen } from '@renderer/services/voice/screenSight';
 import { peekVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
+import { applySurfaceIntent, readSurfaceIntent, type SurfaceIntent } from '@/common/theme/surfaceIntent';
+import { defaultSurfaceChoice, type SurfaceStyleChoice } from '@/common/theme/surfaceChoice';
+import { peekSurfaceChoice, SURFACE_STYLE_CONFIG_KEY } from '@renderer/hooks/config/useSurfaceStyle';
 import { applyThemeOverrides } from '@renderer/utils/theme/applyThemeOverrides';
 import { normalizeEndpoint } from '../localPipeline';
 import { buildAndPreview } from './buildTool';
@@ -66,6 +69,17 @@ import type { ToolHost, ToolInvocation } from './types';
  * "Accent" rather than "primary" in the tool, because that is what a person
  * calls it — the stored key keeps the name the rest of the app uses.
  */
+/**
+ * Writes a material choice the way the panel does.
+ *
+ * Through `configService` rather than onto the document, so the change reaches
+ * every window and survives a restart — the same path the settings panel takes.
+ * The hook applies it to the page when the store tells it to.
+ */
+const writeSurfaceChoice = async (choice: SurfaceStyleChoice): Promise<void> => {
+  await configService.set(SURFACE_STYLE_CONFIG_KEY, choice);
+};
+
 const THEME_TARGETS: Record<string, ThemeColorKey> = {
   accent: 'primary',
   background: 'background',
@@ -89,7 +103,8 @@ export const applyThemeAction = async (
   action: string,
   target: string,
   color: string,
-  name: string
+  name: string,
+  intent: SurfaceIntent = {}
 ): Promise<string> => {
   const stored = sanitizeThemeOverrides(configService.get(THEME_OVERRIDES_CONFIG_KEY));
   const palettes = sanitizeThemePalettes(configService.get(THEME_PALETTES_CONFIG_KEY));
@@ -103,13 +118,32 @@ export const applyThemeAction = async (
 
   if (action === 'reset') {
     await commit({});
+    await writeSurfaceChoice(defaultSurfaceChoice());
     return t('settings.voice.conversationThemeReset');
+  }
+
+  // What the app is made of, and how it moves. Both go through the same pure
+  // reader as every other caller, so a sentence said out loud and a sentence
+  // typed change the same thing by the same amount.
+  if (action === 'style' || action === 'dial') {
+    const { choice, changed } = applySurfaceIntent(peekSurfaceChoice(), intent);
+    // Saying it changed when it did not is the one failure this application is
+    // built against, so an intent that moved nothing says so.
+    if (changed.length === 0) return t('settings.voice.conversationThemeUnchanged');
+    await writeSurfaceChoice(choice);
+    return t('settings.voice.conversationThemeMaterial', {
+      name: t(`settings.appearance.material.${choice.style}`),
+    });
   }
 
   if (action === 'set') {
     const hex = color.trim().toLowerCase();
     if (!isValidHexColor(hex)) throw new Error(t('settings.voice.conversationThemeBadColor'));
     await commit({ ...stored.colors, [key]: hex });
+    // The accent is also the one colour the material derives everything from,
+    // so setting it here and not there would leave the application half
+    // changed — the buttons the new colour and the surfaces the old one.
+    if (key === 'primary') await writeSurfaceChoice({ ...peekSurfaceChoice(), accent: hex });
     return t('settings.voice.conversationThemeSet', { target: t(`settings.voice.conversationThemeTarget.${key}`) });
   }
 
@@ -260,7 +294,14 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
       args[key] === true || (typeof args[key] === 'string' && /^(true|yes)$/i.test(args[key] as string));
 
     if (invocation.name === 'app_theme') {
-      const detail = await applyThemeAction(t, text('action'), text('target') || 'accent', text('color'), text('name'));
+      const detail = await applyThemeAction(
+        t,
+        text('action'),
+        text('target') || 'accent',
+        text('color'),
+        text('name'),
+        readSurfaceIntent(args)
+      );
       host.updateActivity(invocation.callId, { detail, state: 'completed' });
       host.backToListening();
       return { ok: true, detail };

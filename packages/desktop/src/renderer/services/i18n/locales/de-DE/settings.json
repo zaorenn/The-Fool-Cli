@@ -1655,7 +1655,9 @@
     "spokenConversationName": "Gesprochene Unterhaltung",
     "conversationAgentRuntime": "Agent-Laufzeit verwenden",
     "conversationAgentRuntimeHint": "Das gesprochene Gespräch denkt mit derselben Laufzeit wie der Chat: Es kann Dateien lesen, Befehle ausführen und sich an mehr als zwölf Züge erinnern. Standardmäßig an; beim Ausschalten kehrt die kleine eingebaute Schleife zurück. Der erste Ton kann etwas länger dauern.",
-    "conversationCouldNotDoIt": "Das konnte ich nicht tun."
+    "conversationCouldNotDoIt": "Das konnte ich nicht tun.",
+    "conversationThemeUnchanged": "So sah es schon aus.",
+    "conversationThemeMaterial": "Jetzt {{name}}."
   },
   "themeCustomizer": {
     "title": "Design anpassen",
@@ -1936,5 +1938,16 @@
     "always": "Immer erlauben",
     "deny": "Nicht erlauben",
     "noAlwaysForSending": "Danach wird jedes Mal gefragt. Was dieses Gerät verlässt, wird nicht im Voraus erlaubt."
+  },
+  "appearance": {
+    "material": {
+      "neu": "Erhaben",
+      "glass": "Glas",
+      "liquid": "Flüssigglas",
+      "clay": "Ton",
+      "aurora": "Aurora",
+      "brutal": "Brutal",
+      "minimal": "Schlicht"
+    }
   }
 }

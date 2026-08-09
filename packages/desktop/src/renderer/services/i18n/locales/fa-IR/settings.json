@@ -1655,7 +1655,9 @@
     "spokenConversationName": "گفت‌وگوی صوتی",
     "conversationAgentRuntime": "استفاده از زمان اجرای عامل",
     "conversationAgentRuntimeHint": "گفت‌وگوی صوتی با همان زمان اجرای گفت‌وگوی نوشتاری فکر می‌کند: می‌تواند فایل بخواند، فرمان اجرا کند و بیش از دوازده نوبت را به یاد بسپارد. به‌طور پیش‌فرض روشن است؛ با خاموش کردن آن به حلقهٔ کوچک داخلی بازمی‌گردید. نخستین صدا ممکن است کمی دیرتر شنیده شود.",
-    "conversationCouldNotDoIt": "نتوانستم این کار را انجام دهم."
+    "conversationCouldNotDoIt": "نتوانستم این کار را انجام دهم.",
+    "conversationThemeUnchanged": "همین‌طور بود.",
+    "conversationThemeMaterial": "حالا {{name}}."
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",
@@ -1936,5 +1938,16 @@
     "always": "همیشه اجازه بده",
     "deny": "اجازه نده",
     "noAlwaysForSending": "این مورد هر بار پرسیده می‌شود. چیزی که از این دستگاه بیرون می‌رود از پیش پذیرفته نمی‌شود."
+  },
+  "appearance": {
+    "material": {
+      "neu": "برجسته",
+      "glass": "شیشه",
+      "liquid": "شیشهٔ مایع",
+      "clay": "رس",
+      "aurora": "شفق",
+      "brutal": "خام",
+      "minimal": "ساده"
+    }
   }
 }

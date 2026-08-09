@@ -1656,7 +1656,9 @@
     "spokenConversationName": "语音对话",
     "conversationAgentRuntime": "使用智能体运行时",
     "conversationAgentRuntimeHint": "语音对话使用与文字对话相同的运行时思考：可以读取文件、执行命令，并记住十二轮以前的内容。默认开启；关闭后回到内置的小循环。第一声可能会稍慢一些。",
-    "conversationCouldNotDoIt": "这件事我没能做到。"
+    "conversationCouldNotDoIt": "这件事我没能做到。",
+    "conversationThemeUnchanged": "本来就是这样。",
+    "conversationThemeMaterial": "现在是{{name}}。"
   },
   "themeCustomizer": {
     "title": "自定义主题",
@@ -1937,5 +1939,16 @@
     "always": "始终允许",
     "deny": "不允许",
     "noAlwaysForSending": "这一项每次都会询问。离开这台机器的事情不会提前答应。"
+  },
+  "appearance": {
+    "material": {
+      "neu": "浮雕",
+      "glass": "玻璃",
+      "liquid": "液态玻璃",
+      "clay": "黏土",
+      "aurora": "极光",
+      "brutal": "粗野",
+      "minimal": "素净"
+    }
   }
 }

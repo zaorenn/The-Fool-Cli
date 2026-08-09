@@ -1655,7 +1655,9 @@
     "spokenConversationName": "Голосовой разговор",
     "conversationAgentRuntime": "Использовать среду агента",
     "conversationAgentRuntimeHint": "Голосовой разговор думает тем же движком, что и переписка: может читать файлы, выполнять команды и помнить больше двенадцати ходов. По умолчанию включено; если выключить, вернётся небольшой встроенный цикл. Первый звук может прозвучать чуть позже.",
-    "conversationCouldNotDoIt": "Я не смог этого сделать."
+    "conversationCouldNotDoIt": "Я не смог этого сделать.",
+    "conversationThemeUnchanged": "Так уже и было.",
+    "conversationThemeMaterial": "Теперь {{name}}."
   },
   "themeCustomizer": {
     "title": "Настроить тему",
@@ -1936,5 +1938,16 @@
     "always": "Разрешать всегда",
     "deny": "Не разрешать",
     "noAlwaysForSending": "Об этом спрашивают каждый раз. То, что уходит с этой машины, заранее не разрешают."
+  },
+  "appearance": {
+    "material": {
+      "neu": "Рельеф",
+      "glass": "Стекло",
+      "liquid": "Жидкое стекло",
+      "clay": "Глина",
+      "aurora": "Аврора",
+      "brutal": "Брутал",
+      "minimal": "Просто"
+    }
   }
 }

@@ -1655,7 +1655,9 @@
     "spokenConversationName": "Conversación hablada",
     "conversationAgentRuntime": "Usar el motor del agente",
     "conversationAgentRuntimeHint": "La conversación hablada piensa con el mismo motor que el chat: puede leer archivos, ejecutar comandos y recordar más de doce turnos. Activado de forma predeterminada; al desactivarlo se vuelve al pequeño bucle interno. El primer sonido puede tardar un poco más.",
-    "conversationCouldNotDoIt": "No he podido hacer eso."
+    "conversationCouldNotDoIt": "No he podido hacer eso.",
+    "conversationThemeUnchanged": "Ya se veía así.",
+    "conversationThemeMaterial": "Ahora {{name}}."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",
@@ -1936,5 +1938,16 @@
     "always": "Permitir siempre",
     "deny": "No permitir",
     "noAlwaysForSending": "Esto se pregunta cada vez. Lo que sale de este equipo no se acepta por adelantado."
+  },
+  "appearance": {
+    "material": {
+      "neu": "Relieve",
+      "glass": "Cristal",
+      "liquid": "Cristal líquido",
+      "clay": "Arcilla",
+      "aurora": "Aurora",
+      "brutal": "Brutal",
+      "minimal": "Sencillo"
+    }
   }
 }

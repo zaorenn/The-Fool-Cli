@@ -1655,7 +1655,9 @@
     "spokenConversationName": "Spoken conversation",
     "conversationAgentRuntime": "Run on the agent runtime",
     "conversationAgentRuntimeHint": "The spoken conversation thinks with the same runtime the chat uses, so it can read files, run commands and remember past twelve turns. On by default; turning it off goes back to the small built-in loop. The first sound may take a moment longer.",
-    "conversationCouldNotDoIt": "I could not do that."
+    "conversationCouldNotDoIt": "I could not do that.",
+    "conversationThemeUnchanged": "That was already how it looked.",
+    "conversationThemeMaterial": "Now {{name}}."
   },
   "themeCustomizer": {
     "title": "Customize theme",
@@ -1936,5 +1938,16 @@
     "always": "Always allow this",
     "deny": "Do not allow",
     "noAlwaysForSending": "This one is asked every time. Something that leaves this machine is not something to agree to in advance."
+  },
+  "appearance": {
+    "material": {
+      "neu": "Raised",
+      "glass": "Glass",
+      "liquid": "Liquid glass",
+      "clay": "Clay",
+      "aurora": "Aurora",
+      "brutal": "Brutal",
+      "minimal": "Plain"
+    }
   }
 }

@@ -114,15 +114,15 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_theme',
     description:
-      "Change how the app looks, keep a set of colours under a name, or put a kept one back on. Colours are yours to choose: the user describes what they want — warmer, deeper, like the sea, the colour of an old terminal — and you turn that into a hex value yourself. Only touch what they asked about; changing the background when they said 'accent' is a bigger change than they wanted. Say what you changed in a few words, and never read a hex code out loud.",
+      "Change how the app looks: its colours, what it is made of, and how it moves. Colours are yours to choose — the user describes what they want, warmer, deeper, like the sea, the colour of an old terminal, and you turn that into a hex value yourself. What it is made of is the 'material' ('style' action): raised out of the ground, glass, liquid glass, clay, aurora, brutal, or plain. Everything else is a dial you nudge with 'more' or 'less' ('dial' action) — that is how 'soften the shadows', 'calm it down', 'make the corners rounder' get done. Only touch what they asked about, say what you changed in a few words, and never read a hex code out loud.",
     parameters: {
       type: 'object',
       properties: {
         action: {
           type: 'string',
-          enum: ['set', 'save', 'use', 'reset'],
+          enum: ['set', 'style', 'dial', 'save', 'use', 'reset'],
           description:
-            "'set' applies a colour now, 'save' keeps the current colours under a name, 'use' puts a saved one back on, 'reset' returns to the app's own colours.",
+            "'set' applies a colour now, 'style' changes what the app is made of, 'dial' moves one aspect of it, 'save' keeps the current look under a name, 'use' puts a saved one back on, 'reset' returns to the app's own.",
         },
         target: {
           type: 'string',
@@ -133,6 +133,42 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
           type: 'string',
           description: "A hex colour such as #1f6f8b, for 'set'. Choose it from what the user described.",
         },
+        material: {
+          type: 'string',
+          enum: ['neu', 'glass', 'liquid', 'clay', 'aurora', 'brutal', 'minimal'],
+          description:
+            "For 'style'. neu is raised out of the same ground; glass is a lit pane; liquid is glass that bends; clay is thick and soft; aurora is a dark, breathing ground; brutal is paper with a hard shadow; minimal is a line and nothing else.",
+        },
+        dial: {
+          type: 'string',
+          enum: [
+            'depth',
+            'blur',
+            'alpha',
+            'sheen',
+            'lift',
+            'press',
+            'ambient',
+            'gap',
+            'weight',
+            'leading',
+            'tracking',
+            'edge',
+            'spread',
+            'inner',
+            'saturation',
+            'bounce',
+            'tint',
+          ],
+          description:
+            "For 'dial'. depth is shadow, alpha is see-through, lift is how far it rises when pointed at, ambient is background movement, gap is space between things, weight is heading thickness.",
+        },
+        direction: {
+          type: 'string',
+          enum: ['more', 'less'],
+          description: 'Which way to move the dial. Use this rather than a number unless they named one.',
+        },
+        amount: { type: 'number', description: 'An exact value for the dial, when the user named one.' },
         name: { type: 'string', description: "The user's own name for a palette, for 'save' and 'use'." },
       },
       required: ['action'],

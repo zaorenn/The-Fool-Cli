@@ -1655,7 +1655,9 @@
     "spokenConversationName": "Conversation vocale",
     "conversationAgentRuntime": "Utiliser le moteur de l'agent",
     "conversationAgentRuntimeHint": "La conversation vocale réfléchit avec le même moteur que le chat : elle peut lire des fichiers, exécuter des commandes et se souvenir de plus de douze tours. Activé par défaut ; le désactiver ramène la petite boucle intégrée. Le premier son peut mettre un peu plus de temps.",
-    "conversationCouldNotDoIt": "Je n'ai pas pu le faire."
+    "conversationCouldNotDoIt": "Je n'ai pas pu le faire.",
+    "conversationThemeUnchanged": "C'était déjà comme ça.",
+    "conversationThemeMaterial": "Maintenant {{name}}."
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",
@@ -1936,5 +1938,16 @@
     "always": "Toujours autoriser",
     "deny": "Ne pas autoriser",
     "noAlwaysForSending": "Celle-ci est demandée chaque fois. Ce qui quitte cette machine ne s'accepte pas à l'avance."
+  },
+  "appearance": {
+    "material": {
+      "neu": "Relief",
+      "glass": "Verre",
+      "liquid": "Verre liquide",
+      "clay": "Argile",
+      "aurora": "Aurore",
+      "brutal": "Brutal",
+      "minimal": "Sobre"
+    }
   }
 }

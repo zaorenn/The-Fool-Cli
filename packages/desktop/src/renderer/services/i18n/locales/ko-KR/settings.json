@@ -1657,7 +1657,9 @@
     "spokenConversationName": "음성 대화",
     "conversationAgentRuntime": "에이전트 런타임 사용",
     "conversationAgentRuntimeHint": "음성 대화가 채팅과 같은 런타임에서 생각합니다. 파일을 읽고, 명령을 실행하고, 열두 턴 이전까지 기억합니다. 기본값은 켜짐이며, 끄면 내장된 작은 루프로 돌아갑니다. 첫 소리가 조금 늦어질 수 있습니다.",
-    "conversationCouldNotDoIt": "그건 하지 못했습니다."
+    "conversationCouldNotDoIt": "그건 하지 못했습니다.",
+    "conversationThemeUnchanged": "이미 그렇게 되어 있었어요.",
+    "conversationThemeMaterial": "이제 {{name}}입니다."
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",
@@ -1938,5 +1940,16 @@
     "always": "항상 허용",
     "deny": "허용하지 않음",
     "noAlwaysForSending": "이것은 매번 묻습니다. 이 컴퓨터를 떠나는 일은 미리 허락하지 않습니다."
+  },
+  "appearance": {
+    "material": {
+      "neu": "양각",
+      "glass": "유리",
+      "liquid": "리퀴드 글래스",
+      "clay": "클레이",
+      "aurora": "오로라",
+      "brutal": "브루탈",
+      "minimal": "단순"
+    }
   }
 }
