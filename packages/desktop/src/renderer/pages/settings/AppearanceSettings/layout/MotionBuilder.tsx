@@ -44,7 +44,7 @@ const DEFAULT_DRAFT: Omit<LayoutMotion, 'id'> = {
 };
 
 /** The moves that go somewhere, and so have a distance worth setting. */
-const TRAVELS: readonly MotionMove[] = new Set(['rise', 'fall', 'in-from-left', 'in-from-right']);
+const TRAVELS: ReadonlySet<MotionMove> = new Set(['rise', 'fall', 'in-from-left', 'in-from-right']);
 
 /**
  * The preview keyframe each move plays.
