@@ -1,4 +1,5 @@
 mod formatter;
+pub mod labelled_sink;
 pub mod null_sink;
 pub mod protocol_sink;
 mod sink;

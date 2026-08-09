@@ -400,7 +400,10 @@ impl AgentBootstrap {
             workspace.to_path_buf(),
             self.runtime_env.clone(),
             self.tool_policy.clone(),
-        );
+        )
+        // Onto the same sink the parent writes to, which is the only one that
+        // reaches a screen.
+        .watched_by(Arc::clone(&self.output));
         registry.register(Box::new(SpawnTool::new(Arc::new(spawner))));
     }
 

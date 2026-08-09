@@ -31,11 +31,16 @@ Where The Fool is behind, plainly:
    was written.** `foolrs-agent/src/spawn_tool.rs` spawns up to five children in
    parallel, each with its own context and up to two hundred turns, and
    `fool-team` is a whole multi-agent system on top with role prompts, a task
-   board, a mailbox and a scheduler. The real gap is one line in
-   `spawner.rs`: children run with a `NullSink`, so their output is discarded
-   and nobody can watch them work. That is a stream to connect, not a subsystem
-   to build — and prompt 4 below, written from the wrong premise, would have
-   rebuilt what already exists.
+   board, a mailbox and a scheduler. The real gap was one line in
+   `spawner.rs`: children ran with a `NullSink`, so their output was discarded
+   and nobody could watch them work. That was a stream to connect, not a
+   subsystem to build — and prompt 4 below, written from the wrong premise,
+   would have rebuilt what already exists. **Done.** Children now report
+   through a `LabelledSink` onto the parent's own output: each one's tools and
+   failures appear under its name, and it is announced when it starts and when
+   it finishes. Their prose is not forwarded — it comes back to the parent as
+   the tool result, and streaming it as well would put five answers on top of
+   the parent's own.
 2. **Typed chat is a second-class citizen.** Voice got the skills, the guard,
    the memory rules. The chat window did not.
 3. **Nothing is measured.** No turn counts, no prompt sizes, no latency figures

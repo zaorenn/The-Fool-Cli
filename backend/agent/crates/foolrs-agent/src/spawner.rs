@@ -16,6 +16,7 @@ use foolrs_types::message::TokenUsage;
 
 use crate::engine::AgentEngine;
 use crate::output::OutputSink;
+use crate::output::labelled_sink::LabelledSink;
 use crate::output::null_sink::NullSink;
 use crate::tool_policy::ToolPolicy;
 
@@ -24,10 +25,15 @@ pub use foolrs_types::spawner::{ForkOverrides, Spawner, SubAgentConfig, SubAgent
 
 /// Spawns independent child agents that share the parent's LLM provider.
 ///
-/// Sub-agents use a [`NullSink`] so their streaming output is silently
-/// discarded.  Results are collected via `engine.run()` and returned to the
-/// parent which emits them as a single `tool_result` event — matching the
-/// Claude Code pattern where only the parent writes to stdout.
+/// A child's result comes back to the parent, which returns it as a single
+/// `tool_result`; that has not changed. What has changed is that the work
+/// leading up to it is no longer invisible. Children used to run against a
+/// [`NullSink`], so a request split into five left the user watching a spinner
+/// for a minute with no way to tell a slow search from a stuck one.
+///
+/// Each child now reports through a [`LabelledSink`] onto the parent's own
+/// output, so its tools and failures appear under its name. Its prose does not:
+/// see that type for why.
 ///
 /// Children inherit the parent's runtime tool policy. Fork overrides can
 /// further narrow that policy, but cannot restore tools denied to the parent.
@@ -37,6 +43,9 @@ pub struct AgentSpawner {
     cwd: PathBuf,
     runtime_env: Vec<(String, String)>,
     tool_policy: ToolPolicy,
+    /// Where children are watched. Silent unless a caller supplies one, so a
+    /// spawner built for a test does not need a screen to run against.
+    output: Arc<dyn OutputSink>,
 }
 
 impl AgentSpawner {
@@ -57,7 +66,15 @@ impl AgentSpawner {
             cwd,
             runtime_env,
             tool_policy,
+            output: Arc::new(NullSink),
         }
+    }
+
+    /// Streams the children's work onto the sink the parent is already using.
+    #[must_use]
+    pub fn watched_by(mut self, output: Arc<dyn OutputSink>) -> Self {
+        self.output = output;
+        self
     }
 
     /// Spawn a single sub-agent and wait for result.
@@ -75,7 +92,7 @@ impl AgentSpawner {
 
         let child_policy = effective_child_tool_policy(&self.tool_policy, &[]);
         let tools = build_tool_registry(&child_policy, &self.cwd, &self.runtime_env);
-        let output: Arc<dyn OutputSink> = Arc::new(NullSink);
+        let output = self.watch(&sub_config.name);
         let mut engine = AgentEngine::new_with_provider_and_env(
             self.provider.clone(),
             config,
@@ -87,20 +104,26 @@ impl AgentSpawner {
         engine.set_tool_policy(child_policy);
 
         match engine.run(&sub_config.prompt, "").await {
-            Ok(result) => SubAgentResult {
-                name: sub_config.name,
-                text: result.text,
-                usage: result.usage,
-                turns: result.turns,
-                is_error: false,
-            },
-            Err(e) => SubAgentResult {
-                name: sub_config.name,
-                text: format!("Sub-agent error: {}", e),
-                usage: TokenUsage::default(),
-                turns: 0,
-                is_error: true,
-            },
+            Ok(result) => {
+                self.settled(&sub_config.name, result.turns);
+                SubAgentResult {
+                    name: sub_config.name,
+                    text: result.text,
+                    usage: result.usage,
+                    turns: result.turns,
+                    is_error: false,
+                }
+            }
+            Err(e) => {
+                self.output.emit_error(&format!("[{}] {e}", sub_config.name));
+                SubAgentResult {
+                    name: sub_config.name,
+                    text: format!("Sub-agent error: {}", e),
+                    usage: TokenUsage::default(),
+                    turns: 0,
+                    is_error: true,
+                }
+            }
         }
     }
 
@@ -130,6 +153,24 @@ impl AgentSpawner {
         results
     }
 
+    /// Announces a child and hands it somewhere to report.
+    ///
+    /// The announcement is here rather than in the sink because it belongs to
+    /// starting a child, not to anything the child says — a child that dies
+    /// before its first tool call has still been seen to start.
+    fn watch(&self, name: &str) -> Arc<dyn OutputSink> {
+        self.output.emit_info(&format!("[{name}] started"));
+        Arc::new(LabelledSink::new(Arc::clone(&self.output), name))
+    }
+
+    /// Says a child is done, and in how many turns.
+    ///
+    /// The turn count is the honest measure of how much a child did; a person
+    /// watching five of them wants to know which one is doing the work.
+    fn settled(&self, name: &str, turns: usize) {
+        self.output.emit_info(&format!("[{name}] finished after {turns} turns"));
+    }
+
     fn clone_for_spawn(&self) -> Self {
         Self {
             provider: self.provider.clone(),
@@ -137,6 +178,7 @@ impl AgentSpawner {
             cwd: self.cwd.clone(),
             runtime_env: self.runtime_env.clone(),
             tool_policy: self.tool_policy.clone(),
+            output: Arc::clone(&self.output),
         }
     }
 }
@@ -158,7 +200,7 @@ impl Spawner for AgentSpawner {
 
         let child_policy = effective_child_tool_policy(&self.tool_policy, &overrides.allowed_tools);
         let tools = build_tool_registry(&child_policy, &self.cwd, &self.runtime_env);
-        let output: Arc<dyn OutputSink> = Arc::new(NullSink);
+        let output = self.watch(&sub_config.name);
         let mut engine = AgentEngine::new_with_provider_and_env(
             self.provider.clone(),
             config,
@@ -171,20 +213,26 @@ impl Spawner for AgentSpawner {
         engine.set_tool_policy(child_policy);
 
         match engine.run(&sub_config.prompt, "").await {
-            Ok(result) => SubAgentResult {
-                name: sub_config.name,
-                text: result.text,
-                usage: result.usage,
-                turns: result.turns,
-                is_error: false,
-            },
-            Err(e) => SubAgentResult {
-                name: sub_config.name,
-                text: format!("Sub-agent error: {}", e),
-                usage: TokenUsage::default(),
-                turns: 0,
-                is_error: true,
-            },
+            Ok(result) => {
+                self.settled(&sub_config.name, result.turns);
+                SubAgentResult {
+                    name: sub_config.name,
+                    text: result.text,
+                    usage: result.usage,
+                    turns: result.turns,
+                    is_error: false,
+                }
+            }
+            Err(e) => {
+                self.output.emit_error(&format!("[{}] {e}", sub_config.name));
+                SubAgentResult {
+                    name: sub_config.name,
+                    text: format!("Sub-agent error: {}", e),
+                    usage: TokenUsage::default(),
+                    turns: 0,
+                    is_error: true,
+                }
+            }
         }
     }
 }

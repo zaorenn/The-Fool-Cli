@@ -206,3 +206,95 @@ async fn test_spawn_agent_error_captured() {
         result.text
     );
 }
+
+// ---------------------------------------------------------------------------
+// Watching children work
+// ---------------------------------------------------------------------------
+
+/// Records everything the parent's sink is told, in order.
+#[derive(Default)]
+struct RecordingSink {
+    lines: Mutex<Vec<String>>,
+}
+
+impl RecordingSink {
+    fn lines(&self) -> Vec<String> {
+        self.lines.lock().unwrap().clone()
+    }
+
+    fn push(&self, line: String) {
+        self.lines.lock().unwrap().push(line);
+    }
+}
+
+impl foolrs_agent::output::OutputSink for RecordingSink {
+    fn emit_text_delta(&self, text: &str, _msg_id: &str) {
+        self.push(format!("text:{text}"));
+    }
+    fn emit_thinking(&self, text: &str, _msg_id: &str) {
+        self.push(format!("thinking:{text}"));
+    }
+    fn emit_tool_call(&self, _id: &str, name: &str, _input: &str) {
+        self.push(format!("call:{name}"));
+    }
+    fn emit_tool_result(&self, _id: &str, name: &str, is_error: bool, _content: &str) {
+        self.push(format!("result:{name}:{is_error}"));
+    }
+    fn emit_stream_start(&self, _msg_id: &str) {
+        self.push("start".into());
+    }
+    fn emit_stream_end(&self, _msg_id: &str, _turns: usize, _i: u64, _o: u64, _cc: u64, _cr: u64) {
+        self.push("end".into());
+    }
+    fn emit_error(&self, msg: &str) {
+        self.push(format!("error:{msg}"));
+    }
+    fn emit_info(&self, msg: &str) {
+        self.push(format!("info:{msg}"));
+    }
+}
+
+/// A child that starts and finishes is seen to, by name.
+///
+/// Before this, children ran against a `NullSink`: a request split into five
+/// showed a spinner and nothing else, and a stuck child looked exactly like a
+/// slow one.
+#[tokio::test]
+async fn a_spawned_child_is_announced_and_its_end_reported() {
+    let sink = Arc::new(RecordingSink::default());
+    let spawner = AgentSpawner::new(
+        Arc::new(MockLlmProvider::with_text_response("Sub-agent done")),
+        test_config(),
+        std::env::temp_dir(),
+        ToolPolicy::Unrestricted,
+    )
+    .watched_by(sink.clone());
+
+    let result = spawner.spawn_one(make_sub_config("search-docs")).await;
+
+    assert_eq!(result.text, "Sub-agent done");
+    assert_eq!(
+        sink.lines(),
+        vec![
+            "info:[search-docs] started".to_string(),
+            "info:[search-docs] finished after 1 turns".to_string(),
+        ],
+        "the child's own prose must not be streamed into the parent's answer"
+    );
+}
+
+/// Nothing is written anywhere when no one is watching.
+///
+/// A spawner built without a sink is the shape every existing caller and test
+/// uses, and it must stay silent rather than panic for want of a screen.
+#[tokio::test]
+async fn an_unwatched_spawner_says_nothing() {
+    let spawner = AgentSpawner::new(
+        Arc::new(MockLlmProvider::with_text_response("quiet")),
+        test_config(),
+        std::env::temp_dir(),
+        ToolPolicy::Unrestricted,
+    );
+
+    assert_eq!(spawner.spawn_one(make_sub_config("quiet-one")).await.text, "quiet");
+}

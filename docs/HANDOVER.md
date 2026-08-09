@@ -16,7 +16,7 @@ handler, and the answer comes back over HTTP. It is a second instance of the pat
 already uses, which is why the risk was low and the generic half (`fool-mcp-server`) was extracted
 rather than written twice.
 
-**What it does not do yet.** Nothing here decides whether a tool is *allowed* to run. And a hosted CLI
+**What it does not do yet.** Nothing here decides whether a tool is _allowed_ to run. And a hosted CLI
 agent (Claude Code, Codex) cannot reach the server yet — that needs the stdio bridge subcommand, so
 the design's claim that typed chat gains these tools "for free" is true of the embedded agent only,
 today.
@@ -37,7 +37,7 @@ Three things in it are worth knowing rather than rediscovering:
   (`common/voice/pendingInstructions.ts`). Agreeing to a rule and then ignoring it until next session
   would be the failure the old code existed to prevent.
 - **The claim gate is now one function** (`renderer/services/voice/session/spokenOutput.ts`) and every
-  surface passes through it: the agent path refuses a sentence *before* it is queued and hands the
+  surface passes through it: the agent path refuses a sentence _before_ it is queued and hands the
   model back its own words for exactly one more round; the socket providers, which speak their own
   audio, get the rest of the claim flushed and keep it out of the record. That is weaker for
   speech-to-speech and it is weaker on purpose — it is the most that can be done when the audio is
@@ -69,10 +69,10 @@ looking for a real bug there.
 reproducible, they are nothing to do with the branch — `git diff main...HEAD` touches neither crate —
 and they are all one shape: paths.
 
-| Test                                                            | What it says                                              |
-| --------------------------------------------------------------- | ----------------------------------------------------------- |
-| `fool-file` `service::tests::build_dir_tree_sync_relative_paths` | got `folder\file.txt`, wanted `folder/file.txt`           |
-| `fool-file` `service::tests::list_workspace_files_sync_relative_paths` | got `src\main.rs`, wanted `src/main.rs`             |
+| Test                                                                                           | What it says                                              |
+| ---------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `fool-file` `service::tests::build_dir_tree_sync_relative_paths`                               | got `folder\file.txt`, wanted `folder/file.txt`           |
+| `fool-file` `service::tests::list_workspace_files_sync_relative_paths`                         | got `src\main.rs`, wanted `src/main.rs`                   |
 | `fool-conversation` `create_rejects_unavailable_workspace_with_trailing_whitespace_in_request` | a trailing-space workspace is accepted here, not rejected |
 
 Either the code should normalise separators and Windows was never checked, or the tests were written
