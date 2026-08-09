@@ -85,7 +85,7 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ open, onOpen, onClose, 
         />
         <div
           ref={panelRef}
-          className={styles.drawerPanel}
+          className={`fool-surface ${styles.drawerPanel}`}
           role='dialog'
           aria-modal='false'
           aria-label={t('settings.voice.conversationSetup')}

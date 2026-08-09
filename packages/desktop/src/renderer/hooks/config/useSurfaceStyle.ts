@@ -63,6 +63,35 @@ export const clearSurfaceChoice = (target: HTMLElement = document.documentElemen
 };
 
 /**
+ * Wears whatever is stored, and keeps wearing it.
+ *
+ * Mounted once at the app root. Without this the material was a setting three
+ * callers could write and nothing could read: the panel, the wizard and the
+ * spoken tool all put a choice in `configService`, and the page went on drawing
+ * what it always drew. The first paint is not this hook's job — that happens in
+ * `bootstrapRendererConfig`, before React exists, for the same reason the saved
+ * colours are applied there. This is what happens afterwards: another window
+ * changing the choice, and the light/dark switch moving, which changes what the
+ * same choice derives to.
+ *
+ * Deliberately returns nothing. A root component re-rendering every time a dial
+ * moves would re-render the whole application to change a shadow.
+ */
+export const useWornSurfaceStyle = (): void => {
+  useEffect(() => {
+    const wear = (): void => applySurfaceChoice(peekSurfaceChoice());
+    wear();
+    const stop = configService.subscribe(SURFACE_STYLE_CONFIG_KEY, wear);
+    const observer = new MutationObserver(wear);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => {
+      stop();
+      observer.disconnect();
+    };
+  }, []);
+};
+
+/**
  * The choice, applied, and kept applied.
  *
  * Re-applies when another window changes it and when the light/dark switch
@@ -113,7 +142,7 @@ export const useSurfaceStyle = (): {
     setStyle: (style: SurfaceStyleId) => write({ style, accent: choice.accent }),
     setAccent: (accent: string) => write({ ...choice, accent }),
     setToken: (key: keyof MaterialTokens, value: number) =>
-      write({ ...choice, tokens: { ...(choice.tokens ?? {}), [key]: value } }),
+      write({ ...choice, tokens: { ...choice.tokens, [key]: value } }),
     reset: () => write(defaultSurfaceChoice()),
   };
 };

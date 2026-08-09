@@ -194,7 +194,10 @@ const SettingsPageWrapper: React.FC<SettingsPageWrapperProps> = ({ children, cla
   // with top padding would otherwise stick 32px down, letting content peek
   // through the gap above it.
   const containerClass = classNames(
-    'settings-page-wrapper w-full min-h-full box-border overflow-y-auto',
+    // `fool-page` is inert until a material has been chosen. Every settings page
+    // goes through this wrapper, so the ground follows the choice without each
+    // of the fourteen of them having to know about it.
+    'fool-page settings-page-wrapper w-full min-h-full box-border overflow-y-auto',
     isMobile ? 'px-16px' : 'px-12px md:px-40px',
     className
   );

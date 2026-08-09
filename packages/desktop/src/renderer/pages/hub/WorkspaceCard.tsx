@@ -51,7 +51,7 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, active, onEnte
     // CSS Modules, and a generated stylesheet lives outside the module and so
     // cannot name them.
     <article
-      className={classNames(styles.card, active && styles.cardActive)}
+      className={classNames('fool-surface fool-body', styles.card, active && styles.cardActive)}
       data-fool-target='card'
       data-testid={`workspace-${workspace.id}`}
     >

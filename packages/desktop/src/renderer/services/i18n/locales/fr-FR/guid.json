@@ -17,5 +17,16 @@
   "firstRun": {
     "conversationName": "Premiers pas",
     "openingMessage": "J'ouvre The Fool pour la première fois. Présente-toi, puis guide-moi dans la configuration : vérifie ce qui fonctionne déjà, aide-moi à connecter un fournisseur de modèles, confirme qu'il répond et explique-moi ce que je peux faire ensuite. Pose-moi une seule question à la fois et effectue toi-même la configuration au fur et à mesure."
+  },
+  "setup": {
+    "materialTitle": "À quoi cela doit-il ressembler ?",
+    "materialLead": "Choisissez-en une. Vous pourrez en changer à tout moment dans Réglages → Apparence.",
+    "colourTitle": "Quelle est votre couleur ?",
+    "colourLead": "Choisissez une couleur : l’application construit tout le reste autour d’elle.",
+    "next": "Continuer",
+    "start": "Commencer",
+    "skip": "Passer",
+    "clicks": "{{clicks}} clics sur {{budget}}",
+    "changeLater": "Tout cela se change plus tard — dans les réglages, ou simplement en le demandant."
   }
 }

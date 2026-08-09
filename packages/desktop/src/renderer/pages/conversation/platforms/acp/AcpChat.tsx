@@ -81,7 +81,7 @@ const AcpChat: React.FC<{
       }}
     >
       <ConversationArtifactProvider conversation_id={conversation_id}>
-        <div className={`${CHAT_SURFACE_CONTAINER_CLASS} flex-1 flex flex-col px-20px min-h-0`}>
+        <div className={`fool-page ${CHAT_SURFACE_CONTAINER_CLASS} flex-1 flex flex-col px-20px min-h-0`}>
           <PermissionDock>
             <FlexFullContainer>
               <MessageList className='flex-1' emptySlot={emptySlot} />

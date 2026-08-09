@@ -156,7 +156,7 @@ const FoolsHubPage: React.FC = () => {
   };
 
   return (
-    <main className={styles.page} data-testid='fools-hub'>
+    <main className={`fool-page ${styles.page}`} data-testid='fools-hub'>
       <header className={styles.head}>
         <Typography.Title heading={4} className='!mb-0 !text-t-primary'>
           {t('hub.title')}

@@ -25,6 +25,12 @@ vi.mock('@/common', () => ({
       transcribe: { invoke: (request: unknown) => transcribeInvoke(request) },
       synthesize: { invoke: (request: unknown) => synthesizeInvoke(request) },
     },
+    // Opening a spoken session asks who the assistants are and which providers
+    // exist, so it can name the one that answers. Nothing below turns on the
+    // answer — but a bridge missing the channel throws on the way in, and every
+    // test in this file fails before it has begun.
+    assistants: { list: { invoke: () => Promise.resolve([]) } },
+    mode: { listProviders: { invoke: () => Promise.resolve([]) } },
   },
 }));
 
@@ -1717,7 +1723,12 @@ describe('LocalVoicePipeline acting on the computer', () => {
       vi.stubGlobal('fetch', fetchMock);
 
       const pipeline = new LocalVoicePipeline({
-        settings: settingsWith({ model: 'google/gemma-4-e4b' }),
+        // Deliberately the local path. These two tests are about what this class
+        // does when the model streams nothing but its own thinking, and the
+        // agent runtime does the thinking somewhere else entirely — left on,
+        // `connect` reports that the bridge mocked above has no agent, and an
+        // assertion about giving up too early catches that error instead.
+        settings: settingsWith({ model: 'google/gemma-4-e4b', useAgentRuntime: false }),
         interfaceLanguage: 'tr',
         onEvent: (event: NormalizedRealtimeEvent) => void events.push(event),
       });

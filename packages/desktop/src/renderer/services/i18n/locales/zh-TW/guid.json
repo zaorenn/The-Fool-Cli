@@ -17,5 +17,16 @@
   "firstRun": {
     "conversationName": "快速上手",
     "openingMessage": "這是我第一次開啟 The Fool。請先自我介紹，然後帶我完成設定：檢查哪些已經可用，幫我接上一個模型服務商，驗證它能正常回應，並告訴我接下來能做什麼。每次只問我一個問題，並在過程中自己完成設定。"
+  },
+  "setup": {
+    "materialTitle": "希望它長什麼樣？",
+    "materialLead": "選一個。隨時可以在 設定 → 外觀 裡改。",
+    "colourTitle": "你的顏色是哪個？",
+    "colourLead": "選一個顏色——應用程式會圍繞它建構其餘一切。",
+    "next": "繼續",
+    "start": "開始使用",
+    "skip": "略過",
+    "clicks": "{{clicks}} / {{budget}} 次點擊",
+    "changeLater": "這些之後都能改——在設定裡，或者直接說一聲。"
   }
 }

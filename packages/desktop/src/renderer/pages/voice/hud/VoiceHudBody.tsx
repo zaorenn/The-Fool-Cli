@@ -86,7 +86,13 @@ const VoiceHudBody: React.FC<VoiceHudBodyProps> = ({ conversation, settings, onS
   const setup = <ConversationSettings settings={settings} disabled={active} onChange={onSettingsChange} />;
 
   return (
-    <div className={classNames(styles.hud, options.density === 'compact' && styles.compact)} data-testid='voice-hud'>
+    // `fool-page` and `fool-surface` are inert until a material is chosen, and
+    // then this is the page that shows it best: the dial, the two transcripts
+    // and the rail are the app at its most characteristic.
+    <div
+      className={classNames('fool-page', styles.hud, options.density === 'compact' && styles.compact)}
+      data-testid='voice-hud'
+    >
       <section className={styles.stage}>
         <div className={styles.dialStage}>
           <VoiceDial phase={phase} level={conversation.level} motion={options.motion} label={phaseLabel} />
@@ -99,7 +105,7 @@ const VoiceHudBody: React.FC<VoiceHudBodyProps> = ({ conversation, settings, onS
         {/* Both sides, not whichever spoke last: checking what was actually heard
             is the first thing you want when an answer looks wrong, and the only
             way to tell a mis-transcription from a bad answer. */}
-        <div className={styles.said}>
+        <div className={classNames('fool-surface fool-body', styles.said)}>
           {conversation.userTranscript ? (
             <p className={styles.heard} data-testid='voice-heard'>
               {conversation.userTranscript}
@@ -139,7 +145,7 @@ const VoiceHudBody: React.FC<VoiceHudBodyProps> = ({ conversation, settings, onS
         </div>
       </section>
 
-      <aside className={styles.rail}>
+      <aside className={classNames('fool-surface', styles.rail)}>
         {settingsInRail ? (
           <>
             <div className={styles.railHead}>

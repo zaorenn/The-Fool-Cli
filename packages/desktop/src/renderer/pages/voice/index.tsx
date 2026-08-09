@@ -81,8 +81,10 @@ const VoiceConversationPage: React.FC = () => {
   };
 
   return (
+    // `fool-page` is inert until a material is chosen, and then this is the
+    // ground the whole page is drawn on — aurora's breathing gradient included.
     <main
-      className={classNames(styles.page, active && styles.active, styles[phase], over && styles.over)}
+      className={classNames('fool-page', styles.page, active && styles.active, styles[phase], over && styles.over)}
       data-testid='voice-conversation'
       onDragOver={(event) => {
         event.preventDefault();
@@ -149,7 +151,7 @@ const VoiceConversationPage: React.FC = () => {
                 the user unable to check what was actually heard — which is the
                 first thing you want when an answer looks wrong, and the only way
                 to tell a mis-transcription from a bad answer. */}
-              <div className='flex min-h-96px w-full max-w-620px flex-col gap-10px'>
+              <div className='fool-surface fool-body flex min-h-96px w-full max-w-620px flex-col gap-10px'>
                 {conversation.userTranscript ? (
                   <p className={styles.heard} data-testid='voice-heard'>
                     {t('settings.voice.conversationYouSaid', { text: conversation.userTranscript })}
@@ -191,7 +193,7 @@ const VoiceConversationPage: React.FC = () => {
               </div>
             </section>
 
-            <aside className='flex min-h-0 flex-col rounded-18px border border-border-2 bg-bg-2/82 p-16px shadow-sm backdrop-blur-xl max-[920px]:mb-24px'>
+            <aside className='fool-surface flex min-h-0 flex-col rounded-18px border border-border-2 bg-bg-2/82 p-16px shadow-sm backdrop-blur-xl max-[920px]:mb-24px'>
               {!active ? (
                 // Two tabs rather than one long column: who is being talked to is
                 // a different decision from what they sound like, and the second

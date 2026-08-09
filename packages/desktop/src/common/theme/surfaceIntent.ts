@@ -133,7 +133,7 @@ export const applySurfaceIntent = (current: SurfaceStyleChoice, intent: SurfaceI
           : from;
 
     if (to !== from) {
-      choice = { ...choice, tokens: { ...(choice.tokens ?? {}), [intent.dial]: to } };
+      choice = { ...choice, tokens: { ...choice.tokens, [intent.dial]: to } };
       changed.push(intent.dial);
     }
   }

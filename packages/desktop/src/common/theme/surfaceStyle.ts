@@ -304,6 +304,27 @@ export const sanitizeMaterialTokens = (value: unknown, base: MaterialTokens = ma
 /** The colour a user picked, as the only thing they had to pick. */
 export const DEFAULT_ACCENT = '#e5484d';
 
+/**
+ * Nine colours to start from, so nobody has to open a picker to get going.
+ *
+ * A wheel is the right control for somebody who knows what they want and the
+ * wrong one for somebody being asked, thirty seconds into a new application,
+ * what colour it should be. These are spread around the wheel at a lightness
+ * that derives a readable palette in all seven materials, which is a promise no
+ * arbitrary point on the wheel can make.
+ */
+export const ACCENT_SUGGESTIONS: readonly string[] = [
+  '#e5484d',
+  '#e5891a',
+  '#d9b528',
+  '#31a074',
+  '#199fd1',
+  '#5570e8',
+  '#8f5fdb',
+  '#d94a94',
+  '#4a5568',
+];
+
 const HEX = /^#[0-9a-f]{6}$/i;
 
 /** An accent this application will write into a stylesheet, or its own. */
@@ -437,6 +458,33 @@ export const derivePalette = (
     inkSoft: hslToHex({ h: accent.h, s: lightInk ? 14 : 12, l: lightInk ? 76 : 40 }),
     lightInk,
   };
+};
+
+/**
+ * The palette, laid out left to right, for somebody to look at before choosing.
+ *
+ * Five bands rather than a number: what a person wants to know when they pick a
+ * colour is whether the whole application will be all right afterwards, and no
+ * hex value answers that. Accent, its lighter partner, the card, the ground and
+ * the ink — in the order they cover a page, so a ramp that ends up all one
+ * shade is visibly a bad choice before it is a worn one.
+ */
+export const paletteRamp = (
+  accentHex: string,
+  styleId: SurfaceStyleId,
+  prefersDark: boolean,
+  tint = MATERIAL_SPECS.tint.fallback
+): readonly string[] => {
+  const palette = derivePalette(accentHex, styleId, prefersDark, tint);
+  const accent = hexToHsl(palette.accent);
+
+  return [
+    palette.accent,
+    hslToHex({ h: accent.h, s: accent.s - 20, l: accent.l + 16 }),
+    palette.card,
+    palette.ground,
+    palette.ink,
+  ];
 };
 
 /**

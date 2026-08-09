@@ -17,5 +17,16 @@
   "firstRun": {
     "conversationName": "Başlangıç",
     "openingMessage": "The Fool'u ilk kez açıyorum. Kendini tanıt, sonra kurulumda bana rehberlik et: neyin hazır olduğunu kontrol et, bir model sağlayıcı bağlamama yardım et, yanıt verdiğini doğrula ve buradan neler yapabileceğimi anlat. Bana tek seferde tek soru sor ve yapılandırmayı ilerledikçe kendin yap."
+  },
+  "setup": {
+    "materialTitle": "Nasıl görünsün?",
+    "materialLead": "Birini seç. Ayarlar → Görünüm’den her zaman değiştirebilirsin.",
+    "colourTitle": "Rengin hangisi?",
+    "colourLead": "Bir renk seç — uygulama geri kalan her şeyi ona göre kurar.",
+    "next": "Devam",
+    "start": "Kullanmaya başla",
+    "skip": "Atla",
+    "clicks": "{{clicks}} / {{budget}} tık",
+    "changeLater": "Bunların hepsini sonra da değiştirebilirsin — ayarlardan ya da söyleyerek."
   }
 }

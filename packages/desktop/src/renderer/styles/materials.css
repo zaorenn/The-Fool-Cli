@@ -192,32 +192,63 @@ html[data-fool-style='clay'] .fool-surface:active {
  * dark windows onto it, and their edges light up when pointed at.
  * ------------------------------------------------------------------------ */
 
+/*
+ * The ground is painted into the page's own background rather than into a
+ * pseudo-element sized larger than the page, and the drift is a moving
+ * background-position rather than a transform.
+ *
+ * The obvious version — an oversized `::before` that slides around — needs the
+ * page to clip, and half the surfaces this class goes on are scroll containers.
+ * `overflow: hidden` on one of those stops it scrolling; the alternative,
+ * leaving it unclipped, paints the aurora out over the sidebar and the frame.
+ * A background has neither problem: it is anchored to the element's own box,
+ * stays put while the content scrolls, and cannot escape it.
+ *
+ * `--fool-ambient` reaches it through the mix rather than through `opacity`,
+ * which a background cannot have on its own. At zero the washes mix to nothing
+ * and what is left is the flat ground — which is what turning the movement off
+ * is meant to look like.
+ */
 html[data-fool-style='aurora'] {
   --fool-surface-bg: rgb(12 14 24 / calc(var(--fool-alpha) * 0.5));
   --fool-surface-border: calc(var(--fool-edge) + 1px) solid color-mix(in oklab, var(--fool-accent) 30%, transparent);
   --fool-surface-shadow: 0 calc(var(--fool-depth) * 0.6px) calc(var(--fool-depth) * var(--fool-spread) * 2.2px)
     rgb(4 3 10 / 0.5);
-  --fool-page-bg: var(--fool-ground);
+  --fool-page-bg:
+    radial-gradient(
+      38% 42% at 24% 26%,
+      color-mix(in oklab, var(--fool-accent) calc(var(--fool-ambient) * 62%), transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      34% 38% at 78% 30%,
+      color-mix(
+        in oklab,
+        color-mix(in oklab, var(--fool-accent) 40%, cyan) calc(var(--fool-ambient) * 55%),
+        transparent
+      ),
+      transparent 62%
+    ),
+    radial-gradient(
+      44% 44% at 52% 88%,
+      color-mix(
+        in oklab,
+        color-mix(in oklab, var(--fool-accent) 45%, magenta) calc(var(--fool-ambient) * 58%),
+        transparent
+      ),
+      transparent 64%
+    ),
+    var(--fool-ground);
 }
 
-html[data-fool-style='aurora'] .fool-page::before {
-  content: '';
-  position: absolute;
-  inset: -30%;
-  background:
-    radial-gradient(34% 38% at 24% 30%, color-mix(in oklab, var(--fool-accent) 60%, transparent), transparent 60%),
-    radial-gradient(30% 34% at 76% 26%, color-mix(in oklab, var(--fool-accent) 40%, cyan), transparent 60%),
-    radial-gradient(40% 40% at 54% 86%, color-mix(in oklab, var(--fool-accent) 45%, magenta), transparent 62%);
-  filter: blur(42px);
-  opacity: var(--fool-ambient);
+html[data-fool-style='aurora'] .fool-page {
+  background-size:
+    170% 170%,
+    155% 155%,
+    185% 185%,
+    auto;
+  background-repeat: no-repeat;
   animation: fool-drift calc(var(--fool-motion, 220ms) * 100) ease-in-out infinite alternate;
-  pointer-events: none;
-  z-index: 0;
-}
-
-html[data-fool-style='aurora'] .fool-page > * {
-  position: relative;
-  z-index: 1;
 }
 
 html[data-fool-style='aurora'] .fool-surface:hover {
@@ -229,10 +260,16 @@ html[data-fool-style='aurora'] .fool-surface:hover {
 
 @keyframes fool-drift {
   0% {
-    transform: translate3d(-4%, -3%, 0) scale(1);
+    background-position:
+      6% 4%,
+      94% 8%,
+      52% 96%;
   }
   100% {
-    transform: translate3d(5%, 4%, 0) scale(1.12);
+    background-position:
+      26% 20%,
+      74% 26%,
+      38% 78%;
   }
 }
 
@@ -278,6 +315,54 @@ html[data-fool-style='minimal'] .fool-surface:hover {
 }
 
 /* ---------------------------------------------------------------------------
+ * Chat
+ *
+ * The composer and the message bodies keep their border, radius and shadow as
+ * inline styles, written from JS as focus and dragging change them. `!important`
+ * is the only thing that reaches an inline style, and it is what
+ * `surface-shapes.css` already uses next door for exactly this reason.
+ *
+ * Reached by their own stable class names rather than by adding `.fool-surface`
+ * in the JSX, because those names are what the chat's layout rules are already
+ * written against — a second handle for the same element is a second thing to
+ * keep in step.
+ * ------------------------------------------------------------------------ */
+
+html[data-fool-style] .sendbox-panel {
+  background: var(--fool-surface-bg) !important;
+  border: var(--fool-surface-border) !important;
+  border-radius: var(--fool-radius-material) !important;
+  box-shadow: var(--fool-surface-shadow) !important;
+  backdrop-filter: blur(var(--fool-blur, 0px)) saturate(calc(100% + var(--fool-saturation, 0%)));
+  -webkit-backdrop-filter: blur(var(--fool-blur, 0px)) saturate(calc(100% + var(--fool-saturation, 0%)));
+  color: var(--fool-ink);
+}
+
+/*
+ * A flat transcript is a shape the reader chose in the layout editor, and it is
+ * the one setting here that says "no bubbles at all". A material must not put
+ * them back.
+ */
+html[data-fool-style]:not([data-fool-chat-bubbles='flat']) .chat-message-body {
+  background: var(--fool-surface-bg) !important;
+  border: var(--fool-surface-border);
+  border-radius: var(--fool-radius-material) !important;
+  box-shadow: var(--fool-surface-shadow);
+  color: var(--fool-ink) !important;
+  padding: calc(7px + var(--fool-gap) * 4px) calc(9px + var(--fool-gap) * 4px) !important;
+  line-height: var(--fool-leading);
+}
+
+/* What the person said, in the colour they picked. */
+html[data-fool-style]:not([data-fool-chat-bubbles='flat'])
+  .message-item[data-message-position='right']
+  .chat-message-body {
+  background: var(--fool-accent) !important;
+  border-color: transparent;
+  color: var(--fool-on-accent) !important;
+}
+
+/* ---------------------------------------------------------------------------
  * The pulse a voice conversation shows while it is listening.
  *
  * Here rather than in the component so it obeys the ambient dial: somebody who
@@ -315,7 +400,7 @@ html[data-fool-style] [style*='--fool-ambient: 0'] .fool-pulse::after {
 @media (prefers-reduced-motion: reduce) {
   html[data-fool-style] .fool-surface,
   html[data-fool-style] .fool-surface::after,
-  html[data-fool-style] .fool-page::before,
+  html[data-fool-style] .fool-page,
   html[data-fool-style] .fool-pulse::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;

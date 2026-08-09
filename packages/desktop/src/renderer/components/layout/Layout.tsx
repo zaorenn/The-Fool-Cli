@@ -35,6 +35,7 @@ import { LayoutContext } from '@renderer/hooks/context/LayoutContext';
 import { NavigationHistoryProvider } from '@renderer/hooks/context/NavigationHistoryContext';
 import { useDeepLink } from '@renderer/hooks/system/useDeepLink';
 import { useSurfaceShapes } from '@renderer/hooks/config/useSurfaceShapes';
+import { useWornSurfaceStyle } from '@renderer/hooks/config/useSurfaceStyle';
 import { useNotificationClick } from '@renderer/hooks/system/notification/useNotificationClick';
 import { useBrowserNotification } from '@renderer/hooks/system/notification/useBrowserNotification';
 import { useDesktopTurnNotification } from '@renderer/hooks/system/notification/useDesktopTurnNotification';
@@ -149,6 +150,10 @@ const Layout: React.FC<{
   // component — a hook that waited for the frame's page to mount would wait for
   // a page that does not exist.
   useSurfaceShapes();
+  // The material, kept on the document after the first paint put it there. A
+  // choice made in another window and the light/dark switch moving both change
+  // what should be worn without this window being told in so many words.
+  useWornSurfaceStyle();
   useNotificationClick();
   useBrowserNotification();
   useDesktopTurnNotification();
