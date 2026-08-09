@@ -244,6 +244,22 @@ pub fn validate_workspace_path_availability(workspace: &str) -> Result<String, W
         return Err(WorkspacePathValidationError::Empty);
     }
 
+    // Windows drops trailing whitespace when it resolves a path, so
+    // `…\workspace ` opens `…\workspace` and `metadata` reports it present. The
+    // workspace would then be accepted under a name that is not the one it
+    // actually points at — the same directory with two identities, which is how
+    // an agent ends up writing somewhere nobody named. Refused there, because
+    // as spelled it does not exist.
+    //
+    // Not refused elsewhere: on a filesystem that keeps the space, a directory
+    // whose name ends in one is a real directory with a real name, and
+    // rejecting it would be this application deciding somebody named their
+    // folder wrongly.
+    #[cfg(windows)]
+    if workspace != workspace.trim_end() {
+        return Err(WorkspacePathValidationError::DoesNotExist(workspace.to_owned()));
+    }
+
     let path = Path::new(workspace);
     match fs::metadata(path) {
         Ok(metadata) if metadata.is_dir() => Ok(workspace.to_owned()),

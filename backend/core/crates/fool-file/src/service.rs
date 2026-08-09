@@ -18,6 +18,18 @@ use crate::types::{
     ContentUpdateEvent, ContentUpdateOperation, CopyResult, DirOrFile, FileMetadata, WorkspaceFlatFile, ZipEntry,
 };
 
+/// A path as the rest of the application spells one.
+///
+/// `to_string_lossy` keeps whatever separator the platform used, so the same
+/// file arrives as `src/main.rs` from one machine and with a backslash from
+/// another. This value does not stay inside Rust: it reaches the interface, it
+/// is compared against paths the frontend built, and it is used as an identity.
+/// A file with two identities depending on the operating system is a file that
+/// goes missing.
+fn to_portable(path: &std::path::Path) -> String {
+    path.to_string_lossy().replace('\\', "/")
+}
+
 /// Maximum number of files returned by `list_workspace_files`.
 const MAX_WORKSPACE_FILES: usize = 20_000;
 
@@ -144,7 +156,7 @@ fn build_dir_tree_sync(dir: &Path, root: &Path) -> Result<Vec<DirOrFile>, FileEr
         let name = entry.file_name().to_string_lossy().into_owned();
 
         let full_path = path.to_string_lossy().into_owned();
-        let relative_path = path.strip_prefix(root).unwrap_or(&path).to_string_lossy().into_owned();
+        let relative_path = to_portable(path.strip_prefix(root).unwrap_or(&path));
 
         let is_dir = metadata.is_dir();
 
@@ -191,7 +203,7 @@ fn read_children_sync(dir: &Path, root: &Path) -> Result<Vec<DirOrFile>, FileErr
         let name = entry.file_name().to_string_lossy().into_owned();
 
         let full_path = path.to_string_lossy().into_owned();
-        let relative_path = path.strip_prefix(root).unwrap_or(&path).to_string_lossy().into_owned();
+        let relative_path = to_portable(path.strip_prefix(root).unwrap_or(&path));
 
         children.push(DirOrFile {
             name,
@@ -248,7 +260,7 @@ fn list_workspace_files_sync(root: &Path) -> Result<Vec<WorkspaceFlatFile>, File
             .unwrap_or_default();
 
         let full_path = path.to_string_lossy().into_owned();
-        let relative_path = path.strip_prefix(root).unwrap_or(path).to_string_lossy().into_owned();
+        let relative_path = to_portable(path.strip_prefix(root).unwrap_or(path));
 
         files.push(WorkspaceFlatFile {
             name,
@@ -720,11 +732,11 @@ impl crate::traits::IFileService for FileService {
 
         // Compute relative path from workspace
         let workspace_path = Path::new(workspace);
-        let relative_path = canonical
-            .strip_prefix(std::fs::canonicalize(workspace_path).unwrap_or_else(|_| workspace_path.to_path_buf()))
-            .unwrap_or(&canonical)
-            .to_string_lossy()
-            .into_owned();
+        let relative_path = to_portable(
+            canonical
+                .strip_prefix(std::fs::canonicalize(workspace_path).unwrap_or_else(|_| workspace_path.to_path_buf()))
+                .unwrap_or(&canonical),
+        );
 
         // Build and broadcast contentUpdate event
         let content = String::from_utf8(data.to_vec()).ok();
@@ -850,11 +862,11 @@ impl crate::traits::IFileService for FileService {
 
         // Compute relative path from workspace
         let workspace_path = Path::new(workspace);
-        let relative_path = canonical
-            .strip_prefix(std::fs::canonicalize(workspace_path).unwrap_or_else(|_| workspace_path.to_path_buf()))
-            .unwrap_or(&canonical)
-            .to_string_lossy()
-            .into_owned();
+        let relative_path = to_portable(
+            canonical
+                .strip_prefix(std::fs::canonicalize(workspace_path).unwrap_or_else(|_| workspace_path.to_path_buf()))
+                .unwrap_or(&canonical),
+        );
 
         // Broadcast contentUpdate delete event
         let event = ContentUpdateEvent {

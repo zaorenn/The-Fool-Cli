@@ -1806,6 +1806,16 @@ async fn create_rejects_unavailable_workspace_with_trailing_whitespace_in_reques
 
 #[tokio::test]
 async fn create_accepts_existing_workspace_with_trailing_whitespace_in_name() {
+    // Windows cannot hold this test's premise: `create_dir("workspace ")` makes
+    // `workspace`, and a request for `workspace ` then resolves to it — which
+    // is exactly what the sibling test above requires to be *refused*. The two
+    // cannot both hold there, and the refusal is the one worth keeping, because
+    // a directory reachable under a name that is not its own is how an agent
+    // writes somewhere nobody named.
+    if cfg!(windows) {
+        return;
+    }
+
     let (svc, _broadcaster, _repo, _task_mgr) = make_service();
     let dir = std::env::temp_dir().join(format!("fool-test-{}", fool_common::generate_short_id()));
     std::fs::create_dir(&dir).unwrap();
