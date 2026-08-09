@@ -127,6 +127,14 @@ pub struct FoolrsAgentManager {
     cancel_notify: Arc<Notify>,
     /// Signalled after an in-flight turn emits its terminal event.
     turn_finished_notify: Arc<Notify>,
+    /// What each file looked like before a turn changed it.
+    ///
+    /// Held here rather than only inside the tools because this is the layer
+    /// that knows about turns at all: a tool's `execute` is handed its
+    /// arguments and nothing else, so without this every copy would be filed
+    /// under the same nameless heap and "undo that turn" would mean "undo
+    /// everything".
+    checkpoints: Arc<std::sync::Mutex<foolrs_tools::checkpoint::CheckpointStore>>,
 }
 
 impl Drop for FoolrsAgentManager {
@@ -305,6 +313,7 @@ impl FoolrsAgentManager {
             image_input_capability,
             cancel_notify: Arc::new(Notify::new()),
             turn_finished_notify: Arc::new(Notify::new()),
+            checkpoints,
         })
     }
 
@@ -413,6 +422,14 @@ impl IAgentTask for FoolrsAgentManager {
         );
         self.runtime.bump_activity();
         self.runtime.reset_for_new_turn(ConversationStatus::Running);
+        // Everything this turn copies aside is filed under its own name, so a
+        // rollback can mean "that turn" rather than "everything since the
+        // conversation opened".
+        if let Some(turn_id) = data.turn_id.as_deref()
+            && let Ok(mut store) = self.checkpoints.lock()
+        {
+            store.begin_turn(turn_id);
+        }
         self.dump_foolrs_final_input(&data);
 
         // Attachment paths stay in the provider-independent history. Image
