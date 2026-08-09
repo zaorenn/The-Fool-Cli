@@ -87,6 +87,14 @@ const textOf = (content: unknown): string => {
  * Never throws: the caller is a microphone, and an unhandled rejection there is
  * silence the user cannot tell apart from a crash.
  */
+/**
+ * Message kinds this turn saw and did not speak, so each is reported once.
+ *
+ * Module-level rather than per turn: the point is to name a kind the first time
+ * it appears, not once a second for the length of a conversation.
+ */
+const seenKinds = new Set<string>();
+
 export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnResult> => {
   const { conversationId, said, onSentence, signal } = input;
   const instructions = input.instructions ?? [];
@@ -177,6 +185,17 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
       // Anything else on this channel is the agent doing something rather than
       // saying something: a tool call, a file read, a step. That is precisely
       // what makes "I have done it" true rather than a lie.
+      //
+      // Reported once per kind, and here rather than nowhere, because this
+      // branch is where a reply goes to die. A message the two lines above do
+      // not recognise is counted as work and dropped — so a backend that names
+      // its text something else produces a conversation that answers on screen
+      // and never says a word, with nothing anywhere to say why. That is
+      // exactly the bug this line was added to find.
+      if (!seenKinds.has(message.type)) {
+        seenKinds.add(message.type);
+        console.info('[spokenTurn] not spoken:', message.type, 'status:', message.status ?? '-');
+      }
       toolsRan += 1;
     })
   );
