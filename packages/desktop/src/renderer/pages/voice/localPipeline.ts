@@ -1461,6 +1461,19 @@ export class LocalVoicePipeline {
     // start this render nobody will until that wait is over — which is the
     // whole gap this look-ahead exists to remove.
     if (this.voice) this.pumpRenders(this.voice, controller);
+    // And somebody has to be listening to the queue.
+    //
+    // Starting the drain used to be the caller's job, and only one of the two
+    // callers did it: the local turn loop started it, the agent-runtime path
+    // did not. So a reply written by the agent was transcribed, gated,
+    // sanitised, queued — and then sat in `pending` with nothing draining it.
+    // No error anywhere, because nothing had failed; nobody had started. The
+    // reply appeared on screen and the room stayed silent.
+    //
+    // Queueing a sentence and starting the speaker are one act, so they are in
+    // one place now. `startDraining` returns immediately if it is already
+    // running, which is what makes this safe to call per sentence.
+    this.startDraining(controller);
   }
 
   /** Starts the speaker on the queue, if it is not already working through it. */

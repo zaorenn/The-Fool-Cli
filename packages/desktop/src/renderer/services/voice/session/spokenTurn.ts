@@ -147,12 +147,21 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
 
     const verdict = guardSpokenSentence(trimmed, { toolsRan, remembered });
     if (verdict.speak === false) {
-      input.onRefused?.(verdict.correction);
+      refuse(trimmed, verdict.correction);
       return;
     }
 
     spoken += spoken.length > 0 ? ` ${trimmed}` : trimmed;
+    // The measurement that was missing. Knowing which kinds are *not* spoken
+    // cannot tell "the text never arrived" apart from "the text arrived, was
+    // spoken, and died further down" — and those need opposite fixes.
+    console.info('[spokenTurn] speaking:', JSON.stringify(trimmed.slice(0, 60)));
     onSentence(trimmed);
+  };
+
+  const refuse = (sentence: string, correction: string): void => {
+    console.warn('[spokenTurn] refused by the honesty gate:', JSON.stringify(sentence.slice(0, 60)));
+    input.onRefused?.(correction);
   };
 
   const say = (delta: string): void => {
