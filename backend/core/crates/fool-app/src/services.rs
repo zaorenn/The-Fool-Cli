@@ -16,7 +16,6 @@ use fool_ai_agent::{
 use fool_api_types::AppToolsMcpConfig;
 use fool_app_tools::{AppToolHosts, AppToolsState, Catalogue, PendingCalls};
 use fool_auth::{CookieConfig, JwtService, QrTokenStore, resolve_jwt_secret};
-use fool_mcp_server::serve_http;
 use fool_common::OnConversationDelete;
 use fool_conversation::{ConversationService, runtime_state::ConversationRuntimeStateService};
 use fool_db::{
@@ -26,6 +25,7 @@ use fool_db::{
     SqliteConversationRepository, SqliteMcpServerRepository, SqliteProjectStore, SqliteProviderRepository,
     SqliteSkillRepository, SqliteUserRepository,
 };
+use fool_mcp_server::serve_http;
 use fool_project::ProjectService;
 use fool_realtime::{BroadcastEventBus, WebSocketManager};
 
@@ -233,6 +233,12 @@ impl AppServices {
             mcp_server_repo: Some(mcp_server_repo),
             session_spawner,
             app_tools_mcp: Some(app_tools_mcp),
+            // The same store the settings page writes to, so every embedded
+            // conversation starts knowing what the user has told this
+            // application — not only the spoken one.
+            client_pref_repo: Some(Arc::new(fool_db::SqliteClientPreferenceRepository::new(
+                database.pool().clone(),
+            ))),
         });
 
         // Agent factory is now wired. Future extension/custom agents
@@ -426,8 +432,5 @@ async fn start_app_tools(broadcaster: Arc<BroadcastEventBus>) -> anyhow::Result<
     tokio::spawn(serve_http(listener, token.clone(), hosts, shutdown_rx));
     tracing::info!(port, "startup: app tools MCP server listening");
 
-    Ok((
-        AppToolsState { catalogue, pending },
-        AppToolsMcpConfig { port, token },
-    ))
+    Ok((AppToolsState { catalogue, pending }, AppToolsMcpConfig { port, token }))
 }

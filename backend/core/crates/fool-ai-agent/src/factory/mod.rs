@@ -51,6 +51,14 @@ pub struct AgentFactoryDeps {
     /// different one. `None` for tests and for any composition that has no
     /// application to call back into.
     pub app_tools_mcp: Option<fool_api_types::AppToolsMcpConfig>,
+    /// Where what the user has told the assistant is kept.
+    ///
+    /// Held by the factory rather than passed per request, so a caller cannot
+    /// open a conversation that quietly knows nothing about them — that split
+    /// is what left the spoken assistant and the typed one remembering
+    /// different halves of the same person. `None` for tests and for any
+    /// composition with no settings store behind it.
+    pub client_pref_repo: Option<Arc<dyn fool_db::IClientPreferenceRepository>>,
 }
 
 /// Build a production agent factory that dispatches to concrete agent types.

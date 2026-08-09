@@ -27,6 +27,7 @@ pub(crate) mod services;
 pub mod session_agent;
 pub mod session_context;
 pub mod shared_kernel;
+pub mod shared_memory;
 pub mod task_manager;
 pub mod types;
 

@@ -93,6 +93,7 @@ fn make_factory(
         mcp_server_repo: None,
         session_spawner,
         app_tools_mcp: None,
+        client_pref_repo: None,
     })
 }
 

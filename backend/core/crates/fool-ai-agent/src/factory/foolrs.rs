@@ -34,6 +34,12 @@ pub(super) async fn build(
     let mut overrides = build_context.config;
     let resolved_skills = overrides.skills.clone();
 
+    // A session that arrived with its own prompt has already decided what the
+    // model knows — a spoken one assembles the memory into its persona, and
+    // adding it again would have the assistant read the same documents twice.
+    // Everything else gets it here, which is every typed conversation.
+    let brought_own_prompt = overrides.system_prompt.is_some();
+
     // Where those skills actually live.
     //
     // Foolrs is embedded, not a CLI that reads the workspace, so it loads
@@ -61,6 +67,11 @@ pub(super) async fn build(
             Some(existing) => format!("{existing}\n\n{rules}"),
             None => rules,
         });
+    }
+
+    if !brought_own_prompt {
+        let memory = crate::shared_memory::read_shared_memory(deps.client_pref_repo.as_ref(), &ctx.user_id).await;
+        overrides.system_prompt = crate::shared_memory::prepend(memory, overrides.system_prompt.take());
     }
 
     let mut extra_mcp_servers = resolve_mcp_servers(&overrides, deps.app_tools_mcp.as_ref(), &ctx.conversation_id);
