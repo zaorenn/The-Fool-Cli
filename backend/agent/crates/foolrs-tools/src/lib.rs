@@ -1,3 +1,4 @@
+pub mod background;
 pub mod checkpoint;
 pub mod edit;
 pub mod exec_command;
