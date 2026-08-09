@@ -1685,7 +1685,12 @@
     },
     "conversationTaskAccepted": "開始しました。バックグラウンドで動いています——取りかかったと短く伝えて、会話を続けてください。",
     "conversationAsideFailed": "ところで、{{what}} は完了できませんでした。{{why}}",
-    "conversationSettingUnknownModel": "「{{name}}」というモデルは読み込まれていません。"
+    "conversationSettingUnknownModel": "「{{name}}」というモデルは読み込まれていません。",
+    "personaLibrary": "あなた自身のアシスタント",
+    "personaLibraryEmpty": "まだ保存されていません。上に指示を書いて、名前をつけて保存してください。",
+    "personaLibraryNamePlaceholder": "名前をつける",
+    "personaLibrarySave": "保存",
+    "personaLibraryFull": "{{count}} 件保存済みで、これが上限です。別のものを保存するには一つ削除してください。"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",

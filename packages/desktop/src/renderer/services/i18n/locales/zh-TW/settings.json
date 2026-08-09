@@ -1685,7 +1685,12 @@
     },
     "conversationTaskAccepted": "我已經開始了。它在背景執行——簡短地說你正在處理，然後繼續對話。",
     "conversationAsideFailed": "順帶一提，{{what}} 沒能完成。{{why}}",
-    "conversationSettingUnknownModel": "沒有已載入名為「{{name}}」的模型。"
+    "conversationSettingUnknownModel": "沒有已載入名為「{{name}}」的模型。",
+    "personaLibrary": "你自己的助理",
+    "personaLibraryEmpty": "還沒有保存過。在上面寫下指示，取個名字，然後保存。",
+    "personaLibraryNamePlaceholder": "取個名字",
+    "personaLibrarySave": "保存",
+    "personaLibraryFull": "已保存 {{count}} 個，這是上限。刪除一個才能再保存。"
   },
   "themeCustomizer": {
     "title": "自訂主題",

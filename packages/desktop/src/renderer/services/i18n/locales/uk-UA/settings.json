@@ -1684,7 +1684,12 @@
     },
     "conversationTaskAccepted": "Я почав. Завдання виконується у фоні — коротко скажи, що взявся за нього, і продовжуй розмову.",
     "conversationAsideFailed": "До речі, {{what}} не вдалося завершити. {{why}}",
-    "conversationSettingUnknownModel": "Модель «{{name}}» не завантажена."
+    "conversationSettingUnknownModel": "Модель «{{name}}» не завантажена.",
+    "personaLibrary": "Ваші власні асистенти",
+    "personaLibraryEmpty": "Поки нічого не збережено. Напишіть інструкції вище, дайте їм ім'я і збережіть.",
+    "personaLibraryNamePlaceholder": "Дайте ім'я",
+    "personaLibrarySave": "Зберегти",
+    "personaLibraryFull": "Збережено {{count}} — це максимум. Видаліть одного, щоб зберегти іншого."
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",

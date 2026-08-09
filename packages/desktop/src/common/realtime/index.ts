@@ -505,6 +505,20 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   },
 ];
 
-export { buildPersonaInstructions, PERSONA_PRESET_IDS, type PersonaPresetId, type SpokenVoice } from './personas';
+export {
+  buildPersonaInstructions,
+  findPersonaByName,
+  forgetPersona,
+  MAX_SAVED_PERSONAS,
+  PERSONA_INSTRUCTIONS_MAX,
+  PERSONA_NAME_MAX,
+  PERSONA_PRESET_IDS,
+  rememberPersona,
+  sanitizeSavedPersonas,
+  VOICE_PERSONAS_CONFIG_KEY,
+  type PersonaPresetId,
+  type SavedPersona,
+  type SpokenVoice,
+} from './personas';
 export { LOCAL_S2S_ENDPOINT };
 export * from './types';

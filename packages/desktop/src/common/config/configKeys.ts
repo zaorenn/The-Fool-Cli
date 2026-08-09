@@ -4,6 +4,7 @@ import type { LayoutPresetLibrary, SurfaceLayoutSelection } from '@/common/confi
 import type { ThemeOverrides, ThemePalettes } from '@/common/config/themeOverrides';
 import type { WorkspaceLibrary } from '@/common/config/workspaces';
 import type { Rule } from '@/common/permissions/types';
+import type { SavedPersona } from '@/common/realtime/personas';
 import type { LocalSkill } from '@/common/voice/localSkills';
 import type { SurfaceStyleChoice } from '@/common/theme/surfaceChoice';
 import type { SurfaceBackground } from '@/common/theme/surfaceBackground';
@@ -76,6 +77,14 @@ export type ConfigKeyMap = {
    * rather than paying the cold start again on the first thing said.
    */
   'voice.summaryModelId': string | undefined;
+  /**
+   * Assistants the user wrote, kept under names they chose.
+   *
+   * The four presets are the four things this was built for. Anything else has
+   * always been writable into the one custom box, where it lasted until they
+   * wanted the other one back — see `SavedPersona`.
+   */
+  'voice.personas': SavedPersona[] | undefined;
   'window.bounds': { x?: number; y?: number; width: number; height: number } | undefined;
   'webui.desktop.enabled': boolean | undefined;
   'webui.desktop.allowRemote': boolean | undefined;

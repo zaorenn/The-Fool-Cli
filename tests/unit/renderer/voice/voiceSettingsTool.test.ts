@@ -96,6 +96,13 @@ vi.mock('@renderer/hooks/config/useWorkspaces', () => ({
   enterWorkspace: async (workspace: { id: string }) => void entered.push(workspace.id),
 }));
 
+/** The persona library, as the settings tool reads it back from the config. */
+const storedPersonas: { name: string; instructions: string }[] = [];
+
+vi.mock('@/common/config/configService', () => ({
+  configService: { get: () => storedPersonas, set: async () => {} },
+}));
+
 vi.mock('@renderer/hooks/config/useSurfaceLayout', () => ({
   peekLayoutPresets: () => ({
     'my quiet one': {
@@ -364,5 +371,49 @@ describe('changing the model that thinks', () => {
 
     await applySpokenSetting('thinking_model', 'whatever-they-said', t);
     expect(settings.realtime.model).toBe('whatever-they-said');
+  });
+});
+
+/**
+ * An assistant the user wrote, chosen by saying its name.
+ *
+ * A persona kept under a name they chose is only half a feature if the only
+ * way to put it back on is a settings panel — the sentence "put the German one
+ * back on" is how somebody in the middle of a conversation asks for it.
+ */
+describe('choosing a persona the user wrote', () => {
+  beforeEach(() => {
+    written.length = 0;
+    settings = structuredClone(DEFAULT_FOOL_VOICE_SETTINGS);
+    storedPersonas.length = 0;
+    storedPersonas.push({ name: 'German tutor', instructions: 'Correct my German gently.' });
+  });
+
+  it('puts their own instructions on, by whatever they called it', async () => {
+    await applySpokenSetting('persona', 'the German one', t);
+
+    expect(settings.realtime.personaPresetId).toBe('custom');
+    expect(settings.realtime.customInstructions).toBe('Correct my German gently.');
+  });
+
+  /// Their own name wins over ours: a persona they called "companion" is
+  /// theirs, and answering with the shipped one would be answering somebody
+  /// else's request.
+  it('prefers one they wrote over a preset of the same name', async () => {
+    storedPersonas.push({ name: 'companion', instructions: 'Only ever agree with me.' });
+
+    await applySpokenSetting('persona', 'companion', t);
+
+    expect(settings.realtime.customInstructions).toBe('Only ever agree with me.');
+  });
+
+  it('still takes a preset when they have written nothing like it', async () => {
+    await applySpokenSetting('persona', 'interview coach', t);
+
+    expect(settings.realtime.personaPresetId).toBe('interview-coach');
+  });
+
+  it('refuses a name that is neither theirs nor ours', async () => {
+    await expect(applySpokenSetting('persona', 'sea captain', t)).rejects.toThrow();
   });
 });

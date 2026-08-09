@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { buildPersonaInstructions } from '@/common/realtime';
+import {
+  buildPersonaInstructions,
+  findPersonaByName,
+  forgetPersona,
+  MAX_SAVED_PERSONAS,
+  PERSONA_INSTRUCTIONS_MAX,
+  PERSONA_NAME_MAX,
+  rememberPersona,
+  sanitizeSavedPersonas,
+  type SavedPersona,
+} from '@/common/realtime';
 
 const base = {
   customInstructions: '',
@@ -266,5 +276,85 @@ describe('what it knows about the app it lives in', () => {
 
   it('does not recite the app when asked what it can do', () => {
     expect(built).toContain('never answer "what can you do" with an inventory');
+  });
+});
+
+/**
+ * Assistants the user wrote, kept under names they chose.
+ *
+ * The four presets are the four things this was built for. Anything else has
+ * always been writable into the one custom box, where it lasted exactly until
+ * they wanted the other one back. What was missing was not the writing — it was
+ * keeping more than one.
+ */
+describe('a library of personas', () => {
+  const two: SavedPersona[] = [
+    { name: 'German tutor', instructions: 'Correct my German gently.' },
+    { name: 'Rubber duck', instructions: 'Say almost nothing. Let me talk.' },
+  ];
+
+  it('keeps what was written, newest first', () => {
+    const kept = rememberPersona(two, 'Night shift', 'Speak quietly.');
+    expect(kept.map((persona) => persona.name)).toEqual(['Night shift', 'German tutor', 'Rubber duck']);
+  });
+
+  /// Saving over the name you already used is what a person means by saving.
+  /// Two entries called "German tutor" is what a machine means by it.
+  it('replaces one of the same name rather than doubling it', () => {
+    const kept = rememberPersona(two, 'german tutor', 'Be much stricter.');
+    expect(kept).toHaveLength(2);
+    expect(kept[0]).toEqual({ name: 'german tutor', instructions: 'Be much stricter.' });
+  });
+
+  it('refuses to keep one with no body, which is an assistant with no instructions', () => {
+    expect(rememberPersona(two, 'Empty', '   ')).toEqual(two);
+    expect(rememberPersona(two, '  ', 'Something.')).toEqual(two);
+  });
+
+  it('drops one by name, and leaves an unknown name alone', () => {
+    expect(forgetPersona(two, 'Rubber duck').map((persona) => persona.name)).toEqual(['German tutor']);
+    expect(forgetPersona(two, 'nothing like this')).toEqual(two);
+  });
+
+  it('stops at the most it keeps rather than growing without end', () => {
+    let library: SavedPersona[] = [];
+    for (let n = 0; n < MAX_SAVED_PERSONAS + 5; n += 1) {
+      library = rememberPersona(library, `Persona ${n}`, 'Say something.');
+    }
+    expect(library).toHaveLength(MAX_SAVED_PERSONAS);
+  });
+
+  /// "Put the teacher one back on" is the request; "German tutor" is the name.
+  it('finds the one they meant from what they called it', () => {
+    expect(findPersonaByName(two, 'the German one')?.name).toBe('German tutor');
+    expect(findPersonaByName(two, 'RUBBER DUCK')?.name).toBe('Rubber duck');
+    expect(findPersonaByName(two, 'interview coach')).toBeNull();
+    expect(findPersonaByName(two, '   ')).toBeNull();
+  });
+});
+
+describe('reading a stored library that may not be one', () => {
+  it('drops anything that is not a usable pair', () => {
+    const stored = [
+      { name: 'Good', instructions: 'Fine.' },
+      { name: 'No body', instructions: '' },
+      { instructions: 'No name.' },
+      'not an object',
+      null,
+      { name: 'Good', instructions: 'A second one under the same name.' },
+    ];
+
+    expect(sanitizeSavedPersonas(stored)).toEqual([{ name: 'Good', instructions: 'Fine.' }]);
+  });
+
+  it('treats anything that is not a list as an empty library', () => {
+    expect(sanitizeSavedPersonas(undefined)).toEqual([]);
+    expect(sanitizeSavedPersonas({ name: 'x' })).toEqual([]);
+  });
+
+  it('trims a name and a body that were written longer than they may be', () => {
+    const [only] = sanitizeSavedPersonas([{ name: 'n'.repeat(200), instructions: 'i'.repeat(9000) }]);
+    expect(only.name).toHaveLength(PERSONA_NAME_MAX);
+    expect(only.instructions).toHaveLength(PERSONA_INSTRUCTIONS_MAX);
   });
 });

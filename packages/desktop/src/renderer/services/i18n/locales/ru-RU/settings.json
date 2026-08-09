@@ -1683,7 +1683,12 @@
     },
     "conversationTaskAccepted": "Я начал. Задача выполняется в фоне — коротко скажи, что взялся за неё, и продолжай разговор.",
     "conversationAsideFailed": "Кстати, {{what}} не удалось завершить. {{why}}",
-    "conversationSettingUnknownModel": "Модель «{{name}}» не загружена."
+    "conversationSettingUnknownModel": "Модель «{{name}}» не загружена.",
+    "personaLibrary": "Ваши собственные ассистенты",
+    "personaLibraryEmpty": "Пока ничего не сохранено. Напишите инструкции выше, дайте им имя и сохраните.",
+    "personaLibraryNamePlaceholder": "Дайте имя",
+    "personaLibrarySave": "Сохранить",
+    "personaLibraryFull": "Сохранено {{count}} — это максимум. Удалите одного, чтобы сохранить другого."
   },
   "themeCustomizer": {
     "title": "Настроить тему",

@@ -1683,7 +1683,12 @@
     },
     "conversationTaskAccepted": "I've started it. It runs in the background — tell them briefly that you are on it, and carry on the conversation.",
     "conversationAsideFailed": "By the way, {{what}} could not be finished. {{why}}",
-    "conversationSettingUnknownModel": "There is no model called “{{name}}” loaded."
+    "conversationSettingUnknownModel": "There is no model called “{{name}}” loaded.",
+    "personaLibrary": "Your own assistants",
+    "personaLibraryEmpty": "Nothing saved yet. Write instructions above, name them, and keep them.",
+    "personaLibraryNamePlaceholder": "Name it",
+    "personaLibrarySave": "Keep",
+    "personaLibraryFull": "You have {{count}} saved, which is the most this keeps. Remove one to keep another."
   },
   "themeCustomizer": {
     "title": "Customize theme",

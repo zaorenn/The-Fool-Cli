@@ -372,3 +372,135 @@ export const PERSONA_PRESET_IDS: readonly PersonaPresetId[] = [
   'interview-coach',
   'custom',
 ];
+
+/**
+ * An assistant the user wrote, kept under a name they chose.
+ *
+ * The four presets cover the four things this was built for and nothing else.
+ * Somebody who wants a patient German tutor, or a rubber duck that never
+ * answers, has always been able to write it — into the one custom box, where it
+ * lasted exactly until they wanted the other one back. What was missing was not
+ * the writing. It was keeping more than one.
+ *
+ * Deliberately the same shape as the custom box rather than a new kind of
+ * thing: choosing a saved persona writes its text into `customInstructions` and
+ * sets the preset to `custom`, so nothing downstream — the prompt builder, the
+ * spoken settings, the workspaces — has to learn about it. This is a library,
+ * not a fifth mechanism.
+ */
+export type SavedPersona = { name: string; instructions: string };
+
+/** Where the library is kept. */
+export const VOICE_PERSONAS_CONFIG_KEY = 'voice.personas';
+
+/**
+ * How many may be kept.
+ *
+ * Bounded because this is written to a preferences bag that is read on every
+ * launch, and because a list of forty is a list nobody scrolls. Twelve is more
+ * than anybody has asked for.
+ */
+export const MAX_SAVED_PERSONAS = 12;
+
+/** How long a name and a body may be, matching what the panel offers. */
+export const PERSONA_NAME_MAX = 40;
+export const PERSONA_INSTRUCTIONS_MAX = 4000;
+
+const normalizePersonaName = (name: string): string => name.trim().replaceAll(/\s+/g, ' ').toLowerCase();
+
+/**
+ * The library as it can be trusted, from whatever was stored.
+ *
+ * Read defensively because this comes back from a preferences bag that another
+ * version of the app, or a hand-edited file, may have written. Anything that is
+ * not a usable pair is dropped rather than repaired: a persona with no body is
+ * an assistant with no instructions, which is worse than one that is missing.
+ */
+export const sanitizeSavedPersonas = (value: unknown): SavedPersona[] => {
+  if (!Array.isArray(value)) return [];
+
+  const seen = new Set<string>();
+  const kept: SavedPersona[] = [];
+  for (const entry of value) {
+    if (entry === null || typeof entry !== 'object') continue;
+    const record = entry as { name?: unknown; instructions?: unknown };
+    if (typeof record.name !== 'string' || typeof record.instructions !== 'string') continue;
+
+    const name = record.name.trim().slice(0, PERSONA_NAME_MAX);
+    const instructions = record.instructions.trim().slice(0, PERSONA_INSTRUCTIONS_MAX);
+    if (name.length === 0 || instructions.length === 0) continue;
+
+    const key = normalizePersonaName(name);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    kept.push({ name, instructions });
+    if (kept.length >= MAX_SAVED_PERSONAS) break;
+  }
+  return kept;
+};
+
+/**
+ * Keeps one, replacing a persona of the same name rather than doubling it.
+ *
+ * Saving over the name you already used is what a person means by saving; two
+ * entries called "German tutor" is what a machine means by it.
+ */
+export const rememberPersona = (
+  library: readonly SavedPersona[],
+  name: string,
+  instructions: string
+): SavedPersona[] => {
+  const entry = { name: name.trim().slice(0, PERSONA_NAME_MAX), instructions: instructions.trim() };
+  if (entry.name.length === 0 || entry.instructions.length === 0) return [...library];
+
+  const key = normalizePersonaName(entry.name);
+  const without = library.filter((kept) => normalizePersonaName(kept.name) !== key);
+  // Newest first: it is the one they are about to look for.
+  return sanitizeSavedPersonas([entry, ...without]);
+};
+
+/** Drops one by name. An unknown name changes nothing rather than throwing. */
+export const forgetPersona = (library: readonly SavedPersona[], name: string): SavedPersona[] => {
+  const key = normalizePersonaName(name);
+  return library.filter((kept) => normalizePersonaName(kept.name) !== key);
+};
+
+/**
+ * The one they meant, by whatever they called it.
+ *
+ * Loosely, because this is reached from a sentence as often as from a list:
+ * "put the teacher one back on" is the request, and the name they saved was
+ * "German teacher".
+ */
+export const findPersonaByName = (library: readonly SavedPersona[], said: string): SavedPersona | null => {
+  const wanted = normalizePersonaName(said);
+  if (wanted.length === 0) return null;
+
+  const exact = library.find((persona) => normalizePersonaName(persona.name) === wanted);
+  if (exact) return exact;
+
+  const contained = library.find((persona) => {
+    const label = normalizePersonaName(persona.name);
+    return label.includes(wanted) || wanted.includes(label);
+  });
+  if (contained) return contained;
+
+  // Neither contains the other in "put the German one back on", and that is the
+  // sentence this is reached from. So: whichever name shares the most real
+  // words with what was said, and nothing at all when none of them shares one.
+  const saidWords = new Set(wanted.split(' ').filter((word) => word.length >= 3));
+  if (saidWords.size === 0) return null;
+
+  let best: SavedPersona | null = null;
+  let bestShared = 0;
+  for (const persona of library) {
+    const shared = normalizePersonaName(persona.name)
+      .split(' ')
+      .filter((word) => word.length >= 3 && saidWords.has(word)).length;
+    if (shared > bestShared) {
+      best = persona;
+      bestShared = shared;
+    }
+  }
+  return best;
+};

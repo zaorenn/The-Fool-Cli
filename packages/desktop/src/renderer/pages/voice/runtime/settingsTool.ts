@@ -5,6 +5,8 @@
  */
 
 import { ipcBridge } from '@/common';
+import { configService } from '@/common/config/configService';
+import { findPersonaByName, sanitizeSavedPersonas, VOICE_PERSONAS_CONFIG_KEY } from '@/common/realtime';
 import { findLayoutByName, SURFACE_IDS } from '@/common/config/surfaceLayouts';
 import { findWorkspaceByName } from '@/common/config/workspaces';
 import { synthesisProviderFor, type FoolVoiceSettings, type VoiceProfile } from '@/common/types/foolVoice';
@@ -279,6 +281,16 @@ export const applySpokenSetting = async (setting: string, value: string, t: Tran
 
     case 'persona': {
       const preset = said.toLowerCase().replaceAll(' ', '-');
+      // One they wrote themselves comes first, because a name they chose is a
+      // name they meant. Their own "companion" should be theirs, not ours.
+      const own = findPersonaByName(sanitizeSavedPersonas(configService.get(VOICE_PERSONAS_CONFIG_KEY)), said);
+      if (own) {
+        await save({
+          ...settings,
+          realtime: { ...settings.realtime, personaPresetId: 'custom', customInstructions: own.instructions },
+        });
+        return t('settings.voice.conversationSettingPersona', { name: own.name });
+      }
       if (!PERSONA_IDS.has(preset)) bad();
       await save({
         ...settings,

@@ -1683,7 +1683,12 @@
     },
     "conversationTaskAccepted": "Başlattım. Arka planda çalışıyor — kısaca üstlendiğini söyle ve sohbete devam et.",
     "conversationAsideFailed": "Bu arada, {{what}} tamamlanamadı. {{why}}",
-    "conversationSettingUnknownModel": "“{{name}}” adında yüklü bir model yok."
+    "conversationSettingUnknownModel": "“{{name}}” adında yüklü bir model yok.",
+    "personaLibrary": "Kendi asistanların",
+    "personaLibraryEmpty": "Henüz kayıtlı bir şey yok. Yukarıya talimatları yaz, bir ad ver ve sakla.",
+    "personaLibraryNamePlaceholder": "Ad ver",
+    "personaLibrarySave": "Sakla",
+    "personaLibraryFull": "{{count}} tane kayıtlı, en fazla bu kadar tutuluyor. Yenisi için birini sil."
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

@@ -1686,7 +1686,12 @@
     },
     "conversationTaskAccepted": "Já comecei. Está rodando em segundo plano — diga brevemente que está cuidando disso e siga a conversa.",
     "conversationAsideFailed": "Aliás, {{what}} não pôde ser concluído. {{why}}",
-    "conversationSettingUnknownModel": "Não há nenhum modelo chamado “{{name}}” carregado."
+    "conversationSettingUnknownModel": "Não há nenhum modelo chamado “{{name}}” carregado.",
+    "personaLibrary": "Seus próprios assistentes",
+    "personaLibraryEmpty": "Nada salvo ainda. Escreva as instruções acima, dê um nome e guarde.",
+    "personaLibraryNamePlaceholder": "Dê um nome",
+    "personaLibrarySave": "Guardar",
+    "personaLibraryFull": "Você tem {{count}} salvos, que é o máximo. Remova um para guardar outro."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

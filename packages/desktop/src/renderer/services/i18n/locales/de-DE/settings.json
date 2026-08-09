@@ -1683,7 +1683,12 @@
     },
     "conversationTaskAccepted": "Ich habe angefangen. Es läuft im Hintergrund — sag kurz, dass du dich darum kümmerst, und führe das Gespräch weiter.",
     "conversationAsideFailed": "Übrigens, {{what}} konnte nicht abgeschlossen werden. {{why}}",
-    "conversationSettingUnknownModel": "Es ist kein Modell namens „{{name}}“ geladen."
+    "conversationSettingUnknownModel": "Es ist kein Modell namens „{{name}}“ geladen.",
+    "personaLibrary": "Deine eigenen Assistenten",
+    "personaLibraryEmpty": "Noch nichts gespeichert. Schreib oben Anweisungen, gib ihnen einen Namen und behalte sie.",
+    "personaLibraryNamePlaceholder": "Benennen",
+    "personaLibrarySave": "Behalten",
+    "personaLibraryFull": "Du hast {{count}} gespeichert, mehr geht nicht. Entferne einen, um einen anderen zu behalten."
   },
   "themeCustomizer": {
     "title": "Design anpassen",

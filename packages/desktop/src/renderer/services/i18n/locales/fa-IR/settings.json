@@ -1683,7 +1683,12 @@
     },
     "conversationTaskAccepted": "شروع کردم. در پس‌زمینه در حال اجراست — کوتاه بگو که داری انجامش می‌دهی و گفتگو را ادامه بده.",
     "conversationAsideFailed": "راستی، {{what}} تمام نشد. {{why}}",
-    "conversationSettingUnknownModel": "مدلی به نام «{{name}}» بارگذاری نشده است."
+    "conversationSettingUnknownModel": "مدلی به نام «{{name}}» بارگذاری نشده است.",
+    "personaLibrary": "دستیارهای خودت",
+    "personaLibraryEmpty": "هنوز چیزی ذخیره نشده. بالا دستورها را بنویس، اسمی بگذار و نگه‌اش دار.",
+    "personaLibraryNamePlaceholder": "اسم بگذار",
+    "personaLibrarySave": "نگه دار",
+    "personaLibraryFull": "{{count}} مورد ذخیره شده که بیشترین تعداد است. برای ذخیرهٔ یکی دیگر، یکی را حذف کن."
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",

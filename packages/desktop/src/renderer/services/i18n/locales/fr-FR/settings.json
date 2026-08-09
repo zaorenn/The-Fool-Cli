@@ -1683,7 +1683,12 @@
     },
     "conversationTaskAccepted": "J'ai commencé. Ça tourne en arrière-plan — dis brièvement que tu t'en occupes et poursuis la conversation.",
     "conversationAsideFailed": "Au fait, {{what}} n'a pas pu être terminé. {{why}}",
-    "conversationSettingUnknownModel": "Aucun modèle nommé « {{name}} » n'est chargé."
+    "conversationSettingUnknownModel": "Aucun modèle nommé « {{name}} » n'est chargé.",
+    "personaLibrary": "Tes propres assistants",
+    "personaLibraryEmpty": "Rien d'enregistré pour l'instant. Écris des instructions au-dessus, donne-leur un nom et garde-les.",
+    "personaLibraryNamePlaceholder": "Donne un nom",
+    "personaLibrarySave": "Garder",
+    "personaLibraryFull": "Tu en as {{count}} enregistrés, c'est le maximum. Supprimes-en un pour en garder un autre."
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

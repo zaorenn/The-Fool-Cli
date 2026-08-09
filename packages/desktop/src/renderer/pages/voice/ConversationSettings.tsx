@@ -5,15 +5,23 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Collapse, Input, Link, Select, Switch, Tag, Typography } from '@arco-design/web-react';
+import { Button, Collapse, Input, Link, Select, Switch, Tag, Typography } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
+import { configService } from '@/common/config/configService';
 import type { IProvider } from '@/common/config/storage';
 import {
+  forgetPersona,
+  MAX_SAVED_PERSONAS,
+  PERSONA_NAME_MAX,
   PERSONA_PRESET_IDS,
   REALTIME_PROVIDER_IDS,
   REALTIME_PROVIDER_SPECS,
+  rememberPersona,
+  sanitizeSavedPersonas,
+  VOICE_PERSONAS_CONFIG_KEY,
   type PersonaPresetId,
+  type SavedPersona,
   type VoiceConversationProviderId,
 } from '@/common/realtime';
 import type { FoolVoiceSettings } from '@/common/types/foolVoice';
@@ -94,6 +102,105 @@ const Toggle: React.FC<{
     <Typography.Text className='text-11px leading-16px text-t-tertiary'>{hint}</Typography.Text>
   </div>
 );
+
+/**
+ * Assistants the user wrote, kept under names they chose.
+ *
+ * The four presets are the four things this was built for. Anything else — a
+ * patient German tutor, a rubber duck that never answers — has always been
+ * writable into the box above, where it lasted exactly until they wanted the
+ * other one back. What was missing was not the writing; it was keeping more
+ * than one.
+ *
+ * Applying one writes its text into the same custom box rather than becoming a
+ * fifth kind of persona, so nothing downstream has to learn about it: the
+ * prompt builder, the spoken settings and the workspaces all keep working on
+ * the two fields they already read.
+ */
+const PersonaLibrary: React.FC<{
+  instructions: string;
+  disabled: boolean;
+  onApply: (persona: SavedPersona) => void;
+}> = ({ instructions, disabled, onApply }) => {
+  const { t } = useTranslation();
+  const [library, setLibrary] = useState<SavedPersona[]>(() =>
+    sanitizeSavedPersonas(configService.get(VOICE_PERSONAS_CONFIG_KEY))
+  );
+  const [name, setName] = useState('');
+
+  // Another window may have saved one. The panel is open for as long as the
+  // conversation is being set up, which is plenty of time for that to happen.
+  useEffect(
+    () => configService.subscribe(VOICE_PERSONAS_CONFIG_KEY, (stored) => setLibrary(sanitizeSavedPersonas(stored))),
+    []
+  );
+
+  const write = (next: SavedPersona[]): void => {
+    setLibrary(next);
+    void configService.set(VOICE_PERSONAS_CONFIG_KEY, next);
+  };
+
+  const full = library.length >= MAX_SAVED_PERSONAS;
+  const canSave = !disabled && name.trim().length > 0 && instructions.trim().length > 0;
+
+  return (
+    <div className='mt-10px grid gap-6px'>
+      <Typography.Text className='text-11px font-600 uppercase tracking-wide text-t-tertiary'>
+        {t('settings.voice.personaLibrary')}
+      </Typography.Text>
+
+      {library.length === 0 ? (
+        <Typography.Text className='text-11px leading-16px text-t-tertiary'>
+          {t('settings.voice.personaLibraryEmpty')}
+        </Typography.Text>
+      ) : (
+        <div className='flex flex-wrap gap-6px'>
+          {library.map((persona) => (
+            <Tag
+              key={persona.name}
+              closable={!disabled}
+              className='cursor-pointer'
+              onClick={() => onApply(persona)}
+              onClose={() => write(forgetPersona(library, persona.name))}
+            >
+              {persona.name}
+            </Tag>
+          ))}
+        </div>
+      )}
+
+      <div className='flex items-center gap-6px'>
+        <Input
+          size='small'
+          value={name}
+          disabled={disabled}
+          maxLength={PERSONA_NAME_MAX}
+          onChange={setName}
+          placeholder={t('settings.voice.personaLibraryNamePlaceholder')}
+        />
+        <Button
+          size='small'
+          type='primary'
+          disabled={!canSave}
+          onClick={() => {
+            write(rememberPersona(library, name, instructions));
+            setName('');
+          }}
+        >
+          {t('settings.voice.personaLibrarySave')}
+        </Button>
+      </div>
+
+      {/* Said plainly rather than by silently dropping the oldest: a library
+          that quietly forgets what was put in it is a library nobody trusts. */}
+      {full ? (
+        <Typography.Text className='text-11px leading-16px text-warning'>
+          {t('settings.voice.personaLibraryFull', { count: MAX_SAVED_PERSONAS })}
+        </Typography.Text>
+      ) : null}
+    </div>
+  );
+};
 
 const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, disabled, onChange }) => {
   const { t } = useTranslation();
@@ -246,6 +353,11 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
             maxLength={4000}
             showWordLimit
             placeholder={t('settings.voice.conversationInstructionsPlaceholder')}
+          />
+          <PersonaLibrary
+            instructions={realtime.customInstructions}
+            disabled={disabled}
+            onApply={(persona) => patch({ personaPresetId: 'custom', customInstructions: persona.instructions })}
           />
         </Collapse.Item>
 
