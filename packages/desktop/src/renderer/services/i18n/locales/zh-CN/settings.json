@@ -1926,5 +1926,13 @@
     "copied": "已复制",
     "copyFailed": "无法复制",
     "learnMore": "了解更多"
+  },
+  "permissions": {
+    "askTitle": "允许这个操作吗？",
+    "askBody": "助手想使用 {{tool}}，它无法自行决定。",
+    "allow": "允许一次",
+    "always": "始终允许",
+    "deny": "不允许",
+    "noAlwaysForSending": "这一项每次都会询问。离开这台机器的事情不会提前答应。"
   }
 }

@@ -46,6 +46,7 @@ vi.mock('@/common', () => ({
 vi.mock('@renderer/pages/voice/runtime/toolRunner', () => ({ runVoiceTool }));
 
 const { startAppToolChannel } = await import('@renderer/services/appTools/appToolChannel');
+const { answerAsk, outstandingAsks } = await import('@renderer/services/permissions/permissionStore');
 
 const request = (callId: string, name = 'app_look_at_screen'): Record<string, unknown> => ({
   conversation_id: 'c1',
@@ -135,21 +136,54 @@ describe('startAppToolChannel and the permission layer', () => {
     runVoiceTool.mockResolvedValue({ ok: true, screen: 'a browser' });
   });
 
-  it('refuses a call nobody wrote a rule for, without running it', async () => {
-    startAppToolChannel();
-    await listeners[0](request('call-9', 'app_delete_everything'));
-
-    expect(runVoiceTool).not.toHaveBeenCalled();
-    // Still exactly one answer. Silence here is the same failure as a timeout:
-    // an agent waiting on a tool that will never come back.
-    expect(postResult).toHaveBeenCalledWith(expect.objectContaining({ call_id: 'call-9', ok: false }));
-  });
-
   it('runs a tool the rules allow', async () => {
     startAppToolChannel();
     await listeners[0](request('call-10', 'app_look_at_screen'));
 
     expect(runVoiceTool).toHaveBeenCalled();
     expect(postResult).toHaveBeenCalledWith(expect.objectContaining({ call_id: 'call-10', ok: true }));
+  });
+
+  it('refuses a denied call without running it', async () => {
+    startAppToolChannel();
+    await listeners[0]({
+      conversation_id: 'c1',
+      call_id: 'call-11',
+      name: 'Write',
+      arguments: { path: 'C:/Windows/system32/x.dll' },
+    });
+
+    expect(runVoiceTool).not.toHaveBeenCalled();
+    // Still exactly one answer. Silence here is the same failure as a timeout:
+    // an agent waiting on a tool that will never come back.
+    expect(postResult).toHaveBeenCalledWith(expect.objectContaining({ call_id: 'call-11', ok: false }));
+  });
+
+  it('waits for the user on a call the rules do not settle, and runs it when allowed', async () => {
+    startAppToolChannel();
+    const handled = listeners[0](request('call-12', 'app_delete_everything'));
+
+    // The card is up and nothing has run yet: the judging happens before the
+    // handler is reached, so a tool cannot be half-run and then denied.
+    await vi.waitFor(() => expect(outstandingAsks()).toHaveLength(1));
+    expect(runVoiceTool).not.toHaveBeenCalled();
+
+    answerAsk(outstandingAsks()[0].id, 'allow');
+    await handled;
+
+    expect(runVoiceTool).toHaveBeenCalled();
+    expect(postResult).toHaveBeenCalledWith(expect.objectContaining({ call_id: 'call-12', ok: true }));
+  });
+
+  it('refuses when the user says no', async () => {
+    startAppToolChannel();
+    const handled = listeners[0](request('call-13', 'app_delete_everything'));
+
+    await vi.waitFor(() => expect(outstandingAsks()).toHaveLength(1));
+    answerAsk(outstandingAsks()[0].id, 'deny');
+    await handled;
+
+    expect(runVoiceTool).not.toHaveBeenCalled();
+    expect(postResult).toHaveBeenCalledWith(expect.objectContaining({ call_id: 'call-13', ok: false }));
   });
 });

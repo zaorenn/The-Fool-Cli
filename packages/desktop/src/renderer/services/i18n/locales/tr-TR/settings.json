@@ -1925,5 +1925,13 @@
     "copied": "Kopyalandı",
     "copyFailed": "Kopyalanamadı",
     "learnMore": "Daha fazla"
+  },
+  "permissions": {
+    "askTitle": "Buna izin veriyor musun?",
+    "askBody": "Asistan {{tool}} kullanmak istiyor. Buna kendi başına karar veremedi.",
+    "allow": "Bir kez izin ver",
+    "always": "Buna her zaman izin ver",
+    "deny": "İzin verme",
+    "noAlwaysForSending": "Bu her seferinde sorulur. Bu makineden çıkan bir şeye önceden söz verilmez."
   }
 }

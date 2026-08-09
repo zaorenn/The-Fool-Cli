@@ -1927,5 +1927,13 @@
     "copied": "복사됨",
     "copyFailed": "복사할 수 없음",
     "learnMore": "자세히"
+  },
+  "permissions": {
+    "askTitle": "허용할까요?",
+    "askBody": "어시스턴트가 {{tool}}을 사용하려고 합니다. 스스로 판단할 수 없었습니다.",
+    "allow": "한 번 허용",
+    "always": "항상 허용",
+    "deny": "허용하지 않음",
+    "noAlwaysForSending": "이것은 매번 묻습니다. 이 컴퓨터를 떠나는 일은 미리 허락하지 않습니다."
   }
 }

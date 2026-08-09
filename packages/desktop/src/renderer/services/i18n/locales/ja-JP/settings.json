@@ -1927,5 +1927,13 @@
     "copied": "コピーしました",
     "copyFailed": "コピーできません",
     "learnMore": "詳細"
+  },
+  "permissions": {
+    "askTitle": "これを許可しますか？",
+    "askBody": "アシスタントが {{tool}} を使おうとしています。自分では判断できませんでした。",
+    "allow": "一度だけ許可",
+    "always": "常に許可",
+    "deny": "許可しない",
+    "noAlwaysForSending": "これは毎回確認されます。この端末を出ていくものは事前に許可しません。"
   }
 }

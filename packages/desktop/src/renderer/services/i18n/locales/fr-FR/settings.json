@@ -1925,5 +1925,13 @@
     "copied": "Copié",
     "copyFailed": "Copie impossible",
     "learnMore": "En savoir plus"
+  },
+  "permissions": {
+    "askTitle": "Autoriser ceci ?",
+    "askBody": "L'assistant veut utiliser {{tool}}. Il n'a pas pu en décider seul.",
+    "allow": "Autoriser une fois",
+    "always": "Toujours autoriser",
+    "deny": "Ne pas autoriser",
+    "noAlwaysForSending": "Celle-ci est demandée chaque fois. Ce qui quitte cette machine ne s'accepte pas à l'avance."
   }
 }

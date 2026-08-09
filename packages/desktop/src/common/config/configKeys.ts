@@ -3,6 +3,7 @@ import type { Theme } from '@/common/theme/types';
 import type { LayoutPresetLibrary, SurfaceLayoutSelection } from '@/common/config/surfaceLayouts';
 import type { ThemeOverrides, ThemePalettes } from '@/common/config/themeOverrides';
 import type { WorkspaceLibrary } from '@/common/config/workspaces';
+import type { Rule } from '@/common/permissions/types';
 import type { LocalSkill } from '@/common/voice/localSkills';
 
 export type ConfigKeyMap = {
@@ -28,6 +29,14 @@ export type ConfigKeyMap = {
   'ui.layoutPresets': LayoutPresetLibrary | undefined;
   /** Things the user taught the assistant to do by itself. */
   'voice.localSkills': LocalSkill[] | undefined;
+  /**
+   * What the user has said they never want to be asked about again.
+   *
+   * Their own list, kept apart from this application's defaults so an update can
+   * change its own opinion without touching theirs — and so both can be read
+   * separately when somebody asks why something was allowed.
+   */
+  'permissions.userRules': Rule[] | undefined;
   /**
    * The whole app aimed at one purpose, by name.
    *

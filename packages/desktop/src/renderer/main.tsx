@@ -87,6 +87,7 @@ import { registerPwa } from './services/registerPwa';
 
 import { ipcBridge } from '@/common';
 import { repairAllCronJobTimeZonesOnce } from '@renderer/pages/cron/repairCronJobTimeZone';
+import { PermissionAskCard } from '@renderer/components/permissions/PermissionAskCard';
 import { startAppToolChannel } from '@renderer/services/appTools/appToolChannel';
 import { bootstrapRendererConfig } from '@renderer/services/bootstrapRenderer';
 
@@ -332,13 +333,18 @@ const Main = () => {
   }
 
   return (
-    <Router
-      layout={
-        <ConversationHistoryProvider>
-          <Layout sider={<Sider />} />
-        </ConversationHistoryProvider>
-      }
-    />
+    <>
+      {/* Beside the router rather than inside a page: a tool call can need an
+          answer while the window is minimised and no page is looking. */}
+      <PermissionAskCard />
+      <Router
+        layout={
+          <ConversationHistoryProvider>
+            <Layout sider={<Sider />} />
+          </ConversationHistoryProvider>
+        }
+      />
+    </>
   );
 };
 

@@ -1925,5 +1925,13 @@
     "copied": "Kopiert",
     "copyFailed": "Konnte nicht kopieren",
     "learnMore": "Mehr erfahren"
+  },
+  "permissions": {
+    "askTitle": "Das erlauben?",
+    "askBody": "Der Assistent möchte {{tool}} verwenden. Er konnte das nicht selbst entscheiden.",
+    "allow": "Einmal erlauben",
+    "always": "Immer erlauben",
+    "deny": "Nicht erlauben",
+    "noAlwaysForSending": "Danach wird jedes Mal gefragt. Was dieses Gerät verlässt, wird nicht im Voraus erlaubt."
   }
 }

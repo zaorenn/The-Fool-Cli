@@ -6,8 +6,7 @@
 
 import i18next from 'i18next';
 import { ipcBridge } from '@/common';
-import { decide } from '@/common/permissions/decide';
-import { DEFAULT_RULES } from '@/common/permissions/defaults';
+import { judge } from '@renderer/services/permissions/permissionStore';
 import { runVoiceTool } from '@renderer/pages/voice/runtime/toolRunner';
 import type { ToolHost } from '@renderer/pages/voice/runtime/types';
 import { describeAppTools } from './toolDescriptors';
@@ -87,9 +86,11 @@ const succeeded = (result: Record<string, unknown>): boolean => result.ok !== fa
  * caller can now be an agent rather than a spoken conversation, which is the
  * whole of this piece of work.
  *
- * Nothing here decides whether a tool is *allowed* to run; that belongs to the
- * permission layer and is its own sub-project. This guarantees one thing only:
- * every request gets exactly one answer.
+ * Two things are guaranteed here and nowhere else. Every request gets exactly
+ * one answer, including when the answer is a refusal or a timeout. And nothing
+ * runs before the permission layer has judged it — the judging happens on this
+ * side of the boundary, before the handler is even reached, so a tool cannot be
+ * half-run and then denied.
  */
 export const startAppToolChannel = (): (() => void) => {
   const register = (): void => {
@@ -106,10 +107,10 @@ export const startAppToolChannel = (): (() => void) => {
   const stopRequests = ipcBridge.appTools.request.on(async (request: AppToolRequest) => {
     try {
       const args = request.arguments ?? {};
-      // Consulted before anything runs and before anything is shown. An `ask`
-      // is treated as a refusal until the asking itself is built: safe, honest,
-      // and visibly incomplete rather than quietly permissive.
-      const verdict = decide(DEFAULT_RULES, { tool: request.name, ...targetOf(args) });
+      // Consulted before anything runs. `ask` puts a card in front of the user
+      // and waits; an unanswered card refuses on their behalf, because during a
+      // spoken conversation nobody is looking at one.
+      const verdict = await judge({ tool: request.name, ...targetOf(args) }, request.conversation_id);
       if (verdict !== 'allow') {
         await ipcBridge.appTools.result.invoke({ call_id: request.call_id, ok: false, content: REFUSED });
         return;

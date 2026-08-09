@@ -1928,5 +1928,13 @@
     "copied": "Copiado",
     "copyFailed": "Não foi possível copiar",
     "learnMore": "Saiba mais"
+  },
+  "permissions": {
+    "askTitle": "Permitir isso?",
+    "askBody": "O assistente quer usar {{tool}}. Não conseguiu decidir por conta própria.",
+    "allow": "Permitir uma vez",
+    "always": "Permitir sempre",
+    "deny": "Não permitir",
+    "noAlwaysForSending": "Esta é perguntada todas as vezes. O que sai desta máquina não se aceita de antemão."
   }
 }

@@ -1925,5 +1925,13 @@
     "copied": "Copied",
     "copyFailed": "Could not copy",
     "learnMore": "Learn more"
+  },
+  "permissions": {
+    "askTitle": "Allow this?",
+    "askBody": "The assistant wants to use {{tool}}. It was not able to decide this on its own.",
+    "allow": "Allow once",
+    "always": "Always allow this",
+    "deny": "Do not allow",
+    "noAlwaysForSending": "This one is asked every time. Something that leaves this machine is not something to agree to in advance."
   }
 }

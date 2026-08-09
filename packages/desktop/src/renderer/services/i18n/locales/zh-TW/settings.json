@@ -1927,5 +1927,13 @@
     "copied": "已複製",
     "copyFailed": "無法複製",
     "learnMore": "瞭解更多"
+  },
+  "permissions": {
+    "askTitle": "允許這個操作嗎？",
+    "askBody": "助手想使用 {{tool}}，它無法自行決定。",
+    "allow": "允許一次",
+    "always": "一律允許",
+    "deny": "不允許",
+    "noAlwaysForSending": "這一項每次都會詢問。離開這台機器的事情不會提前答應。"
   }
 }
