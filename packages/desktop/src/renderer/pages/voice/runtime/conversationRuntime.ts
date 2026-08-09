@@ -18,6 +18,7 @@ import {
 import { createHoldGate } from '@/common/voice/holdToTalkGate';
 import { describeSpokenTurns, worthRemembering, type SpokenTurn } from '@/common/voice/sessionSummary';
 import { appendTurn, resumedTurns, startConversation, type VoiceConversation } from '@/common/voice/conversationLog';
+import { windowWhileSpeaking } from '@/common/voice/bargeIn';
 import { notchLine } from '@/common/voice/notchLine';
 import { saveConversation } from '@renderer/services/voice/session/conversationStore';
 import { claimManualVoiceSession } from '@renderer/hooks/voice/useFoolVoiceSession';
@@ -168,6 +169,14 @@ class ConversationRuntime {
   private local: LocalVoicePipeline | null = null;
   /** Ends the subscription that keeps a running conversation's settings current. */
   private releaseSettings: (() => void) | null = null;
+  /**
+   * Narrows the listening window while a reply is being spoken.
+   *
+   * Set when the local pipeline's microphone is opened; absent for the socket
+   * providers, which capture on the far side of a socket and have no window
+   * here to narrow.
+   */
+  private narrowVad: ((speaking: boolean) => void) | null = null;
   private microphone: PcmMicrophone | null = null;
   private output: PcmAudioOutput | null = null;
   /** Held for the length of the conversation, so nothing else opens capture. */
@@ -291,6 +300,9 @@ class ConversationRuntime {
   }
 
   private enter(next: ConversationPhase, extra?: { level?: number; transcript?: string }): void {
+    // Narrowed while a reply is being spoken and restored the moment it is not,
+    // so the shorter window never applies to somebody dictating.
+    this.narrowVad?.(next === 'speaking');
     this.applyPhase(next);
     this.publish(next, extra);
   }
@@ -587,6 +599,14 @@ class ConversationRuntime {
     this.openOutput(LOCAL_OUTPUT_FALLBACK_RATE);
 
     const vad = new AdaptiveVad(settings.vad);
+    // While a reply is being spoken the microphone stops waiting for a
+    // sentence: what it is listening for is somebody cutting in, and that is one
+    // word. See `common/voice/bargeIn.ts` for the whole of the reasoning and
+    // for what this does *not* achieve.
+    this.narrowVad = (speaking: boolean): void => {
+      const configured = peekVoiceSettings().vad;
+      vad.useWindow(speaking ? windowWhileSpeaking(configured) : configured);
+    };
     // The room, not the last conversation: the device may have changed, and the
     // floor a previous session settled on is not evidence about this one.
     vad.recalibrate();

@@ -79,7 +79,7 @@ const quantile = (samples: readonly number[], fraction: number): number => {
  * event, so the turn logic can be tested without audio hardware or timers.
  */
 export class AdaptiveVad {
-  private readonly config: VadConfig;
+  private config: VadConfig;
 
   private calibrationStartMs: number | null = null;
   /** Every frame heard during calibration, so an outlier can be discarded. */
@@ -98,6 +98,20 @@ export class AdaptiveVad {
 
   constructor(config: VadConfig) {
     this.config = config;
+  }
+
+  /**
+   * Narrows or restores the listening window without losing the calibration.
+   *
+   * Used while a reply is being spoken: the only thing being listened for then
+   * is somebody cutting in, which is one short word, so waiting most of a
+   * second after it to be sure they have finished is waiting for a sentence
+   * they were never going to say. The calibration is deliberately untouched —
+   * the room has not changed, and re-measuring it here would open the
+   * microphone to a floor taken while the speaker was playing.
+   */
+  useWindow(window: Pick<VadConfig, 'minimumSpeechMs' | 'silenceMs' | 'maximumUtteranceMs'>): void {
+    this.config = { ...this.config, ...window };
   }
 
   /**
