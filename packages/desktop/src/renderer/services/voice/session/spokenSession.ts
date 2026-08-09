@@ -106,6 +106,25 @@ const sessionPrompt = (input: SpokenSessionInput): string => {
 };
 
 /**
+ * Any model at all, for a session that was given none.
+ *
+ * Deliberately the first provider that has one rather than a cleverer choice:
+ * this is the difference between a spoken conversation running on the agent
+ * runtime and not running there at all, and the user can pin the one they meant
+ * in the voice settings. A wrong guess is visible and one click from fixed; the
+ * refusal it replaces was neither.
+ */
+type ProviderWithModel = Omit<IProvider, 'models'> & { use_model: string };
+
+const firstUsableModel = (providers: readonly IProvider[]): ProviderWithModel | undefined => {
+  const provider = providers.find((candidate) => (candidate.models ?? []).length > 0);
+  if (!provider) return undefined;
+
+  const { models, ...rest } = provider;
+  return { ...rest, use_model: (models ?? [])[0] };
+};
+
+/**
  * Opens the conversation a spoken session runs in.
  *
  * Never throws: the caller is a microphone, and an unhandled rejection there is
@@ -127,9 +146,22 @@ export const openSpokenSession = async (input: SpokenSessionInput): Promise<Spok
     return { ok: false, reason: assistantId.length === 0 ? 'no-agent' : 'agent-unavailable', detail: assistantId };
   }
 
-  const model = findPinnedModel(providers ?? [], providerId, modelId);
-  // The embedded backend is handed the provider record itself; without one there
-  // is nothing to create the conversation with.
+  /**
+   * The model, and a real answer when nothing was pinned.
+   *
+   * The embedded backend is handed the provider record itself, so a foolrs
+   * assistant with no model cannot open a conversation. That was written as a
+   * refusal — and voice settings ship with nothing pinned, so on a default
+   * installation the refusal fired on *every* spoken conversation. Nobody saw
+   * it: the pipeline caught it, fell back to its own small local model, and
+   * went on answering. What the user experienced was their agent never being
+   * asked, and a model in LM Studio loading and unloading behind a
+   * conversation they thought was talking to something else.
+   *
+   * So when nothing is pinned, take what a typed conversation would take.
+   * Refusing is right only when the pin itself is broken.
+   */
+  const model = findPinnedModel(providers ?? [], providerId, modelId) ?? firstUsableModel(providers ?? []);
   if (isFoolrsAssistant(assistant) && !model) {
     return { ok: false, reason: 'agent-unavailable', detail: modelId };
   }
