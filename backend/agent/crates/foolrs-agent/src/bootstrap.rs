@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 
 use anyhow::Result;
 use foolrs_config::config::{Config, McpServerConfig};
@@ -13,6 +13,7 @@ use foolrs_providers::{LlmProvider, create_provider};
 use foolrs_skills::loader::load_all_skills;
 use foolrs_skills::permissions::SkillPermissionChecker;
 use foolrs_skills::types::SkillMetadata;
+use foolrs_tools::checkpoint::CheckpointStore;
 use foolrs_tools::edit::EditTool;
 use foolrs_tools::exec_command::ExecCommandTool;
 use foolrs_tools::file_cache::FileStateCache;
@@ -73,6 +74,12 @@ pub struct AgentBootstrap {
     resume_session: Option<Session>,
     runtime_env: Vec<(String, String)>,
     tool_policy: ToolPolicy,
+    /// Where a file's previous contents are kept so a turn can be undone.
+    ///
+    /// `None` leaves `Write` and `Edit` as they were. An agent that refused to
+    /// write because nobody wired a checkpoint would be worse than one that
+    /// cannot be undone, so this is added rather than required.
+    checkpoints: Option<Arc<Mutex<CheckpointStore>>>,
 }
 
 struct BootstrapEnvironment {
@@ -111,7 +118,14 @@ impl AgentBootstrap {
             resume_session: None,
             runtime_env: Vec::new(),
             tool_policy: ToolPolicy::default(),
+            checkpoints: None,
         }
+    }
+
+    /// Keep a copy of every file a turn changes, so the turn can be undone.
+    pub fn checkpoints(mut self, checkpoints: Arc<Mutex<CheckpointStore>>) -> Self {
+        self.checkpoints = Some(checkpoints);
+        self
     }
 
     /// Use a pre-created provider instead of creating one from config.
@@ -223,8 +237,19 @@ impl AgentBootstrap {
         let mut registry = ToolRegistry::new();
 
         registry.register(Box::new(ReadTool::new(file_cache.clone())));
-        registry.register(Box::new(WriteTool::new(file_cache.clone())));
-        registry.register(Box::new(EditTool::new(file_cache)));
+
+        let write = WriteTool::new(file_cache.clone());
+        let edit = EditTool::new(file_cache);
+        match &self.checkpoints {
+            Some(store) => {
+                registry.register(Box::new(write.with_checkpoints(store.clone())));
+                registry.register(Box::new(edit.with_checkpoints(store.clone())));
+            }
+            None => {
+                registry.register(Box::new(write));
+                registry.register(Box::new(edit));
+            }
+        }
         registry.register(Box::new(ExecCommandTool::new_with_env(
             workspace_path.to_path_buf(),
             self.runtime_env.clone(),
