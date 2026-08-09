@@ -1682,7 +1682,9 @@
         "1": "아, {{what}} 방금 끝났습니다.",
         "2": "아까 그 {{what}}, 완료됐어요."
       }
-    }
+    },
+    "conversationTaskAccepted": "시작했습니다. 백그라운드에서 실행 중입니다 — 처리 중이라고 짧게 말하고 대화를 계속하세요.",
+    "conversationAsideFailed": "그런데, {{what}} 은(는) 끝내지 못했습니다. {{why}}"
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",

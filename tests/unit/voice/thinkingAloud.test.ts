@@ -6,12 +6,18 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  ASIDE_NAME_MAX,
+  BETWEEN_ASIDES_MS,
   FIRST_GAP_MS,
   MAX_FILLERS,
+  QUIET_BEFORE_ASIDE_MS,
   VARIANTS_PER_KIND,
   fillerFor,
   fillerKey,
   gapBefore,
+  mayMentionAside,
+  shortenForAside,
+  type AsideMoment,
   type ThinkingState,
 } from '@/common/voice/thinkingAloud';
 
@@ -86,5 +92,68 @@ describe('which line', () => {
 
   it('names a key under the voice settings, where the rest of the spoken lines are', () => {
     expect(fillerKey('still', 0)).toBe('settings.voice.thinkingAloud.still.0');
+  });
+});
+
+/**
+ * An aside is an interruption, so it owes the room more than a filler does.
+ *
+ * A filler covers a silence the assistant itself made. This walks into one
+ * nobody asked it to fill, which is why every one of these is a refusal.
+ */
+const moment = (over: Partial<AsideMoment> = {}): AsideMoment => ({
+  phase: 'listening',
+  standby: false,
+  quietForMs: QUIET_BEFORE_ASIDE_MS,
+  sinceLastAsideMs: Number.POSITIVE_INFINITY,
+  ...over,
+});
+
+describe('mentioning a finished task', () => {
+  it('takes a long enough gap in a listening conversation', () => {
+    expect(mayMentionAside(moment())).toBe(true);
+  });
+
+  it('refuses over an answer', () => {
+    expect(mayMentionAside(moment({ phase: 'speaking' }))).toBe(false);
+  });
+
+  it('refuses over the user', () => {
+    expect(mayMentionAside(moment({ phase: 'hearing' }))).toBe(false);
+  });
+
+  it('refuses while it has been told to wait', () => {
+    expect(mayMentionAside(moment({ standby: true }))).toBe(false);
+  });
+
+  it('refuses in a pause too short to walk into', () => {
+    expect(mayMentionAside(moment({ quietForMs: QUIET_BEFORE_ASIDE_MS - 1 }))).toBe(false);
+  });
+
+  /// Two tasks finishing while a third is discussed is the normal case once
+  /// delegating is cheap, and back to back they are one unreadable sentence.
+  it('refuses on top of the previous aside', () => {
+    expect(mayMentionAside(moment({ sinceLastAsideMs: BETWEEN_ASIDES_MS - 1 }))).toBe(false);
+    expect(mayMentionAside(moment({ sinceLastAsideMs: BETWEEN_ASIDES_MS }))).toBe(true);
+  });
+});
+
+describe('naming the task that finished', () => {
+  it('leaves a short request alone', () => {
+    expect(shortenForAside('back up the photos')).toBe('back up the photos');
+  });
+
+  it('collapses the whitespace a transcript arrives with', () => {
+    expect(shortenForAside('back  up\n the photos')).toBe('back up the photos');
+  });
+
+  /// Read back in full, a long request is not a reminder — it is the task
+  /// again, and by then the user has stopped listening.
+  it('shortens a long one at a word boundary', () => {
+    const long = 'open Discord and tell Ali I am running twenty minutes late and will bring the drive';
+    const short = shortenForAside(long);
+    expect(short.length).toBeLessThanOrEqual(ASIDE_NAME_MAX + 1);
+    expect(short.endsWith('…')).toBe(true);
+    expect(long.startsWith(short.slice(0, -1))).toBe(true);
   });
 });

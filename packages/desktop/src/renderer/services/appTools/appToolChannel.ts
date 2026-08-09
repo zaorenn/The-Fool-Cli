@@ -45,6 +45,13 @@ const agentToolHost = (_conversationId: string): ToolHost => ({
   // exist. Rules meant to last go through the memory instead.
   setSessionRule: () => undefined,
   dropSessionRule: () => undefined,
+  // There is no room to interrupt: an agent turn is not a conversation, and it
+  // has its own way of reporting what it delegated. The promise is still
+  // swallowed rather than dropped — an unhandled rejection here would surface
+  // as a crash in a window nobody has open.
+  announceLater: (_what, finished): void => {
+    void finished.catch((): undefined => undefined);
+  },
 });
 
 /**

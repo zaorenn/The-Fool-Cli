@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   asksToBeReminded,
+  backsCompletedAction,
   claimsCompletedAction,
   claimsRecall,
   emptyRecallCorrection,
@@ -278,5 +279,29 @@ describe('a finished action, by its grammar', () => {
     expect(claimsCompletedAction('I uploaded the file.')).toBe(true);
     expect(claimsCompletedAction('I wanted to check first.')).toBe(false);
     expect(claimsCompletedAction('I tried but it did not work.')).toBe(false);
+  });
+});
+
+/**
+ * Not every tool that answers has done anything.
+ *
+ * A task handed to the agent comes back the moment it is accepted — the flight
+ * is not booked and will not be for minutes. Counted as evidence it would open
+ * the gate's own hole one level along: the claim would have a tool behind it,
+ * and the tool would only have agreed to start.
+ */
+describe('what a tool result is evidence of', () => {
+  it('takes an ordinary result as evidence the work is done', () => {
+    expect(backsCompletedAction({ ok: true, opened: 1 })).toBe(true);
+  });
+
+  it('does not take an accepted task as evidence of anything finished', () => {
+    expect(backsCompletedAction({ ok: true, accepted: true, result: 'started' })).toBe(false);
+  });
+
+  it('takes a result it cannot read as evidence, rather than refusing honest reports', () => {
+    expect(backsCompletedAction('done')).toBe(true);
+    expect(backsCompletedAction(null)).toBe(true);
+    expect(backsCompletedAction(undefined)).toBe(true);
   });
 });

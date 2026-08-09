@@ -366,43 +366,51 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
         detail: t('settings.voice.conversationDelegated'),
         state: 'running',
       });
-      // Back to listening *before* awaiting: the task runs for minutes and the
-      // user has to be able to keep talking while it does. This is the whole
-      // reason it is not the old navigate-and-prefill.
+      // Back to listening *before* the work starts: the task runs for minutes
+      // and the user has to be able to keep talking while it does. This is the
+      // whole reason it is not the old navigate-and-prefill.
       host.backToListening();
-      // Something to hear while it works. Minutes of silence from a voice that
-      // was talking a moment ago reads as a crash — the user asks again, and now
-      // the same job is running twice.
-      const stopHeartbeat = host.startWorkingHeartbeat();
       const steps = trackSteps(host, invocation.callId);
-      const outcome = await runAgentTask({
+      // Not awaited. Awaiting it held the turn open for the length of the task,
+      // so the conversation could not go anywhere else and a second request had
+      // to wait for the first — which is not delegating, it is queueing. The
+      // finish arrives later, as something the assistant volunteers.
+      const finished = runAgentTask({
         request,
         settings: peekVoiceSettings(),
         memory: peekVoiceMemory(),
         onProgress: steps.note,
-      }).finally(stopHeartbeat);
-      steps.finish();
-      if (outcome.ok === false) {
-        const detail = t(`settings.voice.conversationTaskError.${outcome.reason}`, {
-          defaultValue: outcome.detail ?? outcome.reason,
-        });
-        // Written down without being asked, for the two failures that say
-        // something about the request rather than about the moment. A dropped
-        // connection is not a lesson; a task this machine cannot carry out is
-        // one, and finding that out twice is how the user loses faith in it.
-        // The others are left alone on purpose — a memory that records every
-        // hiccup is a memory nobody can read.
-        if (outcome.reason === 'run-failed' || outcome.reason === 'agent-unavailable') {
-          void learnVoiceLesson(`Asked to "${request}", the agent could not finish it: ${detail}`);
+      }).then((outcome) => {
+        steps.finish();
+        if (outcome.ok === false) {
+          const detail = t(`settings.voice.conversationTaskError.${outcome.reason}`, {
+            defaultValue: outcome.detail ?? outcome.reason,
+          });
+          // Written down without being asked, for the two failures that say
+          // something about the request rather than about the moment. A dropped
+          // connection is not a lesson; a task this machine cannot carry out is
+          // one, and finding that out twice is how the user loses faith in it.
+          // The others are left alone on purpose — a memory that records every
+          // hiccup is a memory nobody can read.
+          if (outcome.reason === 'run-failed' || outcome.reason === 'agent-unavailable') {
+            void learnVoiceLesson(`Asked to "${request}", the agent could not finish it: ${detail}`);
+          }
+          host.updateActivity(invocation.callId, { detail, state: 'failed' });
+          return { ok: false, detail };
         }
-        host.updateActivity(invocation.callId, { detail, state: 'failed' });
-        return { ok: false, error: detail };
-      }
-      host.updateActivity(invocation.callId, {
-        detail: outcome.summary.slice(0, 160) || t('settings.voice.conversationTaskDone'),
-        state: 'completed',
+        host.updateActivity(invocation.callId, {
+          detail: outcome.summary.slice(0, 160) || t('settings.voice.conversationTaskDone'),
+          state: 'completed',
+        });
+        return { ok: true, detail: outcome.summary };
       });
-      return { ok: true, result: outcome.summary };
+      host.announceLater(request, finished);
+
+      // What goes back to the model is that the work *started*, and nothing
+      // about how it went — because nothing is known yet, and a tool result
+      // that reads like an outcome is how a model comes to say a thing is done
+      // while it is still running.
+      return { ok: true, accepted: true, result: t('settings.voice.conversationTaskAccepted') };
     }
 
     if (invocation.name === 'app_build_app') {

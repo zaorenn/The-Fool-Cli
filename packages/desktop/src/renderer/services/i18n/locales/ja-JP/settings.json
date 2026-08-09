@@ -1682,7 +1682,9 @@
         "1": "あ、{{what}} がいま終わりました。",
         "2": "別件の {{what}} は完了しました。"
       }
-    }
+    },
+    "conversationTaskAccepted": "開始しました。バックグラウンドで動いています——取りかかったと短く伝えて、会話を続けてください。",
+    "conversationAsideFailed": "ところで、{{what}} は完了できませんでした。{{why}}"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",

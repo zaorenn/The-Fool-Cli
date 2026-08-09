@@ -1683,7 +1683,9 @@
         "1": "Ah, {{what}} acabou de terminar.",
         "2": "Aquela outra coisa, {{what}}, está pronta."
       }
-    }
+    },
+    "conversationTaskAccepted": "Já comecei. Está rodando em segundo plano — diga brevemente que está cuidando disso e siga a conversa.",
+    "conversationAsideFailed": "Aliás, {{what}} não pôde ser concluído. {{why}}"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

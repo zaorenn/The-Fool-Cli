@@ -58,6 +58,9 @@ const { runVoiceTool } = await import('@renderer/pages/voice/runtime/toolRunner'
 
 const activities = new Map<string, ConversationActivity>();
 
+/** Everything the runtime was asked to volunteer once the work finished. */
+const announced: { what: string; finished: Promise<{ ok: boolean; detail: string }> }[] = [];
+
 const host: ToolHost = {
   t: (key) => key,
   updateActivity: (id, patch) => {
@@ -68,6 +71,20 @@ const host: ToolHost = {
   flushOutput: vi.fn(),
   setStandby: vi.fn(),
   startWorkingHeartbeat: () => () => {},
+  setSessionRule: vi.fn(),
+  dropSessionRule: vi.fn(),
+  announceLater: (what, finished) => void announced.push({ what, finished }),
+};
+
+/**
+ * Waits for the work the tool call did not wait for.
+ *
+ * The activity rows are written when the task finishes, which is now after the
+ * turn has ended — so a test that asserts on them has to wait for the thing the
+ * conversation deliberately does not.
+ */
+const settled = async (): Promise<void> => {
+  await Promise.all(announced.map((task) => task.finished));
 };
 
 const steps = (): ConversationActivity[] =>
@@ -80,6 +97,7 @@ describe('a task handed to the agent', () => {
   beforeEach(() => {
     activities.clear();
     lessons.length = 0;
+    announced.length = 0;
     runAgentTask.mockReset();
   });
 
@@ -96,6 +114,7 @@ describe('a task handed to the agent', () => {
       name: 'app_ask_jester',
       argumentsJson: JSON.stringify({ request: 'find the trailer' }),
     });
+    await settled();
 
     expect(steps().map((item) => item.detail)).toEqual([
       'opening the browser',
@@ -116,6 +135,7 @@ describe('a task handed to the agent', () => {
       name: 'app_ask_jester',
       argumentsJson: JSON.stringify({ request: 'find the trailer' }),
     });
+    await settled();
 
     expect(steps().map((item) => item.state)).toEqual(['completed', 'completed']);
   });
@@ -133,6 +153,7 @@ describe('a task handed to the agent', () => {
       name: 'app_ask_jester',
       argumentsJson: JSON.stringify({ request: 'summarise it' }),
     });
+    await settled();
 
     expect(steps()).toHaveLength(1);
   });
@@ -145,6 +166,7 @@ describe('a task handed to the agent', () => {
       name: 'app_ask_jester',
       argumentsJson: JSON.stringify({ request: 'find the best mods and open them' }),
     });
+    await settled();
 
     expect(activities.get('call-1')).toMatchObject({
       label: 'find the best mods and open them',
@@ -164,8 +186,12 @@ describe('a task handed to the agent', () => {
       name: 'app_ask_jester',
       argumentsJson: JSON.stringify({ request: 'find the trailer' }),
     });
+    await settled();
 
-    expect(result.ok).toBe(false);
+    // The call itself succeeded: the task was accepted. Whether the work went
+    // well is not known when the turn ends, and a tool result that says it did
+    // is the exact false report the honesty work exists to stop.
+    expect(result).toMatchObject({ ok: true, accepted: true });
     expect(steps().map((item) => item.state)).toEqual(['completed']);
     expect(activities.get('call-1')?.state).toBe('failed');
   });
@@ -188,6 +214,7 @@ describe('a task handed to the agent', () => {
       name: 'app_ask_jester',
       argumentsJson: JSON.stringify({ request: 'open it' }),
     });
+    await settled();
 
     expect(steps()).toHaveLength(0);
     expect(activities.get('call-1#writing')).toMatchObject({
@@ -224,6 +251,7 @@ describe('a task handed to the agent', () => {
       name: 'app_ask_jester',
       argumentsJson: JSON.stringify({ request: 'open it' }),
     });
+    await settled();
 
     // Six fragments in, three writes out: the row going up, and one per
     // sentence that actually finished.
@@ -238,6 +266,7 @@ describe('a task handed to the agent', () => {
       name: 'app_ask_jester',
       argumentsJson: JSON.stringify({ request: 'send the email' }),
     });
+    await settled();
 
     expect(lessons).toHaveLength(1);
     expect(lessons[0]).toContain('send the email');
@@ -251,6 +280,7 @@ describe('a task handed to the agent', () => {
       name: 'app_ask_jester',
       argumentsJson: JSON.stringify({ request: 'send the email' }),
     });
+    await settled();
 
     expect(lessons).toEqual([]);
   });
@@ -263,6 +293,7 @@ describe('a task handed to the agent', () => {
       name: 'app_ask_jester',
       argumentsJson: JSON.stringify({ request: 'put it on my desktop' }),
     });
+    await settled();
 
     expect(runAgentTask).toHaveBeenCalledWith(expect.objectContaining({ memory: EMPTY_VOICE_MEMORY }));
   });
@@ -431,5 +462,83 @@ describe('searching inside a site', () => {
     });
 
     expect(result.ok).toBe(false);
+  });
+});
+
+/**
+ * The turn does not wait for the work.
+ *
+ * Awaiting the task inside the call held the spoken turn open for as long as
+ * the agent ran — minutes — so the conversation could not go anywhere else and
+ * a second request had to queue behind the first. Delegating that you have to
+ * sit and watch is not delegating.
+ */
+describe('a task the conversation does not wait for', () => {
+  beforeEach(() => {
+    activities.clear();
+    announced.length = 0;
+    runAgentTask.mockReset();
+  });
+
+  it('comes back as soon as the work is accepted', async () => {
+    let finish: (outcome: unknown) => void = () => undefined;
+    runAgentTask.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+
+    const result = await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_ask_jester',
+      argumentsJson: JSON.stringify({ request: 'book a flight to Tokyo' }),
+    });
+
+    // Returned while the task is still running: nothing has resolved it yet.
+    expect(result).toMatchObject({ ok: true, accepted: true });
+    expect(announced).toHaveLength(1);
+    expect(announced[0].what).toBe('book a flight to Tokyo');
+
+    finish({ ok: true, conversationId: 'c1', summary: 'Booked.' });
+    await expect(announced[0].finished).resolves.toMatchObject({ ok: true, detail: 'Booked.' });
+  });
+
+  it('says nothing about how it went, because nothing is known yet', async () => {
+    runAgentTask.mockReturnValue(new Promise(() => undefined));
+
+    const result = await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_ask_jester',
+      argumentsJson: JSON.stringify({ request: 'tidy the downloads folder' }),
+    });
+
+    expect(JSON.stringify(result)).not.toContain('summary');
+    expect(activities.get('call-1')?.state).toBe('running');
+  });
+
+  it('hands over the failure too, rather than swallowing it', async () => {
+    runAgentTask.mockResolvedValue({ ok: false, reason: 'agent-unavailable', detail: 'no agent' });
+
+    await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_ask_jester',
+      argumentsJson: JSON.stringify({ request: 'buy a ticket' }),
+    });
+
+    await expect(announced[0].finished).resolves.toMatchObject({ ok: false });
+    expect(lessons).toHaveLength(1);
+  });
+
+  it('takes a second task while the first is still running', async () => {
+    runAgentTask.mockReturnValue(new Promise(() => undefined));
+
+    await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_ask_jester',
+      argumentsJson: JSON.stringify({ request: 'first job' }),
+    });
+    await runVoiceTool(host, {
+      callId: 'call-2',
+      name: 'app_ask_jester',
+      argumentsJson: JSON.stringify({ request: 'second job' }),
+    });
+
+    expect(announced.map((task) => task.what)).toEqual(['first job', 'second job']);
   });
 });

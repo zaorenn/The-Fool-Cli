@@ -1680,7 +1680,9 @@
         "1": "Ah, {{what}} vient de se terminer.",
         "2": "L’autre chose, {{what}}, est faite."
       }
-    }
+    },
+    "conversationTaskAccepted": "J'ai commencé. Ça tourne en arrière-plan — dis brièvement que tu t'en occupes et poursuis la conversation.",
+    "conversationAsideFailed": "Au fait, {{what}} n'a pas pu être terminé. {{why}}"
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

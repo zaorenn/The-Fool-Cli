@@ -1680,7 +1680,9 @@
         "1": "Ha bir de, {{what}} tamamlandı.",
         "2": "Şu diğer iş, {{what}}, bitti."
       }
-    }
+    },
+    "conversationTaskAccepted": "Başlattım. Arka planda çalışıyor — kısaca üstlendiğini söyle ve sohbete devam et.",
+    "conversationAsideFailed": "Bu arada, {{what}} tamamlanamadı. {{why}}"
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

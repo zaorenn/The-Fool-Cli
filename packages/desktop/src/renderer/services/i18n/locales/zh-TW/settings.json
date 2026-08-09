@@ -1682,7 +1682,9 @@
         "1": "啊，{{what}} 剛剛完成。",
         "2": "剛才那個 {{what}}，做完了。"
       }
-    }
+    },
+    "conversationTaskAccepted": "我已經開始了。它在背景執行——簡短地說你正在處理，然後繼續對話。",
+    "conversationAsideFailed": "順帶一提，{{what}} 沒能完成。{{why}}"
   },
   "themeCustomizer": {
     "title": "自訂主題",

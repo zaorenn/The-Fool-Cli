@@ -1681,7 +1681,9 @@
         "1": "啊，{{what}} 刚刚完成。",
         "2": "刚才那个 {{what}}，做完了。"
       }
-    }
+    },
+    "conversationTaskAccepted": "我已经开始了。它在后台运行——简短地说你正在处理，然后继续对话。",
+    "conversationAsideFailed": "顺便说一句，{{what}} 没能完成。{{why}}"
   },
   "themeCustomizer": {
     "title": "自定义主题",

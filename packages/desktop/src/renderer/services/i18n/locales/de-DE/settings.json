@@ -1680,7 +1680,9 @@
         "1": "Ach, {{what}} ist gerade fertig geworden.",
         "2": "Die andere Sache, {{what}}, ist erledigt."
       }
-    }
+    },
+    "conversationTaskAccepted": "Ich habe angefangen. Es läuft im Hintergrund — sag kurz, dass du dich darum kümmerst, und führe das Gespräch weiter.",
+    "conversationAsideFailed": "Übrigens, {{what}} konnte nicht abgeschlossen werden. {{why}}"
   },
   "themeCustomizer": {
     "title": "Design anpassen",

@@ -341,6 +341,26 @@ export const isUnbackedClaim = (reply: string, toolsRan: number): boolean =>
   toolsRan === 0 && claimsCompletedAction(reply);
 
 /**
+ * Whether a tool result is evidence that something was *finished*.
+ *
+ * Not every tool that comes back has done anything yet. A task handed to the
+ * agent returns the moment it is accepted — the flight is not booked, the
+ * folder is not tidied, and the work will run for minutes after the turn has
+ * ended. Counting that as evidence would open the exact hole the gate exists to
+ * close, one level further along: instead of claiming to have done something
+ * with no tool behind it, the model would claim it with a tool behind it that
+ * had only agreed to start.
+ *
+ * Anything that does not say so counts, because the great majority of tools
+ * really have finished by the time they answer, and a gate that demanded proof
+ * of completion from all of them would refuse honest reports.
+ */
+export const backsCompletedAction = (result: unknown): boolean => {
+  if (result === null || typeof result !== 'object') return true;
+  return (result as { accepted?: unknown }).accepted !== true;
+};
+
+/**
  * What to tell the model when it has been caught.
  *
  * Addressed to the model, not the user, and phrased as an instruction for this

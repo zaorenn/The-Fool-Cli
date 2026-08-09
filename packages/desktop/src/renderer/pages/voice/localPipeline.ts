@@ -14,6 +14,7 @@ import {
 } from '@/common/realtime';
 import { synthesisProviderFor, type FoolVoiceSettings, type VoiceModel } from '@/common/types/foolVoice';
 import {
+  backsCompletedAction,
   emptyRecallCorrection,
   isEmptyRecall,
   isUnbackedClaim,
@@ -793,6 +794,33 @@ export class LocalVoicePipeline {
   }
 
   /**
+   * Tells the conversation something that happened without it.
+   *
+   * The companion to {@link speakAside}, and it exists because saying "that
+   * other thing is finished" and then being unable to answer "what did it say?"
+   * is worse than never having mentioned it. The line the user hears is short
+   * on purpose; this is where the rest of the answer goes.
+   *
+   * A system turn rather than an assistant one: the assistant did not say this,
+   * the app did, and a model that reads its own voice saying something it never
+   * said starts inventing more of the same.
+   */
+  noteAside(line: string): void {
+    const note = line.trim();
+    if (this.closed || note.length === 0) return;
+
+    // A session owned by the agent runtime built its prompt once and holds its
+    // own history on the far side, so the note rides ahead of the next thing
+    // said — the same route a mid-conversation rule takes.
+    if (this.agentConversationId !== null) {
+      this.pendingInstructions.add(note);
+      return;
+    }
+    if (this.history.length === 0) return;
+    this.history.push({ role: 'system', content: note });
+  }
+
+  /**
    * Works out what was said, and only then what it means for the reply.
    *
    * Deciding from the audio is what broke this: a loud frame is a cough, a chair,
@@ -1155,7 +1183,10 @@ export class LocalVoicePipeline {
     const turnStartedAt = Date.now();
     this.firstAudioAt = null;
 
+    /** Tool results that finished something — the claim gate's evidence. */
     let toolsRan = 0;
+    /** Every call made, finished or not, which is what the metrics count. */
+    let toolCalls = 0;
     let rounds = 0;
     for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
       rounds += 1;
@@ -1175,8 +1206,8 @@ export class LocalVoicePipeline {
       }
 
       if (calls.length === 0) break;
-      await this.runTools(calls, controller);
-      toolsRan += calls.length;
+      toolCalls += calls.length;
+      toolsRan += await this.runTools(calls, controller);
       if (controller.signal.aborted) return;
     }
 
@@ -1185,7 +1216,7 @@ export class LocalVoicePipeline {
       promptChars: this.history.reduce((total, turn) => total + (turn.content?.length ?? 0), 0),
       toFirstAudioMs: this.firstAudioAt === null ? null : this.firstAudioAt - turnStartedAt,
       totalMs: Date.now() - turnStartedAt,
-      toolCalls: toolsRan,
+      toolCalls,
     };
     const concerns = concernsFor(metrics);
     const line = `[voice-turn] ${describeTurn(metrics)}`;
@@ -1332,8 +1363,17 @@ export class LocalVoicePipeline {
    * an exception here would end the turn silently, which from the user's side is
    * the assistant ignoring them.
    */
-  private async runTools(calls: readonly WireToolCall[], controller: AbortController): Promise<void> {
+  /**
+   * Runs each call and answers with how many of them *finished* something.
+   *
+   * The count is what the claim gate weighs, so it counts results rather than
+   * calls: a task the agent has merely accepted is not evidence that the work
+   * is done, and treating it as evidence would let "I've booked your flight"
+   * through the moment the booking started. See `backsCompletedAction`.
+   */
+  private async runTools(calls: readonly WireToolCall[], controller: AbortController): Promise<number> {
     const run = this.options.runTool;
+    let finished = 0;
     // A tool that is running is progress, and the silent-reply clock must not
     // be counting against it. That clock is armed once a turn and cleared by
     // the first spoken character — so a model that calls a tool immediately,
@@ -1343,7 +1383,7 @@ export class LocalVoicePipeline {
     this.markVisibleReply();
 
     for (const call of calls) {
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted) return finished;
       this.options.onEvent({ kind: 'phase', phase: 'acting' });
 
       let result: unknown;
@@ -1357,6 +1397,7 @@ export class LocalVoicePipeline {
         }
       }
 
+      if (backsCompletedAction(result)) finished += 1;
       this.history.push({
         role: 'tool',
         tool_call_id: call.id,
@@ -1369,6 +1410,7 @@ export class LocalVoicePipeline {
     // length of a tool is right; leaving it off afterwards would mean a model
     // that calls one tool and then deliberates for ever is never bounded again.
     if (!controller.signal.aborted) this.watchForSilentReply(controller);
+    return finished;
   }
 
   /**

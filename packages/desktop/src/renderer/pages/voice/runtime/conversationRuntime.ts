@@ -41,6 +41,7 @@ import type { ConversationFile } from '@/common/voice/conversationFiles';
 import { LocalVoicePipeline } from '../localPipeline';
 import { PcmAudioOutput, PcmMicrophone } from '../pcmAudio';
 import { RealtimeVoiceClient } from '../RealtimeVoiceClient';
+import { DelegatedTasks } from './delegatedTasks';
 import { listSpokenVoices } from './settingsTool';
 import { runVoiceTool } from './toolRunner';
 import type { ConversationActivity, ConversationPhase, ToolHost, Translate } from './types';
@@ -184,6 +185,15 @@ class ConversationRuntime {
 
   /** True while waiting: audio still flows, nothing it says is let through. */
   private standby = false;
+  /** When the conversation last fell quiet; null while anything is happening. */
+  private quietSince: number | null = null;
+  /**
+   * Tasks handed to an agent that this conversation is not waiting for.
+   *
+   * Built lazily and thrown away with the conversation: a completion nobody is
+   * in the room for has nowhere to go.
+   */
+  private delegated: DelegatedTasks | null = null;
   /** Whether right Ctrl is down right now, when hold-to-talk is switched on. */
   private holding = false;
   /**
@@ -275,7 +285,17 @@ class ConversationRuntime {
   }
 
   private applyPhase(next: ConversationPhase): void {
+    // When the room last went quiet, which is what an interruption has to wait
+    // for. `listening` is the one phase in which nobody is talking, so the clock
+    // starts on entering it and is thrown away on leaving.
+    if (next === 'listening') this.quietSince ??= Date.now();
+    else this.quietSince = null;
     this.emit({ phase: next });
+  }
+
+  /** Milliseconds of quiet, or zero while anything is being said or heard. */
+  private get quietForMs(): number {
+    return this.quietSince === null ? 0 : Date.now() - this.quietSince;
   }
 
   /**
@@ -410,7 +430,27 @@ class ConversationRuntime {
       setSessionRule: (rule: string) => this.local?.addSessionRule(rule),
       dropSessionRule: (about: string) => this.local?.dropSessionRule(about),
       startWorkingHeartbeat: this.startWorkingHeartbeat,
+      announceLater: (what, finished) => this.asides.follow(what, finished),
     };
+  }
+
+  /**
+   * The queue that volunteers a finished task, made on first use.
+   *
+   * On first use rather than on start because most conversations never delegate
+   * anything, and a timer that exists for all of them is a timer that has to be
+   * right about being idle.
+   */
+  private get asides(): DelegatedTasks {
+    this.delegated ??= new DelegatedTasks({
+      t: this.t,
+      moment: () => ({ phase: this.phase, standby: this.standby, quietForMs: this.quietForMs }),
+      // The same door the heartbeat uses, and it refuses for the same reasons:
+      // an aside over an answer, or over the user, is worse than a late one.
+      speak: (line) => void this.local?.speakAside(line),
+      note: (line) => this.local?.noteAside(line),
+    });
+    return this.delegated;
   }
 
   private runTool = async (invocation: {
@@ -845,6 +885,11 @@ class ConversationRuntime {
     }
     this.saved = null;
     this.carried = [];
+    // A task may still be running out there, and it is welcome to finish — but
+    // there is nobody left to tell, and a queue holding a closed pipeline is a
+    // timer nothing will ever clear.
+    this.delegated?.close();
+    this.delegated = null;
     this.microphone?.stop();
     this.microphone = null;
     this.client?.disconnect();

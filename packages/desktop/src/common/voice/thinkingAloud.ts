@@ -110,3 +110,68 @@ export const VARIANTS_PER_KIND = 3;
 
 export const fillerKey = (kind: ThinkingKind, saidSoFar: number): string =>
   `settings.voice.thinkingAloud.${kind}.${saidSoFar % VARIANTS_PER_KIND}`;
+
+/**
+ * How long a gap has to be before a finished task may be mentioned in it.
+ *
+ * An aside is an interruption — nobody asked for it at the moment it arrives —
+ * so it owes the conversation a longer pause than a filler does. A filler is
+ * covering a silence the assistant itself created; this is walking into one.
+ */
+export const QUIET_BEFORE_ASIDE_MS = 2_000;
+
+/**
+ * The gap between two asides.
+ *
+ * Two tasks finishing while a third is being discussed is the case this exists
+ * for. Said together they are one long sentence about two unrelated things,
+ * which is the moment the user stops listening to either.
+ */
+export const BETWEEN_ASIDES_MS = 6_000;
+
+/** Whether this moment can carry an interruption. */
+export type AsideMoment = {
+  /** What the conversation is doing. Only a listening one has room. */
+  phase: string;
+  /** Told to wait: connected, listening, and not to be spoken to. */
+  standby: boolean;
+  /** Milliseconds since anything was said, by either side. */
+  quietForMs: number;
+  /** Milliseconds since the last aside, or `Infinity` when there has been none. */
+  sinceLastAsideMs: number;
+};
+
+/**
+ * Whether a finished task may be volunteered right now.
+ *
+ * Three ways to be wrong, and all three were worth writing down: over an
+ * answer, over the user, and over the previous aside. The first two are what
+ * `phase` rules out — `listening` is the only phase in which nobody is talking
+ * — and the third is why the last one is timed.
+ */
+export const mayMentionAside = (moment: AsideMoment): boolean => {
+  if (moment.phase !== 'listening' || moment.standby) return false;
+  if (moment.quietForMs < QUIET_BEFORE_ASIDE_MS) return false;
+  return moment.sinceLastAsideMs >= BETWEEN_ASIDES_MS;
+};
+
+/** How much of a request survives into the sentence that mentions it. */
+export const ASIDE_NAME_MAX = 60;
+
+/**
+ * The request, short enough to sit inside "by the way, … is finished".
+ *
+ * Spoken rather than shown, which is why this is not a CSS ellipsis: the whole
+ * of "open Discord and tell Ali I am running twenty minutes late and will bring
+ * the drive" read back at the user is not a reminder, it is the task again.
+ */
+export const shortenForAside = (request: string, max: number = ASIDE_NAME_MAX): string => {
+  const line = request.trim().replaceAll(/\s+/g, ' ');
+  if (line.length <= max) return line;
+
+  const cut = line.slice(0, max);
+  const lastSpace = cut.lastIndexOf(' ');
+  // Mid-word is worse than short: a truncated word is heard as a different word.
+  const kept = lastSpace > max / 2 ? cut.slice(0, lastSpace) : cut;
+  return `${kept.replace(/[\s,;:.]+$/, '')}…`;
+};

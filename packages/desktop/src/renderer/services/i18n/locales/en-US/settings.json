@@ -1680,7 +1680,9 @@
         "1": "Oh, {{what}} just finished.",
         "2": "That other thing, {{what}}, is done."
       }
-    }
+    },
+    "conversationTaskAccepted": "I've started it. It runs in the background — tell them briefly that you are on it, and carry on the conversation.",
+    "conversationAsideFailed": "By the way, {{what}} could not be finished. {{why}}"
   },
   "themeCustomizer": {
     "title": "Customize theme",

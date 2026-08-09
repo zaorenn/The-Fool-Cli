@@ -66,6 +66,14 @@ export type ToolHost = {
   setSessionRule: (rule: string) => void;
   /** Withdraws a session rule by naming enough of it. */
   dropSessionRule: (about: string) => void;
+  /**
+   * Carries a task the conversation is not waiting for.
+   *
+   * The handler returns as soon as the work is accepted; this is what
+   * volunteers the finish afterwards, into a gap that can take it. `what` is
+   * the request in the user's own words, because it is what gets said back.
+   */
+  announceLater: (what: string, finished: Promise<{ ok: boolean; detail: string }>) => void;
 };
 
 /** One tool call, in the shape both transports normalise to. */
