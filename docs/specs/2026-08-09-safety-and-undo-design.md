@@ -14,11 +14,11 @@ The product's whole point is that it acts rather than advises, on the user's own
 That is also the reason it is the most dangerous assistant they run. The current defaults, read
 together, are worse than any one of them looks:
 
-| Setting                    | Default | Where                          |
-| -------------------------- | ------- | -------------------------------- |
-| `conversationHoldToTalk`   | off     | `foolVoice.ts:700`             |
-| `activation.wakePhrase`    | on      | `foolVoice.ts:704`             |
-| `session.unattended`       | **on**  | `foolVoice.ts:756`             |
+| Setting                  | Default | Where              |
+| ------------------------ | ------- | ------------------ |
+| `conversationHoldToTalk` | off     | `foolVoice.ts:700` |
+| `activation.wakePhrase`  | on      | `foolVoice.ts:704` |
+| `session.unattended`     | **on**  | `foolVoice.ts:756` |
 
 An open microphone, a wake phrase, and every spoken task created with `permission: 'yolo'`
 (`runAgentTask.ts`, `spokenSession.ts`). Any voice in the room — a person, a video, a podcast — that
@@ -68,7 +68,7 @@ Four facts about the codebase decide most of it.
 
 ### 3.2 Excluded, with where it goes
 
-- Anything about *what* an agent can be asked. This is about what it may do, not what it may be told.
+- Anything about _what_ an agent can be asked. This is about what it may do, not what it may be told.
 - Network egress filtering. Worth doing, needs its own design, and is not what the current defaults
   make urgent.
 - Multi-user or remote-access permissions. The web and mobile surfaces have their own auth story.
@@ -110,20 +110,20 @@ that catches nothing.
 
 ## 5. Reversible, and not
 
-The distinction the user asked for, made concrete. It is a property of the *call*, not of the tool:
+The distinction the user asked for, made concrete. It is a property of the _call_, not of the tool:
 `Write` to a new file is reversible, `Write` over an existing one is reversible only because a
 checkpoint was taken first, and `exec_command` running `shutdown` is not reversible at all.
 
-| Kind                                                    | Behaviour           |
-| ------------------------------------------------------- | --------------------- |
-| Reading anything                                        | Never asks          |
-| Writing inside the workspace                            | Checkpoint, no ask  |
-| Writing outside the workspace                           | Ask                 |
-| Deleting anything                                       | Ask                 |
-| Installing, uninstalling, or elevating                  | Ask                 |
-| Sending — a message, an email, a post, a payment        | Ask, every time     |
-| Changing system or security settings                    | Ask                 |
-| Anything matching no rule                               | Ask                 |
+| Kind                                             | Behaviour          |
+| ------------------------------------------------ | ------------------ |
+| Reading anything                                 | Never asks         |
+| Writing inside the workspace                     | Checkpoint, no ask |
+| Writing outside the workspace                    | Ask                |
+| Deleting anything                                | Ask                |
+| Installing, uninstalling, or elevating           | Ask                |
+| Sending — a message, an email, a post, a payment | Ask, every time    |
+| Changing system or security settings             | Ask                |
+| Anything matching no rule                        | Ask                |
 
 **"Ask, every time" means it.** Sending is the one category where "always allow" is not offered,
 because the cost of a wrong send is not paid by the person who clicked it.
@@ -150,7 +150,7 @@ the dialog on the way.
 What sandboxed means here is deliberately modest: a working directory the conversation cannot leave,
 no writes outside it, and no elevation. Not a VM, not a container — those need a decision about
 Docker or WSL that has not been taken, and pretending a filesystem boundary is a security boundary
-against a determined attacker would be a lie. It is a boundary against a *mistake*, which is what
+against a determined attacker would be a lie. It is a boundary against a _mistake_, which is what
 actually happens.
 
 The permission layer applies in both. The sandbox narrows what the rules can allow; it never widens

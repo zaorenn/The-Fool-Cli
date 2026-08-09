@@ -34,11 +34,13 @@ having whether or not there is a way back from the reversible ones.
 ### Task 1: The decision, as a pure function
 
 **Files:**
+
 - Create: `packages/desktop/src/common/permissions/decide.ts`
 - Create: `packages/desktop/src/common/permissions/types.ts`
 - Create: `tests/unit/common/permissions/decide.test.ts`
 
 **Interfaces:**
+
 - Produces: `type Decision = 'allow' | 'ask' | 'deny'`
 - Produces: `type Rule = { decision: Decision; tool: string; pattern?: string }`
 - Produces: `decide(rules: readonly Rule[], call: { tool: string; path?: string; command?: string }): Decision`
@@ -162,11 +164,13 @@ A path rule that can be defeated by `..` or a symlink is decoration. This is the
 design's warning about `fool-file`'s Windows separator bugs has to be honoured rather than repeated.
 
 **Files:**
+
 - Create: `packages/desktop/src/common/permissions/paths.ts`
 - Create: `tests/unit/common/permissions/paths.test.ts`
 - Modify: `packages/desktop/src/common/permissions/decide.ts`
 
 **Interfaces:**
+
 - Produces: `normalisePath(path: string): string` — separators folded to `/`, `.`/`..` resolved lexically, case folded on Windows.
 - Produces: `matchesPath(pattern: string, path: string): boolean` — `**` crosses separators, `*` does not.
 
@@ -183,7 +187,9 @@ describe('normalisePath', () => {
   });
 
   it('resolves dot segments so a rule cannot be walked around', () => {
-    expect(normalisePath('D:/work/../../Windows/system32')).toBe('c:/windows/system32'.replace('c:', 'd:').replace('d:/windows/system32', 'windows/system32'));
+    expect(normalisePath('D:/work/../../Windows/system32')).toBe(
+      'c:/windows/system32'.replace('c:', 'd:').replace('d:/windows/system32', 'windows/system32')
+    );
   });
 
   it('leaves a plain relative path alone apart from case and separators', () => {
@@ -240,10 +246,12 @@ git commit -m "feat(permissions): a path rule that cannot be walked around"
 ### Task 3: Commands matched by what they run
 
 **Files:**
+
 - Create: `packages/desktop/src/common/permissions/commands.ts`
 - Create: `tests/unit/common/permissions/commands.test.ts`
 
 **Interfaces:**
+
 - Produces: `normaliseCommand(command: string): string` — the program reduced to its base name without extension, arguments preserved.
 - Produces: `matchesCommand(pattern: string, command: string): boolean`.
 
@@ -313,10 +321,12 @@ git commit -m "feat(permissions): a command rule that a chain cannot slip past"
 ### Task 4: The default rules, and the tools that must never prompt
 
 **Files:**
+
 - Create: `packages/desktop/src/common/permissions/defaults.ts`
 - Create: `tests/unit/common/permissions/defaults.test.ts`
 
 **Interfaces:**
+
 - Produces: `DEFAULT_RULES: readonly Rule[]`.
 
 - [ ] **Step 1: Write the failing test**
@@ -382,6 +392,7 @@ git commit -m "feat(permissions): defaults that ask about what cannot be undone"
 ### Task 5: The channel consults the decision
 
 **Files:**
+
 - Modify: `packages/desktop/src/renderer/services/appTools/appToolChannel.ts`
 - Modify: `tests/unit/renderer/appTools/appToolChannel.test.ts`
 
@@ -428,6 +439,7 @@ git commit -m "feat(permissions): the app-tools channel asks before it acts"
 ### Task 6: Asking, and remembering the answer
 
 **Files:**
+
 - Modify: `packages/desktop/src/renderer/services/appTools/appToolChannel.ts`
 - Create: `packages/desktop/src/renderer/services/appTools/askPermission.ts`
 - Create: `tests/unit/renderer/appTools/askPermission.test.ts`

@@ -51,6 +51,7 @@ first and the team server is re-pointed at it. Nothing about team behaviour chan
 the proof.
 
 **Files:**
+
 - Create: `backend/core/crates/fool-mcp-server/Cargo.toml`
 - Create: `backend/core/crates/fool-mcp-server/src/lib.rs`
 - Create: `backend/core/crates/fool-mcp-server/src/protocol.rs`
@@ -63,6 +64,7 @@ the proof.
 - Modify: `backend/core/crates/fool-team/src/mcp/protocol.rs` (re-export instead of define)
 
 **Interfaces:**
+
 - Produces: `pub trait McpToolHost: Send + Sync { async fn list_tools(&self) -> Vec<ToolDescriptor>; async fn call_tool(&self, name: &str, arguments: Value) -> Result<String, String>; }`
 - Produces: `pub trait HostResolver: Send + Sync { fn resolve(&self, path: &str) -> Option<Arc<dyn McpToolHost>>; }`
 - Produces: `pub struct ToolDescriptor { pub name: String, pub description: String, pub input_schema: Value }`
@@ -73,6 +75,7 @@ know which one it belongs to — the permission layer in the next sub-project de
 not per application. The conversation id rides in the URL path (`/mcp/{conversation_id}`), which the
 MCP client sends as configured and never has to understand. A host per listener would mean a TCP
 listener per conversation.
+
 - Produces: `JsonRpcRequest`, `JsonRpcResponse`, `JsonRpcError`, and the error-code constants, moved verbatim from `fool-team/src/mcp/protocol.rs`.
 
 - [ ] **Step 1: Create the crate manifest**
@@ -463,11 +466,13 @@ git commit -m "refactor(mcp): one MCP server implementation for two callers"
 ### Task 2: The wire types for an app tool call
 
 **Files:**
+
 - Create: `backend/core/crates/fool-api-types/src/app_tool.rs`
 - Create: `backend/core/crates/fool-api-types/src/app_tool_test.rs`
 - Modify: `backend/core/crates/fool-api-types/src/lib.rs`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: `AppToolRequest { conversation_id: String, call_id: String, name: String, arguments: Value }`, `AppToolResult { call_id: String, ok: bool, content: String }`, `APP_TOOL_REQUEST_EVENT: &str = "app.tool.request"`.
 
@@ -563,6 +568,7 @@ The registry is the part that makes a missing answer an error rather than a hang
 tested on its own, before anything is plugged into it.
 
 **Files:**
+
 - Create: `backend/core/crates/fool-app-tools/Cargo.toml`
 - Create: `backend/core/crates/fool-app-tools/src/lib.rs`
 - Create: `backend/core/crates/fool-app-tools/src/pending.rs`
@@ -570,6 +576,7 @@ tested on its own, before anything is plugged into it.
 - Modify: `backend/core/Cargo.toml`
 
 **Interfaces:**
+
 - Consumes: `AppToolResult` from Task 2.
 - Produces: `PendingCalls::new(timeout: Duration)`, `async fn issue(&self, call_id: String) -> Result<AppToolResult, PendingError>`, `fn resolve(&self, result: AppToolResult) -> bool`, `enum PendingError { TimedOut }`.
 
@@ -740,6 +747,7 @@ git commit -m "feat(app-tools): a call that goes unanswered fails instead of han
 ### Task 4: The host that forwards to the application
 
 **Files:**
+
 - Create: `backend/core/crates/fool-app-tools/src/host.rs`
 - Create: `backend/core/crates/fool-app-tools/src/host_test.rs`
 - Create: `backend/core/crates/fool-app-tools/src/catalogue.rs`
@@ -747,6 +755,7 @@ git commit -m "feat(app-tools): a call that goes unanswered fails instead of han
 - Modify: `backend/core/crates/fool-app-tools/src/lib.rs`
 
 **Interfaces:**
+
 - Consumes: `PendingCalls` (Task 3), `McpToolHost`/`ToolDescriptor` (Task 1), `AppToolRequest`, `APP_TOOL_REQUEST_EVENT` (Task 2).
 - Produces: `Catalogue::new()`, `fn replace(&self, tools: Vec<ToolDescriptor>)`, `fn tools(&self) -> Vec<ToolDescriptor>`; `AppToolHost::new(catalogue: Arc<Catalogue>, pending: Arc<PendingCalls>, broadcaster: Arc<dyn EventBroadcaster>, conversation_id: String)`.
 
@@ -1095,12 +1104,14 @@ git commit -m "feat(app-tools): forward a tool call to the application and wait 
 ### Task 5: The two HTTP routes the renderer uses
 
 **Files:**
+
 - Create: `backend/core/crates/fool-app-tools/src/routes.rs`
 - Create: `backend/core/crates/fool-app-tools/src/routes_test.rs`
 - Modify: `backend/core/crates/fool-app-tools/src/lib.rs`
 - Modify: `backend/core/crates/fool-app-tools/Cargo.toml` (add `axum`)
 
 **Interfaces:**
+
 - Consumes: `Catalogue`, `PendingCalls`.
 - Produces: `pub fn router(state: AppToolsState) -> axum::Router`, `pub struct AppToolsState { pub catalogue: Arc<Catalogue>, pub pending: Arc<PendingCalls> }`, serving `POST /api/app-tools/catalogue` and `POST /api/app-tools/result`.
 
@@ -1240,12 +1251,14 @@ git commit -m "feat(app-tools): routes for registering a catalogue and answering
 ### Task 6: Start the server and give it to a session
 
 **Files:**
+
 - Modify: `backend/core/crates/fool-app/src/router/routes.rs` (mount the router)
 - Modify: `backend/core/crates/fool-app/src/router/state.rs` (hold the state and the port/token)
 - Modify: `backend/core/crates/fool-ai-agent/src/factory/foolrs.rs:754-780` (`resolve_mcp_servers`)
 - Create: `backend/core/crates/fool-ai-agent/src/factory/app_tools_test.rs`
 
 **Interfaces:**
+
 - Consumes: `AppToolsState`, `router`, `AppToolHost`, `serve_http`.
 - Produces: `pub const APP_TOOLS_MCP_SERVER_NAME: &str = "fool-app";` in `fool-api-types`, and an entry in the map `resolve_mcp_servers` returns.
 
@@ -1420,6 +1433,7 @@ git commit -m "feat(app-tools): serve the application's own tools to every sessi
 ### Task 7: The renderer answers
 
 **Files:**
+
 - Create: `packages/desktop/src/renderer/services/appTools/appToolChannel.ts`
 - Create: `tests/unit/renderer/appTools/appToolChannel.test.ts`
 - Create: `packages/desktop/src/renderer/services/appTools/toolDescriptors.ts`
@@ -1427,6 +1441,7 @@ git commit -m "feat(app-tools): serve the application's own tools to every sessi
 - Modify: `packages/desktop/src/common/adapter/ipcBridge.ts` (one ws emitter, two posts)
 
 **Interfaces:**
+
 - Consumes: `REALTIME_TOOLS` from `@/common/realtime`, `runVoiceTool` from `@renderer/pages/voice/runtime/toolRunner`.
 - Produces: `describeAppTools(): ToolDescriptor[]`, `startAppToolChannel(): () => void`.
 - Note: `ToolHost` (from `@renderer/pages/voice/runtime/types`) has exactly eight members — `t`,
@@ -1506,7 +1521,12 @@ const runVoiceTool = vi.fn(async () => ({ ok: true, screen: 'a browser' }));
 vi.mock('@/common', () => ({
   ipcBridge: {
     appTools: {
-      request: { on: (fn: (message: unknown) => void) => { listeners.push(fn); return () => undefined; } },
+      request: {
+        on: (fn: (message: unknown) => void) => {
+          listeners.push(fn);
+          return () => undefined;
+        },
+      },
       result: { invoke: postResult },
       catalogue: { invoke: postCatalogue },
     },
@@ -1532,9 +1552,7 @@ describe('startAppToolChannel', () => {
     startAppToolChannel();
     await listeners[0]({ conversation_id: 'c1', call_id: 'call-1', name: 'app_look_at_screen', arguments: {} });
     expect(runVoiceTool).toHaveBeenCalled();
-    expect(postResult).toHaveBeenCalledWith(
-      expect.objectContaining({ call_id: 'call-1', ok: true })
-    );
+    expect(postResult).toHaveBeenCalledWith(expect.objectContaining({ call_id: 'call-1', ok: true }));
   });
 
   it('posts a failure rather than nothing when the handler throws', async () => {
@@ -1673,10 +1691,12 @@ git commit -m "feat(app-tools): let an agent ask the application to do something
 ### Task 8: Prove it end to end, and write down what it cost
 
 **Files:**
+
 - Create: `tests/e2e/specs/app-tools.e2e.ts`
 - Create: `docs/specs/2026-08-08-one-harness-measurements.md`
 
 **Interfaces:**
+
 - Consumes: everything above.
 - Produces: the first row of the measurement table the merge is later judged against.
 
@@ -1770,7 +1790,7 @@ Named here so nobody has to guess whether it was forgotten.
 
 - The spoken turn still runs in the renderer. Moving it is steps 3 to 6 of the design and gets its
   own plan.
-- Nothing here decides whether a tool is *allowed* to run. Permission rules, the sandbox choice and
+- Nothing here decides whether a tool is _allowed_ to run. Permission rules, the sandbox choice and
   checkpoints are the next sub-project.
 - A hosted CLI agent reaches the app-tools server only once the stdio bridge subcommand exists, in
   the shape of `mcp-team-stdio`. That is a small task and belongs with the typed-chat work in the

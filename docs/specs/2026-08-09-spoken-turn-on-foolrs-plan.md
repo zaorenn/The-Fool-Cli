@@ -35,11 +35,11 @@ and released to the branch — see `2026-08-08-one-harness-plan.md`.
 
 Each of these was read in the tree rather than assumed, because the plan depends on all four.
 
-| Mechanism                         | Where it is                                                                       |
-| --------------------------------- | ----------------------------------------------------------------------------------- |
-| System prompt reaches the session | `fool-conversation/src/session_context.rs:436` parses `FoolrsBuildExtra` from `extra` |
-| Token-level streaming             | `conversation.responseStream`, `type: 'content' \| 'text'`, `data` is a delta      |
-| A turn can be cancelled           | `conversation.stop` → `POST /api/conversations/{id}/cancel`, needs `turn_id`       |
+| Mechanism                         | Where it is                                                                               |
+| --------------------------------- | ----------------------------------------------------------------------------------------- |
+| System prompt reaches the session | `fool-conversation/src/session_context.rs:436` parses `FoolrsBuildExtra` from `extra`     |
+| Token-level streaming             | `conversation.responseStream`, `type: 'content' \| 'text'`, `data` is a delta             |
+| A turn can be cancelled           | `conversation.stop` → `POST /api/conversations/{id}/cancel`, needs `turn_id`              |
 | The turn id is reachable          | `TConversationRuntimeSummary.turn_id`, the same source `useConversationRuntimeView` reads |
 
 **One thing is decided here rather than in the design, because the design did not face it.** Today
@@ -59,10 +59,12 @@ arrived. Task 4 implements it.
 ### Task 1: A spoken session, created once and reused
 
 **Files:**
+
 - Create: `packages/desktop/src/renderer/services/voice/session/spokenSession.ts`
 - Create: `tests/unit/renderer/voice/spokenSession.test.ts`
 
 **Interfaces:**
+
 - Consumes: `buildPersonaInstructions` from `@/common/realtime`, `peekVoiceMemory`, `peekLocalSkills`, `findPinnedAssistant`, `findPinnedModel` from `./startVoiceConversation`.
 - Produces: `openSpokenSession(input: SpokenSessionInput): Promise<SpokenSessionResult>` where
   `SpokenSessionInput = { settings: FoolVoiceSettings; interfaceLanguage: string; voices: readonly SpokenVoice[]; sessionRules: readonly string[] }`
@@ -168,15 +170,17 @@ git commit -m "feat(voice): a spoken conversation the agent runtime owns"
 ### Task 2: Speech in, sentences out
 
 **Files:**
+
 - Create: `packages/desktop/src/renderer/services/voice/session/spokenTurn.ts`
 - Create: `tests/unit/renderer/voice/spokenTurn.test.ts`
 
 **Interfaces:**
+
 - Consumes: `openSpokenSession` (Task 1), `conversation.sendMessage`, `conversation.responseStream`, `conversation.turnCompleted`.
 - Produces: `runSpokenTurn(input: { conversationId: string; said: string; onSentence: (sentence: string) => void; signal?: AbortSignal }): Promise<{ ok: true; spoken: string } | { ok: false; reason: 'run-failed' | 'cancelled'; detail?: string }>`.
 
 **The sentence split is not new code.** `localPipeline` already has the splitter that decides when
-enough has arrived to be worth saying; this task moves the *source* of the text, not the rule for
+enough has arrived to be worth saying; this task moves the _source_ of the text, not the rule for
 cutting it. Extract the existing splitter into `common/voice/` first so both callers share one
 definition and the old loop keeps working while the flag is off.
 
@@ -244,10 +248,12 @@ git commit -m "feat(voice): a spoken turn that streams out of the agent runtime"
 ### Task 3: Barge-in cancels the turn
 
 **Files:**
+
 - Modify: `packages/desktop/src/renderer/services/voice/session/spokenTurn.ts`
 - Modify: `tests/unit/renderer/voice/spokenTurn.test.ts`
 
 **Interfaces:**
+
 - Consumes: `conversation.stop`, `TConversationRuntimeSummary.turn_id`.
 - Produces: `runSpokenTurn` honours `signal`, and cancelling stops the model as well as the speaker.
 
@@ -256,7 +262,12 @@ git commit -m "feat(voice): a spoken turn that streams out of the agent runtime"
 ```ts
 it('stops the model, not just the speaker', async () => {
   const controller = new AbortController();
-  const turn = runSpokenTurn({ conversationId: 'c1', said: 'hello', onSentence: () => undefined, signal: controller.signal });
+  const turn = runSpokenTurn({
+    conversationId: 'c1',
+    said: 'hello',
+    onSentence: () => undefined,
+    signal: controller.signal,
+  });
   emitRuntime({ conversation_id: 'c1', turn_id: 'turn-9' });
   controller.abort();
   await expect(turn).resolves.toEqual(expect.objectContaining({ ok: false, reason: 'cancelled' }));
@@ -265,7 +276,12 @@ it('stops the model, not just the speaker', async () => {
 
 it('does not call stop when there is no turn to stop', async () => {
   const controller = new AbortController();
-  const turn = runSpokenTurn({ conversationId: 'c1', said: 'hello', onSentence: () => undefined, signal: controller.signal });
+  const turn = runSpokenTurn({
+    conversationId: 'c1',
+    said: 'hello',
+    onSentence: () => undefined,
+    signal: controller.signal,
+  });
   controller.abort();
   await turn;
   expect(stop).not.toHaveBeenCalled();
@@ -304,11 +320,13 @@ git commit -m "feat(voice): barge-in stops the model, not only the speaker"
 ### Task 4: A rule set out loud reaches the very next turn
 
 **Files:**
+
 - Create: `packages/desktop/src/common/voice/pendingInstructions.ts`
 - Create: `tests/unit/voice/pendingInstructions.test.ts`
 - Modify: `packages/desktop/src/renderer/services/voice/session/spokenTurn.ts`
 
 **Interfaces:**
+
 - Produces: `class PendingInstructions { add(instruction: string): void; takeForNextTurn(): string[]; }` and `prefaceWithInstructions(said: string, instructions: readonly string[]): string`.
 
 - [ ] **Step 1: Write the failing test**
@@ -365,11 +383,13 @@ This is the task the whole sub-project exists to make possible. Until now
 `common/voice/actionClaims.ts` has been imported by exactly one file.
 
 **Files:**
+
 - Create: `packages/desktop/src/renderer/services/voice/session/spokenOutput.ts`
 - Create: `tests/unit/renderer/voice/spokenOutput.test.ts`
 - Modify: `packages/desktop/src/renderer/pages/voice/runtime/conversationRuntime.ts`
 
 **Interfaces:**
+
 - Consumes: `findActionClaim` and the correction text from `@/common/voice/actionClaims`.
 - Produces: `guardSpokenSentence(sentence: string, context: { toolsRan: number; memoryIsEmpty: boolean }): { speak: true } | { speak: false; correction: string }`.
 
@@ -423,6 +443,7 @@ git commit -m "feat(voice): no surface can claim work it did not do"
 ### Task 6: The switch
 
 **Files:**
+
 - Modify: `packages/desktop/src/common/types/foolVoice.ts`
 - Modify: `packages/desktop/src/renderer/pages/voice/runtime/conversationRuntime.ts`
 - Create: `tests/unit/voice/spokenRuntimeChoice.test.ts`
@@ -470,6 +491,7 @@ git commit -m "feat(voice): choose which runtime a spoken conversation uses"
 The flag does not open because the code works. It opens because the numbers hold.
 
 **Files:**
+
 - Create: `docs/specs/2026-08-09-spoken-turn-tasks.md`
 - Modify: `docs/specs/2026-08-08-one-harness-measurements.md`
 
@@ -512,6 +534,7 @@ Only after Task 7 opens the flag. A feature flag that never opens is a second ha
 steps, which is the thing this sub-project exists to remove.
 
 **Files:**
+
 - Modify: `packages/desktop/src/renderer/pages/voice/localPipeline.ts`
 - Modify: `packages/desktop/src/renderer/pages/voice/runtime/conversationRuntime.ts`
 - Modify: `packages/desktop/src/common/types/foolVoice.ts`
@@ -545,8 +568,8 @@ git commit -m "refactor(voice): one harness, and the old loop is gone"
 
 - The permission layer, the sandbox choice and checkpoints. Next sub-project.
 - `WebFetch`, `WebSearch`, background commands.
-- Instant barge-in from a live phrase listener. This plan makes cancellation *possible* from outside
-  the loop; making it *fast* is the spoken-experience sub-project.
+- Instant barge-in from a live phrase listener. This plan makes cancellation _possible_ from outside
+  the loop; making it _fast_ is the spoken-experience sub-project.
 - The stdio bridge that would let Claude Code and Codex reach the app's tools.
 - `notifications/tools/list_changed`, so a session started before the renderer registers still sees
   no app tools.

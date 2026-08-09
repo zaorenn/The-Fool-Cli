@@ -181,14 +181,14 @@ invalidated on every sentence.
 Six steps. Each is complete and tested on its own; the flag stays off until §9 passes, so a partly
 merged app is never something a user can install.
 
-| # | Step                                                                                         | True when it lands                                        |
-| - | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| 1 | `fool-app` MCP server, `mcp-bridge` reuse, one tool end to end (`app_look_at_screen`)        | An agent can read the screen; no user-visible change       |
-| 2 | The remaining `app_*` tools move onto the channel, renderer handlers kept                     | One tool registry; typed chat can use the app's own tools  |
-| 3 | Spoken session profile in `foolrs`: app tools, persona, memory, skills; speech in, tokens out | A whole spoken turn runs on `foolrs`, behind the flag      |
-| 4 | The claim gate moves to the single output path                                                | No surface can claim work it did not do                    |
-| 5 | Before-and-after measurement on the local model                                               | Numbers exist; the flag opens only if they hold            |
-| 6 | The renderer's turn loop is deleted                                                           | One harness                                                |
+| #   | Step                                                                                          | True when it lands                                        |
+| --- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| 1   | `fool-app` MCP server, `mcp-bridge` reuse, one tool end to end (`app_look_at_screen`)         | An agent can read the screen; no user-visible change      |
+| 2   | The remaining `app_*` tools move onto the channel, renderer handlers kept                     | One tool registry; typed chat can use the app's own tools |
+| 3   | Spoken session profile in `foolrs`: app tools, persona, memory, skills; speech in, tokens out | A whole spoken turn runs on `foolrs`, behind the flag     |
+| 4   | The claim gate moves to the single output path                                                | No surface can claim work it did not do                   |
+| 5   | Before-and-after measurement on the local model                                               | Numbers exist; the flag opens only if they hold           |
+| 6   | The renderer's turn loop is deleted                                                           | One harness                                               |
 
 Step 5 is a gate rather than a report. If the merged path is slower to first audio, or takes more
 rounds, or completes fewer tasks, the flag does not open and the result is a regression to fix, not
