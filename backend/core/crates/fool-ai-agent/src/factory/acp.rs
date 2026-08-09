@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::agent_task::AgentInstance;
 use crate::error::AgentError;
 use crate::factory::AgentFactoryDeps;
-use crate::factory::acp_assembler::{WorkspaceInfo, assemble_acp_params};
+use crate::factory::acp_assembler::{AppToolsBridge, WorkspaceInfo, assemble_acp_params};
 use crate::factory::acp_launch_policy::{AcpLaunchPolicyInput, apply_acp_launch_policy};
 use crate::factory::context::FactoryContext;
 use crate::manager::acp::{AcpAgentManager, CatalogForwarder};
@@ -81,6 +81,9 @@ pub(super) async fn build(
                 // DEV (`--dump-prompts`): resolve the dump dir once (mirrors the
                 // foolrs factory's `prompt_dump_dir`). `None` when off.
                 prompt_dump_dir: crate::dev_prompt_dump::dump_dir_for_data_dir(&deps.data_dir, deps.dump_prompts),
+                // The application's own tools, over the stdio bridge — this is
+                // the path claude and codex actually take.
+                app_tools: app_tools_bridge(&deps),
             },
             deps.session_spawner.clone(),
         )
@@ -181,6 +184,7 @@ pub(super) async fn build(
             session_snapshot,
             deps.data_dir.clone(),
             deps.dump_prompts,
+            app_tools_bridge(&deps),
         )
         .await,
     );
@@ -542,6 +546,18 @@ fn session_server_supported_by_capabilities(server: &SessionMcpServer, capabilit
         SessionMcpTransport::Http { .. } | SessionMcpTransport::StreamableHttp { .. } => capabilities.http,
         SessionMcpTransport::Sse { .. } => capabilities.sse,
     }
+}
+
+/// The application's tools, for a session that is a separate process.
+///
+/// `None` in any composition that has no application behind it — tests, and
+/// the headless paths — in which case the session simply has no app tools,
+/// the same as before this existed.
+fn app_tools_bridge(deps: &AgentFactoryDeps) -> Option<AppToolsBridge> {
+    deps.app_tools_mcp.clone().map(|config| AppToolsBridge {
+        config,
+        binary_path: deps.backend_binary_path.to_string_lossy().into_owned(),
+    })
 }
 
 #[cfg(test)]

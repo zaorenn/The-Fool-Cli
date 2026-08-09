@@ -11,11 +11,20 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 // JSON-RPC 2.0 message types
 // ---------------------------------------------------------------------------
 
+/// The `id` of a call, carried back verbatim.
+///
+/// JSON-RPC allows a string or a number here, and MCP clients use both — the
+/// TypeScript SDK counts, the Python one sends strings. This was a `u64`, which
+/// made a request from a string-id client fail to parse: the client saw an
+/// error with a null id, matched it to nothing, and waited forever. Nothing in
+/// this crate reads the value; it is only ever echoed.
+pub type RequestId = serde_json::Value;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JsonRpcRequest {
     pub jsonrpc: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<u64>,
+    pub id: Option<RequestId>,
     pub method: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub params: Option<serde_json::Value>,
@@ -24,7 +33,7 @@ pub struct JsonRpcRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JsonRpcResponse {
     pub jsonrpc: String,
-    pub id: Option<u64>,
+    pub id: Option<RequestId>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub result: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -60,7 +69,7 @@ pub const PROTOCOL_VERSION: &str = "2024-11-05";
 // ---------------------------------------------------------------------------
 
 impl JsonRpcResponse {
-    pub fn success(id: Option<u64>, result: serde_json::Value) -> Self {
+    pub fn success(id: Option<RequestId>, result: serde_json::Value) -> Self {
         Self {
             jsonrpc: "2.0".into(),
             id,
@@ -69,7 +78,7 @@ impl JsonRpcResponse {
         }
     }
 
-    pub fn error(id: Option<u64>, code: i64, message: impl Into<String>) -> Self {
+    pub fn error(id: Option<RequestId>, code: i64, message: impl Into<String>) -> Self {
         Self {
             jsonrpc: "2.0".into(),
             id,

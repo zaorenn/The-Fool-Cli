@@ -1,9 +1,10 @@
 use super::*;
+use serde_json::json;
 
 #[test]
 fn success_response_carries_the_request_id() {
-    let response = JsonRpcResponse::success(Some(7), serde_json::json!({"ok": true}));
-    assert_eq!(response.id, Some(7));
+    let response = JsonRpcResponse::success(Some(json!(7)), serde_json::json!({"ok": true}));
+    assert_eq!(response.id, Some(json!(7)));
     assert_eq!(response.jsonrpc, "2.0");
     assert!(response.error.is_none());
     let json = serde_json::to_value(&response).unwrap();
@@ -13,7 +14,7 @@ fn success_response_carries_the_request_id() {
 
 #[test]
 fn error_response_carries_the_code_and_no_result() {
-    let response = JsonRpcResponse::error(Some(1), METHOD_NOT_FOUND, "no such method");
+    let response = JsonRpcResponse::error(Some(json!(1)), METHOD_NOT_FOUND, "no such method");
     assert_eq!(response.error.as_ref().map(|error| error.code), Some(METHOD_NOT_FOUND));
     assert!(response.result.is_none());
 }
@@ -28,7 +29,7 @@ fn an_error_before_the_id_was_read_has_none() {
 fn a_request_without_params_parses() {
     let request: JsonRpcRequest = serde_json::from_str(r#"{"jsonrpc":"2.0","id":1,"method":"tools/list"}"#).unwrap();
     assert_eq!(request.method, "tools/list");
-    assert_eq!(request.id, Some(1));
+    assert_eq!(request.id, Some(json!(1)));
     assert!(request.params.is_none());
 }
 
@@ -58,7 +59,7 @@ async fn a_frame_survives_a_round_trip() {
 async fn a_request_survives_a_round_trip() {
     let request = JsonRpcRequest {
         jsonrpc: "2.0".into(),
-        id: Some(1),
+        id: Some(json!(1)),
         method: "tools/list".into(),
         params: None,
     };
@@ -70,7 +71,7 @@ async fn a_request_survives_a_round_trip() {
     let mut cursor = std::io::Cursor::new(buffer);
     let parsed = read_request(&mut cursor).await.unwrap();
     assert_eq!(parsed.method, "tools/list");
-    assert_eq!(parsed.id, Some(1));
+    assert_eq!(parsed.id, Some(json!(1)));
 }
 
 #[tokio::test]

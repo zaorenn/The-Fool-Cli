@@ -1165,6 +1165,10 @@ pub struct SessionBuildInputs<'a> {
     /// spawn-time `session-cli-config` dump AND threads it (with the vendor
     /// label) into the `SessionAgentTask` for the send-time dump.
     pub prompt_dump_dir: Option<std::path::PathBuf>,
+    /// The application's own tools, and the binary whose bridge subcommand
+    /// carries them. `None` (tests, and any composition with no application
+    /// behind it) means the session simply gets no app tools.
+    pub app_tools: Option<crate::factory::acp_assembler::AppToolsBridge>,
 }
 
 /// The pure spec + mode/model mapping — the sibling of clean-slate's
@@ -1253,6 +1257,7 @@ pub async fn build_session_instance(
         catalog_writeback,
         acp_session_repo,
         prompt_dump_dir,
+        app_tools,
     } = inputs;
 
     // GAP #1/#2 — the pure spec + mode/model mapping (resume anchor → Resume/Fresh,
@@ -1278,12 +1283,18 @@ pub async fn build_session_instance(
     };
     neutral.extend(config.session_mcp_servers.iter().cloned());
     let mut mcp_servers: Vec<McpServerSpec> = neutral.iter().map(session_server_to_spec).collect();
+    // Team-MCP and the app tools are PREPENDED before the user's servers
+    // (clean-slate + legacy acp_assembler ordering).
+    let mut ours: Vec<McpServerSpec> = Vec::new();
     if let Some(cfg) = config.team_mcp_stdio_config.as_ref() {
-        // Team-MCP is PREPENDED before the user's servers (clean-slate + legacy
-        // acp_assembler ordering).
-        let mut coordination = vec![team_mcp_server_spec(cfg)];
-        coordination.append(&mut mcp_servers);
-        mcp_servers = coordination;
+        ours.push(team_mcp_server_spec(cfg));
+    }
+    if let Some(bridge) = app_tools.as_ref() {
+        ours.extend(app_tools_server_specs(bridge, &conversation_id));
+    }
+    if !ours.is_empty() {
+        ours.append(&mut mcp_servers);
+        mcp_servers = ours;
     }
 
     // GAP #4 — preset_context + skills carried into the init surface.
@@ -1609,6 +1620,40 @@ fn team_mcp_server_spec(cfg: &fool_api_types::TeamMcpStdioConfig) -> fool_sessio
             ],
         },
     }
+}
+
+/// The application's own tools, as stdio specs a hosted CLI can spawn.
+///
+/// This is the direct-CLI sibling of `acp_assembler::app_tools_servers`, and it
+/// is the path that matters most: claude and codex — the two agents most likely
+/// to be asked to look at the screen — never go through the ACP manager.
+fn app_tools_server_specs(
+    bridge: &crate::factory::acp_assembler::AppToolsBridge,
+    conversation_id: &str,
+) -> Vec<fool_session::McpServerSpec> {
+    use fool_api_types::{APP_TOOLS_MCP_SERVER_NAME, AppToolsMcpConfig as C};
+
+    [
+        (APP_TOOLS_MCP_SERVER_NAME.to_owned(), C::core_path(conversation_id)),
+        (
+            format!("{APP_TOOLS_MCP_SERVER_NAME}-rest"),
+            C::rest_path(conversation_id),
+        ),
+    ]
+    .into_iter()
+    .map(|(name, path)| fool_session::McpServerSpec {
+        name,
+        transport: fool_session::McpTransport::Stdio {
+            command: bridge.binary_path.clone(),
+            args: vec![C::BRIDGE_SUBCOMMAND.to_owned()],
+            env: vec![
+                (C::ENV_PATH.to_owned(), path),
+                (C::ENV_PORT.to_owned(), bridge.config.port.to_string()),
+                (C::ENV_TOKEN.to_owned(), bridge.config.token.clone()),
+            ],
+        },
+    })
+    .collect()
 }
 
 /// GAP #7 (G5): spawn the one-shot catalog write-back for a session-model

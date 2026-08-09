@@ -796,7 +796,11 @@ fn app_tools_to_config(cfg: &AppToolsMcpConfig, conversation_id: &str) -> HashMa
         command: None,
         args: None,
         env: None,
-        url: Some(format!("http://127.0.0.1:{}/mcp/{}", cfg.port, conversation_id)),
+        url: Some(format!(
+            "http://127.0.0.1:{}{}",
+            cfg.port,
+            AppToolsMcpConfig::core_path(conversation_id)
+        )),
         headers: Some(headers),
         // Never deferred: these are the tools a spoken conversation reaches for
         // first, and a deferred server would make the model search before it
@@ -817,7 +821,11 @@ fn app_tools_to_config(cfg: &AppToolsMcpConfig, conversation_id: &str) -> HashMa
         command: None,
         args: None,
         env: None,
-        url: Some(format!("http://127.0.0.1:{}/mcp/rest/{}", cfg.port, conversation_id)),
+        url: Some(format!(
+            "http://127.0.0.1:{}{}",
+            cfg.port,
+            AppToolsMcpConfig::rest_path(conversation_id)
+        )),
         headers: Some(deferred_headers),
         deferred: Some(true),
         startup_timeout_ms: None,

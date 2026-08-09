@@ -1,7 +1,8 @@
 //! `foolcore mcp-bridge` subcommand: stdio ↔ TCP bridge for the team MCP server.
 //!
 //! Spawned by the ACP agent CLI as an MCP server with command `foolcore mcp-bridge`.
-//! stdio side speaks MCP Content-Length framed JSON-RPC 2.0;
+//! stdio side speaks JSON-RPC 2.0 in whichever framing the client uses — see
+//! [`super::stdio`], which reads both and answers in the one it was given;
 //! TCP side speaks 4-byte big-endian length-prefixed JSON frames against
 //! `127.0.0.1:<TEAM_MCP_PORT>` (reusing `fool_team::mcp::protocol`).
 //!
@@ -17,17 +18,14 @@ use std::process::ExitCode;
 use fool_api_types::TeamMcpStdioConfig;
 use fool_team::mcp::protocol::{read_frame, write_frame};
 use serde_json::Value;
-use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
+use tokio::io::BufReader;
 use tokio::net::TcpStream;
 
 use crate::commands::error::{CliBoundaryCode, CliBoundaryError, missing_env, parse_required_port};
+use crate::commands::mcp::stdio::{self, SharedFraming};
 
 const SUBCOMMAND: &str = "mcp-bridge";
 const CONNECT_ADDR_HOST: &str = "127.0.0.1";
-const MCP_STDIO_FRAME_MAX_BYTES: usize = 10 * 1024 * 1024;
-const MCP_STDIO_HEADER_LINE_MAX_BYTES: usize = 8 * 1024;
-const MCP_STDIO_HEADER_SECTION_MAX_BYTES: usize = 16 * 1024;
-const MCP_STDIO_HEADER_MAX_COUNT: usize = 64;
 
 /// Entry point for `foolcore mcp-bridge`. Returns an [`ExitCode`] so the
 /// binary surfaces non-zero on any failure (ACP CLI uses that to mark the MCP
@@ -69,9 +67,16 @@ async fn run() -> Result<(), CliBoundaryError> {
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
 
+    // The two directions run on separate tasks, so the framing the client
+    // turned out to speak has to be handed from the one that learns it to the
+    // one that has to answer in it.
+    let framing = SharedFraming::default();
+
     let env_for_stdin = env.clone();
-    let stdin_task = tokio::spawn(async move { forward_stdin_to_tcp(stdin, tcp_writer, env_for_stdin).await });
-    let tcp_task = tokio::spawn(async move { forward_tcp_to_stdout(tcp_reader, stdout).await });
+    let framing_for_stdin = framing.clone();
+    let stdin_task =
+        tokio::spawn(async move { forward_stdin_to_tcp(stdin, tcp_writer, env_for_stdin, framing_for_stdin).await });
+    let tcp_task = tokio::spawn(async move { forward_tcp_to_stdout(tcp_reader, stdout, framing).await });
 
     // First task to return decides the exit path; we treat clean EOF from
     // either side as "other side closed, we're done".
@@ -127,23 +132,27 @@ impl BridgeEnv {
 }
 
 // ---------------------------------------------------------------------------
-// stdin → TCP: read MCP Content-Length frames, inject auth on `initialize`, frame to TCP
+// stdin → TCP: read one stdio message, inject auth on `initialize`, frame to TCP
 // ---------------------------------------------------------------------------
 
-async fn forward_stdin_to_tcp<R, W>(stdin: R, mut tcp_writer: W, env: BridgeEnv) -> Result<(), CliBoundaryError>
+async fn forward_stdin_to_tcp<R, W>(
+    stdin: R,
+    mut tcp_writer: W,
+    env: BridgeEnv,
+    framing: SharedFraming,
+) -> Result<(), CliBoundaryError>
 where
     R: tokio::io::AsyncRead + Unpin,
     W: tokio::io::AsyncWrite + Unpin,
 {
     let mut reader = BufReader::new(stdin);
     loop {
-        let body = match read_mcp_stdio_message(&mut reader).await {
-            Ok(Some(b)) => b,
-            Ok(None) => {
-                return Ok(());
-            }
-            Err(e) => return Err(e),
+        let message = match stdio::read_message(&mut reader, SUBCOMMAND).await? {
+            Some(message) => message,
+            None => return Ok(()),
         };
+        framing.set(message.framing);
+        let body = message.body;
 
         let mut value: Value = serde_json::from_slice(&body).map_err(|_| {
             CliBoundaryError::new(
@@ -174,102 +183,6 @@ where
     }
 }
 
-/// Read one MCP stdio message (Content-Length framing).
-/// Returns None on clean EOF.
-async fn read_mcp_stdio_message<R: tokio::io::AsyncBufRead + Unpin>(
-    reader: &mut R,
-) -> Result<Option<Vec<u8>>, CliBoundaryError> {
-    let mut content_length: Option<usize> = None;
-    let mut header_line = Vec::new();
-    let mut header_bytes = 0usize;
-    let mut header_count = 0usize;
-    loop {
-        let n = read_bounded_header_line(reader, &mut header_line).await?;
-        if n == 0 {
-            return if header_bytes == 0 {
-                Ok(None) // Clean EOF before the next frame starts.
-            } else {
-                Err(stdin_frame_invalid())
-            };
-        }
-        header_bytes = header_bytes.checked_add(n).ok_or_else(stdin_frame_invalid)?;
-        if header_bytes > MCP_STDIO_HEADER_SECTION_MAX_BYTES {
-            return Err(stdin_frame_invalid());
-        }
-        let trimmed = std::str::from_utf8(&header_line)
-            .map_err(|_| stdin_frame_invalid())?
-            .trim();
-        if trimmed.is_empty() {
-            // Empty line = end of headers
-            break;
-        }
-        header_count += 1;
-        if header_count > MCP_STDIO_HEADER_MAX_COUNT {
-            return Err(stdin_frame_invalid());
-        }
-        if let Some(len_str) = trimmed.strip_prefix("Content-Length:") {
-            content_length = Some(len_str.trim().parse::<usize>().map_err(|_| stdin_frame_invalid())?);
-        }
-        // Ignore other headers
-    }
-    let len = content_length.ok_or_else(stdin_frame_invalid)?;
-    if len > MCP_STDIO_FRAME_MAX_BYTES {
-        return Err(CliBoundaryError::new(
-            CliBoundaryCode::McpFrameTooLarge,
-            SUBCOMMAND,
-            "MCP stdio frame exceeds configured size limit",
-        )
-        .with_field("limitBytes", MCP_STDIO_FRAME_MAX_BYTES.to_string()));
-    }
-    let mut body = vec![0u8; len];
-    reader.read_exact(&mut body).await.map_err(|_| stdin_read_error())?;
-    Ok(Some(body))
-}
-
-async fn read_bounded_header_line<R: tokio::io::AsyncBufRead + Unpin>(
-    reader: &mut R,
-    line: &mut Vec<u8>,
-) -> Result<usize, CliBoundaryError> {
-    line.clear();
-    loop {
-        let (n, end_of_line) = {
-            let available = reader.fill_buf().await.map_err(|_| stdin_read_error())?;
-            if available.is_empty() {
-                return Ok(line.len());
-            }
-            let n = available
-                .iter()
-                .position(|byte| *byte == b'\n')
-                .map_or(available.len(), |pos| pos + 1);
-            if line.len() + n > MCP_STDIO_HEADER_LINE_MAX_BYTES {
-                return Err(stdin_frame_invalid());
-            }
-            line.extend_from_slice(&available[..n]);
-            (n, available[n - 1] == b'\n')
-        };
-        reader.consume(n);
-        if end_of_line {
-            return Ok(line.len());
-        }
-    }
-}
-
-fn stdin_frame_invalid() -> CliBoundaryError {
-    CliBoundaryError::new(
-        CliBoundaryCode::McpStdinFrameInvalid,
-        SUBCOMMAND,
-        "invalid MCP stdio frame",
-    )
-}
-
-fn stdin_read_error() -> CliBoundaryError {
-    CliBoundaryError::new(
-        CliBoundaryCode::McpStdinReadFailed,
-        SUBCOMMAND,
-        "failed to read MCP stdio frame from stdin",
-    )
-}
-
 fn inject_auth(value: &mut Value, env: &BridgeEnv) {
     let params = value.as_object_mut().and_then(|obj| {
         obj.entry("params")
@@ -283,10 +196,14 @@ fn inject_auth(value: &mut Value, env: &BridgeEnv) {
 }
 
 // ---------------------------------------------------------------------------
-// TCP → stdout: read length-prefixed frames, write MCP Content-Length frames
+// TCP → stdout: read length-prefixed frames, write them in the client's framing
 // ---------------------------------------------------------------------------
 
-async fn forward_tcp_to_stdout<R, W>(mut tcp_reader: R, mut stdout: W) -> Result<(), CliBoundaryError>
+async fn forward_tcp_to_stdout<R, W>(
+    mut tcp_reader: R,
+    mut stdout: W,
+    framing: SharedFraming,
+) -> Result<(), CliBoundaryError>
 where
     R: tokio::io::AsyncRead + Unpin,
     W: tokio::io::AsyncWrite + Unpin,
@@ -305,23 +222,8 @@ where
                 ));
             }
         };
-        // Content-Length framing for stdout (MCP stdio transport)
-        let header = format!("Content-Length: {}\r\n\r\n", frame.len());
-        stdout
-            .write_all(header.as_bytes())
-            .await
-            .map_err(|_| stdout_write_error())?;
-        stdout.write_all(&frame).await.map_err(|_| stdout_write_error())?;
-        stdout.flush().await.map_err(|_| stdout_write_error())?;
+        stdio::write_message(&mut stdout, framing.get(), &frame, SUBCOMMAND).await?;
     }
-}
-
-fn stdout_write_error() -> CliBoundaryError {
-    CliBoundaryError::new(
-        CliBoundaryCode::McpStdoutWriteFailed,
-        SUBCOMMAND,
-        "failed to write MCP stdio frame to stdout",
-    )
 }
 
 // ---------------------------------------------------------------------------
@@ -346,78 +248,6 @@ mod tests {
         let err = BridgeEnv::from_values("not-a-port", "tok", "slot-a").unwrap_err();
         assert_eq!(err.code(), crate::commands::error::CliBoundaryCode::McpEnvInvalidPort);
         assert_eq!(err.exit_code(), std::process::ExitCode::from(2));
-    }
-
-    #[tokio::test]
-    async fn read_mcp_stdio_message_rejects_oversized_content_length() {
-        let input = format!("Content-Length: {}\r\n\r\n", MCP_STDIO_FRAME_MAX_BYTES + 1);
-        let err = read_mcp_stdio_message(&mut input.as_bytes()).await.unwrap_err();
-        assert_eq!(err.code(), crate::commands::error::CliBoundaryCode::McpFrameTooLarge);
-    }
-
-    #[tokio::test]
-    async fn read_mcp_stdio_message_rejects_invalid_content_length() {
-        let input = "Content-Length: nope\r\n\r\n";
-        let err = read_mcp_stdio_message(&mut input.as_bytes()).await.unwrap_err();
-        assert_eq!(
-            err.code(),
-            crate::commands::error::CliBoundaryCode::McpStdinFrameInvalid
-        );
-    }
-
-    #[tokio::test]
-    async fn read_mcp_stdio_message_rejects_partial_header_eof() {
-        for input in ["Content-Length: 2", "X-Header: value"] {
-            let err = read_mcp_stdio_message(&mut input.as_bytes()).await.unwrap_err();
-            assert_eq!(
-                err.code(),
-                crate::commands::error::CliBoundaryCode::McpStdinFrameInvalid
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn read_mcp_stdio_message_rejects_overlong_header_line() {
-        let input = format!("X-Header: {}\r\nContent-Length: 2\r\n\r\n{{}}", "a".repeat(16 * 1024));
-        let err = read_mcp_stdio_message(&mut input.as_bytes()).await.unwrap_err();
-        assert_eq!(
-            err.code(),
-            crate::commands::error::CliBoundaryCode::McpStdinFrameInvalid
-        );
-    }
-
-    #[tokio::test]
-    async fn read_mcp_stdio_message_rejects_oversized_header_section() {
-        let line_a = format!(
-            "X-A: {}\r\n",
-            "a".repeat(MCP_STDIO_HEADER_LINE_MAX_BYTES - "X-A: \r\n".len())
-        );
-        let line_b = format!(
-            "X-B: {}\r\n",
-            "b".repeat(MCP_STDIO_HEADER_LINE_MAX_BYTES - "X-B: \r\n".len())
-        );
-        let input = format!("{line_a}{line_b}X-C: v\r\nContent-Length: 0\r\n\r\n");
-
-        let err = read_mcp_stdio_message(&mut input.as_bytes()).await.unwrap_err();
-        assert_eq!(
-            err.code(),
-            crate::commands::error::CliBoundaryCode::McpStdinFrameInvalid
-        );
-    }
-
-    #[tokio::test]
-    async fn read_mcp_stdio_message_rejects_too_many_headers() {
-        let mut input = String::new();
-        for index in 0..=MCP_STDIO_HEADER_MAX_COUNT {
-            input.push_str(&format!("X-{index}: v\r\n"));
-        }
-        input.push_str("Content-Length: 0\r\n\r\n");
-
-        let err = read_mcp_stdio_message(&mut input.as_bytes()).await.unwrap_err();
-        assert_eq!(
-            err.code(),
-            crate::commands::error::CliBoundaryCode::McpStdinFrameInvalid
-        );
     }
 
     #[test]
@@ -465,7 +295,9 @@ mod tests {
             std::str::from_utf8(tools_list).unwrap(),
         );
         let mut out = Vec::<u8>::new();
-        forward_stdin_to_tcp(input.as_bytes(), &mut out, env()).await.unwrap();
+        forward_stdin_to_tcp(input.as_bytes(), &mut out, env(), SharedFraming::default())
+            .await
+            .unwrap();
 
         // Parse two frames back out.
         let mut cursor = std::io::Cursor::new(out);
@@ -485,11 +317,44 @@ mod tests {
         write_frame(&mut framed, payload).await.unwrap();
 
         let mut out = Vec::<u8>::new();
-        forward_tcp_to_stdout(&framed[..], &mut out).await.unwrap();
+        forward_tcp_to_stdout(&framed[..], &mut out, SharedFraming::default())
+            .await
+            .unwrap();
 
         let mut cursor = std::io::Cursor::new(out);
-        let body = read_mcp_stdio_message(&mut cursor).await.unwrap().unwrap();
-        let parsed: Value = serde_json::from_slice(&body).unwrap();
+        let message = stdio::read_message(&mut cursor, SUBCOMMAND).await.unwrap().unwrap();
+        let parsed: Value = serde_json::from_slice(&message.body).unwrap();
+        assert_eq!(parsed["id"], 1);
+    }
+
+    /// A client that speaks one JSON document per line has to be answered the
+    /// same way. Both halves of the bridge are driven here because the framing
+    /// is learned by one and used by the other, and a cell that never got set
+    /// would still pass a test that only looked at the reading half.
+    #[tokio::test]
+    async fn a_line_framed_client_is_answered_in_lines() {
+        let framing = SharedFraming::default();
+        let mut to_tcp = Vec::<u8>::new();
+        forward_stdin_to_tcp(
+            &br#"{"jsonrpc":"2.0","id":1,"method":"initialize"}"#[..],
+            &mut to_tcp,
+            env(),
+            framing.clone(),
+        )
+        .await
+        .unwrap();
+
+        let mut framed = Vec::new();
+        write_frame(&mut framed, br#"{"jsonrpc":"2.0","id":1,"result":{}}"#)
+            .await
+            .unwrap();
+        let mut out = Vec::<u8>::new();
+        forward_tcp_to_stdout(&framed[..], &mut out, framing).await.unwrap();
+
+        let text = String::from_utf8(out).unwrap();
+        assert!(!text.contains("Content-Length"), "{text}");
+        assert!(text.ends_with('\n'), "{text}");
+        let parsed: Value = serde_json::from_str(text.trim()).unwrap();
         assert_eq!(parsed["id"], 1);
     }
 }

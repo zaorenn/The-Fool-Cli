@@ -27,7 +27,7 @@ impl McpToolHost for EchoHost {
 fn request(id: u64, method: &str, params: Option<Value>) -> JsonRpcRequest {
     JsonRpcRequest {
         jsonrpc: "2.0".into(),
-        id: Some(id),
+        id: Some(id.into()),
         method: method.into(),
         params,
     }

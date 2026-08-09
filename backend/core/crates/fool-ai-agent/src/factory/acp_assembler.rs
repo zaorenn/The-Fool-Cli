@@ -1,7 +1,9 @@
 use crate::shared_kernel::PersistedSessionState;
 use agent_client_protocol::schema::v1::{EnvVariable, McpServer, McpServerStdio, NewSessionRequest};
 use fool_api_types::AgentMetadata;
-use fool_api_types::{AcpBuildExtra, TEAM_MCP_SERVER_NAME, TeamMcpStdioConfig};
+use fool_api_types::{
+    APP_TOOLS_MCP_SERVER_NAME, AcpBuildExtra, AppToolsMcpConfig, TEAM_MCP_SERVER_NAME, TeamMcpStdioConfig,
+};
 use fool_common::CommandSpec;
 use std::path::PathBuf;
 
@@ -10,6 +12,21 @@ use std::path::PathBuf;
 pub struct WorkspaceInfo {
     pub path: String,
     pub is_custom: bool,
+}
+
+/// What a hosted agent needs in order to reach the application's own tools.
+///
+/// The embedded agent is handed the port and the token directly, because it
+/// lives in this process. An agent that is a separate program cannot be, so it
+/// is given a command to spawn instead, and the bridge behind that command
+/// carries the calls.
+#[derive(Debug, Clone)]
+pub struct AppToolsBridge {
+    pub config: AppToolsMcpConfig,
+    /// Absolute path to this backend's own binary — the bridge is a subcommand
+    /// of it, so a session started by one build cannot end up talking to
+    /// another one that happens to be on `PATH`.
+    pub binary_path: String,
 }
 
 /// All pre-computed parameters needed to create and drive an ACP session.
@@ -69,8 +86,9 @@ pub async fn assemble_acp_params(
     session_snapshot: Option<PersistedSessionState>,
     data_dir: PathBuf,
     dump_prompts: bool,
+    app_tools: Option<AppToolsBridge>,
 ) -> AcpSessionParams {
-    let mcp_servers = resolve_mcp_servers(&config, user_mcp_servers);
+    let mcp_servers = resolve_mcp_servers(&config, user_mcp_servers, app_tools.as_ref(), &conversation_id);
     let preset_context = compose_preset_context(config.preset_context.as_deref());
 
     AcpSessionParams {
@@ -90,16 +108,58 @@ pub async fn assemble_acp_params(
 
 /// Determine which MCP servers to inject into `session/new`.
 ///
-/// Layout: `[team?, ...user_mcp_servers]`. The user's
+/// Layout: `[team?, app tools?, ...user_mcp_servers]`. The user's
 /// own enabled MCP servers are always appended on top so a team
 /// session still gets the operator's tools.
-fn resolve_mcp_servers(config: &AcpBuildExtra, user_mcp_servers: Vec<McpServer>) -> Vec<McpServer> {
+fn resolve_mcp_servers(
+    config: &AcpBuildExtra,
+    user_mcp_servers: Vec<McpServer>,
+    app_tools: Option<&AppToolsBridge>,
+    conversation_id: &str,
+) -> Vec<McpServer> {
     let mut servers: Vec<McpServer> = Vec::new();
     if let Some(cfg) = config.team_mcp_stdio_config.as_ref() {
         servers.push(team_mcp_server(cfg));
     }
+    if let Some(bridge) = app_tools {
+        servers.extend(app_tools_servers(bridge, conversation_id));
+    }
     servers.extend(user_mcp_servers);
     servers
+}
+
+/// The application's own tools, as two stdio servers.
+///
+/// Two rather than one because the catalogue is served in halves: the tools a
+/// conversation reaches for first, and the long tail. A hosted CLI has no way
+/// to defer a server the way the embedded agent does, so it gets both and sees
+/// everything — which is the right trade for an agent with a large window and
+/// the wrong one for a small local model.
+fn app_tools_servers(bridge: &AppToolsBridge, conversation_id: &str) -> Vec<McpServer> {
+    [
+        (
+            APP_TOOLS_MCP_SERVER_NAME.to_owned(),
+            AppToolsMcpConfig::core_path(conversation_id),
+        ),
+        (
+            format!("{APP_TOOLS_MCP_SERVER_NAME}-rest"),
+            AppToolsMcpConfig::rest_path(conversation_id),
+        ),
+    ]
+    .into_iter()
+    .map(|(name, path)| {
+        let env = vec![
+            EnvVariable::new(AppToolsMcpConfig::ENV_PORT.to_owned(), bridge.config.port.to_string()),
+            EnvVariable::new(AppToolsMcpConfig::ENV_TOKEN.to_owned(), bridge.config.token.clone()),
+            EnvVariable::new(AppToolsMcpConfig::ENV_PATH.to_owned(), path),
+        ];
+        McpServer::Stdio(
+            McpServerStdio::new(name, &bridge.binary_path)
+                .args(vec![AppToolsMcpConfig::BRIDGE_SUBCOMMAND.to_owned()])
+                .env(env),
+        )
+    })
+    .collect()
 }
 
 /// Compose first-message preset context.
@@ -215,6 +275,7 @@ mod tests {
             None,
             PathBuf::from("/tmp/data"),
             true,
+            None,
         )
         .await;
 
@@ -234,7 +295,7 @@ mod tests {
             backend: Some("claude".into()),
             ..Default::default()
         };
-        let servers = resolve_mcp_servers(&config, vec![user_stdio("mcp-docs")]);
+        let servers = resolve_mcp_servers(&config, vec![user_stdio("mcp-docs")], None, "conv-1");
         assert_eq!(servers.len(), 1);
         match &servers[0] {
             McpServer::Stdio(s) => assert_eq!(s.name, "mcp-docs"),
@@ -249,7 +310,7 @@ mod tests {
             team_mcp_stdio_config: Some(team_cfg()),
             ..Default::default()
         };
-        let servers = resolve_mcp_servers(&config, vec![user_stdio("mcp-docs")]);
+        let servers = resolve_mcp_servers(&config, vec![user_stdio("mcp-docs")], None, "conv-1");
         assert_eq!(servers.len(), 2);
         match &servers[0] {
             McpServer::Stdio(s) => {
@@ -264,6 +325,63 @@ mod tests {
         }
     }
 
+    fn app_bridge() -> AppToolsBridge {
+        AppToolsBridge {
+            config: AppToolsMcpConfig {
+                port: 5123,
+                token: "tok".into(),
+            },
+            binary_path: "/usr/bin/foolcore".into(),
+        }
+    }
+
+    /// The gap this closes: an agent that is a separate process could not
+    /// reach the application's own tools at all, because the only way in was a
+    /// loopback port it was never told about. It is spawned with a bridge now,
+    /// and the conversation it belongs to is carried in the path.
+    #[test]
+    fn a_hosted_agent_is_given_the_app_tools_as_a_spawnable_bridge() {
+        let config = AcpBuildExtra {
+            backend: Some("claude".into()),
+            ..Default::default()
+        };
+
+        let servers = resolve_mcp_servers(&config, vec![user_stdio("mcp-docs")], Some(&app_bridge()), "conv-1");
+
+        let names: Vec<&str> = servers
+            .iter()
+            .map(|server| match server {
+                McpServer::Stdio(s) => s.name.as_str(),
+                _ => panic!("expected stdio"),
+            })
+            .collect();
+        assert_eq!(names, vec!["fool-app", "fool-app-rest", "mcp-docs"]);
+
+        let McpServer::Stdio(core) = &servers[0] else {
+            panic!("expected stdio");
+        };
+        assert_eq!(core.command, PathBuf::from("/usr/bin/foolcore"));
+        assert_eq!(core.args, vec!["app-tools-bridge".to_owned()]);
+        let env: Vec<(&str, &str)> = core
+            .env
+            .iter()
+            .map(|variable| (variable.name.as_str(), variable.value.as_str()))
+            .collect();
+        assert!(env.contains(&("FOOL_APP_TOOLS_PORT", "5123")), "{env:?}");
+        assert!(env.contains(&("FOOL_APP_TOOLS_TOKEN", "tok")), "{env:?}");
+        assert!(env.contains(&("FOOL_APP_TOOLS_PATH", "/mcp/conv-1")), "{env:?}");
+
+        let McpServer::Stdio(rest) = &servers[1] else {
+            panic!("expected stdio");
+        };
+        let rest_path = rest
+            .env
+            .iter()
+            .find(|variable| variable.name == "FOOL_APP_TOOLS_PATH")
+            .map(|variable| variable.value.as_str());
+        assert_eq!(rest_path, Some("/mcp/rest/conv-1"));
+    }
+
     /// The pre-fix bug: with no team configured and an empty
     /// user-server list, the payload is empty. This is the *no-fix*
     /// scenario and remains valid (no MCP configured anywhere).
@@ -273,7 +391,7 @@ mod tests {
             backend: Some("claude".into()),
             ..Default::default()
         };
-        let servers = resolve_mcp_servers(&config, Vec::new());
+        let servers = resolve_mcp_servers(&config, Vec::new(), None, "conv-1");
         assert!(servers.is_empty());
     }
 }

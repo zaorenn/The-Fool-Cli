@@ -269,7 +269,7 @@ enum InitResult {
 fn handle_initialize(request: &super::protocol::JsonRpcRequest, auth_token: &str) -> InitResult {
     if request.method != "initialize" {
         return InitResult::Response(JsonRpcResponse::error(
-            request.id,
+            request.id.clone(),
             INVALID_REQUEST,
             "Expected 'initialize' as first request",
         ));
@@ -285,7 +285,7 @@ fn handle_initialize(request: &super::protocol::JsonRpcRequest, auth_token: &str
 
     if token != auth_token {
         return InitResult::Response(JsonRpcResponse::error(
-            request.id,
+            request.id.clone(),
             INVALID_REQUEST,
             "Authentication failed: invalid auth_token",
         ));
@@ -299,7 +299,7 @@ fn handle_initialize(request: &super::protocol::JsonRpcRequest, auth_token: &str
         .to_owned();
 
     let resp = JsonRpcResponse::success(
-        request.id,
+        request.id.clone(),
         json!({
             "protocolVersion": PROTOCOL_VERSION,
             "serverInfo": {
@@ -328,11 +328,11 @@ async fn handle_method(
     prompt_dump: &TeamPromptDumpConfig,
 ) -> JsonRpcResponse {
     match request.method.as_str() {
-        "notifications/initialized" => JsonRpcResponse::success(request.id, json!({})),
-        "tools/list" => handle_tools_list(request.id, scheduler, team_id, caller_slot_id, prompt_dump).await,
+        "notifications/initialized" => JsonRpcResponse::success(request.id.clone(), json!({})),
+        "tools/list" => handle_tools_list(request.id.clone(), scheduler, team_id, caller_slot_id, prompt_dump).await,
         "tools/call" => handle_tools_call(request, scheduler, service, team_id, caller_slot_id).await,
         _ => JsonRpcResponse::error(
-            request.id,
+            request.id.clone(),
             METHOD_NOT_FOUND,
             format!("Unknown method: {}", request.method),
         ),
@@ -348,7 +348,7 @@ async fn caller_role_for_tools_list(scheduler: &TeammateManager, caller_slot_id:
 }
 
 async fn handle_tools_list(
-    id: Option<u64>,
+    id: Option<fool_mcp_server::protocol::RequestId>,
     scheduler: &TeammateManager,
     team_id: &str,
     caller_slot_id: &str,
@@ -413,14 +413,18 @@ async fn handle_tools_call(
     let params = match request.params.as_ref() {
         Some(p) => p,
         None => {
-            return JsonRpcResponse::error(request.id, INVALID_PARAMS, "Missing params for tools/call");
+            return JsonRpcResponse::error(request.id.clone(), INVALID_PARAMS, "Missing params for tools/call");
         }
     };
 
     let tool_name = match params.get("name").and_then(|v| v.as_str()) {
         Some(n) => n,
         None => {
-            return JsonRpcResponse::error(request.id, INVALID_PARAMS, "Missing 'name' in tools/call params");
+            return JsonRpcResponse::error(
+                request.id.clone(),
+                INVALID_PARAMS,
+                "Missing 'name' in tools/call params",
+            );
         }
     };
 
@@ -466,7 +470,7 @@ async fn handle_tools_call(
 
     match result {
         Ok(content) => JsonRpcResponse::success(
-            request.id,
+            request.id.clone(),
             json!({
                 "content": [{ "type": "text", "text": serde_json::to_string(&content).unwrap_or_else(|_| content.to_string()) }]
             }),
@@ -477,7 +481,7 @@ async fn handle_tools_call(
                 "isError": true
             });
             result["structuredContent"] = serde_json::to_value(&err).unwrap_or_else(|_| json!({}));
-            JsonRpcResponse::success(request.id, result)
+            JsonRpcResponse::success(request.id.clone(), result)
         }
     }
 }

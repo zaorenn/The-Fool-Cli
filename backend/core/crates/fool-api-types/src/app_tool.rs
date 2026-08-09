@@ -43,6 +43,34 @@ pub struct AppToolsMcpConfig {
     pub token: String,
 }
 
+impl AppToolsMcpConfig {
+    /// The subcommand that carries this server over stdio.
+    ///
+    /// An agent embedded in this process talks to the listener directly. A
+    /// hosted CLI — Claude Code, Codex — is a separate process that speaks MCP
+    /// over stdin and stdout and cannot be handed a port and a token, so it is
+    /// spawned with this and the bridge does the talking.
+    pub const BRIDGE_SUBCOMMAND: &'static str = "app-tools-bridge";
+
+    /// env key the stdio bridge reads to learn the loopback port.
+    pub const ENV_PORT: &'static str = "FOOL_APP_TOOLS_PORT";
+    /// env key the stdio bridge reads to learn the bearer token.
+    pub const ENV_TOKEN: &'static str = "FOOL_APP_TOOLS_TOKEN";
+    /// env key the stdio bridge reads to learn which path — and therefore
+    /// which conversation, and which half of the catalogue — it serves.
+    pub const ENV_PATH: &'static str = "FOOL_APP_TOOLS_PATH";
+
+    /// The tools a conversation reaches for first.
+    pub fn core_path(conversation_id: &str) -> String {
+        format!("/mcp/{conversation_id}")
+    }
+
+    /// The long tail, on its own path so a client that defers can defer it.
+    pub fn rest_path(conversation_id: &str) -> String {
+        format!("/mcp/rest/{conversation_id}")
+    }
+}
+
 #[cfg(test)]
 #[path = "app_tool_test.rs"]
 mod app_tool_test;

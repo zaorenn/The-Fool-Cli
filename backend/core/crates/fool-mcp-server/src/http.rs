@@ -56,6 +56,13 @@ pub async fn dispatch(host: Arc<dyn McpToolHost>, request: JsonRpcRequest) -> Js
                 json!({"content": [{"type": "text", "text": text}], "isError": is_error}),
             )
         }
+        // A notification is told, not asked. `notifications/initialized`
+        // arrives from every client right after the handshake and carries no
+        // id, so nothing is waiting on the answer — but calling it an unknown
+        // method put an error in the client's log at the start of every
+        // session, which is exactly where somebody looking for a real fault
+        // would stop looking.
+        other if other.starts_with("notifications/") => JsonRpcResponse::success(request.id, json!({})),
         other => JsonRpcResponse::error(request.id, METHOD_NOT_FOUND, format!("unknown method {other}")),
     }
 }

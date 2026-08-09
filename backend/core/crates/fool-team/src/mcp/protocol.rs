@@ -54,12 +54,13 @@ impl McpReadyNotification {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn success_response_serialization() {
-        let resp = JsonRpcResponse::success(Some(1), serde_json::json!({"ok": true}));
+        let resp = JsonRpcResponse::success(Some(json!(1)), serde_json::json!({"ok": true}));
         assert_eq!(resp.jsonrpc, "2.0");
-        assert_eq!(resp.id, Some(1));
+        assert_eq!(resp.id, Some(json!(1)));
         assert!(resp.error.is_none());
         let json = serde_json::to_value(&resp).unwrap();
         assert_eq!(json["result"]["ok"], true);
@@ -68,8 +69,8 @@ mod tests {
 
     #[test]
     fn error_response_serialization() {
-        let resp = JsonRpcResponse::error(Some(2), METHOD_NOT_FOUND, "not found");
-        assert_eq!(resp.id, Some(2));
+        let resp = JsonRpcResponse::error(Some(json!(2)), METHOD_NOT_FOUND, "not found");
+        assert_eq!(resp.id, Some(json!(2)));
         assert!(resp.result.is_none());
         let err = resp.error.as_ref().unwrap();
         assert_eq!(err.code, METHOD_NOT_FOUND);
@@ -87,7 +88,7 @@ mod tests {
         let json = r#"{"jsonrpc":"2.0","id":1,"method":"tools/list"}"#;
         let req: JsonRpcRequest = serde_json::from_str(json).unwrap();
         assert_eq!(req.method, "tools/list");
-        assert_eq!(req.id, Some(1));
+        assert_eq!(req.id, Some(json!(1)));
         assert!(req.params.is_none());
     }
 
@@ -128,7 +129,7 @@ mod tests {
     async fn request_response_roundtrip() {
         let req = JsonRpcRequest {
             jsonrpc: "2.0".into(),
-            id: Some(1),
+            id: Some(json!(1)),
             method: "tools/list".into(),
             params: None,
         };
@@ -139,7 +140,7 @@ mod tests {
         let mut cursor = std::io::Cursor::new(buf);
         let parsed = read_request(&mut cursor).await.unwrap();
         assert_eq!(parsed.method, "tools/list");
-        assert_eq!(parsed.id, Some(1));
+        assert_eq!(parsed.id, Some(json!(1)));
     }
 
     #[tokio::test]

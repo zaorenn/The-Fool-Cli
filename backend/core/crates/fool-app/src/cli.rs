@@ -119,6 +119,9 @@ pub(crate) enum Command {
     McpBridge,
     /// MCP stdio server for team tools (spawned by the ACP agent CLI).
     McpTeamStdio,
+    /// Stdio ↔ HTTP bridge for the application's own tools, so a hosted CLI
+    /// agent (Claude Code, Codex) reaches what the embedded one reaches.
+    AppToolsBridge,
     /// Self-check: hydrate the agent registry, probe every CLI on `$PATH`,
     /// and print a per-agent availability table. Useful when the user
     /// reports "no agent works" — running this from the same shell the
@@ -138,6 +141,7 @@ impl Command {
             Self::Team(_) => "team",
             Self::McpBridge => "mcp-bridge",
             Self::McpTeamStdio => "mcp-team-stdio",
+            Self::AppToolsBridge => fool_api_types::AppToolsMcpConfig::BRIDGE_SUBCOMMAND,
             Self::Doctor => "doctor",
             Self::PrepareManagedResources(_) => "prepare-managed-resources",
         }
