@@ -92,3 +92,55 @@ async fn a_tool_without_a_store_still_works() {
     assert!(!result.is_error, "{}", result.content);
     assert_eq!(std::fs::read_to_string(&file).unwrap(), "written");
 }
+
+#[tokio::test]
+async fn a_confined_conversation_cannot_write_outside_its_directory() {
+    let inside = tempfile::tempdir().expect("temp dir");
+    let outside = tempfile::tempdir().expect("another temp dir");
+    let escapee = outside.path().join("secret.txt");
+
+    let tool = WriteTool::new(None).confined_to(foolrs_tools::confinement::Confinement::within(inside.path()));
+
+    let result = tool
+        .execute(json!({ "file_path": escapee.to_string_lossy(), "content": "should not land" }))
+        .await;
+
+    assert!(result.is_error, "{}", result.content);
+    assert!(!escapee.exists());
+}
+
+#[tokio::test]
+async fn a_confined_conversation_still_writes_inside_it() {
+    let inside = tempfile::tempdir().expect("temp dir");
+    let file = inside.path().join("nested/notes.txt");
+
+    let tool = WriteTool::new(None).confined_to(foolrs_tools::confinement::Confinement::within(inside.path()));
+
+    let result = tool
+        .execute(json!({ "file_path": file.to_string_lossy(), "content": "fine" }))
+        .await;
+
+    assert!(!result.is_error, "{}", result.content);
+    assert_eq!(std::fs::read_to_string(&file).unwrap(), "fine");
+}
+
+#[tokio::test]
+async fn an_edit_outside_the_directory_is_refused() {
+    let inside = tempfile::tempdir().expect("temp dir");
+    let outside = tempfile::tempdir().expect("another temp dir");
+    let file = outside.path().join("notes.txt");
+    std::fs::write(&file, "hello world").expect("write");
+
+    let tool = EditTool::new(None).confined_to(foolrs_tools::confinement::Confinement::within(inside.path()));
+
+    let result = tool
+        .execute(json!({
+            "file_path": file.to_string_lossy(),
+            "old_string": "world",
+            "new_string": "there",
+        }))
+        .await;
+
+    assert!(result.is_error, "{}", result.content);
+    assert_eq!(std::fs::read_to_string(&file).unwrap(), "hello world");
+}

@@ -14,6 +14,7 @@ use foolrs_skills::loader::load_all_skills;
 use foolrs_skills::permissions::SkillPermissionChecker;
 use foolrs_skills::types::SkillMetadata;
 use foolrs_tools::checkpoint::CheckpointStore;
+use foolrs_tools::confinement::Confinement;
 use foolrs_tools::edit::EditTool;
 use foolrs_tools::exec_command::ExecCommandTool;
 use foolrs_tools::file_cache::FileStateCache;
@@ -76,6 +77,11 @@ pub struct AgentBootstrap {
     resume_session: Option<Session>,
     runtime_env: Vec<(String, String)>,
     tool_policy: ToolPolicy,
+    /// Where this conversation may write, when it has been confined.
+    ///
+    /// A boundary against a mistake rather than an attacker — `confinement`
+    /// says so at length, and nothing above it should say more.
+    confinement: Confinement,
     /// Where a file's previous contents are kept so a turn can be undone.
     ///
     /// `None` leaves `Write` and `Edit` as they were. An agent that refused to
@@ -121,7 +127,14 @@ impl AgentBootstrap {
             runtime_env: Vec::new(),
             tool_policy: ToolPolicy::default(),
             checkpoints: None,
+            confinement: Confinement::None,
         }
+    }
+
+    /// Refuse writes outside one directory, for this conversation.
+    pub fn confined_to(mut self, confinement: Confinement) -> Self {
+        self.confinement = confinement;
+        self
     }
 
     /// Keep a copy of every file a turn changes, so the turn can be undone.
@@ -240,8 +253,8 @@ impl AgentBootstrap {
 
         registry.register(Box::new(ReadTool::new(file_cache.clone())));
 
-        let write = WriteTool::new(file_cache.clone());
-        let edit = EditTool::new(file_cache);
+        let write = WriteTool::new(file_cache.clone()).confined_to(self.confinement.clone());
+        let edit = EditTool::new(file_cache).confined_to(self.confinement.clone());
         match &self.checkpoints {
             Some(store) => {
                 registry.register(Box::new(write.with_checkpoints(store.clone())));

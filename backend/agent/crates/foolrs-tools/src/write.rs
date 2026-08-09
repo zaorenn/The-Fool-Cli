@@ -9,11 +9,13 @@ use foolrs_types::tool::{JsonSchema, ToolResult};
 
 use crate::Tool;
 use crate::checkpoint::CheckpointStore;
+use crate::confinement::Confinement;
 use crate::file_cache::{FileStateCache, update_cache_after_write};
 
 pub struct WriteTool {
     file_cache: Option<Arc<RwLock<FileStateCache>>>,
     checkpoints: Option<Arc<Mutex<CheckpointStore>>>,
+    confinement: Confinement,
 }
 
 impl WriteTool {
@@ -30,7 +32,18 @@ impl WriteTool {
         Self {
             file_cache,
             checkpoints: None,
+            confinement: Confinement::None,
         }
+    }
+
+    /// Refuses to write outside one directory.
+    ///
+    /// A boundary against a mistake rather than against an attacker — see
+    /// `confinement`, which says so at length and is the only place that
+    /// should.
+    pub fn confined_to(mut self, confinement: Confinement) -> Self {
+        self.confinement = confinement;
+        self
     }
 
     /// Copies a file aside before overwriting it, so the turn can be undone.
@@ -106,6 +119,13 @@ impl Tool for WriteTool {
                     };
                 }
             }
+        }
+
+        if !self.confinement.allows_write(path) {
+            return ToolResult {
+                content: self.confinement.refusal(path),
+                is_error: true,
+            };
         }
 
         // Before anything is changed, and refusing if it cannot be done. A

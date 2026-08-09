@@ -10,6 +10,7 @@ use foolrs_types::tool::{JsonSchema, ToolResult};
 
 use crate::Tool;
 use crate::checkpoint::CheckpointStore;
+use crate::confinement::Confinement;
 use crate::file_cache::{FileStateCache, file_mtime_ms, update_cache_after_write};
 
 #[derive(Clone, Copy)]
@@ -118,6 +119,7 @@ fn convert_line_endings(text: &str, line_ending: LineEnding) -> Cow<'_, str> {
 pub struct EditTool {
     file_cache: Option<Arc<RwLock<FileStateCache>>>,
     checkpoints: Option<Arc<Mutex<CheckpointStore>>>,
+    confinement: Confinement,
 }
 
 impl EditTool {
@@ -133,7 +135,18 @@ impl EditTool {
         Self {
             file_cache,
             checkpoints: None,
+            confinement: Confinement::None,
         }
+    }
+
+    /// Refuses to write outside one directory.
+    ///
+    /// A boundary against a mistake rather than against an attacker — see
+    /// `confinement`, which says so at length and is the only place that
+    /// should.
+    pub fn confined_to(mut self, confinement: Confinement) -> Self {
+        self.confinement = confinement;
+        self
     }
 
     /// Copies a file aside before changing it, so the turn can be undone.
@@ -292,6 +305,13 @@ impl Tool for EditTool {
         } else {
             content.replacen(selected.old_string.as_ref(), new_string.as_ref(), 1)
         };
+
+        if !self.confinement.allows_write(Path::new(file_path)) {
+            return ToolResult {
+                content: self.confinement.refusal(Path::new(file_path)),
+                is_error: true,
+            };
+        }
 
         // Before the change, and refusing if the copy cannot be made: a
         // checkpoint that silently did not happen is worse than none, because
