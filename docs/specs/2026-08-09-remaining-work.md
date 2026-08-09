@@ -200,3 +200,98 @@ These are deliberate. Do not "discover" them again.
   and the material layer landed without `bun run dev` being driven by hand —
   there is no model server on the machine this was written on. The user has
   tested the spoken runtime before, with the flag on, and reported it working.
+
+---
+
+## 6. Asked for on 9 August, after this file was first written
+
+In the order they should be built, which is not the order they were asked in:
+each one below depends on the ones above it.
+
+### 6.1 A delegated task that does not stop the conversation
+
+**Today `app_ask_jester` is awaited inline**, so a spoken turn blocks for as
+long as the agent runs. The filler lines cover the silence now, but the
+conversation still cannot go anywhere else while it waits.
+
+What it should be: the tool returns as soon as the task is _accepted_, the
+conversation carries on, and the finish arrives later as an interruption the
+assistant volunteers — "bu arada, o iş bitti". The lines for that already
+exist, in thirteen languages, at `settings.voice.thinkingAloud.aside.*`; what
+does not exist is the channel that delivers the completion to a turn that has
+already ended.
+
+**Watch for:** two tasks finishing while a third is being discussed, and a task
+finishing while the user is mid-sentence. Neither may talk over them.
+
+### 6.2 Permissions for an outside account, before any outside account
+
+Mail that can be read and not written is a _permission model_, and it has to
+exist before the first connector, or the first connector defines it by
+accident. `common/permissions/` already holds the rule engine for tools; this
+is the same idea one level out: per connected service, per capability, with
+read and write as separate answers.
+
+**Done when:** a connector declares the capabilities it wants, the user grants
+them one at a time in settings, and a tool call that exceeds what was granted
+is refused by the layer rather than by the connector's own good manners.
+
+### 6.3 Spotify, then mail
+
+Both are OAuth, both are `.env`-free (the token belongs to the user, not the
+build), and both should arrive as connectors over the permission model above
+rather than as bespoke code in the voice runtime. Spotify first: it is the
+smaller surface, and "favori şarkımı aç" already exists as a taught skill that
+opens a URL — replacing that with a real player is a visible win on day one.
+
+### 6.4 An artifact system, and models that can use it
+
+Claude's shape: a model writes a self-contained page, it renders beside the
+conversation, and it can be revised in place rather than re-pasted. The
+application already has most of the parts — `app_build_app` writes and previews
+a page, and the Hub keeps built workspaces — so this is mostly about giving
+them one identity: an artifact that is addressable, versioned, and offered to
+every agent as a tool rather than only to the spoken one.
+
+### 6.5 Extensions, last
+
+Deliberately last, and the reason is worth keeping: an extension system built
+before the permission model and the connector shape would freeze both. There is
+already a `fool-extension` crate and a settings page for it; what is missing is
+the contract a third party writes against.
+
+### 6.6 The smaller ones, unblocked
+
+- **Switching the speaking model mid-conversation**, the way the theme can be
+  changed mid-conversation now. `app_settings` already reaches voice settings;
+  the work is making the running session pick up a change rather than needing a
+  restart.
+- **Being taken to the login when an agent needs one.** Connecting Claude Code
+  should open the flow, not print an instruction.
+- **Faster first connection.** Nobody has measured where the time goes yet, so
+  this is a measurement task before it is an optimisation task.
+- **Building an assistant or a persona in settings.** The presets exist in
+  `common/realtime/personas.ts`; what does not is a way for the user to add one.
+
+---
+
+## 7. What landed on 9 August, so nobody rebuilds it
+
+- The spoken register: a turn that did work says what it did rather than
+  reading out its diff (`common/voice/spokenRegister.ts`).
+- Filling a silence: "hmm, bir bakayım" into a gap, gaps that double, three
+  variants per kind, thirteen languages (`common/voice/thinkingAloud.ts`).
+- The material layer, its panel, the first-run wizard, and `app_theme` gaining
+  `style` and `dial` — see §1, which is now mostly done rather than mostly not.
+
+### Measured, for the first time
+
+`bun scripts/eval/run.ts`, on this machine, 9 August:
+
+| Model                | Score                                             |
+| -------------------- | ------------------------------------------------- |
+| `qwen/qwen3.5-9b`    | **8/8**                                           |
+| `google/gemma-4-e4b` | **7/8** — missed teaching a skill, called no tool |
+
+Suites at that point: TypeScript 4,931 passed / 0 failed; Rust core 5,394
+passed / 0 failed; `tsc --noEmit` clean.
