@@ -7,6 +7,7 @@
 import { ipcBridge } from '@/common';
 import { prefaceWithInstructions } from '@/common/voice/pendingInstructions';
 import { createIncrementalSentenceDetector } from '@renderer/services/voice/narration/incrementalSentences';
+import { isSayable, registerFor, stripForSpeech } from '@/common/voice/spokenRegister';
 import { guardSpokenSentence } from './spokenOutput';
 
 /**
@@ -145,18 +146,29 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
     const trimmed = sentence.trim();
     if (trimmed.length === 0) return;
 
-    const verdict = guardSpokenSentence(trimmed, { toolsRan, remembered });
+    // Said, not read out. On screen a diff is the most useful thing an agent
+    // can hand back; out loud it is thirty seconds nobody can follow, skim or
+    // skip. In a conversation — where nothing ran — the reply is the answer and
+    // goes out as written; in a turn that did work, the code comes out and what
+    // is left is what a person would actually have said.
+    const forSpeech = registerFor(toolsRan) === 'work' ? stripForSpeech(trimmed) : trimmed;
+    if (!isSayable(trimmed, forSpeech)) {
+      console.info('[spokenTurn] not sayable:', JSON.stringify(trimmed.slice(0, 60)));
+      return;
+    }
+
+    const verdict = guardSpokenSentence(forSpeech, { toolsRan, remembered });
     if (verdict.speak === false) {
       refuse(trimmed, verdict.correction);
       return;
     }
 
-    spoken += spoken.length > 0 ? ` ${trimmed}` : trimmed;
+    spoken += spoken.length > 0 ? ` ${forSpeech}` : forSpeech;
     // The measurement that was missing. Knowing which kinds are *not* spoken
     // cannot tell "the text never arrived" apart from "the text arrived, was
     // spoken, and died further down" — and those need opposite fixes.
-    console.info('[spokenTurn] speaking:', JSON.stringify(trimmed.slice(0, 60)));
-    onSentence(trimmed);
+    console.info('[spokenTurn] speaking:', JSON.stringify(forSpeech.slice(0, 60)));
+    onSentence(forSpeech);
   };
 
   const refuse = (sentence: string, correction: string): void => {
