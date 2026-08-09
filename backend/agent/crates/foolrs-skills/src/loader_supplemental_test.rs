@@ -286,13 +286,16 @@ async fn tc_11_1_bare_mode_only_loads_add_dirs() {
     let result = load_all_skills(
         Path::new("/nonexistent_cwd_xyz"),
         &[add_tmp.path().to_path_buf()],
+        &[],
         true,
         None,
     )
     .await;
 
-    assert_eq!(result.len(), 1);
-    assert_eq!(result[0].name, "add-skill");
+    // Bundled skills are loaded in bare mode too, so this is about which
+    // *directories* were consulted rather than about the count: the add_dir
+    // was, and the user directory was not.
+    assert!(result.iter().any(|skill| skill.name == "add-skill"), "{result:?}");
     // user_tmp was not consulted (no skills from there)
     let _ = user_tmp;
 }
@@ -308,6 +311,7 @@ async fn tc_11_4_nonexistent_dirs_silently_skipped() {
     let result = load_all_skills(
         Path::new("/tmp/nonexistent_project_abc_xyz"),
         &[add_tmp.path().to_path_buf()],
+        &[],
         false,
         None,
     )
@@ -322,7 +326,7 @@ async fn tc_11_5_empty_scenario_returns_empty_vec() {
     // All dirs nonexistent, no add_dirs
     let tmp = TempDir::new().unwrap();
     // tmp exists but has no .foolrs/skills
-    let result = load_all_skills(tmp.path(), &[], false, None).await;
+    let result = load_all_skills(tmp.path(), &[], &[], false, None).await;
     // May have skills from user dir if it exists, but must not panic
     let _ = result;
 }
@@ -337,7 +341,7 @@ async fn tc_11_6_empty_add_dirs_no_effect() {
     fs::create_dir_all(&skills_dir).unwrap();
     write_skill(&skills_dir, "proj-skill/SKILL.md", "---\n---\n");
 
-    let result = load_all_skills(root, &[], false, None).await;
+    let result = load_all_skills(root, &[], &[], false, None).await;
     let names: Vec<_> = result.iter().map(|s| s.name.as_str()).collect();
     assert!(
         names.contains(&"proj-skill"),
@@ -448,7 +452,7 @@ async fn tc_4_5_mcp_manager_none_returns_no_mcp_skills() {
     fs::create_dir_all(&skills_dir).unwrap();
     write_skill(&skills_dir, "local-skill/SKILL.md", "---\ndescription: local\n---\n");
 
-    let result = load_all_skills(root, &[], false, None).await;
+    let result = load_all_skills(root, &[], &[], false, None).await;
     let names: Vec<_> = result.iter().map(|s| s.name.as_str()).collect();
     // No skill with source=Mcp
     for skill in &result {

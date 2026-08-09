@@ -223,8 +223,13 @@ async fn test_load_all_skills_bare_mode() {
     fs::create_dir_all(&skills_dir).unwrap();
     write_skill(&skills_dir, "my-skill/SKILL.md", "---\n---\n");
 
-    let result = load_all_skills(Path::new("/nonexistent"), &[tmp.path().to_owned()], true, None).await;
-    assert_eq!(result.len(), 1);
+    let result = load_all_skills(Path::new("/nonexistent"), &[tmp.path().to_owned()], &[], true, None).await;
+
+    // The named directory is read. Bare mode no longer means "only this
+    // directory" — the bundled skills come along, as `load_all_skills` says
+    // they do — so this asks what bare mode is actually for: that a cwd which
+    // does not exist is not consulted and does not panic.
+    assert!(result.iter().any(|skill| skill.name == "my-skill"), "{result:?}");
 }
 
 #[tokio::test]
@@ -239,7 +244,7 @@ async fn test_load_all_skills_deduplicates() {
     fs::create_dir_all(&skills_dir).unwrap();
     write_skill(&skills_dir, "my-skill/SKILL.md", "---\n---\n");
 
-    let result = load_all_skills(root, &[], false, None).await;
+    let result = load_all_skills(root, &[], &[], false, None).await;
     let names: Vec<_> = result.iter().map(|s| s.name.as_str()).collect();
     let count = names.iter().filter(|&&n| n == "my-skill").count();
     assert_eq!(count, 1, "skill should appear exactly once after dedup");

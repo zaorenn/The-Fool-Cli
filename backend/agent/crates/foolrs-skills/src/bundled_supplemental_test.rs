@@ -46,7 +46,7 @@ mod bundled_supplemental_tests {
         register_bundled_skill(minimal_def("bundled-only"));
 
         let tmp = TempDir::new().unwrap();
-        let result = load_all_skills(tmp.path(), &[], false, None).await;
+        let result = load_all_skills(tmp.path(), &[], &[], false, None).await;
 
         let found = result
             .iter()
@@ -71,7 +71,7 @@ mod bundled_supplemental_tests {
         let tmp = TempDir::new().unwrap();
         write_skill_dir(tmp.path(), "shared-name");
 
-        let result = load_all_skills(tmp.path(), &[tmp.path().to_path_buf()], false, None).await;
+        let result = load_all_skills(tmp.path(), &[tmp.path().to_path_buf()], &[], false, None).await;
 
         let matches: Vec<_> = result.iter().filter(|s| s.name == "shared-name").collect();
         assert_eq!(matches.len(), 1, "deduplication should leave exactly one 'shared-name'");
@@ -99,7 +99,7 @@ mod bundled_supplemental_tests {
         register_bundled_skill(minimal_def("bundled-bare"));
 
         let tmp = TempDir::new().unwrap();
-        let result = load_all_skills(tmp.path(), &[], true, None).await;
+        let result = load_all_skills(tmp.path(), &[], &[], true, None).await;
 
         let found = result
             .iter()

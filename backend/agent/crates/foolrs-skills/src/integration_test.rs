@@ -503,7 +503,7 @@ async fn tc_e2e_11_legacy_commands_loaded() {
     // bare=true so we don't accidentally pick up user's real skill dirs,
     // but legacy commands are discovered via cwd, not add_dirs.
     // Use bare=false with cwd=tmp to exercise project_commands_dirs path.
-    let skills = load_all_skills(tmp.path(), &[], false, None).await;
+    let skills = load_all_skills(tmp.path(), &[], &[], false, None).await;
 
     // AC-14 assertions
     let skill = skills
