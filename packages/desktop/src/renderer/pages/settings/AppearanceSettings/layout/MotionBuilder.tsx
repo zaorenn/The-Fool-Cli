@@ -44,7 +44,7 @@ const DEFAULT_DRAFT: Omit<LayoutMotion, 'id'> = {
 };
 
 /** The moves that go somewhere, and so have a distance worth setting. */
-const TRAVELS: readonly MotionMove[] = ['rise', 'fall', 'in-from-left', 'in-from-right'];
+const TRAVELS: readonly MotionMove[] = new Set(['rise', 'fall', 'in-from-left', 'in-from-right']);
 
 /**
  * The preview keyframe each move plays.
@@ -82,7 +82,7 @@ const MotionBuilder: React.FC<MotionBuilderProps> = ({ motions, onChange }) => {
   const [previewRun, setPreviewRun] = useState(0);
 
   const full = motions.length >= MAX_MOTIONS;
-  const travels = TRAVELS.includes(draft.move);
+  const travels = TRAVELS.has(draft.move);
 
   const add = (): void => {
     if (full) return;

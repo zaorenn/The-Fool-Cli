@@ -101,7 +101,7 @@ export const SPOKEN_TASKS: readonly SpokenTask[] = [
       return fail(
         turn.toolNames.length > 0
           ? `answered about the screen after calling ${turn.toolNames.join(', ')} — it never looked`
-          : 'answered about the screen without looking at it',
+          : 'answered about the screen without looking at it'
       );
     },
   },
@@ -171,7 +171,7 @@ export const SPOKEN_TASKS: readonly SpokenTask[] = [
 
 /** The tasks a machine can settle on its own. */
 export const AUTOMATIC_TASKS = SPOKEN_TASKS.filter(
-  (task): task is Extract<SpokenTask, { judge: unknown }> => task.judge !== undefined,
+  (task): task is Extract<SpokenTask, { judge: unknown }> => task.judge !== undefined
 );
 
 export type Scored = {

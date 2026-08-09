@@ -60,7 +60,7 @@ export const previousVersion = (kept: readonly MemorySnapshot[]): MemorySnapshot
   kept.length === 0 ? null : kept[kept.length - 1];
 
 /** Everything that can be gone back to, newest first, for a settings page. */
-export const versionsNewestFirst = (kept: readonly MemorySnapshot[]): MemorySnapshot[] => [...kept].reverse();
+export const versionsNewestFirst = (kept: readonly MemorySnapshot[]): MemorySnapshot[] => [...kept].toReversed();
 
 /**
  * Drops the version that was just restored, so undo does not become a loop.

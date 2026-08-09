@@ -6,6 +6,9 @@
 
 import i18next from 'i18next';
 import { ipcBridge } from '@/common';
+import { configService } from '@/common/config/configService';
+import { LOCAL_SKILLS_CONFIG_KEY } from '@/common/voice/localSkills';
+import { peekLocalSkills } from '@renderer/services/voice/session/localSkillStore';
 import { judge } from '@renderer/services/permissions/permissionStore';
 import { runVoiceTool } from '@renderer/pages/voice/runtime/toolRunner';
 import type { ToolHost } from '@renderer/pages/voice/runtime/types';
@@ -94,7 +97,13 @@ const succeeded = (result: Record<string, unknown>): boolean => result.ok !== fa
  */
 export const startAppToolChannel = (): (() => void) => {
   const register = (): void => {
-    void ipcBridge.appTools.catalogue.invoke({ tools: describeAppTools(), core: [...CORE_APP_TOOLS] });
+    // The taught skills go out with the catalogue, so every agent that can act
+    // for this person knows what they have already been taught — not just the
+    // spoken conversation, which was the only one told.
+    void ipcBridge.appTools.catalogue.invoke({
+      tools: describeAppTools(peekLocalSkills()),
+      core: [...CORE_APP_TOOLS],
+    });
   };
 
   register();
@@ -103,6 +112,10 @@ export const startAppToolChannel = (): (() => void) => {
   // nothing, silently. `realtime.reconnected` exists for exactly this: the
   // caller re-declares its state.
   const stopReconnect = ipcBridge.realtime.reconnected.on(register);
+  // A skill taught a minute ago has to be callable now. Without this the names
+  // in the catalogue are the ones that existed when the window opened, and the
+  // first thing a user does after teaching one is ask for it.
+  const stopSkillWatch = configService.subscribe(LOCAL_SKILLS_CONFIG_KEY, register);
 
   const stopRequests = ipcBridge.appTools.request.on(async (request: AppToolRequest) => {
     try {
@@ -140,6 +153,7 @@ export const startAppToolChannel = (): (() => void) => {
 
   return () => {
     stopReconnect();
+    stopSkillWatch();
     stopRequests();
   };
 };

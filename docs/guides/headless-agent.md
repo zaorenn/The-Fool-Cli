@@ -71,13 +71,13 @@ a harness that already sets those needs no flags at all.
 
 ## Guards worth setting
 
-| Flag | Why a harness wants it |
-| --- | --- |
-| `--auto-approve` | Nothing is watching to answer a permission prompt. |
-| `--max-turns N` | A task that cannot be finished stops costing money. Defaults to 20; `0` disables. |
-| `--max-tool-call-failure-turns N` | Stops a loop that keeps calling a tool that keeps failing. |
-| `--project-dir DIR` | Where `.foolrs.toml` is read from; defaults to the working directory. |
-| `--log-dir DIR` | Logs go to files instead of the terminal, leaving stdout clean. |
+| Flag                              | Why a harness wants it                                                            |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| `--auto-approve`                  | Nothing is watching to answer a permission prompt.                                |
+| `--max-turns N`                   | A task that cannot be finished stops costing money. Defaults to 20; `0` disables. |
+| `--max-tool-call-failure-turns N` | Stops a loop that keeps calling a tool that keeps failing.                        |
+| `--project-dir DIR`               | Where `.foolrs.toml` is read from; defaults to the working directory.             |
+| `--log-dir DIR`                   | Logs go to files instead of the terminal, leaving stdout clean.                   |
 
 ## What this is not, yet
 

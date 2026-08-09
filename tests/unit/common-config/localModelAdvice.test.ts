@@ -65,7 +65,7 @@ describe('adviseLocalModel', () => {
 describe('the tier table', () => {
   it('is ordered and describes every tier honestly', () => {
     const sizes = MODEL_TIERS.map((tier) => tier.needsVramGb);
-    expect(sizes).toEqual([...sizes].sort((a, b) => a - b));
+    expect(sizes).toEqual([...sizes].toSorted((a, b) => a - b));
 
     for (const tier of MODEL_TIERS) {
       expect(tier.examples.length, tier.parameters).toBeGreaterThan(0);

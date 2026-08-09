@@ -49,7 +49,7 @@ export type PdfAnswer = { name: string; value: string };
  * on page two"), which is at least true.
  */
 export const readableFieldName = (name: string): string => {
-  const withoutWidget = name.replace(/^(txt|text|chk|check|cb|rb|radio|dd|drop|fld|field)[._\-]?/i, '');
+  const withoutWidget = name.replace(/^(txt|text|chk|check|cb|rb|radio|dd|drop|fld|field)[._-]?/i, '');
   const words = withoutWidget
     // `SurnameOfApplicant` → `Surname Of Applicant`, before separators are lost.
     .replace(/([a-z\d])([A-Z])/g, '$1 $2')

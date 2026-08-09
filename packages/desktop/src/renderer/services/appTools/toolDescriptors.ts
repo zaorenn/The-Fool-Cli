@@ -5,6 +5,7 @@
  */
 
 import { REALTIME_TOOLS } from '@/common/realtime';
+import type { LocalSkill } from '@/common/voice/localSkills';
 
 /** One tool as an MCP server advertises it. */
 export type ToolDescriptor = {
@@ -55,9 +56,57 @@ export const CORE_APP_TOOLS: readonly string[] = [
   'app_remember',
 ];
 
-export const describeAppTools = (): ToolDescriptor[] =>
-  REALTIME_TOOLS.filter((tool) => !SPOKEN_ONLY.has(tool.name)).map((tool) => ({
-    name: tool.name,
-    description: tool.description,
-    inputSchema: tool.parameters as unknown as Record<string, unknown>,
-  }));
+/** The tool a taught skill is run through. */
+const SKILL_TOOL = 'app_skill_do';
+
+/**
+ * A skill taught out loud, said to every agent that can act for this person.
+ *
+ * The spoken conversation was told about these in its persona, and nothing
+ * else was: typed chat and a hosted CLI saw a tool for running a taught skill
+ * and no way to learn that any existed. Teaching the assistant something and
+ * then having it be unknown to the other half of the same application is the
+ * split this closes — the names live in the tool's own description now, which
+ * every client reads, in every language, without a prompt of its own.
+ *
+ * Names and triggers only. The address is never advertised: a model that has
+ * it reads it out loud, or invents a neighbouring one.
+ */
+const withTaughtSkills = (description: string, taught: readonly LocalSkill[]): string => {
+  if (taught.length === 0) {
+    return `${description} Nothing has been taught yet, so this has nothing to run until it is.`;
+  }
+  return [description, 'Taught so far:', ...taught.map((skill) => `- ${skill.name} — ${skill.when}`)].join('\n');
+};
+
+/**
+ * The same names, where a client can validate against them.
+ *
+ * A description is advice; an enum is a constraint the client checks before the
+ * call is made, which is the difference between a model guessing a skill name
+ * and being unable to.
+ */
+const withTaughtNames = (schema: Record<string, unknown>, taught: readonly LocalSkill[]): Record<string, unknown> => {
+  if (taught.length === 0) return schema;
+  const properties = schema.properties as Record<string, Record<string, unknown>> | undefined;
+  const name = properties?.name;
+  if (!name) return schema;
+
+  return {
+    ...schema,
+    properties: { ...properties, name: { ...name, enum: taught.map((skill) => skill.name) } },
+  };
+};
+
+export const describeAppTools = (taught: readonly LocalSkill[] = []): ToolDescriptor[] =>
+  REALTIME_TOOLS.filter((tool) => !SPOKEN_ONLY.has(tool.name)).map((tool) => {
+    const schema = tool.parameters as unknown as Record<string, unknown>;
+    if (tool.name !== SKILL_TOOL) {
+      return { name: tool.name, description: tool.description, inputSchema: schema };
+    }
+    return {
+      name: tool.name,
+      description: withTaughtSkills(tool.description, taught),
+      inputSchema: withTaughtNames(schema, taught),
+    };
+  });

@@ -25,7 +25,7 @@ const TASKS: readonly { task: number; said: string; call: { tool: string; path?:
   { task: 2, said: "YouTube'u aç ve bunny girl'ü bul.", call: { tool: 'app_search' } },
   { task: 3, said: 'Ekranıma bak, bu hata ne diyor?', call: { tool: 'app_look_at_screen' } },
   { task: 4, said: 'Vurgu rengini biraz daha sıcak yap.', call: { tool: 'app_theme' } },
-  { task: 5, said: 'Masaüstüm D:\Work.', call: { tool: 'app_remember' } },
+  { task: 5, said: 'Masaüstüm D:Work.', call: { tool: 'app_remember' } },
   { task: 6, said: 'Bir video istediğimde YouTube’da ara.', call: { tool: 'app_skill_teach' } },
   { task: 7, said: 'Bir video bul: bunny girl.', call: { tool: 'app_find_video' } },
   { task: 8, said: 'Bana Tokyo’ya uçak bileti al.', call: { tool: 'app_ask_jester' } },

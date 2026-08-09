@@ -6,13 +6,13 @@ exactly what is still missing between here and a score.
 
 ## What exists
 
-| Piece | State |
-| --- | --- |
+| Piece                                                               | State                                                                            |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | One task in, one result out (`foolrs --print --output-format json`) | **Done** — see [docs/guides/headless-agent.md](../docs/guides/headless-agent.md) |
-| A Linux container with the agent in it (`bench/Dockerfile`) | **Written, never built** — there is no Docker on the machine this was written on |
-| The container's contract (`bench/entrypoint.sh`) | Done |
-| A harness adapter | **Not written** — see below |
-| A model to run it with | Yours to supply |
+| A Linux container with the agent in it (`bench/Dockerfile`)         | **Written, never built** — there is no Docker on the machine this was written on |
+| The container's contract (`bench/entrypoint.sh`)                    | Done                                                                             |
+| A harness adapter                                                   | **Not written** — see below                                                      |
+| A model to run it with                                              | Yours to supply                                                                  |
 
 ## What a score costs
 

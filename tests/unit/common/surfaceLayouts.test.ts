@@ -171,7 +171,7 @@ describe('normalizeLayoutName', () => {
  */
 describe('a surface other than voice', () => {
   it('offers every surface a shape', () => {
-    expect([...SURFACE_IDS].sort()).toEqual(['chat', 'frame', 'hub', 'voice']);
+    expect([...SURFACE_IDS].toSorted()).toEqual(['chat', 'frame', 'hub', 'voice']);
   });
 
   it("gives each surface its own axes, not the voice page's", () => {

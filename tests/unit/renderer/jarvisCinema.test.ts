@@ -102,7 +102,7 @@ describe('the JARVIS cinema stylesheet', () => {
       )
     );
 
-    expect([...declared].sort()).toEqual([...played].sort());
+    expect([...declared].toSorted()).toEqual([...played].toSorted());
   });
 
   it('stands down for anyone who asked the system for less motion', () => {

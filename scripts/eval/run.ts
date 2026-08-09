@@ -126,7 +126,7 @@ const main = async (): Promise<void> => {
           because: entry.verdict.because,
         })),
         manual: manual.map((task) => ({ id: task.id, said: task.said, why: task.manual })),
-      }),
+      })
     );
   } else {
     console.log(`endpoint  ${ENDPOINT}`);

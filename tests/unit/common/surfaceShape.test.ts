@@ -31,7 +31,7 @@ describe('surfaceShapeAttributes', () => {
       const emitted = surfaceShapeAttributes(surface, defaultLayoutOptions(surface)).map(([name]) => name);
       const expected = surfaceOptionKeys(surface).map((key) => shapeAttributeName(surface, key));
 
-      expect([...emitted].sort()).toEqual([...expected].sort());
+      expect([...emitted].toSorted()).toEqual([...expected].toSorted());
     }
   });
 

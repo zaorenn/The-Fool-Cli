@@ -60,6 +60,6 @@ describe('concernsFor', () => {
   it('reports every concern a bad turn has, not just the first', () => {
     const concerns = concernsFor(turn({ rounds: 9, promptChars: 90_000, toFirstAudioMs: 30_000 }));
 
-    expect(concerns.sort()).toEqual(['circling', 'large-prompt', 'slow-first-audio']);
+    expect(concerns.toSorted()).toEqual(['circling', 'large-prompt', 'slow-first-audio']);
   });
 });
