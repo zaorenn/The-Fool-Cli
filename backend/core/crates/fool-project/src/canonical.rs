@@ -27,6 +27,34 @@ impl Canonical {
     }
 }
 
+/// Test-only: an absolute `file:` URI this platform can actually parse.
+///
+/// `Url::to_file_path` needs a drive letter on Windows, so `file:///a/b` — the
+/// shape every test in this crate was written with — names no path there and
+/// [`canonicalize`] rejected it. Eighteen tests failed on every Windows run, on
+/// the platform this application is developed and shipped on: they were not
+/// testing anything, they were noise sitting where a real failure would have to
+/// be noticed. What they check is lexical and identical on both platforms, once
+/// the path is one the host can name.
+#[cfg(test)]
+pub(crate) fn test_uri(posix_path: &str) -> String {
+    if cfg!(windows) {
+        format!("file:///C:{posix_path}")
+    } else {
+        format!("file://{posix_path}")
+    }
+}
+
+/// Test-only: the same absolute location, as a filesystem path.
+#[cfg(test)]
+pub(crate) fn test_path(posix_path: &str) -> PathBuf {
+    if cfg!(windows) {
+        PathBuf::from(format!("C:{}", posix_path.replace('/', "\\")))
+    } else {
+        PathBuf::from(posix_path)
+    }
+}
+
 /// Parse the scheme of a provider URI (for provider dispatch; not persisted).
 pub fn parse_scheme(uri: &str) -> Result<Scheme, ProjectError> {
     let url = Url::parse(uri).map_err(|_| ProjectError::FolderCanonicalizeFailed { uri: uri.to_owned() })?;
