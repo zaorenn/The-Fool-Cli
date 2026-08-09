@@ -1958,7 +1958,10 @@
     "copy": "Copiar",
     "copied": "Copiado",
     "copyFailed": "Não foi possível copiar",
-    "learnMore": "Saiba mais"
+    "learnMore": "Saiba mais",
+    "signInNow": "Entrar",
+    "signInStarted": "Um terminal foi aberto. Entre por lá e depois volte e verifique de novo.",
+    "signInFallback": "Não foi possível abrir um terminal. Execute isto você mesmo:"
   },
   "permissions": {
     "askTitle": "Permitir isso?",

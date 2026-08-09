@@ -798,6 +798,15 @@ export const application = {
    * since the caller offers this to the user as "is this the one?".
    */
   findVideo: bridge.buildProvider<IBridgeResponse<FoundVideo | null>, { query: string }>('app.find-video'),
+  /**
+   * Starts a coding agent's own sign-in, in a terminal the user can see.
+   *
+   * The setup panel used to print `claude login` as a line to copy. That is an
+   * instruction, not a flow: find a terminal, paste, come back — and the middle
+   * step is where people stop. Every one of these CLIs opens a browser and
+   * waits; all that was missing was something to start it.
+   */
+  signInToAgent: bridge.buildProvider<IBridgeResponse<void>, { agentId: string }>('app.sign-in-to-agent'),
   getGpuStatus: bridge.buildProvider<IBridgeResponse<IGpuStatus>, void>('app.get-gpu-status'),
   setGpuOverride: bridge.buildProvider<IBridgeResponse<IGpuStatus>, { override: IGpuOverride | null }>(
     'app.set-gpu-override'

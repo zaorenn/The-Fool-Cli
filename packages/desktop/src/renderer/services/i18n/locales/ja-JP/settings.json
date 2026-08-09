@@ -1957,7 +1957,10 @@
     "copy": "コピー",
     "copied": "コピーしました",
     "copyFailed": "コピーできません",
-    "learnMore": "詳細"
+    "learnMore": "詳細",
+    "signInNow": "サインイン",
+    "signInStarted": "ターミナルが開きました。そこでサインインしてから、戻って再確認してください。",
+    "signInFallback": "ターミナルを開けませんでした。次を自分で実行してください:"
   },
   "permissions": {
     "askTitle": "これを許可しますか？",

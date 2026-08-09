@@ -1955,7 +1955,10 @@
     "copy": "رونوشت",
     "copied": "رونوشت شد",
     "copyFailed": "رونوشت نشد",
-    "learnMore": "بیشتر"
+    "learnMore": "بیشتر",
+    "signInNow": "ورود",
+    "signInStarted": "یک ترمینال باز شد. آن‌جا وارد شو، بعد برگرد و دوباره بررسی کن.",
+    "signInFallback": "ترمینالی باز نشد. این را خودت اجرا کن:"
   },
   "permissions": {
     "askTitle": "اجازه می‌دهید؟",

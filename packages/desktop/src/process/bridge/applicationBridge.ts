@@ -6,7 +6,9 @@
 
 import type { BrowserWindow } from 'electron';
 import { app } from 'electron';
+import { spawn } from 'node:child_process';
 import { ipcBridge } from '@/common';
+import { connectableAgent, LINUX_TERMINALS, signInLaunchFor } from '@/common/config/connectableAgents';
 import { ProcessConfig } from '@process/utils/initStorage';
 import { getZoomFactor, setZoomFactor } from '@process/utils/zoom';
 import { getCdpStatus, updateCdpConfig } from '@process/utils/configureChromium';
@@ -211,6 +213,44 @@ export function initApplicationBridge(): void {
   });
 
   // CDP status and configuration
+  /**
+   * Opens the CLI's own sign-in, in a terminal window.
+   *
+   * Visible rather than hidden on purpose. These sign-ins print a code to
+   * confirm, ask which account, and occasionally fail with something worth
+   * reading — run invisibly they would look like a button that does nothing.
+   *
+   * Detached and unreferenced so quitting the app does not take the sign-in
+   * with it, and so a terminal the user leaves open is theirs rather than ours.
+   */
+  ipcBridge.application.signInToAgent.provider(async ({ agentId }) => {
+    const agent = connectableAgent(agentId);
+    if (!agent?.signIn) return { success: false, msg: `No sign-in is known for "${agentId}".` };
+
+    const launch = signInLaunchFor(agent, process.platform);
+    if (!launch) return { success: false, msg: `No sign-in is known for "${agentId}".` };
+
+    // On Linux the emulator that exists differs per desktop, so the list is
+    // tried in turn; elsewhere there is exactly one way and it either works or
+    // says why.
+    const attempts =
+      process.platform === 'win32' || process.platform === 'darwin'
+        ? [launch]
+        : LINUX_TERMINALS.map((command) => ({ command, args: ['-e', agent.signIn as string] }));
+
+    let lastError = '';
+    for (const attempt of attempts) {
+      try {
+        const child = spawn(attempt.command, [...attempt.args], { detached: true, stdio: 'ignore' });
+        child.unref();
+        return { success: true };
+      } catch (error) {
+        lastError = error instanceof Error ? error.message : String(error);
+      }
+    }
+    return { success: false, msg: lastError || 'No terminal could be opened.' };
+  });
+
   ipcBridge.application.getCdpStatus.provider(async () => {
     try {
       const status = getCdpStatus();

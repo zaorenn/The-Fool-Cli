@@ -111,3 +111,48 @@ export const orderForSetup = (
 /** Whether anything at all is ready, so the panel knows if it can be skipped. */
 export const hasReadyAgent = (found: ReadonlyMap<ConnectableAgentId, AgentPresence>): boolean =>
   orderForSetup(found).some((entry) => entry.step === 'use');
+
+/** An agent by its id, for a caller that has only the string. */
+export const connectableAgent = (id: string): ConnectableAgent | null =>
+  CONNECTABLE_AGENTS.find((agent) => agent.id === id) ?? null;
+
+/**
+ * How to put the CLI's own sign-in in front of somebody.
+ *
+ * The panel used to show `claude login` as a line to copy, which is an
+ * instruction rather than a flow: the user has to find a terminal, paste it,
+ * and come back — three steps, and the middle one is where people stop. Every
+ * one of these CLIs opens a browser and waits; the only thing missing was
+ * something to start it.
+ *
+ * A terminal rather than a hidden child process, deliberately. These sign-ins
+ * print a code to confirm, ask which account, and sometimes fail with something
+ * worth reading. Run invisibly they would appear to hang, and a sign-in that
+ * appears to hang is worse than one that was never offered.
+ */
+export type SignInLaunch = { command: string; args: readonly string[] };
+
+export const signInLaunchFor = (agent: ConnectableAgent, platform: NodeJS.Platform): SignInLaunch | null => {
+  if (!agent.signIn) return null;
+
+  if (platform === 'win32') {
+    // `start` needs a window title first or it reads the next quoted argument
+    // as one, and `/k` keeps the window open so a failure can be read.
+    return { command: 'cmd.exe', args: ['/c', 'start', '""', 'cmd', '/k', agent.signIn] };
+  }
+  if (platform === 'darwin') {
+    return { command: 'osascript', args: ['-e', `tell application "Terminal" to do script "${agent.signIn}"`] };
+  }
+  // One of the emulators every desktop Linux has. Which of them exists is the
+  // caller's problem — see the process side, which tries them in turn.
+  return { command: 'x-terminal-emulator', args: ['-e', agent.signIn] };
+};
+
+/** The Linux emulators tried in turn, most common first. */
+export const LINUX_TERMINALS: readonly string[] = [
+  'x-terminal-emulator',
+  'gnome-terminal',
+  'konsole',
+  'xfce4-terminal',
+  'xterm',
+];

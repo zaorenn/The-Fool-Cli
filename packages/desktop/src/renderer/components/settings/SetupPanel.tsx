@@ -66,6 +66,54 @@ const CommandRow: React.FC<{ command: string; label: string }> = ({ command, lab
   );
 };
 
+/**
+ * The CLI's own sign-in, started for them.
+ *
+ * The command is still here, and only appears when starting it did not work —
+ * a fallback, rather than the first thing somebody is asked to do. What was
+ * offered before was the command alone, which is an instruction rather than a
+ * flow: find a terminal, paste, come back, and the middle step is where people
+ * stop.
+ */
+const SignInRow: React.FC<{ agentId: string; command: string }> = ({ agentId, command }) => {
+  const { t } = useTranslation();
+  const [starting, setStarting] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const start = useCallback(async () => {
+    setStarting(true);
+    try {
+      const result = await ipcBridge.application.signInToAgent.invoke({ agentId });
+      if (result.success) {
+        Message.info(t('settings.setup.signInStarted'));
+        setFailed(false);
+      } else {
+        setFailed(true);
+      }
+    } catch {
+      setFailed(true);
+    } finally {
+      setStarting(false);
+    }
+  }, [agentId, t]);
+
+  return (
+    <div className='mt-8px'>
+      <Button size='small' type='primary' loading={starting} onClick={() => void start()}>
+        {t('settings.setup.signInNow')}
+      </Button>
+      {failed ? (
+        <>
+          <Typography.Text className='mt-6px block text-12px text-t-tertiary'>
+            {t('settings.setup.signInFallback')}
+          </Typography.Text>
+          <CommandRow command={command} label={t('settings.setup.copy')} />
+        </>
+      ) : null}
+    </div>
+  );
+};
+
 const SetupPanel: React.FC = () => {
   const { t } = useTranslation();
   const [snapshot, setSnapshot] = useState<SetupSnapshot | null>(null);
@@ -121,9 +169,7 @@ const SetupPanel: React.FC = () => {
 
               {/* One action, chosen for them. See the note at the top of the file. */}
               {step === 'install' ? <CommandRow command={agent.install} label={t('settings.setup.copy')} /> : null}
-              {step === 'sign-in' && agent.signIn ? (
-                <CommandRow command={agent.signIn} label={t('settings.setup.copy')} />
-              ) : null}
+              {step === 'sign-in' && agent.signIn ? <SignInRow agentId={agent.id} command={agent.signIn} /> : null}
               {step === 'use' ? (
                 <Typography.Text className='mt-6px block text-12px text-t-tertiary'>
                   {t('settings.setup.readyHint')}

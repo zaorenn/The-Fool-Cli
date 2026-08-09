@@ -7,9 +7,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   CONNECTABLE_AGENTS,
+  connectableAgent,
   hasReadyAgent,
+  LINUX_TERMINALS,
   nextStepFor,
   orderForSetup,
+  signInLaunchFor,
   type AgentPresence,
   type ConnectableAgentId,
 } from '@/common/config/connectableAgents';
@@ -84,5 +87,53 @@ describe('the catalogue', () => {
       expect(entry.install, entry.id).toContain('install');
       expect(entry.docs, entry.id).toMatch(/^https:\/\//);
     }
+  });
+});
+
+/**
+ * The sign-in, started rather than described.
+ *
+ * The panel printed `claude login` as a line to copy: find a terminal, paste,
+ * come back. Three steps, and the middle one is where people stop. Every one of
+ * these CLIs opens a browser and waits — all that was missing was something to
+ * start it.
+ */
+describe('starting a sign-in', () => {
+  const claude = CONNECTABLE_AGENTS.find((agent) => agent.id === 'claude-code');
+  const gemini = CONNECTABLE_AGENTS.find((agent) => agent.id === 'gemini');
+
+  it('opens a visible terminal on Windows, kept open so a failure can be read', () => {
+    const launch = signInLaunchFor(claude, 'win32');
+
+    expect(launch?.command).toBe('cmd.exe');
+    expect(launch?.args).toContain('/k');
+    expect(launch?.args.at(-1)).toBe('claude login');
+    // Without an empty title `start` reads the next quoted argument as one.
+    expect(launch?.args[2]).toBe('""');
+  });
+
+  it('drives Terminal through osascript on macOS', () => {
+    const launch = signInLaunchFor(claude, 'darwin');
+
+    expect(launch?.command).toBe('osascript');
+    expect(launch?.args.join(' ')).toContain('claude login');
+  });
+
+  it('reaches for a terminal emulator on Linux', () => {
+    const launch = signInLaunchFor(claude, 'linux');
+
+    expect(LINUX_TERMINALS).toContain(launch?.command);
+    expect(launch?.args).toEqual(['-e', 'claude login']);
+  });
+
+  /// Gemini has no sign-in of its own; offering one would send somebody
+  /// looking for a command that does not exist.
+  it('has nothing to start for an agent with no sign-in', () => {
+    expect(signInLaunchFor(gemini, 'win32')).toBeNull();
+  });
+
+  it('finds an agent by the id the panel holds, and refuses an unknown one', () => {
+    expect(connectableAgent('claude-code')?.label).toBe('Claude Code');
+    expect(connectableAgent('nothing-like-this')).toBeNull();
   });
 });

@@ -1956,7 +1956,10 @@
     "copy": "复制",
     "copied": "已复制",
     "copyFailed": "无法复制",
-    "learnMore": "了解更多"
+    "learnMore": "了解更多",
+    "signInNow": "登录",
+    "signInStarted": "已打开一个终端。请在那里登录，然后回来重新检查。",
+    "signInFallback": "没能打开终端。请自己运行："
   },
   "permissions": {
     "askTitle": "允许这个操作吗？",

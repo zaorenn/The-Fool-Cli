@@ -1957,7 +1957,10 @@
     "copy": "복사",
     "copied": "복사됨",
     "copyFailed": "복사할 수 없음",
-    "learnMore": "자세히"
+    "learnMore": "자세히",
+    "signInNow": "로그인",
+    "signInStarted": "터미널이 열렸습니다. 거기서 로그인한 다음 돌아와서 다시 확인하세요.",
+    "signInFallback": "터미널을 열지 못했습니다. 직접 실행하세요:"
   },
   "permissions": {
     "askTitle": "허용할까요?",

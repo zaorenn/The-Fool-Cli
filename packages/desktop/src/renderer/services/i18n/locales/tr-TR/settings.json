@@ -1955,7 +1955,10 @@
     "copy": "Kopyala",
     "copied": "Kopyalandı",
     "copyFailed": "Kopyalanamadı",
-    "learnMore": "Daha fazla"
+    "learnMore": "Daha fazla",
+    "signInNow": "Giriş yap",
+    "signInStarted": "Bir terminal açıldı. Girişi orada tamamla, sonra buraya dönüp tekrar kontrol et.",
+    "signInFallback": "Terminal açılamadı. Bunu kendin çalıştır:"
   },
   "permissions": {
     "askTitle": "Buna izin veriyor musun?",

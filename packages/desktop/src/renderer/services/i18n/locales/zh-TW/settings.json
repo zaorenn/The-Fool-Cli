@@ -1957,7 +1957,10 @@
     "copy": "複製",
     "copied": "已複製",
     "copyFailed": "無法複製",
-    "learnMore": "瞭解更多"
+    "learnMore": "瞭解更多",
+    "signInNow": "登入",
+    "signInStarted": "已開啟一個終端機。請在那裡登入，然後回來重新檢查。",
+    "signInFallback": "沒能開啟終端機。請自己執行："
   },
   "permissions": {
     "askTitle": "允許這個操作嗎？",

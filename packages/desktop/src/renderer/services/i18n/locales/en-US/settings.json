@@ -1955,7 +1955,10 @@
     "copy": "Copy",
     "copied": "Copied",
     "copyFailed": "Could not copy",
-    "learnMore": "Learn more"
+    "learnMore": "Learn more",
+    "signInNow": "Sign in",
+    "signInStarted": "A terminal has opened. Sign in there, then come back and check again.",
+    "signInFallback": "That did not open a terminal. Run this yourself:"
   },
   "permissions": {
     "askTitle": "Allow this?",
