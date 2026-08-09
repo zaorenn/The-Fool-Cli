@@ -606,8 +606,6 @@ class ConversationRuntime {
     this.releaseSettings?.();
     this.releaseSettings = subscribeVoiceSettings((next) => pipeline.updateSettings(next));
 
-    this.emit({ providerName: this.t('settings.voice.conversationProviderName.local-pipeline') });
-
     this.openOutput(LOCAL_OUTPUT_FALLBACK_RATE);
 
     const vad = new AdaptiveVad(settings.vad);
