@@ -306,10 +306,13 @@ mod tests {
             bins.iter().any(|p| p.ends_with(".nvm/versions/node/v25.1.0/bin")),
             "expected ~/.nvm/versions/node/v25.1.0/bin in result"
         );
-        let nvm_bins: Vec<_> = bins
-            .iter()
-            .filter(|p| p.to_string_lossy().contains(".nvm/versions/node/"))
-            .collect();
+        // Matched as a path rather than as text. `contains(".nvm/versions/node/")`
+        // is a search for forward slashes, which the same path is spelled with
+        // backslashes on Windows — so this found nothing there and the test
+        // failed on the platform the application ships on. `Path::starts_with`
+        // compares components and is right on both.
+        let nvm_root = home.join(".nvm").join("versions").join("node");
+        let nvm_bins: Vec<_> = bins.iter().filter(|p| p.starts_with(&nvm_root)).collect();
         assert_eq!(nvm_bins.len(), 2);
         assert!(
             nvm_bins[0].ends_with(".nvm/versions/node/v25.1.0/bin"),

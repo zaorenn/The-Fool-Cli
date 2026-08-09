@@ -78,11 +78,43 @@ impl std::fmt::Debug for Builder {
 }
 
 /// Renders the configured spawn as a shell-style preview (`cd … && env -u
-/// X K=V <prog> <args>…`) suitable for logs and error messages. Format
-/// comes for free from `std::process::Command`'s `Debug` impl.
+/// X K=V <prog> <args>…`) suitable for logs and error messages.
+///
+/// Written out rather than delegated to `std::process::Command`'s `Debug`.
+/// That impl only renders the working directory and the environment on Unix;
+/// on Windows it prints the program and its arguments and nothing else, so
+/// every log line and error message on the platform this application ships on
+/// was missing the two things a spawn failure is usually about — where it ran
+/// and what it ran with.
 impl std::fmt::Display for Builder {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Debug::fmt(self.inner.as_std(), f)
+        let command = self.inner.as_std();
+
+        if let Some(dir) = command.get_current_dir() {
+            write!(f, "cd {:?} && ", dir.display().to_string())?;
+        }
+
+        let mut environment = command.get_envs().peekable();
+        if environment.peek().is_some() {
+            f.write_str("env")?;
+            for (key, value) in environment {
+                match value {
+                    // A removed variable, which is what `strip_pollution` does
+                    // and what a reader most needs to see: `NODE_OPTIONS` gone
+                    // is often the answer to why a spawn behaved differently
+                    // from the same command typed by hand.
+                    None => write!(f, " -u {}", key.to_string_lossy())?,
+                    Some(value) => write!(f, " {}={:?}", key.to_string_lossy(), value.to_string_lossy())?,
+                }
+            }
+            f.write_str(" ")?;
+        }
+
+        write!(f, "{:?}", command.get_program().to_string_lossy())?;
+        for argument in command.get_args() {
+            write!(f, " {:?}", argument.to_string_lossy())?;
+        }
+        Ok(())
     }
 }
 

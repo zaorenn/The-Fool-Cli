@@ -51,25 +51,48 @@ mod tests {
         assert_eq!(root, PathBuf::from("/opt/node-v24"));
     }
 
+    /// Where each tool sits differs per platform, and `validate_same_root`
+    /// reads the real one through `cfg!(windows)`.
+    ///
+    /// The fixture used to be the Unix layout unconditionally, so on Windows
+    /// `derive_runtime_root` saw a file called `node` where it wanted
+    /// `node.exe`, gave up before the comparison, and this asserted against
+    /// the wrong error. It was not testing mixed roots there at all.
+    fn layout_for_host(root: &std::path::Path, tool: &str) -> PathBuf {
+        if cfg!(windows) {
+            match tool {
+                "node" => root.join("node.exe"),
+                other => root.join(format!("{other}.cmd")),
+            }
+        } else {
+            root.join("bin").join(tool)
+        }
+    }
+
     #[test]
     fn mixed_roots_are_rejected() {
         let root = tempfile::tempdir().unwrap();
         let node_root = root.path().join("node-a");
         let npm_root = root.path().join("node-b");
 
-        std::fs::create_dir_all(node_root.join("bin")).unwrap();
-        std::fs::create_dir_all(npm_root.join("bin")).unwrap();
-        std::fs::write(node_root.join("bin/node"), b"").unwrap();
-        std::fs::write(node_root.join("bin/npx"), b"").unwrap();
-        std::fs::write(npm_root.join("bin/npm"), b"").unwrap();
+        for (base, tools) in [
+            (&node_root, ["node", "npx"].as_slice()),
+            (&npm_root, ["npm"].as_slice()),
+        ] {
+            for tool in tools {
+                let path = layout_for_host(base, tool);
+                std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+                std::fs::write(&path, b"").unwrap();
+            }
+        }
 
         let err = validate_same_root(
-            &node_root.join("bin/node"),
-            &npm_root.join("bin/npm"),
-            &node_root.join("bin/npx"),
+            &layout_for_host(&node_root, "node"),
+            &layout_for_host(&npm_root, "npm"),
+            &layout_for_host(&node_root, "npx"),
         )
         .unwrap_err();
 
-        assert!(err.to_string().contains("same runtime root"));
+        assert!(err.to_string().contains("same runtime root"), "{err}");
     }
 }

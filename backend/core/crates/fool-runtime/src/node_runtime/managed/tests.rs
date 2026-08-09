@@ -7,6 +7,32 @@ fn write_file(path: &Path) {
     std::fs::write(path, b"").expect("write file");
 }
 
+/// Lay a managed runtime out the way *this* platform's archive does.
+///
+/// Tests that resolve through `current_managed_node_archive_layout` used to
+/// write the Unix shape unconditionally — `bin/node`, `bin/npm`, `bin/npx` —
+/// so on Windows the resolver looked for `node.exe` beside the root, found
+/// nothing, and the test failed on every run. The two tests that name a layout
+/// explicitly passed on both platforms, which is why nobody noticed.
+fn write_host_layout(root: &Path) {
+    if cfg!(windows) {
+        write_file(&root.join("node.exe"));
+        write_file(&root.join("npm.cmd"));
+        write_file(&root.join("npx.cmd"));
+    } else {
+        write_file(&root.join("bin").join("node"));
+        write_file(&root.join("bin").join("npm"));
+        write_file(&root.join("bin").join("npx"));
+    }
+}
+
+/// Needs a `node` that runs and prints a version, and the Windows layout wants
+/// that to be `node.exe` — a real PE, which a test cannot write. What is
+/// covered on Windows is the path resolution, by
+/// `windows_managed_runtime_prefers_direct_cli_entrypoints_over_wrappers` and
+/// its sibling below; what is not covered there is the execution, and saying so
+/// is better than a test that fails on every Windows run.
+#[cfg(unix)]
 #[tokio::test]
 async fn managed_runtime_validation_uses_real_commands() {
     let tmp = tempfile::tempdir().unwrap();
@@ -163,11 +189,7 @@ fn managed_runtime_checksum_verification_detects_mismatch() {
 fn managed_runtime_injects_npm_state_under_runtime_root() {
     let tmp = tempfile::tempdir().unwrap();
     let root = tmp.path().join("node-v24.11.0-test");
-    let bin = root.join("bin");
-    std::fs::create_dir_all(&bin).unwrap();
-    std::fs::write(bin.join("node"), b"").unwrap();
-    std::fs::write(bin.join("npm"), b"").unwrap();
-    std::fs::write(bin.join("npx"), b"").unwrap();
+    write_host_layout(&root);
 
     let runtime = runtime_from_root(&root, ResolvedNodeSource::Managed).expect("runtime");
     let env: std::collections::HashMap<_, _> = runtime

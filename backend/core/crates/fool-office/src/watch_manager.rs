@@ -1044,8 +1044,15 @@ mod tests {
         std::fs::write(&file, b"test").unwrap();
 
         let resolved = resolve_path(file.to_str().unwrap()).unwrap();
-        let port = allocate_port().unwrap();
-        let result = mgr.poll_port_ready(port, &resolved).await;
+        // Port 0, not an allocated one. `allocate_port` returns a port that was
+        // free a moment ago, which is not the same as one that stays free:
+        // anything on the machine, including another test in this binary, can
+        // take it in between — and then the poll finds a listener, never times
+        // out, and this fails. Nothing can listen on port 0, and a connection
+        // to it is refused at once rather than after the two seconds Windows
+        // spends on a closed ephemeral port, which is what made a hundred and
+        // fifty attempts take five minutes.
+        let result = mgr.poll_port_ready(0, &resolved).await;
         assert!(matches!(result, Err(OfficeError::PortTimeout(_))));
     }
 

@@ -315,6 +315,8 @@ mod tests {
     use tracing::Level;
     use tracing_subscriber::fmt;
 
+    // Only the unix-gated cache tests use this.
+    #[cfg(unix)]
     static TEST_MANAGED_RUNTIME_CACHE_LOCK: OnceLock<tokio::sync::Mutex<()>> = OnceLock::new();
 
     #[derive(Clone)]
@@ -348,6 +350,8 @@ mod tests {
         String::from_utf8(buffer.lock().expect("lock").clone()).expect("utf8")
     }
 
+    // Only the unix-gated cache tests use this.
+    #[cfg(unix)]
     fn write_executable(path: &std::path::Path, body: &str) {
         fs::write(path, body).expect("write executable");
         #[cfg(unix)]
@@ -359,6 +363,8 @@ mod tests {
         }
     }
 
+    // Only the unix-gated cache tests use this.
+    #[cfg(unix)]
     fn fake_managed_runtime(root: &std::path::Path) -> ResolvedNodeRuntime {
         let bin = root.join("bin");
         fs::create_dir_all(&bin).expect("create runtime bin");
@@ -379,6 +385,8 @@ mod tests {
         }
     }
 
+    // Only the unix-gated cache tests use this.
+    #[cfg(unix)]
     fn test_managed_runtime_cache_lock() -> &'static tokio::sync::Mutex<()> {
         TEST_MANAGED_RUNTIME_CACHE_LOCK.get_or_init(|| tokio::sync::Mutex::new(()))
     }
@@ -506,6 +514,15 @@ mod tests {
         );
     }
 
+    /// Both of these need a fake `node` that runs and prints a version.
+    ///
+    /// On Windows the managed layout wants `node.exe` — a real executable,
+    /// which a test cannot write — so the fixture below is a `#!/bin/sh`
+    /// script and the two tests failed on every Windows run. The caching
+    /// behaviour itself is platform-neutral; what cannot be exercised there is
+    /// the validation call underneath it, and saying so is better than leaving
+    /// two failures in the suite for somebody to learn to ignore.
+    #[cfg(unix)]
     #[tokio::test]
     async fn stale_managed_runtime_cache_is_evicted_when_root_is_deleted() {
         let _guard = test_managed_runtime_cache_lock().lock().await;
@@ -531,6 +548,15 @@ mod tests {
         );
     }
 
+    /// Both of these need a fake `node` that runs and prints a version.
+    ///
+    /// On Windows the managed layout wants `node.exe` — a real executable,
+    /// which a test cannot write — so the fixture below is a `#!/bin/sh`
+    /// script and the two tests failed on every Windows run. The caching
+    /// behaviour itself is platform-neutral; what cannot be exercised there is
+    /// the validation call underneath it, and saying so is better than leaving
+    /// two failures in the suite for somebody to learn to ignore.
+    #[cfg(unix)]
     #[tokio::test]
     async fn cached_managed_runtime_emits_ready_after_validation() {
         let _guard = test_managed_runtime_cache_lock().lock().await;
