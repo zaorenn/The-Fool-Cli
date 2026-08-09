@@ -3,6 +3,7 @@ import type { Theme } from '@/common/theme/types';
 import type { LayoutPresetLibrary, SurfaceLayoutSelection } from '@/common/config/surfaceLayouts';
 import type { ThemeOverrides, ThemePalettes } from '@/common/config/themeOverrides';
 import type { WorkspaceLibrary } from '@/common/config/workspaces';
+import type { ConnectorGrant } from '@/common/permissions/connectors';
 import type { Rule } from '@/common/permissions/types';
 import type { SavedPersona } from '@/common/realtime/personas';
 import type { LocalSkill } from '@/common/voice/localSkills';
@@ -85,6 +86,14 @@ export type ConfigKeyMap = {
    * wanted the other one back — see `SavedPersona`.
    */
   'voice.personas': SavedPersona[] | undefined;
+  /**
+   * What the user has allowed each connected service to be asked for.
+   *
+   * One answer per capability rather than one per service: "connect Spotify" is
+   * one click and is how somebody ends up having agreed to let an assistant
+   * write to a playlist they have kept for ten years. See `ConnectorGrant`.
+   */
+  'connectors.grants': ConnectorGrant[] | undefined;
   'window.bounds': { x?: number; y?: number; width: number; height: number } | undefined;
   'webui.desktop.enabled': boolean | undefined;
   'webui.desktop.allowRemote': boolean | undefined;
