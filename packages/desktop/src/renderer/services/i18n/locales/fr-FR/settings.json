@@ -1652,7 +1652,9 @@
     "historyResume": "Reprendre ici",
     "historyYou": "Vous :",
     "historyAssistant": "Lui :",
-    "spokenConversationName": "Conversation vocale"
+    "spokenConversationName": "Conversation vocale",
+    "conversationAgentRuntime": "Utiliser le moteur de l'agent",
+    "conversationAgentRuntimeHint": "Expérimental. La conversation vocale réfléchit avec le même moteur que le chat. Désactivé tant que les mesures ne montrent pas l'absence de ralentissement."
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

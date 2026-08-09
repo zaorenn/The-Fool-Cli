@@ -296,6 +296,19 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
             />
 
             <Toggle
+              label={t('settings.voice.conversationAgentRuntime')}
+              hint={t('settings.voice.conversationAgentRuntimeHint')}
+              checked={settings.realtime.useAgentRuntime}
+              disabled={disabled}
+              onChange={(value) =>
+                onChange((previous) => ({
+                  ...previous,
+                  realtime: { ...previous.realtime, useAgentRuntime: value },
+                }))
+              }
+            />
+
+            <Toggle
               label={t('settings.voice.conversationInterruptible')}
               hint={
                 settings.playback.interruptible

@@ -1652,7 +1652,9 @@
     "historyResume": "از اینجا ادامه بده",
     "historyYou": "شما:",
     "historyAssistant": "او:",
-    "spokenConversationName": "گفت‌وگوی صوتی"
+    "spokenConversationName": "گفت‌وگوی صوتی",
+    "conversationAgentRuntime": "استفاده از زمان اجرای عامل",
+    "conversationAgentRuntimeHint": "آزمایشی. گفت‌وگوی صوتی با همان زمان اجرای گفت‌وگوی نوشتاری فکر می‌کند. تا وقتی اعداد نگویند کندتر نیست، خاموش است."
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",

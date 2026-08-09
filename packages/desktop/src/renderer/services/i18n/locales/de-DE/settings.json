@@ -1652,7 +1652,9 @@
     "historyResume": "Hier weitermachen",
     "historyYou": "Du:",
     "historyAssistant": "Es:",
-    "spokenConversationName": "Gesprochene Unterhaltung"
+    "spokenConversationName": "Gesprochene Unterhaltung",
+    "conversationAgentRuntime": "Agent-Laufzeit verwenden",
+    "conversationAgentRuntimeHint": "Experimentell. Das gesprochene Gespräch denkt mit derselben Laufzeit wie der Chat. Aus, bis die Zahlen zeigen, dass es nicht langsamer ist."
   },
   "themeCustomizer": {
     "title": "Design anpassen",

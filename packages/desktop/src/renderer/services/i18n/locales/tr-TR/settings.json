@@ -1652,7 +1652,9 @@
     "historyResume": "Buradan devam et",
     "historyYou": "Sen:",
     "historyAssistant": "O:",
-    "spokenConversationName": "Sesli sohbet"
+    "spokenConversationName": "Sesli sohbet",
+    "conversationAgentRuntime": "Ajan çalışma zamanını kullan",
+    "conversationAgentRuntimeHint": "Deneysel. Sesli sohbet, yazılı sohbetin kullandığı çalışma zamanıyla düşünür: dosya okuyabilir, komut çalıştırabilir ve on iki turdan fazlasını hatırlar. Ölçümler yavaşlamadığını gösterene kadar kapalı."
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

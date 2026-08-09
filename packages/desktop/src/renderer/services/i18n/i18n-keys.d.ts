@@ -2548,6 +2548,8 @@ export type I18nKey =
   | 'settings.voice.conversationActionUnsupported'
   | 'settings.voice.conversationActivityEmpty'
   | 'settings.voice.conversationAgentActivity'
+  | 'settings.voice.conversationAgentRuntime'
+  | 'settings.voice.conversationAgentRuntimeHint'
   | 'settings.voice.conversationBuildNoEntry'
   | 'settings.voice.conversationBuildOpened'
   | 'settings.voice.conversationBuildUnavailable'

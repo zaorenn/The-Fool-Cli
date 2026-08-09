@@ -1652,7 +1652,9 @@
     "historyResume": "Continuar desde aquí",
     "historyYou": "Tú:",
     "historyAssistant": "Él:",
-    "spokenConversationName": "Conversación hablada"
+    "spokenConversationName": "Conversación hablada",
+    "conversationAgentRuntime": "Usar el motor del agente",
+    "conversationAgentRuntimeHint": "Experimental. La conversación hablada piensa con el mismo motor que el chat. Desactivado hasta que los números digan que no es más lento."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

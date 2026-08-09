@@ -1653,7 +1653,9 @@
     "historyResume": "从这里继续",
     "historyYou": "你：",
     "historyAssistant": "它：",
-    "spokenConversationName": "语音对话"
+    "spokenConversationName": "语音对话",
+    "conversationAgentRuntime": "使用智能体运行时",
+    "conversationAgentRuntimeHint": "实验性。语音对话与聊天使用同一运行时思考。在数据表明不会更慢之前保持关闭。"
   },
   "themeCustomizer": {
     "title": "自定义主题",

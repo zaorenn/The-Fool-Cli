@@ -1652,7 +1652,9 @@
     "historyResume": "Carry on from here",
     "historyYou": "You:",
     "historyAssistant": "It:",
-    "spokenConversationName": "Spoken conversation"
+    "spokenConversationName": "Spoken conversation",
+    "conversationAgentRuntime": "Run on the agent runtime",
+    "conversationAgentRuntimeHint": "Experimental. The spoken conversation thinks with the same runtime the chat uses, so it can read files, run commands and remember past twelve turns. Off until the numbers say it is no slower."
   },
   "themeCustomizer": {
     "title": "Customize theme",

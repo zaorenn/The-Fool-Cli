@@ -1655,7 +1655,9 @@
     "historyResume": "Continuar daqui",
     "historyYou": "Você:",
     "historyAssistant": "Ele:",
-    "spokenConversationName": "Conversa por voz"
+    "spokenConversationName": "Conversa por voz",
+    "conversationAgentRuntime": "Usar o motor do agente",
+    "conversationAgentRuntimeHint": "Experimental. A conversa falada pensa com o mesmo motor do chat. Desligado até os números mostrarem que não ficou mais lento."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

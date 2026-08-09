@@ -1653,7 +1653,9 @@
     "historyResume": "Продовжити звідси",
     "historyYou": "Ви:",
     "historyAssistant": "Він:",
-    "spokenConversationName": "Голосова розмова"
+    "spokenConversationName": "Голосова розмова",
+    "conversationAgentRuntime": "Використовувати середовище агента",
+    "conversationAgentRuntimeHint": "Експериментально. Голосова розмова думає тим самим середовищем, що й чат. Вимкнено, доки вимірювання не покажуть, що це не повільніше."
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",
