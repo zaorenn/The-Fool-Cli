@@ -161,7 +161,18 @@ export const openSpokenSession = async (input: SpokenSessionInput): Promise<Spok
    * So when nothing is pinned, take what a typed conversation would take.
    * Refusing is right only when the pin itself is broken.
    */
-  const model = findPinnedModel(providers ?? [], providerId, modelId) ?? firstUsableModel(providers ?? []);
+  const model =
+    findPinnedModel(providers ?? [], providerId, modelId) ??
+    // The model already chosen for voice, resolved as an ordinary provider.
+    // This is the whole of "run the agent runtime on a local model": LM Studio
+    // is registered like any other provider, and the one named in the voice
+    // settings is the one the user picked on purpose — taking anything else
+    // would answer their question with somebody else's model.
+    findPinnedModel(providers ?? [], '', input.settings.realtime.model.trim()) ??
+    // And only then anything at all, because a session that opens on the wrong
+    // model is visible and one click from fixed, and the refusal this replaced
+    // was neither.
+    firstUsableModel(providers ?? []);
   if (isFoolrsAssistant(assistant) && !model) {
     return { ok: false, reason: 'agent-unavailable', detail: modelId };
   }
