@@ -63,15 +63,30 @@ mod tests {
         AcpSkillManager::new(paths)
     }
 
+    /// One test at a time may own the environment variable.
+    ///
+    /// Four tests here point the corpus somewhere of their own, and the
+    /// variable is process-global: whichever finished first removed it while
+    /// the others were still reading, so one of them failed whenever the
+    /// scheduler happened to overlap them. It failed in the full workspace run
+    /// and passed on its own, which is the shape that gets a test dismissed as
+    /// noise instead of read.
+    ///
+    /// A std mutex rather than tokio's: it is held across no await point — the
+    /// guard is dropped at the end of the test body — and poisoning is not a
+    /// concern for a lock whose only job is ordering.
+    static ENV_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     /// Point the embedded corpus at an empty dir so tests don't pick up
     /// real auto-inject builtin skills.
-    struct EmptyBuiltinGuard;
+    struct EmptyBuiltinGuard(std::sync::MutexGuard<'static, ()>);
     impl EmptyBuiltinGuard {
         fn new(empty_path: &std::path::Path) -> Self {
+            let held = ENV_MUTEX.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
             unsafe {
                 std::env::set_var(BUILTIN_SKILLS_ENV_VAR, empty_path);
             }
-            Self
+            Self(held)
         }
     }
     impl Drop for EmptyBuiltinGuard {

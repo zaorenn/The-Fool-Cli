@@ -376,6 +376,13 @@ mod tests {
         assert_eq!(args.last().unwrap(), "");
     }
 
+    /// Unix only, and not because the function is: `Url::from_file_path`
+    /// refuses `/home/user/…` on Windows, where an absolute path needs a drive
+    /// letter, so the raw `file://` fallback runs and nothing is encoded. This
+    /// failed there on every run. Its sibling above passes on Windows for the
+    /// same reason — the fallback happens to produce the string it asserts —
+    /// which is worth knowing before trusting it.
+    #[cfg(unix)]
     #[test]
     fn linux_show_item_percent_encodes_spaces_in_uri() {
         let path = Path::new("/home/user/My Downloads/The Fool.deb");
