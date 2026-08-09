@@ -124,3 +124,32 @@ describe('startAppToolChannel', () => {
     expect(reconnectListeners).toHaveLength(0);
   });
 });
+
+describe('startAppToolChannel and the permission layer', () => {
+  beforeEach(() => {
+    listeners.length = 0;
+    reconnectListeners.length = 0;
+    postResult.mockClear();
+    postCatalogue.mockClear();
+    runVoiceTool.mockClear();
+    runVoiceTool.mockResolvedValue({ ok: true, screen: 'a browser' });
+  });
+
+  it('refuses a call nobody wrote a rule for, without running it', async () => {
+    startAppToolChannel();
+    await listeners[0](request('call-9', 'app_delete_everything'));
+
+    expect(runVoiceTool).not.toHaveBeenCalled();
+    // Still exactly one answer. Silence here is the same failure as a timeout:
+    // an agent waiting on a tool that will never come back.
+    expect(postResult).toHaveBeenCalledWith(expect.objectContaining({ call_id: 'call-9', ok: false }));
+  });
+
+  it('runs a tool the rules allow', async () => {
+    startAppToolChannel();
+    await listeners[0](request('call-10', 'app_look_at_screen'));
+
+    expect(runVoiceTool).toHaveBeenCalled();
+    expect(postResult).toHaveBeenCalledWith(expect.objectContaining({ call_id: 'call-10', ok: true }));
+  });
+});

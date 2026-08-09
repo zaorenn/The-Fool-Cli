@@ -6,6 +6,8 @@
 
 import i18next from 'i18next';
 import { ipcBridge } from '@/common';
+import { decide } from '@/common/permissions/decide';
+import { DEFAULT_RULES } from '@/common/permissions/defaults';
 import { runVoiceTool } from '@renderer/pages/voice/runtime/toolRunner';
 import type { ToolHost } from '@renderer/pages/voice/runtime/types';
 import { describeAppTools } from './toolDescriptors';
@@ -44,6 +46,30 @@ const agentToolHost = (_conversationId: string): ToolHost => ({
 });
 
 /**
+ * What a model is told when the rules refuse a call.
+ *
+ * Written as a sentence it can repeat, and as a refusal rather than a failure:
+ * the difference matters, because a model told "that did not work" will try
+ * again, and one told "you are not allowed to do that" will say so.
+ */
+const REFUSED = 'This is not allowed without the user agreeing to it first, and they have not been asked yet.';
+
+/**
+ * The path or command a rule can be about, dug out of the arguments.
+ *
+ * Best-effort by name, because the app's own tools do not share one argument
+ * shape. A call whose target cannot be found is judged on its tool alone, which
+ * — with a default of `ask` — is the safe direction to be wrong in.
+ */
+const targetOf = (args: Record<string, unknown>): { path?: string; command?: string } => {
+  const pick = (key: string): string | undefined => (typeof args[key] === 'string' ? (args[key] as string) : undefined);
+  return {
+    path: pick('path') ?? pick('file_path') ?? pick('url'),
+    command: pick('command') ?? pick('request'),
+  };
+};
+
+/**
  * Whether a handler's own return says it worked.
  *
  * Handlers answer `{ ok: false, error }` for a request they understood and
@@ -79,10 +105,20 @@ export const startAppToolChannel = (): (() => void) => {
 
   const stopRequests = ipcBridge.appTools.request.on(async (request: AppToolRequest) => {
     try {
+      const args = request.arguments ?? {};
+      // Consulted before anything runs and before anything is shown. An `ask`
+      // is treated as a refusal until the asking itself is built: safe, honest,
+      // and visibly incomplete rather than quietly permissive.
+      const verdict = decide(DEFAULT_RULES, { tool: request.name, ...targetOf(args) });
+      if (verdict !== 'allow') {
+        await ipcBridge.appTools.result.invoke({ call_id: request.call_id, ok: false, content: REFUSED });
+        return;
+      }
+
       const result = await runVoiceTool(agentToolHost(request.conversation_id), {
         callId: request.call_id,
         name: request.name,
-        argumentsJson: JSON.stringify(request.arguments ?? {}),
+        argumentsJson: JSON.stringify(args),
       });
       await ipcBridge.appTools.result.invoke({
         call_id: request.call_id,
