@@ -113,6 +113,12 @@ model quoting the user or writing code that contains "I created the file".
 
 ### 2.2 The claim detector is a verb list
 
+**Partly addressed, and only partly.** The gate now weighs tool *results* rather
+than the number of calls: a result that says only `accepted` does not back a
+completed-action claim (`backsCompletedAction`). That closes the hole delegation
+would otherwise have opened. It does **not** answer the criticism below, which is
+about how a claim is *detected* rather than about what backs it.
+
 It catches a completed-action claim by matching conjugations, per language. Two
 holes were found by hand in one session (`aldım` missing from Turkish; a `\w`
 written with one backslash). The structural answer is either a small classifier
@@ -139,11 +145,23 @@ sign-up is USA/Canada only.
 keys under it), and verify the artefact with `signtool verify /pa` — the
 builder's own log line is not evidence of a signature.
 
-### 3.2 No release has gone out since 2.2.52
+### 3.2 The release job has never built anything — **fixed**
 
-A green suite exits non-zero on Linux CI (a console-teardown race), which blocks
-the release job. Auto-update also needs a _published_ release with `latest.yml`
-uploaded — a draft is invisible to the updater.
+This entry was wrong about the cause, so it is rewritten rather than ticked.
+Releases *have* gone out — 2.3.4 to 2.3.10 are published, with `latest.yml` and
+an installer on each. What had never happened is CI producing them: every `Build
+and Release` run since 2.3.4 stopped at **Code Quality**, on **five oxlint
+errors**, so `Build Pipeline` was skipped every time and the artefacts were
+built by hand.
+
+Fixed here. `Distribute Release Assets` was failing separately and for an
+unrelated reason — it assumes an S3 mirror and this repository has no AWS
+secrets — so it now says it is not configured and stops, instead of putting a
+red cross on a release that is fine.
+
+The console-teardown race this entry blamed was not observed: on Windows the
+suite is green and exits 0. If it is real it is Linux-only, and the first CI run
+that gets past Code Quality is the first evidence either way.
 
 ### 3.3 The other two, untouched
 
@@ -208,10 +226,24 @@ These are deliberate. Do not "discover" them again.
 In the order they should be built, which is not the order they were asked in:
 each one below depends on the ones above it.
 
-### 6.1 A delegated task that does not stop the conversation
+### 6.1 A delegated task that does not stop the conversation — **done**
 
-**Today `app_ask_jester` is awaited inline**, so a spoken turn blocks for as
-long as the agent runs. The filler lines cover the silence now, but the
+Landed. `app_ask_jester` returns as soon as the task is accepted; the finish is
+volunteered later, into the next gap that can take it. `runtime/delegatedTasks.ts`
+holds the queue, `mayMentionAside` in `common/voice/thinkingAloud.ts` holds the
+three refusals — over the answer, over the user, over the previous aside — and
+the result is written into the conversation at the moment it is spoken, so "what
+did it say?" has an answer.
+
+One thing it opened, closed in the same change: the claim gate weighed the
+*number* of tools that ran, so an accepted task would have backed "I've booked
+your flight" with the booking still running. It now weighs results that report
+completion — see `backsCompletedAction`.
+
+The original entry, kept because the reasoning is still the reasoning:
+
+**`app_ask_jester` used to be awaited inline**, so a spoken turn blocked for as
+long as the agent ran. The filler lines cover the silence now, but the
 conversation still cannot go anywhere else while it waits.
 
 What it should be: the tool returns as soon as the task is _accepted_, the
@@ -262,16 +294,21 @@ the contract a third party writes against.
 
 ### 6.6 The smaller ones, unblocked
 
-- **Switching the speaking model mid-conversation**, the way the theme can be
-  changed mid-conversation now. `app_settings` already reaches voice settings;
-  the work is making the running session pick up a change rather than needing a
-  restart.
-- **Being taken to the login when an agent needs one.** Connecting Claude Code
-  should open the flow, not print an instruction.
+- ~~**Switching the speaking model mid-conversation.**~~ **Done.** The id is read
+  from the settings each turn and checked against what the server offers, so the
+  change lands on the very next thing said. The spoken setting now matches
+  against the server's own list — "gemma", "qwen", not the slug — and refuses a
+  name nothing matches instead of confirming it.
+- ~~**Being taken to the login when an agent needs one.**~~ **Done.** The setup
+  panel starts the CLI's own sign-in in a visible terminal. The command is still
+  there, and only appears once starting it has failed.
 - **Faster first connection.** Nobody has measured where the time goes yet, so
-  this is a measurement task before it is an optimisation task.
-- **Building an assistant or a persona in settings.** The presets exist in
-  `common/realtime/personas.ts`; what does not is a way for the user to add one.
+  this is a measurement task before it is an optimisation task. **Still open.**
+- ~~**Building an assistant or a persona in settings.**~~ **Done.** A library
+  beside the instructions box: name what is in it, keep it, put it back on with
+  a click or by saying its name. Applying one writes into the two fields
+  everything downstream already reads, so it is a library rather than a fifth
+  kind of persona.
 
 ---
 
@@ -295,3 +332,36 @@ the contract a third party writes against.
 
 Suites at that point: TypeScript 4,931 passed / 0 failed; Rust core 5,394
 passed / 0 failed; `tsc --noEmit` clean.
+
+---
+
+## 8. What landed on 9 August, in the evening
+
+Written after §7, and in the order it was built.
+
+- **The release gate.** Five oxlint errors had stopped `Build and Release` at
+  Code Quality since 2.3.4, so the build pipeline had never run for a tag. Four
+  of the five were in tests: a Windows path written with one backslash, an
+  optional chain the rule reads as unsafe, and three array snapshots it cannot
+  tell from pointless ones. The two real snapshots are kept, named, with the
+  reason written down.
+- **A delegated task that does not stop the conversation** — §6.1, in full.
+- **The claim gate weighs results rather than calls**, which is what makes the
+  above safe to ship.
+- **The model that answers, changed mid-conversation** — §6.6.
+- **A login that opens instead of being described** — §6.6.
+- **A library of personas the user writes** — §6.6.
+
+### Still open, and why
+
+- **§1.3 and §1.4** — the surfaces have not been moved onto `.fool-surface`, and
+  the dial labels are not translated. Untouched here.
+- **§2.1** — typed chat and the honesty gate. The decision named in that section
+  has still not been made, and it is not a technical one.
+- **§2.2** — the detector is still a verb list. What changed is what backs a
+  claim, not how one is spotted.
+- **§3.1** — blocked on a certificate, which is the user's to buy.
+- **§4** — blocked on Docker, which is not on this machine.
+- **§6.2, §6.3, §6.4, §6.5** — untouched. Note that `common/voice/spotifyPlayback.ts`
+  already holds the part of §6.3 with no network in it.
+- **Faster first connection** — a measurement task, not yet measured.
