@@ -1654,7 +1654,7 @@
     "historyAssistant": "Es:",
     "spokenConversationName": "Gesprochene Unterhaltung",
     "conversationAgentRuntime": "Agent-Laufzeit verwenden",
-    "conversationAgentRuntimeHint": "Experimentell. Das gesprochene Gespräch denkt mit derselben Laufzeit wie der Chat. Aus, bis die Zahlen zeigen, dass es nicht langsamer ist.",
+    "conversationAgentRuntimeHint": "Das gesprochene Gespräch denkt mit derselben Laufzeit wie der Chat: Es kann Dateien lesen, Befehle ausführen und sich an mehr als zwölf Züge erinnern. Standardmäßig an; beim Ausschalten kehrt die kleine eingebaute Schleife zurück. Der erste Ton kann etwas länger dauern.",
     "conversationCouldNotDoIt": "Das konnte ich nicht tun."
   },
   "themeCustomizer": {

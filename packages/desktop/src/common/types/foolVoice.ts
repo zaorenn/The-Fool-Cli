@@ -476,10 +476,16 @@ export type FoolVoiceSettings = {
      * conversation gets the same tools, context handling and skills as a typed
      * one.
      *
-     * Off until the measurement in
-     * `docs/specs/2026-08-08-one-harness-measurements.md` says the move costs
-     * nothing. A flag that opens on an argument rather than a number is how the
-     * slower path ships.
+     * On. The measurement in
+     * `docs/specs/2026-08-08-one-harness-measurements.md` is what opened it: the
+     * long tail of tools is described only when asked for, which took 36% off
+     * every prompt, and the compactor now works against the window the model
+     * actually has rather than a 200k default no small model ever reaches.
+     *
+     * What it does not buy is a faster first word — that is still the model's
+     * own latency. It is off in the two places where the small loop is the
+     * better answer: a machine that cannot open the session at all falls back to
+     * it, and a user who wants the old behaviour turns this off.
      */
     useAgentRuntime: boolean;
     /** Empty means the provider's own default, which is what most users want. */
@@ -782,7 +788,7 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     // models it needs are the ones the voice settings already install.
     providerId: 'local-pipeline',
     // Off until measured — see the field's own note.
-    useAgentRuntime: false,
+    useAgentRuntime: true,
     model: '',
     localEndpoint: '',
     visionModel: '',
@@ -1007,7 +1013,7 @@ const settingsSchema = z
     realtime: z
       .object({
         providerId: z.enum(['openai-realtime', 'gemini-live', 'local-s2s', 'local-pipeline']).default('local-pipeline'),
-        useAgentRuntime: z.boolean().default(false),
+        useAgentRuntime: z.boolean().default(true),
         model: z.string().max(256).default(''),
         // Empty is the LM Studio default rather than an invalid URL, so the
         // field can be cleared to get back to it.

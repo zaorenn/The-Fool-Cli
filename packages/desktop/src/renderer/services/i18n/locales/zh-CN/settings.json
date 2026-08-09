@@ -1655,7 +1655,7 @@
     "historyAssistant": "它：",
     "spokenConversationName": "语音对话",
     "conversationAgentRuntime": "使用智能体运行时",
-    "conversationAgentRuntimeHint": "实验性。语音对话与聊天使用同一运行时思考。在数据表明不会更慢之前保持关闭。",
+    "conversationAgentRuntimeHint": "语音对话使用与文字对话相同的运行时思考：可以读取文件、执行命令，并记住十二轮以前的内容。默认开启；关闭后回到内置的小循环。第一声可能会稍慢一些。",
     "conversationCouldNotDoIt": "这件事我没能做到。"
   },
   "themeCustomizer": {

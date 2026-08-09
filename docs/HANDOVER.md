@@ -284,7 +284,7 @@ half-finished bridge would be worse than a documented absence.
 
 - ~~**PDF by voice**~~ — **done**, `process/pdf/pdfDocument.ts`. Reads a form, writes a filled copy
   beside the original and never over it, and skips-and-reports a value the form never offered
-  instead of letting `pdf-lib` silently add it as a new option. Translation of a PDF's *body* is
+  instead of letting `pdf-lib` silently add it as a new option. Translation of a PDF's _body_ is
   still not there; this is forms.
 - **Learning a skill by watching** — ask for an app it does not know, watch which one the user
   opens, remember it. The local-skills machinery from `612a5187b` is the half that exists, and
