@@ -265,10 +265,14 @@ impl AgentBootstrap {
                 registry.register(Box::new(edit));
             }
         }
-        registry.register(Box::new(ExecCommandTool::new_with_env(
-            workspace_path.to_path_buf(),
-            self.runtime_env.clone(),
-        )));
+        registry.register(Box::new(
+            ExecCommandTool::new_with_env(workspace_path.to_path_buf(), self.runtime_env.clone())
+                // Not to restrict what may be run — a shell in a confined
+                // session still runs anything. It is so a delete aimed outside
+                // the workspace is recognised as one, which is the only kind
+                // there is no checkpoint for.
+                .confined_to(self.confinement.clone()),
+        ));
         registry.register(Box::new(GrepTool::new(workspace_path.to_path_buf())));
         registry.register(Box::new(GlobTool::new(workspace_path.to_path_buf())));
         registry.register(Box::new(ViewImageTool::new()));

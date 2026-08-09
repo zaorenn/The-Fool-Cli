@@ -11,6 +11,8 @@ use foolrs_protocol::events::ToolCategory;
 use foolrs_types::tool::{JsonSchema, ToolResult};
 
 use crate::Tool;
+use crate::confinement::Confinement;
+use crate::irreversible;
 
 const DEFAULT_TIMEOUT_MS: u64 = 120_000;
 const MAX_TIMEOUT_MS: u64 = 600_000;
@@ -18,6 +20,9 @@ const MAX_TIMEOUT_MS: u64 = 600_000;
 pub struct ExecCommandTool {
     cwd: PathBuf,
     runtime_env: HashMap<String, String>,
+    /// What this session was told it may change. Consulted for deletes, which
+    /// are the one thing a checkpoint cannot put back.
+    confinement: Confinement,
 }
 
 impl ExecCommandTool {
@@ -25,6 +30,7 @@ impl ExecCommandTool {
         Self {
             cwd,
             runtime_env: HashMap::new(),
+            confinement: Confinement::None,
         }
     }
 
@@ -32,7 +38,14 @@ impl ExecCommandTool {
         Self {
             cwd,
             runtime_env: runtime_env.into_iter().collect(),
+            confinement: Confinement::None,
         }
+    }
+
+    #[must_use]
+    pub fn confined_to(mut self, confinement: Confinement) -> Self {
+        self.confinement = confinement;
+        self
     }
 }
 
@@ -104,6 +117,18 @@ impl Tool for ExecCommandTool {
                 is_error: true,
             };
         };
+
+        // Before the shell is even resolved, and regardless of session mode. An
+        // unattended conversation approves its own tool calls, which is what
+        // makes talking to it work at all; it does not get to approve wiping a
+        // disk or deleting somebody's documents, because nothing can put those
+        // back and nobody is in the room to object.
+        if let Some(refusal) = irreversible::refuse(command, &self.cwd, &self.confinement) {
+            return ToolResult {
+                content: refusal.into_message(),
+                is_error: true,
+            };
+        }
 
         let shell = match resolve_shell(input["shell"].as_str()) {
             Ok(shell) => shell,
