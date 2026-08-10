@@ -529,3 +529,17 @@ body[arco-theme='dark'] .arco-message-error {
   padding-bottom: 2px;
   background-color: var(--color-bg-popup);
 }
+
+/* The empty state's own caption.
+
+   Arco ships this at #78787a, which is 2.33:1 against the dark ground this
+   application uses — measured in the running app, and by a distance the worst
+   contrast on the default screen. "Sohbet geçmişi yok" is the first sentence
+   somebody reads on a fresh install, and it was the hardest one to read.
+
+   The same tone the sidebar's section titles use, at 4.91:1, so the two quiet
+   labels on that screen are quiet in the same way rather than each dim by a
+   different amount. */
+[data-theme='dark'] .arco-empty-description {
+  color: #adb4bd;
+}

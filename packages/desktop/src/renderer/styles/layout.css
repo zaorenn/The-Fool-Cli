@@ -25,10 +25,17 @@
 /* Section title text — light mode uses text-t-tertiary (#86909c).
    In dark mode, the tertiary token (#5a5a5a) is too dim on #0e0e0e,
    while --text-secondary (#ced3da) is too bright; pick a mid-gray
-   shared by sidebar section titles and settings group headers. */
+   shared by sidebar section titles and settings group headers.
+
+   Measured in the running app rather than chosen by eye: #9098a1 read
+   3.52:1 against the default sider ground (#463f3f), which is below the
+   4.5:1 a body-sized label needs. This is 4.91:1 on the same ground and
+   still visibly quieter than --text-secondary, which is 6.83:1 and is
+   what made it look shouty when it was tried. Re-measure if the shipped
+   accent changes: the ground is derived from it. */
 [data-theme='dark'] .sider-section-title,
 [data-theme='dark'] .settings-sider__group-header {
-  color: #9098a1;
+  color: #adb4bd;
 }
 
 /* Layout sider base styles */
