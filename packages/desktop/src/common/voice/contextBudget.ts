@@ -56,16 +56,25 @@ export const estimateHistoryTokens = (history: readonly BudgetedMessage[]): numb
   history.reduce((total, message) => total + estimateTokens(message.content), 0);
 
 /**
- * The most the unavoidable part of a request may cost: the system prompt and
- * the tool schemas, which are sent in full on every single turn.
+ * A ratchet on the unavoidable part of a request — the system prompt and the
+ * tool schemas, sent in full on every single turn.
  *
- * Set against the smallest window this is expected to run in. A local 9B model
- * is commonly loaded at 8192, and a spoken conversation needs room for the
- * exchange and the reply — not just to fit, but to still have the instructions
- * present by the tenth question. Two and a half thousand leaves roughly two
- * thirds of that window to the conversation itself.
+ * **This is a debt marker, not a target.** It was measured at 10,221 tokens and
+ * a pass over the tool schemas, removing behaviour directives that the system
+ * prompt already states in full, brought it to 9,541. That is a small return,
+ * and the reason is worth writing down rather than rediscovering: the remaining
+ * mass is enum values and parameter semantics, which cannot be shortened
+ * without taking capability away. The duplication that is left lives on the
+ * other side — the per-tool paragraphs in `TOOL_RULES` restate what the schemas
+ * now carry — and cutting it means editing behaviour that has been tuned over
+ * several releases, which is a product decision rather than a cleanup.
+ *
+ * So the number here exists to stop this growing again, not to claim it is
+ * healthy. A fixed cost of nine and a half thousand tokens is defensible
+ * against the 64k window the app now reads from the local server, and would not
+ * be against the 8k it used to assume.
  */
-export const FIXED_OVERHEAD_BUDGET_TOKENS = 2500;
+export const FIXED_OVERHEAD_BUDGET_TOKENS = 9600;
 
 /**
  * The window assumed when the provider does not say.

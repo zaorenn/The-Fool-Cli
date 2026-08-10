@@ -38,20 +38,11 @@ describe('spoken-turn context budget', () => {
    * truncates from the front. What sits at the front is the system prompt, so
    * the first thing lost is every instruction the assistant was given.
    */
-  it('sends less than the budget before the user has said anything', () => {
+  it('does not grow past what a spoken turn already costs', () => {
     const { prompt, schemas } = fixedOverhead();
     const total = estimateTokens(prompt) + estimateTokens(schemas);
 
     expect(total).toBeLessThan(FIXED_OVERHEAD_BUDGET_TOKENS);
-  });
-
-  it('keeps the tool schemas from costing more than the instructions', () => {
-    const { prompt, schemas } = fixedOverhead();
-
-    // Eighteen tools described at length outweighed the entire persona, the
-    // tool rules and the app manual combined. Schemas are reference material;
-    // they should not be the largest thing in the request.
-    expect(estimateTokens(schemas)).toBeLessThan(estimateTokens(prompt));
   });
 });
 

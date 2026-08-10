@@ -114,7 +114,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_theme',
     description:
-      "Change how the app looks: its colours, what it is made of, and how it moves. Colours are yours to choose — the user describes what they want, warmer, deeper, like the sea, the colour of an old terminal, and you turn that into a hex value yourself. What it is made of is the 'material' ('style' action): raised out of the ground, glass, liquid glass, clay, aurora, brutal, or plain. Everything else is a dial you nudge with 'more' or 'less' ('dial' action) — that is how 'soften the shadows', 'calm it down', 'make the corners rounder' get done. Only touch what they asked about, say what you changed in a few words, and never read a hex code out loud.",
+      "Change how the app looks: its colours ('set'), what it is made of ('style'), and how it moves ('dial'). 'Soften the shadows', 'calm it down', 'rounder corners' are dials nudged with 'more' or 'less'.",
     parameters: {
       type: 'object',
       properties: {
@@ -137,7 +137,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
           type: 'string',
           enum: ['neu', 'glass', 'liquid', 'clay', 'aurora', 'brutal', 'minimal'],
           description:
-            "For 'style'. neu is raised out of the same ground; glass is a lit pane; liquid is glass that bends; clay is thick and soft; aurora is a dark, breathing ground; brutal is paper with a hard shadow; minimal is a line and nothing else.",
+            "For 'style'. neu is raised, glass is a lit pane, liquid bends, clay is thick and soft, aurora is dark and moving, brutal is hard-shadowed, minimal is a line.",
         },
         dial: {
           type: 'string',
@@ -162,7 +162,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
             'tint',
           ],
           description:
-            "For 'dial'. radius is how round the corners are, depth is shadow, alpha is see-through, lift is how far it rises when pointed at, ambient is background movement, gap is space between things, weight is heading thickness.",
+            "For 'dial'. radius is corner roundness, depth is shadow, alpha is transparency, lift is hover rise, ambient is background movement, gap is spacing, weight is heading thickness.",
         },
         direction: {
           type: 'string',
@@ -253,7 +253,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_settings',
     description:
-      'Change how the assistant itself behaves, without the user having to leave the conversation and find a settings page. Use it whenever they say what they want changed: a different voice, a male or a female one, faster or slower speech, louder or quieter, what language you answer in, whether they have to hold a key to talk, whether tasks may run without asking, the word that cuts you off, the phrase that wakes you, and the layout of the page they are looking at. Say what you changed in a few words. For colours use app_theme instead; for anything outside this app use app_ask_jester.',
+      'Change how the assistant itself behaves: voice, speech speed and volume, reply language, persona, hold-to-talk, unattended running, interrupt word, wake phrase, models, layout, workspace. For colours use app_theme; for anything outside this app use app_ask_jester.',
     parameters: {
       type: 'object',
       properties: {
@@ -279,7 +279,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
         value: {
           type: 'string',
           description:
-            "The new value. For 'voice', an id from the list of installed voices you were given. For 'speed' and 'volume', a number — 1 is normal, 1.3 is faster. For 'reply_language', a language code such as en or tr, or 'auto' to follow whoever is speaking. For 'persona', one of companion, english-teacher, language-partner, interview-coach. For 'layout', the name of a layout. Each window has its own, and the name says which window it belongs to, so the user never has to: 'instrument' and 'hud' are the voice page, 'column' and 'transcript' the chat, 'gallery' and 'index' the Hub, 'standard' and 'focused' the app frame. The user may have saved others under their own names. For 'workspace', the name of a workspace: 'default' ships, and the user names their own. For the on/off ones, 'on' or 'off'.",
+            "The new value. 'voice': an id from the installed voices you were given. 'speed'/'volume': a number, 1 is normal. 'reply_language': a code such as en or tr, or 'auto'. 'persona': companion, english-teacher, language-partner, interview-coach. 'layout': instrument/hud (voice page), column/transcript (chat), gallery/index (Hub), standard/focused (app frame), or one the user saved. 'workspace': a workspace name, 'default' ships. On/off settings: 'on' or 'off'.",
         },
       },
       required: ['setting', 'value'],
@@ -288,7 +288,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_remember',
     description:
-      "Keep something about the person you are talking to, so it is still true in tomorrow's conversation. Use it the moment they tell you what to call them, what they are working on, how they like things done, what machine they are on, or anything else you would be embarrassed to ask twice. Also use it when something you already knew turns out to have changed. Do not ask permission to remember and do not read the memory back — note it in a few words at most and carry on talking.",
+      "Keep something about the person, so it is still true in tomorrow's conversation: what to call them, what they are working on, how they like things done, what machine they are on — anything you would be embarrassed to ask twice. Also use it when something you already knew has changed.",
     parameters: {
       type: 'object',
       properties: {
@@ -319,7 +319,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_learn',
     description:
-      "Get better at working for this person. Two uses, and they are both about not making them say the same thing twice. Use `lesson` the moment they correct you, tell you that is not what they meant, or you find out something you did was wrong — write down what to do differently next time, in one sentence, without being asked. Use `skillName` with `skillSteps` when they are teaching you how they want something done: 'when I ask you to find a video, search YouTube and open the first result'. What you keep here is read back at the start of every future conversation and by any agent working on their behalf, so write it as an instruction to yourself rather than as a note about what happened.",
+      "Get better at working for this person, so they never say the same thing twice. Use `lesson` the moment they correct you or something you did was wrong. Use `skillName` with `skillSteps` when they are teaching you how they want something done. Both are read back at the start of every future conversation, so write them as instructions to yourself rather than as notes about what happened.",
     parameters: {
       type: 'object',
       properties: {
@@ -344,7 +344,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_rule',
     description:
-      "Take a standing instruction about how to behave, as opposed to a fact about them. 'Answer me in English even when I speak Turkish', 'never read addresses out', 'always ask before you run anything' — anything they tell you to keep doing or stop doing. This is different from app_remember: that keeps what is true about them, this keeps what they have told you to do, and you must then actually do it on every single turn until they say otherwise. Set `remember` only when they asked you to remember it — 'remember to', 'from now on', 'always', 'never again'. Without that the rule holds for this conversation and is gone when it ends, which is what they meant by 'for now' or 'just this once'. Say in a few words that you have it, and whether it is for now or for good.",
+      "Take a standing instruction about how to behave, as opposed to a fact about them: 'answer in English even when I speak Turkish', 'always ask before you run anything'. app_remember keeps what is true about them; this keeps what they told you to do, and you must then do it every turn until they say otherwise. Set `remember` only when they asked for it to last beyond this conversation.",
     parameters: {
       type: 'object',
       properties: {
@@ -388,7 +388,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_skill',
     description:
-      "Turn something the user has taught you into a real, installed skill — a folder in their skill library that every agent can use, not a note only you follow. Two ways in. If they can explain it, use `write` with what it is for and how they do it. If it involves a screen — 'let me show you', 'watch what I do' — use `record` first, say you are watching, then be quiet and let them work; use `write` when they say they are done, describing what they showed in your own words. Reach for this when they say to learn how to do something or to make it a skill. For a rule you simply follow yourself, `app_learn` is enough and costs nothing.",
+      "Turn something the user taught you into a real, installed skill every agent can use. If they can explain it, use `write`. If it involves a screen — 'let me show you' — use `record` first, then `write` when they say they are done. For a rule you simply follow yourself, `app_learn` is enough.",
     parameters: {
       type: 'object',
       properties: {
