@@ -36,7 +36,7 @@ vi.mock('@/common/config/storage', () => ({
   },
 }));
 
-import WhatsNewModal, { decideWhatsNew } from '@/renderer/components/settings/WhatsNewModal';
+import WhatsNewModal, { decideWhatsNew, splitEmphasis } from '@/renderer/components/settings/WhatsNewModal';
 
 const ENTRIES: ReleaseNoteEntry[] = [
   { version: '2.4.0', sections: [{ title: 'Features', items: ['A thing that is new.'] }] },
@@ -153,5 +153,47 @@ describe('WhatsNewModal', () => {
     await waitFor(() => expect(mocks.releaseNotesMock).toHaveBeenCalled());
     expect(screen.queryByText('update.whatsNew.dismiss')).toBeNull();
     expect(mocks.configSetMock).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The asterisks a reader should never see.
+ *
+ * Every bullet in this project's changelog opens with a bold sentence saying
+ * what changed. Rendered as plain text the reader got the markup instead —
+ * `**The first word took four minutes.** Measured on…` — and the first release
+ * anybody saw this dialogue for was full of them.
+ */
+describe('a changelog line', () => {
+  it('reads the bold lead-in as emphasis rather than as asterisks', () => {
+    expect(splitEmphasis('**It is faster now.** Measured on this machine.')).toEqual([
+      { text: 'It is faster now.', strong: true },
+      { text: ' Measured on this machine.', strong: false },
+    ]);
+  });
+
+  it('leaves a line with no emphasis exactly as it was', () => {
+    expect(splitEmphasis('Nothing bold here.')).toEqual([{ text: 'Nothing bold here.', strong: false }]);
+  });
+
+  it('handles emphasis in the middle, and more than one', () => {
+    expect(splitEmphasis('before **one** between **two** after')).toEqual([
+      { text: 'before ', strong: false },
+      { text: 'one', strong: true },
+      { text: ' between ', strong: false },
+      { text: 'two', strong: true },
+      { text: ' after', strong: false },
+    ]);
+  });
+
+  /// An empty run would render an element with nothing in it, and an unclosed
+  /// one is a line the author wrote — neither should eat the text around it.
+  it('leaves stray asterisks alone', () => {
+    expect(splitEmphasis('****')).toEqual([{ text: '****', strong: false }]);
+    expect(splitEmphasis('an **unclosed lead-in')).toEqual([{ text: 'an **unclosed lead-in', strong: false }]);
+  });
+
+  it('keeps an empty line an empty line', () => {
+    expect(splitEmphasis('')).toEqual([{ text: '', strong: false }]);
   });
 });

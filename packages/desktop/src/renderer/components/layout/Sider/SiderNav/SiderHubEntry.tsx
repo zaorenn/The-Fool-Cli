@@ -32,7 +32,7 @@ const SiderHubEntry: React.FC<SiderHubEntryProps> = ({ isMobile, isActive, colla
 
   if (collapsed) {
     return (
-      <Tooltip {...siderTooltipProps} content={t('hub.title')} position='right'>
+      <Tooltip {...siderTooltipProps} content={t('settings.hub.title')} position='right'>
         <div
           className={classNames(
             'w-full h-34px flex items-center justify-center cursor-pointer transition-colors rd-8px text-t-primary',
@@ -53,7 +53,7 @@ const SiderHubEntry: React.FC<SiderHubEntryProps> = ({ isMobile, isActive, colla
   }
 
   return (
-    <Tooltip {...siderTooltipProps} content={t('hub.title')} position='right'>
+    <Tooltip {...siderTooltipProps} content={t('settings.hub.title')} position='right'>
       <div
         className={classNames(
           'box-border group h-34px w-full flex items-center justify-start gap-8px pl-10px pr-8px rd-0.5rem cursor-pointer shrink-0 transition-all text-t-primary',
@@ -71,7 +71,9 @@ const SiderHubEntry: React.FC<SiderHubEntryProps> = ({ isMobile, isActive, colla
             style={{ lineHeight: 0 }}
           />
         </span>
-        <span className='collapsed-hidden text-t-primary text-14px font-[500] leading-24px'>{t('hub.title')}</span>
+        <span className='collapsed-hidden text-t-primary text-14px font-[500] leading-24px'>
+          {t('settings.hub.title')}
+        </span>
       </div>
     </Tooltip>
   );

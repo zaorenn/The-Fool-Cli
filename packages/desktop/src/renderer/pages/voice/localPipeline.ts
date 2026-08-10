@@ -22,6 +22,7 @@ import {
 } from '@/common/voice/actionClaims';
 import { mayAskForNoDeliberation, noDeliberation, refusedTheField, rememberRefusal } from '@/common/realtime/reasoning';
 import { beginScreenLook, forgetScreenLook } from '@renderer/services/voice/screenSight';
+import { MEMORY_REVIEW_PROMPT, readProposals } from '@/common/voice/memoryProposal';
 import { isBackchannel } from '@/common/voice/backchannel';
 import { concernsFor, describeTurn } from '@/common/voice/turnMetrics';
 import { isHallucinatedTranscript } from '@/common/voice/hallucinations';
@@ -31,7 +32,11 @@ import { applyTranscriptRules } from '@/common/voice/transcriptRules';
 import { sanitizeConversationFiles, type ConversationFile } from '@/common/voice/conversationFiles';
 import { findLocalSkill } from '@/common/voice/localSkills';
 import { peekLocalSkills } from '@renderer/services/voice/session/localSkillStore';
-import { peekVoiceMemory, rememberVoiceSession } from '@renderer/services/voice/session/voiceMemoryStore';
+import {
+  offerVoiceMemories,
+  peekVoiceMemory,
+  rememberVoiceSession,
+} from '@renderer/services/voice/session/voiceMemoryStore';
 import { PendingInstructions } from '@/common/voice/pendingInstructions';
 import { openSpokenSession } from '@renderer/services/voice/session/spokenSession';
 import { runSpokenTurn } from '@renderer/services/voice/session/spokenTurn';
@@ -773,6 +778,13 @@ export class LocalVoicePipeline {
     // could have written a better one is unreachable.
     const fallback = describeSpokenTurns(turns);
 
+    // What it learned about the person, offered rather than written. Started
+    // here and deliberately not awaited with the summary: the user has already
+    // ended the conversation, and neither of these is worth holding a teardown
+    // for. It is the half that makes the assistant know them better next time
+    // rather than merely have a longer list of evenings.
+    void this.reviewForMemory(readiness, turns);
+
     try {
       const response = await fetch(`${readiness.endpoint}/chat/completions`, {
         method: 'POST',
@@ -801,6 +813,64 @@ export class LocalVoicePipeline {
       await rememberVoiceSession(typeof written === 'string' && written.trim().length > 0 ? written : fallback);
     } catch {
       await rememberVoiceSession(fallback);
+    }
+  }
+
+  /**
+   * Looks back at a finished conversation for things worth remembering.
+   *
+   * A separate pass from the summary because it answers a different question:
+   * the summary is what *happened*, and this is what is true about the person
+   * afterwards. Kept apart in the prompt as well, since a model asked for both
+   * at once returns a summary with the facts dissolved into it.
+   *
+   * Nothing it finds is written. Proposals are stored for the user to agree to
+   * or turn down in Settings → Memory, because the most damaging thing a memory
+   * can do is be confidently wrong about somebody — and a model that has decided
+   * it learned something is exactly as confident either way.
+   *
+   * Never throws: this runs while the conversation is being torn down, and a
+   * rejection here would be an unhandled one in a window nobody is looking at.
+   */
+  private async reviewForMemory(
+    readiness: Extract<LocalReadiness, { ok: true }>,
+    turns: readonly SpokenTurn[]
+  ): Promise<void> {
+    try {
+      const response = await fetch(`${readiness.endpoint}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(SUMMARY_TIMEOUT_MS),
+        body: JSON.stringify({
+          model: this.thinkingModelId(readiness),
+          stream: false,
+          temperature: 0.2,
+          max_tokens: 400,
+          // Deliberating over this costs the same minutes it costs a spoken
+          // turn, and nobody is waiting to hear the answer.
+          ...noDeliberation(readiness.endpoint),
+          messages: [
+            { role: 'system', content: MEMORY_REVIEW_PROMPT },
+            {
+              role: 'user',
+              content: turns
+                .map((turn) => `${turn.role === 'user' ? 'Them' : 'You'}: ${turn.text.trim()}`)
+                .join('\n')
+                .slice(-SUMMARY_INPUT_LIMIT),
+            },
+          ],
+        }),
+      });
+      if (!response.ok) return;
+
+      const body = (await response.json()) as { choices?: { message?: { content?: unknown } }[] };
+      const written = body.choices?.[0]?.message?.content;
+      if (typeof written !== 'string') return;
+
+      await offerVoiceMemories(readProposals(written));
+    } catch {
+      // A review that could not be made is a memory that does not improve this
+      // evening, which is exactly where it was before this existed.
     }
   }
 

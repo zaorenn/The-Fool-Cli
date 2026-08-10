@@ -6,6 +6,7 @@ import type { WorkspaceLibrary } from '@/common/config/workspaces';
 import type { ConnectorGrant } from '@/common/permissions/connectors';
 import type { Rule } from '@/common/permissions/types';
 import type { SavedPersona } from '@/common/realtime/personas';
+import type { MemoryProposal } from '@/common/voice/memoryProposal';
 import type { LocalSkill } from '@/common/voice/localSkills';
 import type { SurfaceStyleChoice } from '@/common/theme/surfaceChoice';
 import type { SurfaceBackground } from '@/common/theme/surfaceBackground';
@@ -86,6 +87,20 @@ export type ConfigKeyMap = {
    * wanted the other one back — see `SavedPersona`.
    */
   'voice.personas': SavedPersona[] | undefined;
+  /**
+   * Things the assistant thinks it learned, waiting for the user to agree.
+   *
+   * Offered rather than written, because the most damaging thing a memory can
+   * do is be confidently wrong about somebody. See `MemoryProposal`.
+   */
+  'voice.memoryProposals': MemoryProposal[] | undefined;
+  /**
+   * Lines the user has turned down.
+   *
+   * Kept so that being told no means something: a loop that offers the same
+   * sentence every evening is not learning, it is nagging.
+   */
+  'voice.memoryRefusals': string[] | undefined;
   /**
    * What the user has allowed each connected service to be asked for.
    *

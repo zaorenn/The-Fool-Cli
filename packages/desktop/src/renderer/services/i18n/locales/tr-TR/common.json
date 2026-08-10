@@ -98,32 +98,32 @@
       "runtimeComponentDescription": "Bu kurulumda gerekli yerleşik çalışma zamanı bileşenleri eksik olduğu için {{resource}} başlatılamıyor. En son The Fool paketini yeniden yükleyin. Yeniden yükledikten sonra da devam ederse güvenlik veya antivirüs yazılımının The Fool bileşenlerini karantinaya alıp almadığını kontrol edin."
     },
     "packageArchitectureMismatch": {
-      "title": "The Fool package architecture mismatch",
-      "description": "This The Fool package is for {{packageArch}}, but this Mac is {{deviceArch}}. You may have downloaded the wrong package. Please download and install the {{expectedArch}} package."
+      "title": "The Fool paket mimarisi uyumsuz",
+      "description": "Bu The Fool paketi {{packageArch}} için, ama bu Mac {{deviceArch}}. Yanlış paketi indirmiş olabilirsin. {{expectedArch}} paketini indirip kur."
     },
     "dataMigration": {
-      "title": "Local data migration failed",
-      "description": "The Fool opened, but The Fool Core stopped while initializing local data. Reinstalling The Fool may not fix this. Send a diagnostics report or contact support so the local database migration can be inspected.",
-      "sendDiagnostics": "Send diagnostics",
-      "diagnosticsSent": "Diagnostics sent",
-      "diagnosticsReportSuccess": "Diagnostics report sent",
-      "diagnosticsReportFailed": "Failed to send diagnostics report"
+      "title": "Yerel veri taşıması başarısız",
+      "description": "The Fool açıldı, ama The Fool Core yerel veriyi hazırlarken durdu. Yeniden kurmak bunu düzeltmeyebilir. Yerel veritabanı taşımasının incelenebilmesi için bir tanılama raporu gönder ya da destekle iletişime geç.",
+      "sendDiagnostics": "Tanılama gönder",
+      "diagnosticsSent": "Tanılama gönderildi",
+      "diagnosticsReportSuccess": "Tanılama raporu gönderildi",
+      "diagnosticsReportFailed": "Tanılama raporu gönderilemedi"
     },
     "localDataRepair": {
-      "title": "Local data repair failed",
+      "title": "Yerel veri onarımı başarısız",
       "description": "The Fool açıldı, ancak The Fool Core assistant veya agent kayıtları gibi yerel başlangıç verilerini hazırlarken durdu. The Fool'u yeniden yüklemek bu sorunu çözmeyebilir. Yerel veritabanının incelenebilmesi için tanılama raporu gönderin veya destek ekibiyle iletişime geçin.",
-      "sendDiagnostics": "Send diagnostics",
-      "diagnosticsSent": "Diagnostics sent",
-      "diagnosticsReportSuccess": "Diagnostics report sent",
-      "diagnosticsReportFailed": "Failed to send diagnostics report"
+      "sendDiagnostics": "Tanılama gönder",
+      "diagnosticsSent": "Tanılama gönderildi",
+      "diagnosticsReportSuccess": "Tanılama raporu gönderildi",
+      "diagnosticsReportFailed": "Tanılama raporu gönderilemedi"
     },
     "startupDirectory": {
-      "title": "Startup directory is unavailable",
-      "description": "The Fool opened, but The Fool Core could not start because the configured work or log directory is missing, unavailable, or blocked by permissions. Check that the configured directories exist and are writable, then restart The Fool.",
-      "sendDiagnostics": "Send diagnostics",
-      "diagnosticsSent": "Diagnostics sent",
-      "diagnosticsReportSuccess": "Diagnostics report sent",
-      "diagnosticsReportFailed": "Failed to send diagnostics report"
+      "title": "Başlangıç klasörüne ulaşılamıyor",
+      "description": "The Fool açıldı, ama The Fool Core başlayamadı: ayarlı çalışma veya günlük klasörü yok, erişilemiyor ya da izinler engelliyor. Klasörlerin var olduğunu ve yazılabilir olduğunu kontrol edip The Fool’u yeniden başlat.",
+      "sendDiagnostics": "Tanılama gönder",
+      "diagnosticsSent": "Tanılama gönderildi",
+      "diagnosticsReportSuccess": "Tanılama raporu gönderildi",
+      "diagnosticsReportFailed": "Tanılama raporu gönderilemedi"
     },
     "recoverableDatabaseCorruption": {
       "title": "Yerel veriler bozulmuş",
@@ -139,10 +139,10 @@
     "transientConcurrentStartup": {
       "title": "The Fool başlatılıyor",
       "description": "Bu pencere açıldığında başka bir The Fool başlatma işlemi yerel verileri hâlâ kullanıyordu. Bu geçicidir ve verileriniz güvende — yeniden yükleme gerekmez. Lütfen biraz bekleyip tekrar deneyin veya The Fool'u yeniden başlatın.",
-      "sendDiagnostics": "Send diagnostics",
-      "diagnosticsSent": "Diagnostics sent",
-      "diagnosticsReportSuccess": "Diagnostics report sent",
-      "diagnosticsReportFailed": "Failed to send diagnostics report",
+      "sendDiagnostics": "Tanılama gönder",
+      "diagnosticsSent": "Tanılama gönderildi",
+      "diagnosticsReportSuccess": "Tanılama raporu gönderildi",
+      "diagnosticsReportFailed": "Tanılama raporu gönderilemedi",
       "diagnosticsHint": "Bu durum tekrar ederse bir tanılama raporu gönderebilirsiniz."
     }
   },

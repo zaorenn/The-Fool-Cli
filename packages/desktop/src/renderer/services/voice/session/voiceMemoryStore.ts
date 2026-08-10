@@ -21,6 +21,19 @@ import {
   forgetRule,
   rememberRule,
 } from '@/common/voice/memory';
+import {
+  alreadyKnown,
+  alreadyRefused,
+  MAX_PROPOSALS,
+  MAX_REFUSALS,
+  MEMORY_PROPOSALS_CONFIG_KEY,
+  MEMORY_REFUSALS_CONFIG_KEY,
+  sanitizeProposals,
+  sanitizeRefusals,
+  worthOffering,
+  type MemoryProposal,
+} from '@/common/voice/memoryProposal';
+import { configService } from '@/common/config/configService';
 import { getClientBusinessSetting, setClientBusinessSetting } from '@renderer/services/clientBusinessSettings';
 
 /**
@@ -171,4 +184,75 @@ export const resetVoiceMemoryStore = (): void => {
   cached = null;
   inFlight = null;
   listeners.clear();
+};
+
+/**
+ * What the assistant thinks it learned, waiting to be agreed to.
+ *
+ * Separate from the memory itself and stored separately, because a proposal is
+ * not yet a memory. Nothing here reaches a prompt: an assistant that acts on
+ * what it has guessed about somebody, before they have said it is right, is the
+ * failure this whole design is arranged around.
+ */
+export const peekMemoryProposals = (): MemoryProposal[] =>
+  sanitizeProposals(configService.get(MEMORY_PROPOSALS_CONFIG_KEY));
+
+const peekRefusals = (): string[] => sanitizeRefusals(configService.get(MEMORY_REFUSALS_CONFIG_KEY));
+
+/**
+ * Keeps what a finished conversation suggested, minus what is already known.
+ *
+ * Filtered here rather than where it was produced, so that every route into the
+ * memory — the local review, an agent, anything added later — passes the same
+ * three tests: it is not already written down, it has not been turned down, and
+ * it is not a near-copy of something else being offered in the same breath.
+ */
+export const offerVoiceMemories = async (proposals: readonly MemoryProposal[]): Promise<MemoryProposal[]> => {
+  if (proposals.length === 0) return peekMemoryProposals();
+
+  const memory = await readVoiceMemory();
+  const refused = peekRefusals();
+  const pending = peekMemoryProposals();
+
+  const fresh = worthOffering(proposals, memory).filter(
+    (proposal) =>
+      !alreadyRefused(refused, proposal.line) && !pending.some((waiting) => alreadyKnown(waiting.line, proposal.line))
+  );
+  if (fresh.length === 0) return pending;
+
+  // Newest first: it is what the conversation just now suggested, and the one
+  // the user is in a position to judge.
+  const next = [...fresh, ...pending].slice(0, MAX_PROPOSALS);
+  await configService.set(MEMORY_PROPOSALS_CONFIG_KEY, next);
+  return next;
+};
+
+/** Everything waiting, minus this one. */
+const withoutProposal = (line: string): MemoryProposal[] =>
+  peekMemoryProposals().filter((proposal) => proposal.line !== line);
+
+/**
+ * Writes one the user agreed to, into the document it belongs in.
+ *
+ * A fact about the person is a fact — the same shape `app_remember` writes — so
+ * it goes where those go rather than into a section of its own. Somebody
+ * reading their memory afterwards should not be able to tell which of them was
+ * asked for and which was offered.
+ */
+export const acceptMemoryProposal = async (proposal: MemoryProposal): Promise<VoiceMemory> => {
+  await configService.set(MEMORY_PROPOSALS_CONFIG_KEY, withoutProposal(proposal.line));
+  return proposal.target === 'agent' ? learnVoiceLesson(proposal.line) : rememberVoiceFact(proposal.line);
+};
+
+/**
+ * Records that the user said no, so it is not offered again.
+ *
+ * The line is kept rather than the whole proposal: what must not come back is
+ * the claim, and the evidence for a claim nobody accepted is not worth storing
+ * about somebody.
+ */
+export const refuseMemoryProposal = async (proposal: MemoryProposal): Promise<void> => {
+  const refused = [proposal.line, ...peekRefusals()].slice(0, MAX_REFUSALS);
+  await configService.set(MEMORY_REFUSALS_CONFIG_KEY, refused);
+  await configService.set(MEMORY_PROPOSALS_CONFIG_KEY, withoutProposal(proposal.line));
 };

@@ -43,6 +43,37 @@ export const decideWhatsNew = (
   return entries.length > 0 ? 'show' : 'record';
 };
 
+/**
+ * A changelog line, with its lead-in read as emphasis rather than as asterisks.
+ *
+ * Every bullet in this project's changelog opens with a bold sentence saying
+ * what changed, and the rest explains it — which is the house style and is
+ * worth keeping. Rendered as plain text, though, the reader gets the asterisks:
+ * `**The first word takes four minutes.** Measured on…`. The first release
+ * anybody saw this modal for was full of them.
+ *
+ * Deliberately only `**bold**`. A changelog is prose with an emphasised opening
+ * clause; pulling in a markdown renderer for that would bring links, images and
+ * raw HTML into a dialogue shown on first launch, and none of those belong
+ * there.
+ */
+export const splitEmphasis = (line: string): { text: string; strong: boolean }[] => {
+  const runs: { text: string; strong: boolean }[] = [];
+  // Non-greedy, and a run may not be empty, so `****` stays as written rather
+  // than becoming an invisible element.
+  const pattern = /\*\*(.+?)\*\*/g;
+  let read = 0;
+
+  for (const match of line.matchAll(pattern)) {
+    const at = match.index ?? 0;
+    if (at > read) runs.push({ text: line.slice(read, at), strong: false });
+    runs.push({ text: match[1], strong: true });
+    read = at + match[0].length;
+  }
+  if (read < line.length) runs.push({ text: line.slice(read), strong: false });
+  return runs.length > 0 ? runs : [{ text: line, strong: false }];
+};
+
 const ReleaseEntry: React.FC<{ entry: ReleaseNoteEntry }> = ({ entry }) => (
   <section className='mb-24px last:mb-0'>
     <h3 className='m-0 mb-12px text-15px font-600 text-t-1'>{entry.version}</h3>
@@ -54,7 +85,15 @@ const ReleaseEntry: React.FC<{ entry: ReleaseNoteEntry }> = ({ entry }) => (
         <ul className='m-0 pl-18px flex flex-col gap-6px'>
           {section.items.map((item, itemIndex) => (
             <li key={itemIndex} className='text-13px leading-relaxed text-t-secondary'>
-              {item}
+              {splitEmphasis(item).map((run, runIndex) =>
+                run.strong ? (
+                  <strong key={runIndex} className='font-600 text-t-primary'>
+                    {run.text}
+                  </strong>
+                ) : (
+                  <React.Fragment key={runIndex}>{run.text}</React.Fragment>
+                )
+              )}
             </li>
           ))}
         </ul>
