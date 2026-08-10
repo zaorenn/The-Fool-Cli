@@ -797,7 +797,7 @@ fn resolve_mcp_servers(
         servers.extend(team_mcp_to_config(cfg));
     }
     if let Some(cfg) = app_tools {
-        servers.extend(app_tools_to_config(cfg, conversation_id));
+        servers.extend(app_tools_to_config(cfg, conversation_id, overrides.user_id.as_deref()));
     }
     servers
 }
@@ -810,7 +810,11 @@ fn resolve_mcp_servers(
 ///
 /// The conversation is named in the path, which is how one listener serves
 /// every conversation and a call still knows which one it belongs to.
-fn app_tools_to_config(cfg: &AppToolsMcpConfig, conversation_id: &str) -> HashMap<String, McpServerConfig> {
+fn app_tools_to_config(
+    cfg: &AppToolsMcpConfig,
+    conversation_id: &str,
+    user_id: Option<&str>,
+) -> HashMap<String, McpServerConfig> {
     /// How long to wait for a listener inside this same process.
     ///
     /// The default is thirty seconds, which is written for a server that has to
@@ -839,7 +843,7 @@ fn app_tools_to_config(cfg: &AppToolsMcpConfig, conversation_id: &str) -> HashMa
         url: Some(format!(
             "http://127.0.0.1:{}{}",
             cfg.port,
-            AppToolsMcpConfig::core_path(conversation_id)
+            AppToolsMcpConfig::with_user(&AppToolsMcpConfig::core_path(conversation_id), user_id)
         )),
         headers: Some(headers),
         // Never deferred: these are the tools a spoken conversation reaches for
@@ -864,7 +868,7 @@ fn app_tools_to_config(cfg: &AppToolsMcpConfig, conversation_id: &str) -> HashMa
         url: Some(format!(
             "http://127.0.0.1:{}{}",
             cfg.port,
-            AppToolsMcpConfig::rest_path(conversation_id)
+            AppToolsMcpConfig::with_user(&AppToolsMcpConfig::rest_path(conversation_id), user_id)
         )),
         headers: Some(deferred_headers),
         deferred: Some(true),

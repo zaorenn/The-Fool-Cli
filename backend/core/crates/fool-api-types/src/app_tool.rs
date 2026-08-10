@@ -20,6 +20,19 @@ pub struct AppToolRequest {
     pub call_id: String,
     pub name: String,
     pub arguments: Value,
+    /// Whose renderer this is addressed to.
+    ///
+    /// The websocket bridge routes an event by the `user_id` in its payload and
+    /// drops anything without one that is not an explicitly global event. This
+    /// carried none, so every call the agent made was dropped before it left
+    /// the process, waited out its sixty-second deadline and came back to the
+    /// model as a tool that had failed. No application tool had ever run.
+    ///
+    /// Not solved by adding the event to the global list: a tool request is an
+    /// instruction, and whoever answers it decides what the assistant does. On
+    /// a shared WebUI that is another user's session.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
 }
 
 /// What came back.
@@ -68,6 +81,18 @@ impl AppToolsMcpConfig {
     /// The long tail, on its own path so a client that defers can defer it.
     pub fn rest_path(conversation_id: &str) -> String {
         format!("/mcp/rest/{conversation_id}")
+    }
+
+    /// The same path, saying which user's renderer should answer.
+    ///
+    /// Carried in the query rather than another path segment so the two
+    /// functions above stay the shape every existing caller and the stdio
+    /// bridge already build, and a path without it still resolves.
+    pub fn with_user(path: &str, user_id: Option<&str>) -> String {
+        match user_id.map(str::trim).filter(|id| !id.is_empty()) {
+            Some(id) => format!("{path}?user={id}"),
+            None => path.to_owned(),
+        }
     }
 }
 
