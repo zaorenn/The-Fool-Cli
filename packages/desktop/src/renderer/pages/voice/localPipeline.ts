@@ -36,7 +36,6 @@ import { refersToScreen } from '@/common/voice/screenIntent';
 import { describeSpokenTurns, worthRemembering, type SpokenTurn } from '@/common/voice/sessionSummary';
 import { applyTranscriptRules } from '@/common/voice/transcriptRules';
 import { sanitizeConversationFiles, type ConversationFile } from '@/common/voice/conversationFiles';
-import { findLocalSkill } from '@/common/voice/localSkills';
 import { peekLocalSkills } from '@renderer/services/voice/session/localSkillStore';
 import {
   offerVoiceMemories,
@@ -1180,29 +1179,18 @@ export class LocalVoicePipeline {
       // function the tool uses, so a phrase that would have worked through the
       // model works here identically. No match falls straight through to the
       // ordinary turn, which is every other sentence they say.
-      const taught = this.options.runTool ? findLocalSkill(peekLocalSkills(), heard) : null;
-      if (taught) {
-        const call = {
-          id: newId(),
-          type: 'function' as const,
-          function: { name: 'app_skill_do', arguments: JSON.stringify({ name: taught.name }) },
-        };
-        // The assistant turn carrying the call goes in first. `runTools` pushes
-        // a `tool` message answering it, and a server handed a `tool` message
-        // whose call appears nowhere in the history rejects the whole request —
-        // so leaving this out ran the skill once and then broke every turn
-        // after it. From outside, that is a conversation that does the thing
-        // and then stops responding.
-        this.history.push({ role: 'assistant', content: '', tool_calls: [call] });
-        await this.runTools([call], controller);
-        if (controller.signal.aborted) return;
-        // Straight back to listening. The tool says what it did on the notch
-        // and in the activity list; making the model narrate a thing that has
-        // already happened would add a second of latency to the one path that
-        // is meant to be instant.
-        this.options.onEvent({ kind: 'phase', phase: 'listening' });
-        return;
-      }
+      // A taught skill used to be matched here, on the words of the sentence,
+      // and run before the model saw the turn at all. That is why "favori
+      // şarkımı hatırlıyor musun" played the song: the trigger appeared in the
+      // sentence, so the shortcut fired, and the question went unanswered.
+      //
+      // Guarding the matcher against questions was the first attempt and it was
+      // the wrong shape — a phrase list deciding intent will always be wrong
+      // about the sentence nobody thought of. The skills are already described
+      // to the model, and `app_skill_do` is already a tool it can call, so the
+      // decision belongs to the thing that can actually read the sentence.
+      // Removing the shortcut costs a round trip and buys judgement.
+
       // "What does this error mean" is a question about a screen, and asked it
       // the model answers from nothing — confidently, which is the whole
       // problem. Telling it in the persona to work that out for itself helps and

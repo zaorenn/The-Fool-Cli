@@ -61,6 +61,12 @@ export const CONNECTABLE_AGENTS: readonly ConnectableAgent[] = [
     label: 'Gemini CLI',
     command: 'gemini',
     install: 'npm install -g @google/gemini-cli',
+    // No `login` subcommand — checked against the installed CLI, whose help
+    // lists `mcp`, `extensions`, `skills`, `hooks` and `gemma` and nothing
+    // else. It authenticates on its first interactive launch, so running it
+    // *is* the sign-in. Leaving this out was worse than getting it wrong: the
+    // agent settings diagnosed "Needs Sign-in" and then offered no way to.
+    signIn: 'gemini',
     docs: 'https://github.com/google-gemini/gemini-cli',
   },
 ];
@@ -111,6 +117,28 @@ export const orderForSetup = (
 /** Whether anything at all is ready, so the panel knows if it can be skipped. */
 export const hasReadyAgent = (found: ReadonlyMap<ConnectableAgentId, AgentPresence>): boolean =>
   orderForSetup(found).some((entry) => entry.step === 'use');
+
+/**
+ * The connectable agent a row in the agent settings is about.
+ *
+ * Matched on the command rather than on a name or an id, because that is the
+ * one thing the two lists genuinely share: this catalogue is keyed by the
+ * executable, and the management view knows which binary it resolved. A row
+ * for something not in here — a custom agent, a remote one — simply has no
+ * sign-in this application knows how to start, and says nothing rather than
+ * offering a button that would run the wrong thing.
+ */
+export const connectableAgentForCommand = (
+  command: string | undefined | null,
+  catalogue: readonly ConnectableAgent[] = CONNECTABLE_AGENTS
+): ConnectableAgent | null => {
+  const name = (command ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\.(exe|cmd|bat|ps1)$/, '');
+  if (name.length === 0) return null;
+  return catalogue.find((agent) => agent.command === name) ?? null;
+};
 
 /** An agent by its id, for a caller that has only the string. */
 export const connectableAgent = (id: string): ConnectableAgent | null =>

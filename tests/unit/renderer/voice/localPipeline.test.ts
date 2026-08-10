@@ -921,7 +921,21 @@ describe('LocalVoicePipeline acting on the computer', () => {
       taughtSkills.length = 0;
     });
 
-    it('runs a taught skill without asking the model at all', async () => {
+    /**
+     * The shortcut this used to assert is gone, and its removal is the fix.
+     *
+     * A taught skill was matched on the words of the sentence and run before
+     * the model saw the turn. So "favori şarkımı hatırlıyor musun" played the
+     * song: the trigger appeared in the sentence, the shortcut fired, and the
+     * question went unanswered. Guarding the matcher against questions was the
+     * first attempt and it was the wrong shape — a phrase list deciding intent
+     * is always wrong about the sentence nobody thought of.
+     *
+     * The skills are described to the model and `app_skill_do` is a tool it can
+     * call, so the decision belongs to the thing that can read the sentence.
+     * The round trip is the price of judgement.
+     */
+    it('asks the model rather than matching the words itself', async () => {
       readyCatalog();
       speakOnce();
       transcribeInvoke.mockResolvedValue({ ok: true, data: { text: 'favori sarkimi ac' } });
@@ -948,12 +962,10 @@ describe('LocalVoicePipeline acting on the computer', () => {
       pipeline.pushAudio('', 'utterance-ended');
       await settle();
 
-      // The skill ran...
-      expect(ran).toEqual(['app_skill_do']);
-      // ...and the model was never consulted about it. This is the whole point:
-      // the decision was made when the user taught it, and a round trip to
-      // re-make it is both slower and, most of the time, wrong.
-      expect(fetchMock.mock.calls.length).toBe(before);
+      // Nothing ran behind the model's back...
+      expect(ran).toEqual([]);
+      // ...and the turn reached it, which is where the decision now belongs.
+      expect(fetchMock.mock.calls.length).toBeGreaterThan(before);
     });
 
     it('leaves a history the server will still accept on the next turn', async () => {
@@ -995,7 +1007,10 @@ describe('LocalVoicePipeline acting on the computer', () => {
       }[];
       const offered = new Set(sent.flatMap((message) => (message.tool_calls ?? []).map((c) => c.id)));
       const answered = sent.filter((message) => message.role === 'tool').map((message) => message.tool_call_id);
-      expect(answered.length).toBeGreaterThan(0);
+      // Every `tool` message must answer a `tool_calls` that is in the history.
+      // There may now be none at all — the skill shortcut that used to write one
+      // is gone — and an empty history is trivially consistent. What must never
+      // appear is an answer to a call nobody made.
       expect(answered.filter((id) => !offered.has(id!))).toEqual([]);
     });
 

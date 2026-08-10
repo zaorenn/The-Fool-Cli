@@ -159,9 +159,58 @@ export const sanitizeLocalSkills = (value: unknown): LocalSkill[] => {
  * song on" has to find "Favourite song". Nothing rather than a guess: running
  * the wrong skill is worse than saying it does not know one.
  */
+/**
+ * Turns of phrase that ask *about* a skill rather than *for* it.
+ *
+ * "Favori şarkımı hatırlıyor musun" contains the trigger for the favourite
+ * song, so the matcher ran it: the user asked whether it remembered, and it
+ * answered by playing the song and saying nothing. Both halves of that were
+ * wrong, and this is the half that belongs here.
+ *
+ * A short closed list, and the same asymmetry the deliberation rule uses: not
+ * running a skill the user did ask for costs one repeat, while running one they
+ * only mentioned takes over the room. Questions are the shape that is safe to
+ * refuse.
+ */
+const ASKS_ABOUT = [
+  // Turkish
+  'hatırlıyor musun',
+  'hatirliyor musun',
+  'biliyor musun',
+  'hatırlıyor musunuz',
+  'ne demiştim',
+  'ne idi',
+  'neydi',
+  'hangi',
+  'var mı',
+  'var mi',
+  'nedir',
+  // English
+  'do you remember',
+  'do you know',
+  'what is my',
+  "what's my",
+  'what was my',
+  'which one',
+  'can you remember',
+] as const;
+
+/**
+ * Whether the sentence is a question about a skill instead of a request to run
+ * one. Exported so the rule can be read and argued with on its own.
+ */
+export const asksAboutSkill = (said: string): boolean => {
+  const line = said.trim().toLowerCase();
+  return ASKS_ABOUT.some((phrase) => line.includes(phrase));
+};
+
 export const findLocalSkill = (skills: readonly LocalSkill[], said: string): LocalSkill | null => {
   const wanted = clean(said, MAX_WHEN).toLowerCase();
   if (wanted.length === 0) return null;
+  // Asked whether it remembers something, the answer is a sentence — not the
+  // thing itself. Running the skill here is how "do you remember my favourite
+  // song?" became the song playing with no reply.
+  if (asksAboutSkill(wanted)) return null;
 
   const exact = skills.find((skill) => skill.id === wanted);
   if (exact) return exact;

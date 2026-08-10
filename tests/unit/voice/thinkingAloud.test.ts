@@ -13,6 +13,7 @@ import {
   BETWEEN_ASIDES_MS,
   FIRST_GAP_MS,
   MAX_FILLERS,
+  QUIET_BEFORE_FIRST_WORD_MS,
   QUIET_BEFORE_ASIDE_MS,
   VARIANTS_PER_KIND,
   fillerFor,
@@ -38,8 +39,25 @@ describe('when to say something into a silence', () => {
     expect(fillerFor(state({ quietForMs: FIRST_GAP_MS - 1 }))).toBeNull();
   });
 
-  it('fills the first long one', () => {
-    expect(fillerFor(state({ quietForMs: FIRST_GAP_MS }))).toBe('thinking');
+  /**
+   * Not while nothing is being done. Asked "Hello, how are you today?", the
+   * assistant replied "One moment. Hmm, let me think. Just a moment." — three
+   * of these and no answer. A greeting is not a task, and narrating a wait
+   * nobody is in sounds stupid rather than attentive.
+   */
+  it('leaves a silence alone while no work is happening', () => {
+    expect(fillerFor(state({ quietForMs: FIRST_GAP_MS }))).toBeNull();
+    expect(fillerFor(state({ quietForMs: QUIET_BEFORE_FIRST_WORD_MS - 1 }))).toBeNull();
+  });
+
+  it('says one thing, once, when a turn with no work has genuinely stalled', () => {
+    expect(fillerFor(state({ quietForMs: QUIET_BEFORE_FIRST_WORD_MS }))).toBe('thinking');
+    // And never a second time: that is the three-in-a-row the user heard.
+    expect(fillerFor(state({ quietForMs: 600_000, saidSoFar: 1 }))).toBeNull();
+  });
+
+  it('fills the first long gap once work is under way', () => {
+    expect(fillerFor(state({ quietForMs: FIRST_GAP_MS, toolsRan: 1 }))).toBe('working');
   });
 
   /// A filler over the top of an answer is worse than any silence it could
@@ -68,8 +86,8 @@ describe('when to say something into a silence', () => {
 describe('what it says', () => {
   /// Before anything has happened there is nothing true to report, so it is a
   /// sound rather than a sentence.
-  it('is a sound before any tool has run', () => {
-    expect(fillerFor(state({ quietForMs: FIRST_GAP_MS, toolsRan: 0 }))).toBe('thinking');
+  it('is a sound before any tool has run, once the wait is genuinely long', () => {
+    expect(fillerFor(state({ quietForMs: QUIET_BEFORE_FIRST_WORD_MS, toolsRan: 0 }))).toBe('thinking');
   });
 
   it('is about the work once there is work', () => {

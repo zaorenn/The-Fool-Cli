@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
-import { Avatar, Button, Switch, Tag, Tooltip, Typography } from '@arco-design/web-react';
+import React, { useCallback, useState } from 'react';
+import { Avatar, Button, Message, Switch, Tag, Tooltip, Typography } from '@arco-design/web-react';
 import { Delete, EditTwo, Robot } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
+import { ipcBridge } from '@/common';
+import { connectableAgentForCommand } from '@/common/config/connectableAgents';
 import type { Assistant } from '@/common/types/agent/assistantTypes';
 import { resolveAgentAvatar, useAgentLogos } from '@/renderer/utils/model/agentLogo';
 import {
@@ -109,6 +111,28 @@ const AgentCard: React.FC<AgentCardProps> = (props) => {
   const isDisabled = isCustom && agent.enabled === false;
   const diagnostics = formatManagedAgentDiagnosticMessage(t, agent);
   const displayStatus = resolveDisplayStatus(agent.status, agent.last_check_error_code);
+  const display = displayStatus;
+
+  // Which CLI this row is, if it is one whose sign-in this app knows how to
+  // start. Matched on the resolved binary rather than the display name, which
+  // is translated and which a custom row can set to anything.
+  const signIn = connectableAgentForCommand(agent.agent_source_info?.binary_name || agent.command)?.id ?? null;
+  const [signingIn, setSigningIn] = useState(false);
+
+  const startSignIn = useCallback(async () => {
+    if (!signIn) return;
+    setSigningIn(true);
+    try {
+      const result = await ipcBridge.application.signInToAgent.invoke({ agentId: signIn });
+      Message[result.success ? 'info' : 'error'](
+        result.success ? t('settings.setup.signInStarted') : t('settings.setup.signInFallback')
+      );
+    } catch {
+      Message.error(t('settings.setup.signInFallback'));
+    } finally {
+      setSigningIn(false);
+    }
+  }, [signIn, t]);
 
   const avatar = resolveAgentAvatar(logos, {
     icon: agent.avatar || agent.icon,
@@ -161,6 +185,28 @@ const AgentCard: React.FC<AgentCardProps> = (props) => {
 
       <div className='ml-12px flex flex-shrink-0 items-center gap-8px' onClick={stop}>
         <BoundAssistantStack assistants={boundAssistants} />
+        {/* The row already worked out that this agent is reachable and not
+            signed in — and then offered nothing that signs in. "Test" says the
+            same thing again and "Edit" opens path and environment overrides,
+            which is the one remedy that cannot fix a login: OAuth credentials
+            live in the CLI's own config and no environment variable reaches
+            them. So the diagnosis stood there with no cure beside it.
+
+            Only for an agent whose sign-in this app actually knows. A custom or
+            remote row gets nothing rather than a button that would run the
+            wrong command. */}
+        {display === 'needs_auth' && signIn ? (
+          <Button
+            data-testid={`agent-row-signin-${agent.id}`}
+            size='small'
+            type='primary'
+            loading={signingIn}
+            onClick={() => void startSignIn()}
+            className='!h-30px !rounded-8px !px-10px !text-12px !font-500'
+          >
+            {t('settings.setup.signInNow')}
+          </Button>
+        ) : null}
         <Button
           data-testid={`agent-row-test-${agent.id}`}
           size='small'

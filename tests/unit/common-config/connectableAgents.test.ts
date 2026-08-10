@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CONNECTABLE_AGENTS,
   connectableAgent,
+  connectableAgentForCommand,
   hasReadyAgent,
   LINUX_TERMINALS,
   nextStepFor,
@@ -35,11 +36,22 @@ describe('nextStepFor', () => {
     expect(nextStepFor(agent('codex'), { installed: false })).toBe('install');
   });
 
-  it('does not ask for a sign-in an agent does not have', () => {
-    // Gemini CLI has no login step of ours to run. Offering one sends the user
-    // hunting for a command that does not exist.
-    expect(agent('gemini').signIn).toBeUndefined();
-    expect(nextStepFor(agent('gemini'), { installed: true })).toBe('use');
+  /**
+   * This used to assert that Gemini had no sign-in, on the belief that it had
+   * no login step to run. Checked against the installed CLI, that is wrong: it
+   * authenticates on its first interactive launch. The belief was costing the
+   * user the whole feature — the agent settings diagnosed "Needs Sign-in" and
+   * then offered nothing that signs in.
+   */
+  it('offers a sign-in for every agent that has one', () => {
+    expect(agent('gemini').signIn).toBe('gemini');
+    expect(nextStepFor(agent('gemini'), { installed: true, signedIn: false })).toBe('sign-in');
+    expect(nextStepFor(agent('gemini'), { installed: true, signedIn: true })).toBe('use');
+  });
+
+  it('still asks for nothing when an agent declares no sign-in', () => {
+    const bare = { id: 'gemini' as const, label: 'X', command: 'x', install: 'x', docs: 'x' };
+    expect(nextStepFor(bare, { installed: true, signedIn: false })).toBe('use');
   });
 
   it('treats an unknown sign-in state as ready rather than blocking', () => {
@@ -126,10 +138,35 @@ describe('starting a sign-in', () => {
     expect(launch?.args).toEqual(['-e', 'claude login']);
   });
 
-  /// Gemini has no sign-in of its own; offering one would send somebody
-  /// looking for a command that does not exist.
-  it('has nothing to start for an agent with no sign-in', () => {
-    expect(signInLaunchFor(gemini, 'win32')).toBeNull();
+  /// Checked against the installed CLI: its help lists `mcp`, `extensions`,
+  /// `skills`, `hooks` and `gemma`, and no `login`. It authenticates on its
+  /// first interactive launch, so running it *is* the sign-in.
+  it('signs in to Gemini by running it, since it has no login subcommand', () => {
+    expect(gemini?.signIn).toBe('gemini');
+    expect(signInLaunchFor(gemini, 'win32')?.args.at(-1)).toBe('gemini');
+  });
+
+  it('has nothing to start for an agent that declares no sign-in', () => {
+    const nothing = { id: 'gemini' as const, label: 'X', command: 'x', install: 'x', docs: 'x' };
+    expect(signInLaunchFor(nothing, 'win32')).toBeNull();
+  });
+
+  /**
+   * The agent settings row diagnosed "Needs Sign-in" and offered no way to
+   * sign in, because nothing connected that row to this catalogue. Matched on
+   * the resolved binary: the display name is translated and a custom row can
+   * set it to anything.
+   */
+  it('finds the agent a settings row is about, by its command', () => {
+    expect(connectableAgentForCommand('gemini')?.id).toBe('gemini');
+    expect(connectableAgentForCommand('claude.exe')?.id).toBe('claude-code');
+    expect(connectableAgentForCommand('CODEX.CMD')?.id).toBe('codex');
+  });
+
+  it('knows no sign-in for a row that is not one of these', () => {
+    expect(connectableAgentForCommand('my-own-agent')).toBeNull();
+    expect(connectableAgentForCommand('')).toBeNull();
+    expect(connectableAgentForCommand(undefined)).toBeNull();
   });
 
   it('finds an agent by the id the panel holds, and refuses an unknown one', () => {

@@ -76,6 +76,17 @@ const GROWTH = 2;
 /** After this many, it stops. Past it, nothing said is better than nagging. */
 export const MAX_FILLERS = 5;
 
+/**
+ * How long to wait before filling a silence in which nothing is being done.
+ *
+ * Long, because a turn that has called no tool is not working — it is simply
+ * taking a while to answer, and a person does not say "one moment" three times
+ * while thinking of a reply to "how are you". Long enough that an ordinary
+ * answer arrives first, and short enough that a genuinely stuck turn still says
+ * something before the user concludes it has crashed.
+ */
+export const QUIET_BEFORE_FIRST_WORD_MS = 7_000;
+
 /** How long the gap should be before the nth filler. */
 export const gapBefore = (saidSoFar: number): number =>
   saidSoFar === 0 ? FIRST_GAP_MS : NEXT_GAP_MS * GROWTH ** (saidSoFar - 1);
@@ -92,9 +103,21 @@ export const fillerFor = (state: ThinkingState): ThinkingKind | null => {
   if (state.saidSoFar >= MAX_FILLERS) return null;
   if (state.quietForMs < gapBefore(state.saidSoFar)) return null;
 
-  // Before anything has happened there is nothing true to report, so it is a
-  // sound rather than a sentence.
-  if (state.toolsRan === 0) return 'thinking';
+  // Nothing has been done yet, so there is nothing to be waiting *for*.
+  //
+  // This is the rule the first version got wrong, and it was seen: asked
+  // "Hello, how are you today?", the assistant answered "One moment. Hmm, let
+  // me think. Just a moment." — three of these and no reply. A greeting is not
+  // a task, and narrating a wait that nobody is in makes it sound stupid
+  // rather than attentive.
+  //
+  // So before any tool has run this waits far longer and says one thing at
+  // most. Once work is genuinely happening the ordinary rhythm applies, which
+  // is the case these were written for: minutes of an agent driving a desktop.
+  if (state.toolsRan === 0) {
+    if (state.saidSoFar >= 1) return null;
+    return state.quietForMs >= QUIET_BEFORE_FIRST_WORD_MS ? 'thinking' : null;
+  }
   // Past half a minute, "still" — which is the honest word for it and the one
   // that stops somebody wondering whether they have been forgotten.
   return state.elapsedMs > 30_000 ? 'still' : 'working';
