@@ -55,19 +55,40 @@ pub enum CompactError {
 
 // ── Trigger check ───────────────────────────────────────────────────────────
 
+/// The least of a window that must be filled before a conversation is summarised.
+///
+/// A floor rather than the usual rule. `output_reserve` and `autocompact_buffer`
+/// deduct a flat 33,000 tokens, which is a reasonable slice of a 200,000-token
+/// frontier window and larger than the entire window of most models that are run
+/// locally. Subtracting it from a smaller window saturates to zero, and a
+/// threshold of zero is `>=` every message ever sent — so the conversation was
+/// summarised on every turn, including the first, discarding the model's own
+/// working state mid-task.
+///
+/// Expressed as a proportion because that is the part of the intent which
+/// survives the window changing: leave the reply somewhere to go, and compact
+/// before the window is full rather than after.
+const MIN_THRESHOLD_PCT: usize = 75;
+
 /// Check if autocompact should trigger based on the best-known context size.
 ///
 /// When `autocompact_threshold_pct` is set, threshold = context_window * pct / 100.
-/// Otherwise falls back to: `threshold = context_window - output_reserve - autocompact_buffer`
+/// Otherwise: `threshold = context_window - output_reserve - autocompact_buffer`,
+/// floored at [`MIN_THRESHOLD_PCT`] of the window so the flat deduction cannot
+/// collapse it to nothing on a small one.
 pub fn should_autocompact(context_tokens: u64, config: &CompactConfig) -> bool {
     if !config.enabled {
         return false;
     }
     let threshold = if let Some(pct) = config.autocompact_threshold_pct {
+        // An explicit percentage is somebody's decision and is left alone.
         config.context_window * pct as usize / 100
     } else {
         let effective_window = config.context_window.saturating_sub(config.output_reserve);
-        effective_window.saturating_sub(config.autocompact_buffer)
+        let deducted = effective_window.saturating_sub(config.autocompact_buffer);
+        // On a large window the deduction is the smaller, stricter figure and
+        // wins, so this changes nothing there.
+        deducted.max(config.context_window * MIN_THRESHOLD_PCT / 100)
     };
     context_tokens as usize >= threshold
 }

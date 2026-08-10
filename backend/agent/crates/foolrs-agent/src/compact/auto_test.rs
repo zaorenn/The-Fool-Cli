@@ -59,6 +59,49 @@ mod tests {
         assert!(!should_autocompact(0, &config));
     }
 
+    /// A window smaller than the fixed deduction must not compact everything.
+    ///
+    /// `output_reserve` and `autocompact_buffer` subtract a flat 33,000 tokens,
+    /// a figure chosen against a 200,000-token frontier window. Every local
+    /// model this product exists to run is smaller than that, and the two
+    /// `saturating_sub` calls turn the shortfall into a threshold of zero
+    /// rather than a negative number. Zero is `>=` every message ever sent, so
+    /// the conversation is summarised on every single turn — the first one
+    /// included, before there is anything worth summarising.
+    ///
+    /// Observed with `qwen/qwen3.5-9b`, which the model table reads as 32,768:
+    /// compaction ran at 14,618 tokens and again at 16,004, and the second pass
+    /// discarded a correct plan to search for a song mid-turn, after which the
+    /// model denied being able to play music at all.
+    #[test]
+    fn a_window_below_the_fixed_deduction_does_not_compact_every_message() {
+        let config = CompactConfig {
+            // What `context_window_for` returns for a qwen3 family model.
+            context_window: 32_768,
+            ..default_config()
+        };
+
+        assert!(
+            !should_autocompact(1, &config),
+            "a single token must not trigger a summary of the conversation"
+        );
+        assert!(
+            !should_autocompact(14_618, &config),
+            "under half of a 32k window is not context pressure"
+        );
+    }
+
+    /// The smallest window the resolver will assume, for a model it cannot name.
+    #[test]
+    fn the_unknown_local_window_does_not_compact_every_message() {
+        let config = CompactConfig {
+            context_window: 8_192,
+            ..default_config()
+        };
+
+        assert!(!should_autocompact(1, &config));
+    }
+
     #[test]
     fn threshold_pct_overrides_default_calculation() {
         let config = CompactConfig {
