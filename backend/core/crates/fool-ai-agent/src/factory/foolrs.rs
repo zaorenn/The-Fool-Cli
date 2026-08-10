@@ -15,6 +15,8 @@ use foolrs_config::compat::OpenAiApiMode;
 use foolrs_config::config::{McpServerConfig, TransportType};
 use foolrs_types::message::ImageInputCapability;
 use serde_json::{Map, Value};
+
+use super::local_context_window;
 use tracing::{debug, info, warn};
 
 use crate::agent_task::AgentInstance;
@@ -206,11 +208,32 @@ pub(super) async fn build(
         }
     };
 
+    // How much this model can actually read.
+    //
+    // A stored value is somebody's decision and is taken as given; zero and
+    // below are treated as unset, because the column is nullable and
+    // hand-editable and a window of zero would compact on every message. With
+    // nothing stored — which is every installation, since the interface never
+    // asks — a local server is asked directly, and only then does the guess
+    // from the model's name stand.
+    let stored_context_limit = row
+        .context_limit
+        .and_then(|value| usize::try_from(value).ok())
+        .filter(|value| *value > 0);
+    let resolved_context_limit = match (stored_context_limit, base_url.as_deref()) {
+        (Some(stored), _) => Some(stored),
+        (None, Some(url)) if foolrs_config::context_window::is_local_endpoint(url) => {
+            local_context_window::probe_context_window(url, &model_id).await
+        }
+        _ => None,
+    };
+
     let config = FoolrsResolvedConfig {
         provider,
         api_key,
         model: model_id,
         base_url,
+        context_limit: resolved_context_limit,
         system_prompt: overrides.system_prompt,
         max_tokens: None,
         max_turns: overrides.max_turns,

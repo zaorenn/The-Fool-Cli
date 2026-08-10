@@ -561,6 +561,7 @@ mod foolrs_config_option_tests {
             api_key: "sk-test-key".into(),
             model: "claude-sonnet-4-20250514".into(),
             base_url: None,
+            context_limit: None,
             system_prompt: None,
             max_tokens: None,
             max_turns: None,
