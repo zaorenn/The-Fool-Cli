@@ -1743,6 +1743,13 @@
     "skillAction": {
       "open-url": "Öffnet",
       "open-path": "Öffnet auf diesem Rechner"
+    },
+    "learned": {
+      "title": "Was ich gelernt zu haben glaube",
+      "hint": "Aus deinem letzten Gespräch. Nichts davon wird gemerkt, bevor du es sagst.",
+      "evidence": "Du hast gesagt:",
+      "accept": "Das merken",
+      "refuse": "Das nicht"
     }
   },
   "layout": {

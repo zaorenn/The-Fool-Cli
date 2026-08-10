@@ -1745,6 +1745,13 @@
     "skillAction": {
       "open-url": "開啟",
       "open-path": "在本機開啟"
+    },
+    "learned": {
+      "title": "我以為我學到的",
+      "hint": "來自你上一次對話。你不同意之前，這裡的任何內容都不會被記住。",
+      "evidence": "你說過：",
+      "accept": "記住這個",
+      "refuse": "這個不要"
     }
   },
   "layout": {

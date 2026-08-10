@@ -1743,6 +1743,13 @@
     "skillAction": {
       "open-url": "Ouvre",
       "open-path": "Ouvre sur cet ordinateur"
+    },
+    "learned": {
+      "title": "Ce que je crois avoir appris",
+      "hint": "De ta dernière conversation. Rien ici n'est retenu tant que tu ne l'as pas dit.",
+      "evidence": "Tu as dit :",
+      "accept": "Retenir ça",
+      "refuse": "Pas celui-là"
     }
   },
   "layout": {

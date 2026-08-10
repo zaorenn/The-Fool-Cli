@@ -1744,6 +1744,13 @@
     "skillAction": {
       "open-url": "打开",
       "open-path": "在本机打开"
+    },
+    "learned": {
+      "title": "我以为我学到的",
+      "hint": "来自你上一次对话。你不同意之前，这里的任何内容都不会被记住。",
+      "evidence": "你说过：",
+      "accept": "记住这个",
+      "refuse": "这个不要"
     }
   },
   "layout": {

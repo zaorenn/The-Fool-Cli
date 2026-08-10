@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { writeMemoryDoc } from '@renderer/services/voice/session/voiceMemoryStore';
 import LocalSkillList from './LocalSkillList';
 import MemoryDocEditor from './MemoryDocEditor';
+import ProposalList from './ProposalList';
 import { useMemoryDocs } from './useMemoryDocs';
 
 /**
@@ -44,6 +45,12 @@ const MemoryModalContent: React.FC = () => {
           {t('settings.memory.subtitle')}
         </Typography.Text>
       </div>
+
+      {/* Above the documents rather than inside one of them: this is the only
+          thing on the page that is waiting on the user, and a decision hidden
+          behind a tab is a decision nobody makes. It renders nothing at all
+          when there is nothing to agree with, which is most of the time. */}
+      <ProposalList />
 
       <Tabs defaultActiveTab='user' size='small'>
         <Tabs.TabPane key='user' title={t('settings.memory.userTab')}>

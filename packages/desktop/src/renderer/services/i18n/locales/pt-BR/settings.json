@@ -1746,6 +1746,13 @@
     "skillAction": {
       "open-url": "Abre",
       "open-path": "Abre neste computador"
+    },
+    "learned": {
+      "title": "O que acho que aprendi",
+      "hint": "Da sua última conversa. Nada aqui é lembrado até você dizer que sim.",
+      "evidence": "Você disse:",
+      "accept": "Lembrar disso",
+      "refuse": "Esse não"
     }
   },
   "layout": {

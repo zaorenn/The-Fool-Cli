@@ -1743,6 +1743,13 @@
     "skillAction": {
       "open-url": "Açar",
       "open-path": "Bu bilgisayarda açar"
+    },
+    "learned": {
+      "title": "Öğrendiğimi sandığım şeyler",
+      "hint": "Son konuşmandan. Sen söylemeden buradaki hiçbir şey hatırlanmaz.",
+      "evidence": "Şöyle demiştin:",
+      "accept": "Bunu hatırla",
+      "refuse": "Bunu değil"
     }
   },
   "layout": {

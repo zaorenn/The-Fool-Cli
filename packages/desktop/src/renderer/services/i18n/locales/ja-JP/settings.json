@@ -1745,6 +1745,13 @@
     "skillAction": {
       "open-url": "開く",
       "open-path": "この端末で開く"
+    },
+    "learned": {
+      "title": "学んだと思ったこと",
+      "hint": "前回の会話からです。あなたが認めるまで、ここにあるものは記憶されません。",
+      "evidence": "あなたの言葉：",
+      "accept": "これを覚える",
+      "refuse": "これは違う"
     }
   },
   "layout": {

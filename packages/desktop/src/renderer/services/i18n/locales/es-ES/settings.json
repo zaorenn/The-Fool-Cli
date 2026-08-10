@@ -1743,6 +1743,13 @@
     "skillAction": {
       "open-url": "Abre",
       "open-path": "Abre en este equipo"
+    },
+    "learned": {
+      "title": "Lo que creo que he aprendido",
+      "hint": "De tu última conversación. Nada de esto se recuerda hasta que tú lo digas.",
+      "evidence": "Dijiste:",
+      "accept": "Recordar esto",
+      "refuse": "Esto no"
     }
   },
   "layout": {
