@@ -22,6 +22,7 @@
  */
 
 import { buildPersonaInstructions, REALTIME_TOOLS } from '../../packages/desktop/src/common/realtime';
+import { noDeliberation } from '../../packages/desktop/src/common/realtime/reasoning';
 import { AUTOMATIC_TASKS, SPOKEN_TASKS, type Scored, type TurnObservation, scoreOf } from './tasks';
 
 const argOf = (name: string, fallback: string): string => {
@@ -81,6 +82,19 @@ const askOnce = async (said: string): Promise<TurnObservation> => {
         { role: 'user', content: said },
       ],
       tools: wireTools,
+      // What the product sends. Without it a reasoning model spends its whole
+      // budget deliberating and answers with no tool call at all, so the score
+      // would be measuring a different application from the one that ships.
+      // What the product sends. Without it a reasoning model spends its whole
+      // budget deliberating and answers with no tool call at all, so a score
+      // taken without it is a score for a different application.
+      //
+      // `EVAL_THINK=1` sends nothing and lets the model deliberate, which is
+      // how the two were compared. On `qwen/qwen3.5-9b` that comparison is
+      // 5/8 without deliberation and 8/8 with it — the three it loses are the
+      // sentences it has to think about rather than pattern-match, and it
+      // answers them conversationally instead of reaching for a tool.
+      ...(process.env.EVAL_THINK === '1' ? {} : noDeliberation(ENDPOINT)),
     }),
   });
 
