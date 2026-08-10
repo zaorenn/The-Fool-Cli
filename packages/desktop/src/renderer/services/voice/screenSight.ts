@@ -89,7 +89,6 @@ const systemPrompt = (language: string): string =>
     language === 'auto' ? 'Answer in the language of the question.' : `Answer in ${language}.`,
   ].join(' ');
 
-/** PNG bytes of the requested surface, as a data URL. */
 const capture = async (source: 'window' | 'screen'): Promise<string> => {
   const grab = source === 'screen' ? window.electronAPI?.captureScreen : window.electronAPI?.captureFeedbackScreenshot;
   if (typeof grab !== 'function') throw new ScreenSightError('capture-unavailable');
@@ -113,6 +112,26 @@ const capture = async (source: 'window' | 'screen'): Promise<string> => {
   return `data:image/png;base64,${btoa(binary)}`;
 };
 
+/** Preemptive capture state for zero-latency screen reads. */
+let preloadedCapture: { url: Promise<string>; source: 'window' | 'screen' } | null = null;
+
+/**
+ * Starts a screen capture in the background before it is asked for.
+ * Called when the user starts speaking, so if they ask about the screen,
+ * the photograph is already taken by the time they finish the sentence.
+ */
+export const preloadScreenCapture = (source: 'window' | 'screen' = 'screen'): void => {
+  // Overwrite any stale capture with a fresh one
+  preloadedCapture = { url: capture(source), source };
+  // Sink rejections so they don't crash unhandled in the background
+  preloadedCapture.url.catch((): void => undefined);
+};
+
+/** Discards a preloaded capture, usually because the user stopped speaking and didn't ask about the screen. */
+export const dropPreloadedCapture = (): void => {
+  preloadedCapture = null;
+};
+
 /**
  * Looks at the screen and answers the question about it.
  *
@@ -120,7 +139,13 @@ const capture = async (source: 'window' | 'screen'): Promise<string> => {
  *   caller can turn into something the user can act on.
  */
 export const describeScreen = async (request: ScreenSightRequest): Promise<string> => {
-  const imageUrl = await capture(request.source);
+  let imageUrl: string;
+  if (preloadedCapture !== null && preloadedCapture.source === request.source) {
+    imageUrl = await preloadedCapture.url;
+    preloadedCapture = null;
+  } else {
+    imageUrl = await capture(request.source);
+  }
 
   const timeout = AbortSignal.timeout(DESCRIBE_TIMEOUT_MS);
   const signal = request.signal ? AbortSignal.any([request.signal, timeout]) : timeout;

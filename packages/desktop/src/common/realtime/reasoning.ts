@@ -169,7 +169,7 @@ const CHAT_ONLY = [
 ] as const;
 
 /** Whole words on their own, which longer ones must not match inside. */
-const CHAT_ONLY_ALONE = ['hi', 'hey', 'yo', 'tamam', 'evet', 'hayır', 'hayir', 'peki', 'olur', 'ok', 'okay', 'bye'];
+const CHAT_ONLY_ALONE = new Set(['hi', 'hey', 'yo', 'tamam', 'evet', 'hayır', 'hayir', 'peki', 'olur', 'ok', 'okay', 'bye']);
 
 export const speaksOnlyToChat = (said: string): boolean => {
   const line = said.trim().toLowerCase();
@@ -192,7 +192,7 @@ export const speaksOnlyToChat = (said: string): boolean => {
   // with one and is a request, which is the case this whole rule exists for.
   return words.every(
     (word) =>
-      CHAT_ONLY_ALONE.includes(word) ||
+      CHAT_ONLY_ALONE.has(word) ||
       // Contained rather than equal, for the languages that glue their endings
       // on: "teşekkürler" and "teşekkür ederim" are the same pleasantry.
       CHAT_ONLY.some((phrase) => !phrase.includes(' ') && word.includes(phrase))

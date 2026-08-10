@@ -17,7 +17,7 @@
  */
 
 import React, { useRef } from 'react';
-
+import { Button } from '@arco-design/web-react';
 import { ExplorerContainer } from '@/renderer/pages/conversation/explorer/ExplorerContainer';
 
 export type ProjectPanelMobileOverlayProps = {
@@ -66,9 +66,9 @@ export const ProjectPanelMobileOverlay: React.FC<ProjectPanelMobileOverlayProps>
 
       {/* Floating collapse handle */}
       {!collapsed && (
-        <button
-          type='button'
-          className='fixed z-101 flex items-center justify-center transition-colors workspace-toggle-floating'
+        <Button
+          type='text'
+          className='fixed z-101 flex items-center justify-center transition-colors workspace-toggle-floating !p-0'
           style={{
             top: '50%',
             right: `${Math.round(widthPx)}px`,
@@ -88,7 +88,7 @@ export const ProjectPanelMobileOverlay: React.FC<ProjectPanelMobileOverlayProps>
             <span className='block w-8px h-2px rd-999px bg-current opacity-65'></span>
             <span className='block w-8px h-2px rd-999px bg-current opacity-45'></span>
           </span>
-        </button>
+        </Button>
       )}
     </>
   );

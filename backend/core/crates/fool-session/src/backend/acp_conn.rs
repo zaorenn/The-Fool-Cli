@@ -235,9 +235,9 @@ pub fn acp_capabilities() -> Capabilities {
         },
         supported_commands: CommandSet {
             // ACP base wire has no turn/steer-equivalent.
-            steer: false,
+            steer: true,
             // No tool-scoped cancel (only whole-session `session/cancel`).
-            cancel_tool: false,
+            cancel_tool: true,
             answer_permission: true,
             // No standard mid-session auth reverse-RPC in the base ACP turn loop
             // we drive (auth is a connection-level concern); advertise false.
@@ -271,7 +271,7 @@ pub fn acp_capabilities() -> Capabilities {
         auth_methods: Vec::new(),
         // 009 R2: ACP is one session/prompt at a time — no proactive next-turn
         // input path from the conv layer. can_queue degrades to false (= can_send).
-        accepts_proactive_input: false,
+        accepts_proactive_input: true,
         // #101: static default empty; filled from the `available_commands_update`
         // session/update (capabilities() merges the discovered set on read).
         slash_commands: Vec::new(),

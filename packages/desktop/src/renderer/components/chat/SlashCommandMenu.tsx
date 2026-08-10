@@ -6,6 +6,7 @@
 
 import classNames from 'classnames';
 import React, { useEffect, useRef } from 'react';
+import { Button } from '@arco-design/web-react';
 
 export interface SlashCommandMenuItem {
   key: string;
@@ -116,16 +117,16 @@ const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
         )}
         {!loading &&
           items.map((item, index) => (
-            <button
+            <Button
               key={item.key}
-              type='button'
+              type='text'
               role='option'
               aria-selected={index === activeIndex}
               ref={(node) => {
-                itemRefs.current[index] = node;
+                itemRefs.current[index] = node as any;
               }}
               className={classNames(
-                'w-full text-left px-10px py-6px rounded-8px transition-all border border-solid outline-none cursor-pointer mb-2px last:mb-0',
+                '!w-full !text-left !px-10px !py-6px !rounded-8px transition-all border border-solid outline-none cursor-pointer mb-2px last:mb-0 !h-auto flex-col items-stretch',
                 {
                   'border-[var(--color-border-2)]': index === activeIndex,
                   'border-transparent hover:bg-[var(--color-fill-1)]': index !== activeIndex,
@@ -164,7 +165,7 @@ const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
                   </span>
                 )}
               </div>
-            </button>
+            </Button>
           ))}
       </div>
     </div>

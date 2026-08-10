@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Minus, CloseSmall } from '@icon-park/react';
 import { ipcBridge } from '@/common';
+import { Button } from '@arco-design/web-react';
+import { useTranslation } from 'react-i18next';
 
 const WindowMaximizeIcon: React.FC<{ size?: number }> = ({ size = 14 }) => (
   <svg width={size} height={size} viewBox='0 0 18 18' fill='none' stroke='currentColor' strokeWidth='1.4'>
@@ -19,6 +21,7 @@ const WindowRestoreIcon: React.FC<{ size?: number }> = ({ size = 14 }) => (
 );
 
 const WindowControls: React.FC = () => {
+  const { t } = useTranslation();
   const [isMaximized, setIsMaximized] = useState(false);
   const [available, setAvailable] = useState(true);
 
@@ -77,25 +80,34 @@ const WindowControls: React.FC = () => {
 
   return (
     <div className='app-window-controls'>
-      <button type='button' className='app-window-controls__button' onClick={handleMinimize} aria-label='Minimize'>
+      <Button
+        htmlType='button'
+        className='app-window-controls__button'
+        onClick={handleMinimize}
+        aria-label={t('common.minimize', { defaultValue: 'Minimize' })}
+      >
         <Minus theme='outline' size='14' fill='currentColor' strokeWidth={4} />
-      </button>
-      <button
-        type='button'
+      </Button>
+      <Button
+        htmlType='button'
         className='app-window-controls__button'
         onClick={handleToggleMaximize}
-        aria-label={isMaximized ? 'Restore' : 'Maximize'}
+        aria-label={
+          isMaximized
+            ? t('common.restore', { defaultValue: 'Restore' })
+            : t('common.maximize', { defaultValue: 'Maximize' })
+        }
       >
         {isMaximized ? <WindowRestoreIcon size={14} /> : <WindowMaximizeIcon size={14} />}
-      </button>
-      <button
-        type='button'
+      </Button>
+      <Button
+        htmlType='button'
         className='app-window-controls__button app-window-controls__button--close'
         onClick={handleClose}
-        aria-label='Close'
+        aria-label={t('common.close', { defaultValue: 'Close' })}
       >
         <CloseSmall theme='outline' size='16' fill='currentColor' strokeWidth={3} />
-      </button>
+      </Button>
     </div>
   );
 };

@@ -20,5 +20,7 @@ export const addRecentWorkspace = (path: string, storageKey: string = DEFAULT_RE
     const prev = getRecentWorkspaces(storageKey);
     const next = [path, ...prev.filter((item) => item !== path)].slice(0, MAX_RECENT_WORKSPACES);
     localStorage.setItem(storageKey, JSON.stringify(next));
-  } catch {}
+  } catch (e) {
+    console.warn('Failed to save recent workspace:', e);
+  }
 };

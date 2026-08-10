@@ -5,6 +5,7 @@
  */
 
 import { useTalkToJester } from '@/renderer/hooks/assistant/useTalkToJester';
+import { Button } from '@arco-design/web-react';
 import { Robot } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useCallback } from 'react';
@@ -43,10 +44,10 @@ const JesterDiagnoseButton: React.FC<JesterDiagnoseButtonProps> = ({ errorText, 
   );
 
   return (
-    <button
-      type='button'
+    <Button
+      htmlType='button'
       role='button'
-      onClick={handleClick}
+      onClick={(e) => handleClick(e as any)}
       className={classNames(
         'inline-flex items-center gap-3px cursor-pointer select-none b-none',
         'px-8px py-4px rd-16px',
@@ -60,7 +61,7 @@ const JesterDiagnoseButton: React.FC<JesterDiagnoseButtonProps> = ({ errorText, 
           lines it up with the text baseline. */}
       <Robot theme='outline' size='14' fill='currentColor' className='flex-shrink-0' />
       <span>{t('settings.talkToJester.solveWithJester')}</span>
-    </button>
+    </Button>
   );
 };
 

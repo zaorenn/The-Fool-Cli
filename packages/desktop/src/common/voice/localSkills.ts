@@ -173,7 +173,7 @@ export const sanitizeLocalSkills = (value: unknown): LocalSkill[] => {
  * refuse.
  */
 const ASKS_ABOUT = [
-  // Turkish
+  // Turkish questions
   'hatırlıyor musun',
   'hatirliyor musun',
   'biliyor musun',
@@ -185,7 +185,18 @@ const ASKS_ABOUT = [
   'var mı',
   'var mi',
   'nedir',
-  // English
+  // Turkish conditionals / complex intents
+  'dediğimde',
+  'dersem',
+  'söylediğimde',
+  'diyorsam',
+  'şunu yap',
+  'bunu yap',
+  'gibi',
+  'zaman',
+  'sonra',
+  'önce',
+  // English questions
   'do you remember',
   'do you know',
   'what is my',
@@ -193,6 +204,12 @@ const ASKS_ABOUT = [
   'what was my',
   'which one',
   'can you remember',
+  // English conditionals / complex intents
+  'when i say',
+  'if i say',
+  'after',
+  'before',
+  'instead of',
 ] as const;
 
 /**

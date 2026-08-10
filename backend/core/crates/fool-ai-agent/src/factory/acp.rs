@@ -169,6 +169,18 @@ pub(super) async fn build(
         }
     }
 
+    if mcp_capabilities.stdio {
+        let foolrs_binary = deps.backend_binary_path.to_string_lossy().into_owned();
+        let spawn_mcp_server = McpServer::Stdio(
+            McpServerStdio::new(
+                "foolrs-spawn-tool".to_owned(),
+                std::path::PathBuf::from(foolrs_binary),
+            )
+            .args(vec!["mcp".to_owned()])
+        );
+        session_mcp_servers.push(spawn_mcp_server);
+    }
+
     let params = Arc::new(
         assemble_acp_params(
             ctx.conversation_id.clone(),

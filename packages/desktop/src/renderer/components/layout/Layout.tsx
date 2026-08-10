@@ -10,7 +10,7 @@ import brandMark from '@renderer/assets/logos/brand/mark.png';
 import { TEAM_MODE_ENABLED } from '@/common/config/constants';
 import PwaPullToRefresh from '@/renderer/components/layout/PwaPullToRefresh';
 import Titlebar from '@/renderer/components/layout/Titlebar';
-import { Layout as ArcoLayout, Tooltip } from '@arco-design/web-react';
+import { Layout as ArcoLayout, Tooltip, Button } from '@arco-design/web-react';
 import classNames from 'classnames';
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -507,15 +507,14 @@ const Layout: React.FC<{
                   <div className='text-16px text-t-primary collapsed-hidden font-semibold'>{PRODUCT_NAME}</div>
                 )}
                 {isMobile && !collapsed && (
-                  <button
-                    type='button'
-                    className='app-titlebar__button app-titlebar__button--mobile'
+                  <Button
+                    type='text'
+                    className='app-titlebar__button app-titlebar__button--mobile !p-0'
                     onClick={() => setCollapsed(true)}
                     title='Collapse sidebar'
                     aria-label='Collapse sidebar'
-                  >
-                    <SidebarIcon size={18} strokeWidth={2.5} />
-                  </button>
+                    icon={<SidebarIcon size={18} strokeWidth={2.5} />}
+                  />
                 )}
                 {/* 侧栏折叠改由标题栏统一控制 / Sidebar folding handled by Titlebar toggle */}
               </ArcoLayout.Header>
@@ -628,9 +627,9 @@ const Layout: React.FC<{
             {/* Desktop expand button when the explorer is collapsed. Not on mac
                 (the Titlebar workspace button owns the toggle there). */}
             {!isMobile && !isMacRuntime && Boolean(currentProject) && explorerCollapsed && (
-              <button
-                type='button'
-                className='workspace-toggle-floating fixed z-101 flex items-center justify-center'
+              <Button
+                type='text'
+                className='workspace-toggle-floating fixed z-101 flex items-center justify-center !p-0'
                 style={{
                   top: '50%',
                   right: '0px',
@@ -644,9 +643,8 @@ const Layout: React.FC<{
                 }}
                 onClick={toggleExplorer}
                 aria-label='Expand explorer'
-              >
-                <ExpandLeft size={16} />
-              </button>
+                icon={<ExpandLeft size={16} />}
+              />
             )}
 
             {/* Mobile overlay: backdrop + fixed panel + floating collapse handle. */}

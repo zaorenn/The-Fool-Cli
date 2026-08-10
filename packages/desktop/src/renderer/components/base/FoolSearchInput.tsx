@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { Input, Button } from '@arco-design/web-react';
 import { CloseSmall, Search } from '@icon-park/react';
 import classNames from 'classnames';
 import type { CSSProperties, InputHTMLAttributes, Ref } from 'react';
@@ -70,27 +71,28 @@ const FoolSearchInput = forwardRef<HTMLInputElement, FoolSearchInputProps>((prop
   return (
     <div className={classNames(styles.searchbar, className)} style={style} data-testid={wrapTestId}>
       <Search theme='outline' size='14' className={styles.icon} fill='currentColor' />
-      <input
-        {...inputProps}
-        ref={ref as Ref<HTMLInputElement>}
+      <Input
+        {...(inputProps as any)}
+        ref={ref as any}
         className={styles.input}
         value={value}
         placeholder={placeholder}
         disabled={disabled}
         autoFocus={autoFocus}
         data-testid={props['data-testid']}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(val) => onChange(val)}
       />
       {allowClear && value ? (
-        <button
-          type='button'
+        <Button
+          type='text'
+          shape='circle'
+          size='small'
+          icon={<CloseSmall theme='outline' size='14' fill='currentColor' />}
           className={styles.clearBtn}
           onClick={handleClear}
           aria-label={t('common.clear', { defaultValue: 'Clear' })}
           tabIndex={-1}
-        >
-          <CloseSmall theme='outline' size='14' fill='currentColor' />
-        </button>
+        />
       ) : null}
     </div>
   );

@@ -1,5 +1,5 @@
 import type { ModalProps } from '@arco-design/web-react';
-import { Modal } from '@arco-design/web-react';
+import { Modal, Button } from '@arco-design/web-react';
 import { Close } from '@icon-park/react';
 import React from 'react';
 
@@ -23,9 +23,14 @@ const ModalWrapper: React.FC<ModalWrapperProps> = ({
         {showCustomClose && title && (
           <div className='fool-modal-header'>
             <h3 className='fool-modal-title'>{title}</h3>
-            <button onClick={onCancel} className='fool-modal-close-btn'>
-              <Close size={20} fill='#86909c' />
-            </button>
+            <Button
+              type='text'
+              shape='circle'
+              size='small'
+              icon={<Close size={20} fill='currentColor' />}
+              onClick={onCancel}
+              className='fool-modal-close-btn'
+            />
           </div>
         )}
         {children}

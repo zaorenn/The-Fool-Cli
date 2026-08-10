@@ -7,6 +7,7 @@
 import React from 'react';
 import { abortUpload, useActiveUploads, useUploadState, type UploadSource } from '@/renderer/hooks/file/useUploadState';
 import { CloseSmall } from '@icon-park/react';
+import { Button } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -49,16 +50,15 @@ const UploadProgressBar: React.FC<{ source?: UploadSource }> = ({ source }) => {
                 {upload.name}
               </span>
               <span className='flex-shrink-0 tabular-nums'>{upload.percent}%</span>
-              <button
-                type='button'
+              <Button
+                type='text'
                 aria-label={t('common.fileAttach.cancelUpload', { defaultValue: 'Cancel upload' })}
                 title={t('common.fileAttach.cancelUpload', { defaultValue: 'Cancel upload' })}
                 className='flex-shrink-0 inline-flex items-center justify-center w-16px h-16px rd-full b-none bg-transparent cursor-pointer color-text-3 hover:color-text-1 hover:bg-fill-3 p-0'
                 onClick={() => abortUpload(upload.id)}
                 data-testid='upload-cancel-btn'
-              >
-                <CloseSmall theme='outline' size='12' strokeWidth={3} />
-              </button>
+                icon={<CloseSmall theme='outline' size='12' strokeWidth={3} />}
+              />
             </li>
           ))}
         </ul>

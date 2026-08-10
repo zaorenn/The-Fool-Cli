@@ -155,6 +155,8 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         action: SkillsAction,
     },
+    /// Start an MCP stdio server exposing agent tools
+    Mcp,
 }
 
 #[derive(Subcommand)]

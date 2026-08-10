@@ -1252,7 +1252,7 @@ const SendBox: React.FC<{
     setReplyQuote(null);
 
     onSend(finalMessage)
-      .catch(() => {})
+      .catch((e: unknown) => console.warn('Unhandled promise rejection:', e))
       .finally(() => {
         setIsLoading(false);
       });

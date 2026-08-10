@@ -14,9 +14,13 @@ export function useActiveLease(target: ActiveLeaseTarget): void {
 
     const renew = () => {
       if (target.type === 'conversation') {
-        void ipcBridge.conversation.activeLease.invoke({ conversation_id: id }).catch(() => {});
+        void ipcBridge.conversation.activeLease
+          .invoke({ conversation_id: id })
+          .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
       } else {
-        void ipcBridge.team.activeLease.invoke({ team_id: id }).catch(() => {});
+        void ipcBridge.team.activeLease
+          .invoke({ team_id: id })
+          .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
       }
     };
 

@@ -70,60 +70,26 @@ fn tool_usage_guidance(tool_policy: &ToolPolicy) -> String {
     if matches!(tool_policy, ToolPolicy::Unrestricted) {
         return "\
 # Using your tools
- - Do NOT use ExecCommand when a dedicated tool is available. Using dedicated tools \
-allows the user to better understand and review your work:
-   - File search: Glob (not find or ls)
-   - Content search: Grep (not grep or rg)
-   - Read files: Read (not cat, head, or tail)
-   - Edit files: Edit (not sed or awk)
-   - Write files: Write (not echo redirection or cat with heredoc)
- - You can call multiple tools in a single response. If there are no \
-dependencies between them, make all independent calls in parallel. \
-However, if one call depends on a previous result, run them sequentially.
- - Prefer Edit over Write for modifying existing files — Edit sends only \
-the diff, which is easier to review.
- - Always Read a file before editing it.
- - Some tools are deferred — only their names are visible. Before calling \
-a deferred tool, use ToolSearch to load its full schema first."
+ - Use dedicated tools (Glob, Grep, Read, Edit, Write) over ExecCommand when appropriate.
+ - You can call multiple tools in a single response in parallel or sequentially.
+ - Some tools are deferred — use ToolSearch to load their full schema first."
             .to_string();
     }
 
     let mut guidance = vec!["# Using your tools".to_string()];
-    let dedicated_tools = [
-        ("Glob", "File search: Glob"),
-        ("Grep", "Content search: Grep"),
-        ("Read", "Read files: Read"),
-        ("Edit", "Edit files: Edit"),
-        ("Write", "Write files: Write"),
-    ]
-    .into_iter()
-    .filter_map(|(name, text)| tool_policy.allows(name).then_some(text))
-    .collect::<Vec<_>>();
+    let dedicated_tools = ["Glob", "Grep", "Read", "Edit", "Write"]
+        .into_iter()
+        .filter(|&name| tool_policy.allows(name))
+        .collect::<Vec<_>>();
 
     if !dedicated_tools.is_empty() {
-        guidance.push(" - Use the available dedicated workspace tools when they fit the task:".to_string());
-        guidance.extend(dedicated_tools.into_iter().map(|tool| format!("   - {tool}")));
+        guidance.push(format!(" - Available workspace tools: {}", dedicated_tools.join(", ")));
     }
 
-    guidance.push(
-        " - You can call multiple tools in a single response. If there are no dependencies between them, make all independent calls in parallel. However, if one call depends on a previous result, run them sequentially."
-            .to_string(),
-    );
+    guidance.push(" - You can call multiple tools in a single response.".to_string());
 
-    if tool_policy.allows("Edit") && tool_policy.allows("Write") {
-        guidance.push(
-            " - Prefer Edit over Write for modifying existing files — Edit sends only the diff, which is easier to review."
-                .to_string(),
-        );
-    }
-    if tool_policy.allows("Read") && tool_policy.allows("Edit") {
-        guidance.push(" - Always Read a file before editing it.".to_string());
-    }
     if tool_policy.allows("ToolSearch") {
-        guidance.push(
-            " - Some tools are deferred — only their names are visible. Before calling a deferred tool, use ToolSearch to load its full schema first."
-                .to_string(),
-        );
+        guidance.push(" - Some tools are deferred — use ToolSearch to load their full schema first.".to_string());
     }
 
     guidance.join("\n")

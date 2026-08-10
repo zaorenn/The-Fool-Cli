@@ -687,7 +687,7 @@ export const useAcpMessage = (
         if (!commands?.length) return;
         setSlashCommands(commands);
       })
-      .catch(() => {});
+      .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
     // Hydrate the context-usage indicator from the backend snapshot. Live
     // acp_context_usage stream events may land first, so never overwrite a
     // value that is already set.
@@ -700,7 +700,7 @@ export const useAcpMessage = (
           setContextLimit((prev) => (prev > 0 ? prev : usage.size));
         }
       })
-      .catch(() => {});
+      .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
     return () => {
       cancelled = true;
     };
@@ -728,7 +728,7 @@ export const useAcpMessage = (
         if (!commands.length) return;
         setSlashCommands(commands);
       })
-      .catch(() => {});
+      .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
   }, [conversation_id, options?.prepareRuntime]);
 
   return {

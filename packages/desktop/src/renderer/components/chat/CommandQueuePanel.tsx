@@ -173,10 +173,10 @@ const QueueItemCard: React.FC<QueueItemCardProps> = ({
     >
       <div className='flex items-center gap-6px min-w-0 flex-1 relative pl-8px'>
         <div className='flex items-center gap-5px w-18px shrink-0 relative'>
-          <button
-            {...restDragHandleButtonProps}
-            ref={dragHandleRef}
-            type='button'
+          <Button
+            {...(restDragHandleButtonProps as any)}
+            ref={dragHandleRef as any}
+            type='text'
             aria-label={dragHandleLabel}
             disabled={dragDisabled}
             data-drag-handle={dragDisabled ? 'disabled' : 'enabled'}
@@ -196,12 +196,11 @@ const QueueItemCard: React.FC<QueueItemCardProps> = ({
               touchAction: dragDisabled ? undefined : 'none',
             }}
             onPointerDown={(event) => {
-              onDragHandlePointerDown(event);
+              onDragHandlePointerDown(event as any);
               onSortableDragHandlePointerDown?.(event);
             }}
-          >
-            <Drag theme='outline' size='12' strokeWidth={2.5} />
-          </button>
+            icon={<Drag theme='outline' size='12' strokeWidth={2.5} />}
+          />
           <span
             aria-hidden='true'
             data-queue-arrow='true'

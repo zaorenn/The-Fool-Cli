@@ -234,7 +234,9 @@ const OfficeWatchViewer: React.FC<OfficeWatchViewerProps> = ({ docType, file_pat
       cancelled = true;
       unsubStatus();
       if (file_pathRef.current) {
-        bridge.stop.invoke({ file_path: file_pathRef.current }).catch(() => {});
+        bridge.stop
+          .invoke({ file_path: file_pathRef.current })
+          .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
       }
     };
   }, [docType, file_path, retryKey, t, workspace]);

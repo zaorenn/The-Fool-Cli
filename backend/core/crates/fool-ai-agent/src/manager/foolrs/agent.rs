@@ -288,6 +288,7 @@ impl FoolrsAgentManager {
             .map_err(|e| AgentError::internal(format!("Agent bootstrap failed: {e}")))?;
 
         let mut engine = result.engine;
+        engine.set_initial_reasoning_effort(Some("none".to_string()));
         if !is_resume && let Err(e) = engine.init_session(&provider_label, &workspace, Some(&conversation_id)) {
             error!(
                 conversation_id = %conversation_id,

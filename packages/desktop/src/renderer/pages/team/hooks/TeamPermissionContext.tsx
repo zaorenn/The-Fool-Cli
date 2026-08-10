@@ -48,7 +48,7 @@ export const TeamPermissionProvider: React.FC<{
     const promise = ipcBridge.team.ensureSession.invoke({ team_id });
     // Fire-and-forget callers only use warmup as a hint; attach a no-op catch
     // so rejected warmups do not surface as unhandled promise rejections.
-    void promise.catch(() => {});
+    void promise.catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
     warmupPromiseRef.current = promise.finally(() => {
       warmupPromiseRef.current = null;
     });

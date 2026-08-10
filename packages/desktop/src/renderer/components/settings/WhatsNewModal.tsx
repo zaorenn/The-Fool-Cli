@@ -142,7 +142,7 @@ const WhatsNewModal: React.FC = () => {
 
     // A launch is not the moment to interrupt anybody with a failure to
     // describe a launch, so nothing here is allowed to surface.
-    void run().catch(() => {});
+    void run().catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
     return () => {
       cancelled = true;
     };
@@ -153,7 +153,10 @@ const WhatsNewModal: React.FC = () => {
     setState(null);
     // Recorded on dismissal rather than on display, so a window closed by a
     // crash shows the same notes again instead of losing them.
-    if (version) void ConfigStorage.set('system.lastSeenVersion', version).catch(() => {});
+    if (version)
+      void ConfigStorage.set('system.lastSeenVersion', version).catch((e: unknown) =>
+        console.warn('Unhandled promise rejection:', e)
+      );
   }, [state]);
 
   if (!state) return null;

@@ -9,6 +9,6 @@ export function uuid(length = 8): string {
         .join('')
         .slice(0, length);
     }
-  } catch {}
+  } catch (e) { console.warn('crypto.randomUUID unavailable, using fallback:', e); }
   return (Date.now().toString(36) + (++counter).toString(36)).slice(0, length);
 }

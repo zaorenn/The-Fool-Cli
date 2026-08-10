@@ -316,14 +316,15 @@ const FileAttachButton: React.FC<FileAttachButtonProps> = ({
           data-testid='foolrs-attach-folder-btn'
         />
       </Trigger>
-      <input
-        ref={fileInputRef}
-        type='file'
-        multiple
-        style={{ display: 'none' }}
-        onChange={handleLocalFileChange}
-        data-testid='foolrs-file-upload-input'
-      />
+      <div className='hidden'>
+        <input
+          ref={fileInputRef}
+          type='file'
+          multiple
+          onChange={handleLocalFileChange}
+          data-testid='foolrs-file-upload-input'
+        />
+      </div>
     </>
   );
 };

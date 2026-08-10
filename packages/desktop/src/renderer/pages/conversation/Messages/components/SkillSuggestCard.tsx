@@ -43,7 +43,7 @@ const SkillSuggestCard: React.FC<SkillSuggestCardProps> = ({
       .then((exists) => {
         if (exists) setSaved(true);
       })
-      .catch(() => {});
+      .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
   }, [cron_job_id]);
 
   if (dismissed || saved) return null;

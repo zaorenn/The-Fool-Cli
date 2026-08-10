@@ -104,7 +104,7 @@ export const useAttachEntry = ({
       ref={fileInputRef}
       type='file'
       multiple
-      style={{ display: 'none' }}
+      className='hidden'
       onChange={handleLocalFileChange}
       data-testid='mobile-sheet-file-upload-input'
     />

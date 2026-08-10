@@ -1,0 +1,31 @@
+{
+  "hooks": [
+    {
+      "event": "post_tool_execution",
+      "trigger": {
+        "tool_names": ["write_to_file", "replace_file_content", "multi_replace_file_content"]
+      },
+      "actions": [
+        {
+          "type": "run_command",
+          "command": "bun run lint:fix && bun run format",
+          "description": "Auto-fix lint and format after file edits"
+        }
+      ]
+    },
+    {
+      "event": "post_tool_execution",
+      "trigger": {
+        "tool_names": ["write_to_file", "replace_file_content", "multi_replace_file_content"],
+        "file_patterns": ["**/locales/**", "**/i18n/**", "**/i18n-config.*"]
+      },
+      "actions": [
+        {
+          "type": "run_command",
+          "command": "bun run i18n:types && node scripts/check-i18n.js",
+          "description": "Regenerate i18n types and validate keys after locale changes"
+        }
+      ]
+    }
+  ]
+}

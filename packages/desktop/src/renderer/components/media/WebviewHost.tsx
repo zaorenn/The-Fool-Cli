@@ -6,6 +6,8 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Left, Right, Refresh, Loading } from '@icon-park/react';
+import { Button, Input } from '@arco-design/web-react';
+import { useTranslation } from 'react-i18next';
 
 export interface WebviewHostProps {
   /** URL to display */
@@ -57,6 +59,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
   onDidFailLoad,
   onWebviewRef,
 }) => {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const webviewRef = useRef<Electron.WebviewTag | null>(null);
@@ -189,7 +192,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
         true;
       `
         )
-        .catch(() => {});
+        .catch((e: unknown) => console.warn('WebviewHost operation failed:', e));
     };
 
     const handleConsoleMessage = (event: Electron.ConsoleMessageEvent) => {
@@ -251,7 +254,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
         true;
       `
         )
-        .catch(() => {});
+        .catch((e: unknown) => console.warn('WebviewHost operation failed:', e));
 
       // Set up message listener inside webview
       webviewEl
@@ -265,7 +268,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
         true;
       `
         )
-        .catch(() => {});
+        .catch((e: unknown) => console.warn('WebviewHost operation failed:', e));
 
       if (isStarOfficeUrl(currentUrl)) {
         webviewEl
@@ -291,7 +294,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
           true;
         `
           )
-          .catch(() => {});
+          .catch((e: unknown) => console.warn('WebviewHost operation failed:', e));
       }
 
       if (isStarOfficeUrl(currentUrl) && autoFitPendingRef.current) {
@@ -322,7 +325,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
               setZoomFactor(Math.max(MIN_ZOOM_FACTOR, Math.min(MAX_ZOOM_FACTOR, next)));
               autoFitPendingRef.current = false;
             })
-            .catch(() => {});
+            .catch((e: unknown) => console.warn('WebviewHost operation failed:', e));
         }, 120);
       }
     };
@@ -410,7 +413,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
         const next = Number((currentContent.clientWidth / stageWidth).toFixed(2));
         setZoomFactor(Math.max(MIN_ZOOM_FACTOR, Math.min(MAX_ZOOM_FACTOR, next)));
       })
-      .catch(() => {});
+      .catch((e: unknown) => console.warn('WebviewHost operation failed:', e));
   }, [isStarOffice]);
 
   const handleOuterWheelZoom = useCallback(
@@ -589,39 +592,65 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
       {/* Navigation bar (optional) */}
       {showNavBar && (
         <div className='fool-url-viewer-toolbar flex items-center gap-6px h-40px px-10px bg-bg-2 border-b border-border-1 flex-shrink-0'>
-          <button onClick={handleGoBack} disabled={!canGoBack} className='toolbar-btn icon-btn' title='Back'>
+          <Button
+            htmlType='button'
+            onClick={handleGoBack}
+            disabled={!canGoBack}
+            className='toolbar-btn icon-btn'
+            title={t('common.historyBack', { defaultValue: 'Back' })}
+          >
             <Left theme='outline' size={16} />
-          </button>
-          <button onClick={handleGoForward} disabled={!canGoForward} className='toolbar-btn icon-btn' title='Forward'>
+          </Button>
+          <Button
+            htmlType='button'
+            onClick={handleGoForward}
+            disabled={!canGoForward}
+            className='toolbar-btn icon-btn'
+            title={t('common.forward', { defaultValue: 'Forward' })}
+          >
             <Right theme='outline' size={16} />
-          </button>
-          <button onClick={handleRefresh} className='toolbar-btn icon-btn' title='Refresh'>
+          </Button>
+          <Button
+            htmlType='button'
+            onClick={handleRefresh}
+            className='toolbar-btn icon-btn'
+            title={t('common.refresh', { defaultValue: 'Refresh' })}
+          >
             {isLoading ? (
               <Loading theme='outline' size={16} className='animate-spin' />
             ) : (
               <Refresh theme='outline' size={16} />
             )}
-          </button>
+          </Button>
           {isStarOffice && (
             <div className='flex items-center gap-6px ml-2px'>
-              <button onClick={handleZoomReset} className='toolbar-btn' title='Reset zoom'>
+              <Button
+                htmlType='button'
+                onClick={handleZoomReset}
+                className='toolbar-btn'
+                title={t('common.zoomReset', { defaultValue: 'Reset zoom' })}
+              >
                 100%
-              </button>
-              <button onClick={handleZoomFit} className='toolbar-btn' title='Fit'>
+              </Button>
+              <Button
+                htmlType='button'
+                onClick={handleZoomFit}
+                className='toolbar-btn'
+                title={t('common.zoomFit', { defaultValue: 'Fit' })}
+              >
                 Fit
-              </button>
+              </Button>
               <span className='toolbar-chip'>{Math.round(zoomFactor * 100)}%</span>
             </div>
           )}
           <form onSubmit={handleUrlSubmit} className='flex-1 ml-2px'>
-            <input
-              type='text'
+            <Input
               value={inputUrl}
-              onChange={(e) => setInputUrl(e.target.value)}
-              onKeyDown={handleUrlKeyDown}
+              onChange={(value) => setInputUrl(value)}
+              onKeyDown={handleUrlKeyDown as any}
               onFocus={(e) => e.target.select()}
               className='toolbar-input'
-              placeholder='Enter URL...'
+              placeholder={t('common.enterUrl', { defaultValue: 'Enter URL...' })}
             />
           </form>
         </div>

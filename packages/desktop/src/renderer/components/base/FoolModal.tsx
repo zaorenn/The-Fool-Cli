@@ -377,9 +377,15 @@ const FoolModal: React.FC<FoolModalProps> = ({
             {headerConfig.subtitle ? <p className={STD_SUBTITLE_CLASS}>{headerConfig.subtitle}</p> : null}
           </div>
           {headerConfig.showClose && (
-            <button onClick={onCancel} className={STD_CLOSE_BTN_CLASS} aria-label='Close'>
-              {headerConfig.closeIcon || <Close size={20} fill='currentColor' />}
-            </button>
+            <Button
+              type='text'
+              shape='circle'
+              size='small'
+              icon={headerConfig.closeIcon || <Close size={20} fill='currentColor' />}
+              onClick={onCancel}
+              className={STD_CLOSE_BTN_CLASS}
+              aria-label='Close'
+            />
           )}
         </div>
       );
@@ -397,9 +403,15 @@ const FoolModal: React.FC<FoolModalProps> = ({
       <div className={headerClassName} style={headerStyle}>
         {headerConfig.title && <h3 className={TITLE_BASE_CLASS}>{headerConfig.title}</h3>}
         {headerConfig.showClose && (
-          <button onClick={onCancel} className={CLOSE_BUTTON_CLASS} aria-label='Close'>
-            {headerConfig.closeIcon || <Close size={20} fill='#86909c' />}
-          </button>
+          <Button
+            type='text'
+            shape='circle'
+            size='small'
+            icon={headerConfig.closeIcon || <Close size={20} fill='currentColor' />}
+            onClick={onCancel}
+            className={CLOSE_BUTTON_CLASS}
+            aria-label='Close'
+          />
         )}
       </div>
     );

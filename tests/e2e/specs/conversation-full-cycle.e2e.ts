@@ -319,16 +319,18 @@ async function getAvailableModes(page: import('@playwright/test').Page): Promise
 async function selectMode(page: import('@playwright/test').Page, modeValue: string): Promise<void> {
   const selector = page.locator(MODE_SELECTOR);
   await selector.click();
+
+  const isVisible = (el: Element) => {
+    const node = el as HTMLElement;
+    const style = window.getComputedStyle(node);
+    const rect = node.getBoundingClientRect();
+    return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+  };
+
   await expect
     .poll(
       async () =>
         page.evaluate((targetMode) => {
-          const isVisible = (el: Element) => {
-            const node = el as HTMLElement;
-            const style = window.getComputedStyle(node);
-            const rect = node.getBoundingClientRect();
-            return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
-          };
           return Array.from(document.querySelectorAll('[data-mode-value]')).some(
             (el) => el.getAttribute('data-mode-value') === targetMode && isVisible(el)
           );
@@ -337,12 +339,6 @@ async function selectMode(page: import('@playwright/test').Page, modeValue: stri
     )
     .toBeTruthy();
   await page.evaluate((targetMode) => {
-    const isVisible = (el: Element) => {
-      const node = el as HTMLElement;
-      const style = window.getComputedStyle(node);
-      const rect = node.getBoundingClientRect();
-      return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
-    };
     const target = Array.from(document.querySelectorAll('[data-mode-value]')).find(
       (el) => el.getAttribute('data-mode-value') === targetMode && isVisible(el)
     ) as HTMLElement | undefined;

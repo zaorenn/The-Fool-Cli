@@ -57,7 +57,7 @@ const logConversationRuntimeView = (entry: ConversationRuntimeViewLogEntry): voi
       message: entry.event,
       data: entry.data,
     })
-    .catch(() => {});
+    .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
 };
 
 const flushRuntimeViewLogs = (logs: ConversationRuntimeViewLogEntry[]): void => {
@@ -213,5 +213,5 @@ export const logStreamTerminalObserved = (
         stream_type,
       },
     })
-    .catch(() => {});
+    .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
 };

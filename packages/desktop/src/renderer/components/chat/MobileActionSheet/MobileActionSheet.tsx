@@ -7,6 +7,7 @@
 import { Left, Right } from '@icon-park/react';
 import React, { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Button } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import styles from './MobileActionSheet.module.css';
 import type { MobileActionSheetEntry, MobileActionSheetProps, MobileActionSheetSubMenu } from './types';
@@ -182,10 +183,10 @@ const MobileActionSheet: React.FC<MobileActionSheetProps> = ({ open, onClose, ti
               aria-hidden={subPhase !== 'shown'}
             >
               <div className={styles.subbar}>
-                <button className={styles.back} onClick={() => setActiveSubKey(null)} type='button'>
+                <Button type='text' className={styles.back} onClick={() => setActiveSubKey(null)}>
                   <Left theme='outline' size='16' />
                   <span>{t('common.back', { defaultValue: 'Back' })}</span>
-                </button>
+                </Button>
                 <div className={styles.subtitle}>{renderedSub.title}</div>
               </div>
               <div className={styles.list}>

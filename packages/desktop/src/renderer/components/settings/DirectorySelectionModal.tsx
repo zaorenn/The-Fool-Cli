@@ -198,7 +198,13 @@ const DirectorySelectionModal: React.FC<DirectorySelectionModalProps> = ({
             {error && (
               <div className='p-16px text-center text-danger text-13px'>
                 <div>{error}</div>
-                <Button size='mini' className='mt-8px' onClick={() => loadDirectory(currentPath).catch(() => {})}>
+                <Button
+                  size='mini'
+                  className='mt-8px'
+                  onClick={() =>
+                    loadDirectory(currentPath).catch((e: unknown) => console.warn('Unhandled promise rejection:', e))
+                  }
+                >
                   {t('common.retry', { defaultValue: 'Retry' })}
                 </Button>
               </div>

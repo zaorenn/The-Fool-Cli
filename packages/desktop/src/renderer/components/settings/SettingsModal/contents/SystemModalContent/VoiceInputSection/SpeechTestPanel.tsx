@@ -124,7 +124,9 @@ const SpeechTestPanel: React.FC<SpeechTestPanelProps> = ({ config, source }) => 
 
   return (
     <div className='mt-16px flex flex-col gap-8px'>
-      <input ref={fileInputRef} type='file' accept='audio/*' className='hidden' onChange={handleFileChange} />
+      <div style={{ display: 'none' }}>
+        <input ref={fileInputRef} type='file' accept='audio/*' onChange={handleFileChange} />
+      </div>
       <div className='flex items-center gap-12px'>
         <Button type='outline' shape='round' loading={isTranscribing} onClick={() => void handleTestClick()}>
           {buttonLabel}

@@ -18,7 +18,13 @@ import {
 } from '@/renderer/pages/conversation/explorer/explorerStore';
 
 const flush = async (): Promise<void> => {
-  for (let i = 0; i < 5; i++) await Promise.resolve();
+  await Promise.all([
+    new Promise((r) => setTimeout(r, 0)),
+    new Promise((r) => setTimeout(r, 0)),
+    new Promise((r) => setTimeout(r, 0)),
+    new Promise((r) => setTimeout(r, 0)),
+    new Promise((r) => setTimeout(r, 0)),
+  ]);
 };
 
 const dir = (name: string): Entry => ({ name, kind: 'dir' });

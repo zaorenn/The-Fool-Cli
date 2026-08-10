@@ -11,6 +11,7 @@ import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import { useFoolVoiceSettings } from '@renderer/hooks/voice/useFoolVoiceSettings';
 import { useSurfaceLayout } from '@renderer/hooks/config/useSurfaceLayout';
+import ShimmerText from '@renderer/components/ShimmerText';
 import TextToSpeechSection from '@renderer/components/settings/SettingsModal/contents/voice/tts/TextToSpeechSection';
 import ConversationHistory from './ConversationHistory';
 import ConversationSettings from './ConversationSettings';
@@ -158,8 +159,15 @@ const VoiceConversationPage: React.FC = () => {
                   </p>
                 ) : null}
                 <p className={styles.said}>
-                  {conversation.assistantTranscript ||
-                    (conversation.userTranscript ? '' : t('settings.voice.conversationReadyHint'))}
+                  {conversation.assistantTranscript ? (
+                    conversation.assistantTranscript
+                  ) : phase === 'thinking' ? (
+                    <ShimmerText>{t('voice.thinking', { defaultValue: 'Thinking...' })}</ShimmerText>
+                  ) : conversation.userTranscript ? (
+                    ''
+                  ) : (
+                    t('settings.voice.conversationReadyHint')
+                  )}
                 </p>
               </div>
 

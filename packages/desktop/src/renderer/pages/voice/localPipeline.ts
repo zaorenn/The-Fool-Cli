@@ -27,7 +27,7 @@ import {
   refusedTheField,
   rememberRefusal,
 } from '@/common/realtime/reasoning';
-import { beginScreenLook, forgetScreenLook } from '@renderer/services/voice/screenSight';
+import { beginScreenLook, dropPreloadedCapture, forgetScreenLook, preloadScreenCapture } from '@renderer/services/voice/screenSight';
 import { MEMORY_REVIEW_PROMPT, readProposals } from '@/common/voice/memoryProposal';
 import { isBackchannel } from '@/common/voice/backchannel';
 import { concernsFor, describeTurn } from '@/common/voice/turnMetrics';
@@ -36,6 +36,7 @@ import { refersToScreen } from '@/common/voice/screenIntent';
 import { describeSpokenTurns, worthRemembering, type SpokenTurn } from '@/common/voice/sessionSummary';
 import { applyTranscriptRules } from '@/common/voice/transcriptRules';
 import { sanitizeConversationFiles, type ConversationFile } from '@/common/voice/conversationFiles';
+import { findLocalSkill } from '@/common/voice/localSkills';
 import { peekLocalSkills } from '@renderer/services/voice/session/localSkillStore';
 import {
   offerVoiceMemories,
@@ -523,6 +524,7 @@ export class LocalVoicePipeline {
    * that to somebody else's turn takes the voice off the next answer.
    */
   private drainOwner: AbortController | null = null;
+  private settingsChanged = false;
 
   constructor(options: LocalPipelineOptions) {
     this.options = options;
@@ -547,6 +549,7 @@ export class LocalVoicePipeline {
   updateSettings(next: FoolVoiceSettings): void {
     if (this.closed) return;
     this.options = { ...this.options, settings: next };
+    this.settingsChanged = true;
   }
 
   /**
@@ -717,7 +720,11 @@ export class LocalVoicePipeline {
   pushAudio(pcm16Base64: string, event: 'speech-started' | 'speech' | 'utterance-ended' | 'idle'): void {
     if (this.closed) return;
 
-    if (event === 'speech-started') this.utterance = [];
+    if (event === 'speech-started') {
+      this.utterance = [];
+      // Start capturing the screen in the background the moment they start speaking
+      if (this.options.runTool) preloadScreenCapture('screen');
+    }
 
     if (event === 'speech-started' || event === 'speech') {
       this.utterance.push(fromBase64(pcm16Base64));
@@ -897,7 +904,7 @@ export class LocalVoicePipeline {
     if (!readiness || line.length === 0) return;
     if (this.closed || this.inFlight !== null || this.draining) return;
 
-    const voice = this.voice ?? this.resolveVoice(readiness);
+    const voice = this.resolveVoiceForChunk(readiness);
     const controller = new AbortController();
     try {
       this.emitSpeech(await this.render(line, voice, controller));
@@ -1163,6 +1170,12 @@ export class LocalVoicePipeline {
       }
 
       this.options.onEvent({ kind: 'user-transcript', text: heard, final: true });
+
+      // The user finished their turn. If they didn't ask about the screen, we drop the background capture.
+      if (!this.options.runTool || !refersToScreen(heard)) {
+        dropPreloadedCapture();
+      }
+
       this.history.push({ role: 'user', content: heard });
 
       // A taught skill is run without asking the model at all.
@@ -1179,17 +1192,29 @@ export class LocalVoicePipeline {
       // function the tool uses, so a phrase that would have worked through the
       // model works here identically. No match falls straight through to the
       // ordinary turn, which is every other sentence they say.
-      // A taught skill used to be matched here, on the words of the sentence,
-      // and run before the model saw the turn at all. That is why "favori
-      // şarkımı hatırlıyor musun" played the song: the trigger appeared in the
-      // sentence, so the shortcut fired, and the question went unanswered.
-      //
-      // Guarding the matcher against questions was the first attempt and it was
-      // the wrong shape — a phrase list deciding intent will always be wrong
-      // about the sentence nobody thought of. The skills are already described
-      // to the model, and `app_skill_do` is already a tool it can call, so the
-      // decision belongs to the thing that can actually read the sentence.
-      // Removing the shortcut costs a round trip and buys judgement.
+      const taught = this.options.runTool ? findLocalSkill(peekLocalSkills(), heard) : null;
+      if (taught) {
+        const call = {
+          id: newId(),
+          type: 'function' as const,
+          function: { name: 'app_skill_do', arguments: JSON.stringify({ name: taught.name }) },
+        };
+        // The assistant turn carrying the call goes in first. `runTools` pushes
+        // a `tool` message answering it, and a server handed a `tool` message
+        // whose call appears nowhere in the history rejects the whole request —
+        // so leaving this out ran the skill once and then broke every turn
+        // after it. From outside, that is a conversation that does the thing
+        // and then stops responding.
+        this.history.push({ role: 'assistant', content: '', tool_calls: [call] });
+        await this.runTools([call], controller);
+        if (controller.signal.aborted) return;
+        // Straight back to listening. The tool says what it did on the notch
+        // and in the activity list; making the model narrate a thing that has
+        // already happened would add a second of latency to the one path that
+        // is meant to be instant.
+        this.options.onEvent({ kind: 'phase', phase: 'listening' });
+        return;
+      }
 
       // "What does this error mean" is a question about a screen, and asked it
       // the model answers from nothing — confidently, which is the whole
@@ -1478,7 +1503,7 @@ export class LocalVoicePipeline {
             this.options.onEvent({ kind: 'assistant-transcript', text: '', final: true });
             return [];
           }
-          this.voice ??= this.resolveVoice(readiness);
+          this.resolveVoiceForChunk(readiness);
           // The first sentence to reach the speaker is the moment the user
           // stops waiting, whatever the rest of the reply goes on to do.
           this.firstAudioAt ??= Date.now();
@@ -1496,7 +1521,7 @@ export class LocalVoicePipeline {
       return [];
     }
     if (tail.length > 0) {
-      this.voice ??= this.resolveVoice(readiness);
+      this.resolveVoiceForChunk(readiness);
       this.queueForSpeech(tail, controller);
       this.startDraining(controller);
     }
@@ -1622,7 +1647,7 @@ export class LocalVoicePipeline {
           // never been chosen. The transcript event is from the same block,
           // which is why the reply could not be read on the page either: not
           // two bugs, one missing paragraph.
-          this.voice ??= this.resolveVoice(this.ready);
+          this.resolveVoiceForChunk(this.ready!);
           this.firstAudioAt ??= Date.now();
           this.options.onEvent({ kind: 'assistant-transcript', text: sentence, final: false });
           this.queueForSpeech(sentence, controller);
@@ -1822,6 +1847,14 @@ export class LocalVoicePipeline {
    * The provider follows the model rather than the stored setting, so a
    * Chatterbox voice is not addressed to sherpa.
    */
+  private resolveVoiceForChunk(readiness: Extract<LocalReadiness, { ok: true }>): SpeakingVoice {
+    if (this.settingsChanged) {
+      this.voice = null;
+      this.settingsChanged = false;
+    }
+    return (this.voice ??= this.resolveVoice(readiness));
+  }
+
   private resolveVoice(readiness: Extract<LocalReadiness, { ok: true }>): SpeakingVoice {
     const installed = readiness.ttsModels.map((model) => model.id);
     const target = {

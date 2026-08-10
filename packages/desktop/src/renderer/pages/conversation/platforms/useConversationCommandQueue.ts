@@ -74,7 +74,7 @@ const logCommandQueue = (conversation_id: string, event: string, payload: Record
         ...payload,
       },
     })
-    .catch(() => {});
+    .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
 };
 
 const normalizeQueueMode = (mode: unknown): ConversationCommandQueueMode => (mode === 'manual' ? 'manual' : 'auto');
