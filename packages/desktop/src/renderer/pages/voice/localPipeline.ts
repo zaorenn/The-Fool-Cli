@@ -36,7 +36,6 @@ import { refersToScreen } from '@/common/voice/screenIntent';
 import { describeSpokenTurns, worthRemembering, type SpokenTurn } from '@/common/voice/sessionSummary';
 import { applyTranscriptRules } from '@/common/voice/transcriptRules';
 import { sanitizeConversationFiles, type ConversationFile } from '@/common/voice/conversationFiles';
-import { findLocalSkill } from '@/common/voice/localSkills';
 import { peekLocalSkills } from '@renderer/services/voice/session/localSkillStore';
 import {
   offerVoiceMemories,
@@ -1178,43 +1177,22 @@ export class LocalVoicePipeline {
 
       this.history.push({ role: 'user', content: heard });
 
-      // A taught skill is run without asking the model at all.
+      // A taught skill used to be run from here, without asking the model at
+      // all: the sentence was matched against the trigger and `app_skill_do`
+      // was called directly. It was written for latency — the decision was
+      // already made when the skill was taught, so why pay for a round trip.
       //
-      // This is the difference between "play my favourite song" working and
-      // almost working. The skill already exists, the address is already
-      // known, and the only thing standing between the two is a small local
-      // model choosing to call `app_skill_do` — which it does most of the
-      // time, and "most of the time" is what the user has been living with. It
-      // is also the slow path: a round trip to think about a decision that was
-      // already made when they taught it.
+      // The cost was that a *substring* decided an action. "My favourite song
+      // is Bunny Girl by Akasaki, remember that and play it" contains the
+      // trigger, so the song played and the fact was never recorded: the model
+      // was never asked, and the half of the sentence that mattered went
+      // nowhere. A closed list of question phrases was added to hold it back,
+      // which is the shape of a rule that cannot be finished — every sentence
+      // that merely mentions the skill needs another entry.
       //
-      // Matched against the trigger they described it with, by the same
-      // function the tool uses, so a phrase that would have worked through the
-      // model works here identically. No match falls straight through to the
-      // ordinary turn, which is every other sentence they say.
-      const taught = this.options.runTool ? findLocalSkill(peekLocalSkills(), heard) : null;
-      if (taught) {
-        const call = {
-          id: newId(),
-          type: 'function' as const,
-          function: { name: 'app_skill_do', arguments: JSON.stringify({ name: taught.name }) },
-        };
-        // The assistant turn carrying the call goes in first. `runTools` pushes
-        // a `tool` message answering it, and a server handed a `tool` message
-        // whose call appears nowhere in the history rejects the whole request —
-        // so leaving this out ran the skill once and then broke every turn
-        // after it. From outside, that is a conversation that does the thing
-        // and then stops responding.
-        this.history.push({ role: 'assistant', content: '', tool_calls: [call] });
-        await this.runTools([call], controller);
-        if (controller.signal.aborted) return;
-        // Straight back to listening. The tool says what it did on the notch
-        // and in the activity list; making the model narrate a thing that has
-        // already happened would add a second of latency to the one path that
-        // is meant to be instant.
-        this.options.onEvent({ kind: 'phase', phase: 'listening' });
-        return;
-      }
+      // Choosing a skill is a reading of what somebody meant, and that is the
+      // model's job. `app_skill_do` is still how it gets run; the difference is
+      // that something now decides rather than matches.
 
       // "What does this error mean" is a question about a screen, and asked it
       // the model answers from nothing — confidently, which is the whole

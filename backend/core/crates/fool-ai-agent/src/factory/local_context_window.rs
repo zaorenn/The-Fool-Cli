@@ -33,7 +33,11 @@ struct NativeModel {
     #[serde(default)]
     loaded_context_length: Option<u64>,
     /// The largest window this model supports.
+    ///
+    /// Read but deliberately unused: see `window_from_listing` for why it is
+    /// not an acceptable substitute when the model is not loaded.
     #[serde(default)]
+    #[allow(dead_code)]
     max_context_length: Option<u64>,
 }
 
@@ -56,9 +60,18 @@ pub(crate) fn native_models_url(base_url: &str) -> String {
 
 /// The window for `model_id`, from a native model listing.
 ///
-/// Prefers what the model was actually loaded with over what it could support:
-/// a model that can do 128k but was loaded at 8k will fail at 8k, and the
-/// number that matters is the one that will be enforced.
+/// **Only what the model was actually loaded with counts.** The listing also
+/// carries `max_context_length`, the largest window the weights support, and
+/// that number is worse than no answer: `qwen/qwen3.5-9b` reports 262,144
+/// against the 64,256 it was loaded with, and compacting against the former
+/// means never compacting at all and letting the conversation run past the
+/// window it really has. Which is the failure the whole module was written to
+/// prevent, arrived at from the other side.
+///
+/// A model that is not loaded therefore yields nothing, and the caller keeps
+/// its pessimistic guess from the model's name. That is right rather than
+/// merely safe: what window it *will* be loaded with is not yet decided, and
+/// the supported maximum is no evidence about it.
 ///
 /// Matching is exact first, then by suffix, because the id stored against a
 /// provider is sometimes qualified with a publisher (`qwen/qwen3.5-9b`) where
@@ -78,7 +91,7 @@ fn window_from_listing(body: &str, model_id: &str) -> Option<usize> {
             })
         })?;
 
-    let window = matched.loaded_context_length.or(matched.max_context_length)?;
+    let window = matched.loaded_context_length?;
     usize::try_from(window).ok().filter(|value| *value > 0)
 }
 
@@ -127,17 +140,23 @@ mod tests {
         assert_eq!(window_from_listing(LISTING, "qwen/qwen3.5-9b"), Some(65536));
     }
 
+    /// The regression this file was changed for.
+    ///
+    /// A model that is not loaded reports only what it could support. Taking
+    /// that number set the window to 262,144 against a model loaded at 64,256,
+    /// which stops compaction firing at all.
     #[test]
-    fn falls_back_to_the_maximum_when_the_model_is_not_loaded() {
-        assert_eq!(window_from_listing(LISTING, "phi-3.5-mini-instruct"), Some(16384));
+    fn a_model_that_is_not_loaded_yields_nothing_rather_than_its_maximum() {
+        assert_eq!(window_from_listing(LISTING, "phi-3.5-mini-instruct"), None);
     }
 
-    /// The loaded window is the one that will be enforced, so it wins even
-    /// though the model could support four times as much.
+    /// The loaded window is the one that will be enforced, and the supported
+    /// maximum is four times larger here.
     #[test]
-    fn prefers_the_loaded_window_over_the_supported_maximum() {
-        let window = window_from_listing(LISTING, "qwen/qwen3.5-9b").unwrap();
-        assert!(window < 131_072);
+    fn takes_the_loaded_window_and_never_the_supported_maximum() {
+        assert_eq!(window_from_listing(LISTING, "qwen/qwen3.5-9b"), Some(65536));
+        let bigger = r#"{ "data": [ { "id": "m", "loaded_context_length": 8192, "max_context_length": 262144 } ] }"#;
+        assert_eq!(window_from_listing(bigger, "m"), Some(8192));
     }
 
     #[test]
@@ -159,7 +178,7 @@ mod tests {
 
     #[test]
     fn a_zero_window_is_not_an_answer() {
-        let zero = r#"{ "data": [ { "id": "m", "loaded_context_length": 0, "max_context_length": 0 } ] }"#;
+        let zero = r#"{ "data": [ { "id": "m", "loaded_context_length": 0 } ] }"#;
         assert_eq!(window_from_listing(zero, "m"), None);
     }
 }
