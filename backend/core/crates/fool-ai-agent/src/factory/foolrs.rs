@@ -811,6 +811,23 @@ fn resolve_mcp_servers(
 /// The conversation is named in the path, which is how one listener serves
 /// every conversation and a call still knows which one it belongs to.
 fn app_tools_to_config(cfg: &AppToolsMcpConfig, conversation_id: &str) -> HashMap<String, McpServerConfig> {
+    /// How long to wait for a listener inside this same process.
+    ///
+    /// The default is thirty seconds, which is written for a server that has to
+    /// be spawned, find an interpreter and load a runtime. This one is a
+    /// `tokio::spawn` on a loopback port in the process doing the waiting: it
+    /// has either answered or it is not going to.
+    ///
+    /// Thirty seconds was not a theoretical cost. `ensure_runtime` runs before a
+    /// turn may proceed, and when these two failed to connect it waited the full
+    /// timeout for each — so every message sat for thirty to forty seconds
+    /// before it was sent to the model at all. Reported as the model being slow,
+    /// which it was not: it had not been asked yet.
+    ///
+    /// This shortens the wait. It does not stop the connection failing, and a
+    /// failure still costs the conversation its app tools.
+    const LOOPBACK_STARTUP_TIMEOUT_MS: u64 = 3_000;
+
     let mut headers = HashMap::new();
     headers.insert("Authorization".to_owned(), format!("Bearer {}", cfg.token));
 
@@ -829,7 +846,7 @@ fn app_tools_to_config(cfg: &AppToolsMcpConfig, conversation_id: &str) -> HashMa
         // first, and a deferred server would make the model search before it
         // could look at the screen.
         deferred: Some(false),
-        startup_timeout_ms: None,
+        startup_timeout_ms: Some(LOOPBACK_STARTUP_TIMEOUT_MS),
     };
 
     // The rest of the application's tools, advertised as names and stubs until
@@ -851,7 +868,7 @@ fn app_tools_to_config(cfg: &AppToolsMcpConfig, conversation_id: &str) -> HashMa
         )),
         headers: Some(deferred_headers),
         deferred: Some(true),
-        startup_timeout_ms: None,
+        startup_timeout_ms: Some(LOOPBACK_STARTUP_TIMEOUT_MS),
     };
 
     HashMap::from([
