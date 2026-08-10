@@ -6,7 +6,9 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  deliberationFor,
   forgetRefusals,
+  speaksOnlyToChat,
   mayAskForNoDeliberation,
   noDeliberation,
   NO_DELIBERATION,
@@ -67,5 +69,76 @@ describe('asking a model not to deliberate', () => {
     forgetRefusals();
 
     expect(mayAskForNoDeliberation('http://strict.example/v1')).toBe(true);
+  });
+});
+
+/**
+ * When it is worth thinking about, and when it is not.
+ *
+ * The two mistakes are not symmetrical, and the rule is lopsided on purpose:
+ * deliberating over "merhaba" costs a slow hello, while not deliberating over
+ * "ekranıma bak" costs the action entirely. So this recognises the small closed
+ * set of turns that are only conversation, and everything else — including
+ * anything it has never seen — gets the model's full attention.
+ */
+describe('whether a turn needs thinking about', () => {
+  const ENDPOINT = 'http://127.0.0.1:1234/v1';
+
+  beforeEach(() => {
+    forgetRefusals();
+  });
+
+  it('answers a greeting at once', () => {
+    for (const said of ['Merhaba', 'merhaba!', 'Selam', 'günaydın', 'Hello', 'hi', 'Nasılsın?', 'teşekkürler']) {
+      expect(speaksOnlyToChat(said), said).toBe(true);
+    }
+  });
+
+  /// Every sentence the task eval scores. All eight must get the attention:
+  /// these are exactly the ones that scored 5/8 when they did not.
+  it('thinks about anything that might be a request', () => {
+    for (const said of [
+      'Favori şarkımı aç.',
+      "YouTube'u aç ve bunny girl'ü bul.",
+      'Ekranıma bak ve bu hata ne diyor söyle.',
+      'Vurgu rengini biraz daha sıcak yap.',
+      String.raw`Masaüstüm D:\Work. Masaüstüm nerede?`,
+      'Bir video istediğimde YouTube’da ara ve ilk sonucu aç.',
+      'Bana Tokyo’ya uçak bileti al.',
+      'Hava nasıl, bir de e-postamı aç.',
+    ]) {
+      expect(speaksOnlyToChat(said), said).toBe(false);
+    }
+  });
+
+  /// The guard that matters as much as the words.
+  it('is not fooled by a request that opens with a greeting', () => {
+    expect(speaksOnlyToChat('selam, ekranıma bakar mısın')).toBe(false);
+    expect(speaksOnlyToChat('merhaba, favori şarkımı açar mısın')).toBe(false);
+  });
+
+  /// A short pleasantry must be a word, not a fragment inside a real one.
+  it('does not mistake a longer word for a pleasantry', () => {
+    expect(speaksOnlyToChat('oku bunu')).toBe(false);
+    expect(speaksOnlyToChat('hikayeyi anlat')).toBe(false);
+    expect(speaksOnlyToChat('tamamla şunu')).toBe(false);
+  });
+
+  it('treats a bare acknowledgement as conversation', () => {
+    for (const said of ['tamam', 'evet', 'ok', 'peki', 'hayır']) {
+      expect(speaksOnlyToChat(said), said).toBe(true);
+    }
+  });
+
+  it('sends the switch only for the turns that need no thought', () => {
+    expect(deliberationFor('merhaba', ENDPOINT)).toEqual({ reasoning_effort: 'none' });
+    expect(deliberationFor('Ekranıma bak.', ENDPOINT)).toEqual({});
+  });
+
+  /// An endpoint that refused the field gets nothing either way, rather than a
+  /// request it has already objected to.
+  it('sends nothing to an endpoint that refused the field', () => {
+    rememberRefusal(ENDPOINT);
+    expect(deliberationFor('merhaba', ENDPOINT)).toEqual({});
   });
 });

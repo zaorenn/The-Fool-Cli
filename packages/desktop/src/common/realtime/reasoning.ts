@@ -100,3 +100,109 @@ export const rememberRefusal = (endpoint: string): void => {
 export const forgetRefusals = (): void => {
   refused.clear();
 };
+
+/**
+ * Whether this turn can be answered without thinking about it.
+ *
+ * Switching the deliberation off made the first spoken word 37 times sooner and
+ * cost three of eight tasks: asked to look at the screen, to warm the accent, or
+ * to learn a rule for next time, the model answered *conversationally* and
+ * reached for no tool at all. Neither end of that is shippable — four minutes is
+ * unusable, and an assistant that talks back instead of acting is the opposite
+ * of the point.
+ *
+ * So the choice is made per sentence, and it is deliberately lopsided. The two
+ * mistakes are not symmetrical:
+ *
+ * - deliberating over "merhaba" costs a few seconds of a greeting
+ * - **not** deliberating over "ekranıma bak" costs the action entirely
+ *
+ * One is a slow hello; the other is the product not working. So this does not
+ * try to recognise a request to act — that would be a verb list, and the list
+ * would be wrong in the direction that breaks things. It recognises the small,
+ * closed set of turns that are *only* conversation, and everything else gets
+ * the model's full attention.
+ *
+ * The length guard matters as much as the words: "selam, ekranıma bakar mısın"
+ * opens with a greeting and is not one.
+ */
+
+/** Past this many characters, a turn is not small talk however it opens. */
+export const CHAT_ONLY_MAX_CHARS = 32;
+
+/**
+ * The openings that are only ever pleasantries, in the languages this is spoken
+ * in. Matched against the whole sentence rather than its start, so "iyi geceler"
+ * and "teşekkürler" land wherever they fall in a short turn.
+ */
+const CHAT_ONLY = [
+  // Turkish
+  'merhaba',
+  'selam',
+  'günaydın',
+  'gunaydin',
+  'iyi akşamlar',
+  'iyi aksamlar',
+  'iyi geceler',
+  'nasılsın',
+  'nasilsin',
+  'naber',
+  'ne haber',
+  'teşekkür',
+  'tesekkur',
+  'sağ ol',
+  'sag ol',
+  'görüşürüz',
+  'gorusuruz',
+  'hoşça kal',
+  'hosca kal',
+  // English
+  'hello',
+  'good morning',
+  'good evening',
+  'good night',
+  'how are you',
+  'thank you',
+  'thanks',
+  'goodbye',
+  'see you',
+] as const;
+
+/** Whole words on their own, which longer ones must not match inside. */
+const CHAT_ONLY_ALONE = ['hi', 'hey', 'yo', 'tamam', 'evet', 'hayır', 'hayir', 'peki', 'olur', 'ok', 'okay', 'bye'];
+
+export const speaksOnlyToChat = (said: string): boolean => {
+  const line = said.trim().toLowerCase();
+  if (line.length === 0) return true;
+  // A long turn is never small talk, whatever it opens with.
+  if (line.length > CHAT_ONLY_MAX_CHARS) return false;
+
+  // The phrases that span words come out first, so "iyi akşamlar" is one
+  // pleasantry rather than an unknown "iyi" beside a known "akşamlar".
+  let rest = line;
+  for (const phrase of CHAT_ONLY.filter((candidate) => candidate.includes(' '))) {
+    rest = rest.replaceAll(phrase, ' ');
+  }
+
+  const words = rest.split(/[^\p{L}\p{N}]+/u).filter((word) => word.length > 0);
+  if (words.length === 0) return true;
+
+  // *Every* word has to be a pleasantry. Testing the sentence for one instead
+  // is what let "selam, ekranıma bakar mısın" through as a greeting — it opens
+  // with one and is a request, which is the case this whole rule exists for.
+  return words.every(
+    (word) =>
+      CHAT_ONLY_ALONE.includes(word) ||
+      // Contained rather than equal, for the languages that glue their endings
+      // on: "teşekkürler" and "teşekkür ederim" are the same pleasantry.
+      CHAT_ONLY.some((phrase) => !phrase.includes(' ') && word.includes(phrase))
+  );
+};
+
+/**
+ * What to send for this turn: nothing to think about, or room to think.
+ *
+ * The one place the trade-off is decided, so a caller cannot get half of it.
+ */
+export const deliberationFor = (said: string, endpoint: string): Record<string, unknown> =>
+  speaksOnlyToChat(said) ? noDeliberation(endpoint) : {};

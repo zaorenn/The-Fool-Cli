@@ -20,7 +20,13 @@ import {
   isUnbackedClaim,
   unbackedClaimCorrection,
 } from '@/common/voice/actionClaims';
-import { mayAskForNoDeliberation, noDeliberation, refusedTheField, rememberRefusal } from '@/common/realtime/reasoning';
+import {
+  deliberationFor,
+  mayAskForNoDeliberation,
+  noDeliberation,
+  refusedTheField,
+  rememberRefusal,
+} from '@/common/realtime/reasoning';
 import { beginScreenLook, forgetScreenLook } from '@renderer/services/voice/screenSight';
 import { MEMORY_REVIEW_PROMPT, readProposals } from '@/common/voice/memoryProposal';
 import { isBackchannel } from '@/common/voice/backchannel';
@@ -903,6 +909,21 @@ export class LocalVoicePipeline {
   }
 
   /**
+   * The last thing the user actually said, for deciding how hard to think.
+   *
+   * Read back out of the history rather than threaded through every caller:
+   * the turn loop runs several rounds against the same sentence, and each of
+   * them has to make the same decision about it.
+   */
+  private newestThingSaid(): string {
+    for (let index = this.history.length - 1; index >= 0; index -= 1) {
+      const turn = this.history[index];
+      if (turn.role === 'user' && typeof turn.content === 'string') return turn.content;
+    }
+    return '';
+  }
+
+  /**
    * Starts looking at the screen before anything has asked to.
    *
    * The user's own sentence is the question — it is what they actually said,
@@ -1389,10 +1410,14 @@ export class LocalVoicePipeline {
           // its entire deliberation into `reasoning_content` before it says a
           // character, and the app rightly refuses to read that aloud — so from
           // the room it is silence. Measured on the real request: 6,538 ms to
-          // the first word without this, 177 ms with, and the same tool chosen.
-          // See `common/realtime/reasoning.ts` for the nine switches that do
-          // nothing.
-          ...(skipDeliberation ? noDeliberation(readiness.endpoint) : {}),
+          // the first word without this, 177 ms with.
+          //
+          // Per sentence rather than always, because switching it off outright
+          // cost three of eight tasks — asked to look at the screen or warm the
+          // accent, it answered conversationally and called no tool. A greeting
+          // is answered at once; anything that might be a request to act gets
+          // the model's full attention. See `common/realtime/reasoning.ts`.
+          ...(skipDeliberation ? deliberationFor(this.newestThingSaid(), readiness.endpoint) : {}),
           // Only when there is something to run them: a server handed tools it is
           // then never allowed to use spends its turn describing what it would do.
           ...(this.options.runTool ? { tools: WIRE_TOOLS } : {}),

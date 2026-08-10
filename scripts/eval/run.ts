@@ -22,7 +22,7 @@
  */
 
 import { buildPersonaInstructions, REALTIME_TOOLS } from '../../packages/desktop/src/common/realtime';
-import { noDeliberation } from '../../packages/desktop/src/common/realtime/reasoning';
+import { deliberationFor, noDeliberation } from '../../packages/desktop/src/common/realtime/reasoning';
 import { AUTOMATIC_TASKS, SPOKEN_TASKS, type Scored, type TurnObservation, scoreOf } from './tasks';
 
 const argOf = (name: string, fallback: string): string => {
@@ -82,6 +82,11 @@ const askOnce = async (said: string): Promise<TurnObservation> => {
         { role: 'user', content: said },
       ],
       tools: wireTools,
+      // Deterministic, because a score is a comparison and sampling makes one
+      // unrepeatable. The same model on the same configuration was seen scoring
+      // 8/8 and then 6/8 with nothing changed between the runs, which made every
+      // number here an opinion. The product samples; the measurement must not.
+      temperature: 0,
       // What the product sends. Without it a reasoning model spends its whole
       // budget deliberating and answers with no tool call at all, so the score
       // would be measuring a different application from the one that ships.
@@ -89,12 +94,17 @@ const askOnce = async (said: string): Promise<TurnObservation> => {
       // budget deliberating and answers with no tool call at all, so a score
       // taken without it is a score for a different application.
       //
-      // `EVAL_THINK=1` sends nothing and lets the model deliberate, which is
-      // how the two were compared. On `qwen/qwen3.5-9b` that comparison is
-      // 5/8 without deliberation and 8/8 with it — the three it loses are the
-      // sentences it has to think about rather than pattern-match, and it
-      // answers them conversationally instead of reaching for a tool.
-      ...(process.env.EVAL_THINK === '1' ? {} : noDeliberation(ENDPOINT)),
+      // The decision is per sentence: a greeting is answered at once and
+      // anything that might be a request to act gets the model's full
+      // attention. Switching it off for everything scored 5/8 against 8/8 —
+      // the three it lost were the sentences it has to think about rather
+      // than pattern-match. `EVAL_THINK=1` deliberates over everything, which
+      // is how that comparison was made.
+      ...(process.env.EVAL_THINK === '1'
+        ? {}
+        : process.env.EVAL_NOTHINK === '1'
+          ? noDeliberation(ENDPOINT)
+          : deliberationFor(said, ENDPOINT)),
     }),
   });
 
