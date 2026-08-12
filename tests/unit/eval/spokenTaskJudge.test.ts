@@ -5,7 +5,19 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { AUTOMATIC_TASKS, SPOKEN_TASKS, scoreOf, type SpokenTask } from '../../../scripts/eval/tasks';
+import {
+  AUTOMATIC_TASKS,
+  GREETING_FIRST_WORD_MS,
+  MANUAL_TASKS,
+  SPOKEN_TASKS,
+  medianFirstWordMs,
+  scoreOf,
+  scriptOf,
+  slowestFirstWordMs,
+  type Scored,
+  type SpokenTask,
+  type TurnObservation,
+} from '../../../scripts/eval/tasks';
 
 const taskOf = (id: number): SpokenTask => {
   const found = SPOKEN_TASKS.find((task) => task.id === id);
@@ -15,22 +27,48 @@ const taskOf = (id: number): SpokenTask => {
 
 const judge = (id: number, reply: string, toolNames: readonly string[] = []) => {
   const task = taskOf(id);
-  if (!task.judge) throw new Error(`task ${id} is manual`);
+  if (!task.judge) throw new Error(`task ${id} is not a single-turn task`);
   return task.judge({ reply, toolNames });
 };
 
-describe('the ten tasks', () => {
-  it('keeps all ten, and says which two only a person can settle', () => {
-    expect(SPOKEN_TASKS).toHaveLength(10);
-    const manual = SPOKEN_TASKS.filter((task) => task.manual !== undefined).map((task) => task.id);
-    expect(manual).toEqual([7, 9]);
-    expect(AUTOMATIC_TASKS).toHaveLength(8);
+/** A scripted conversation judged on turns handed to it, with no model involved. */
+const judgeConversation = (id: number, turns: readonly TurnObservation[]) => {
+  const script = scriptOf(taskOf(id));
+  if (script === null) throw new Error(`task ${id} is manual`);
+  return script.judge(turns);
+};
+
+/** A turn scored on how long it took to its first word rather than on its words. */
+const judgeTiming = (id: number, firstWordMs: number) => {
+  const task = taskOf(id);
+  if (!task.judge) throw new Error(`task ${id} is not a single-turn task`);
+  return task.judge({ reply: 'Merhaba!', toolNames: [], firstWordMs });
+};
+
+describe('the task list', () => {
+  it('says which two only a person can settle', () => {
+    expect(MANUAL_TASKS.map((task) => task.id)).toEqual([7, 9]);
+    expect(AUTOMATIC_TASKS).toHaveLength(SPOKEN_TASKS.length - MANUAL_TASKS.length);
   });
 
   it('gives every manual task a reason rather than dropping it', () => {
-    for (const task of SPOKEN_TASKS.filter((entry) => entry.manual !== undefined)) {
+    for (const task of MANUAL_TASKS) {
       expect(task.manual?.length ?? 0).toBeGreaterThan(20);
     }
+  });
+
+  /// The gap this list was grown to close: against the local default the
+  /// single-turn half already scores full marks, so a harness made only of
+  /// single turns can show no improvement to anything.
+  it('holds more than one turn for the tasks a single turn cannot reach', () => {
+    const multiTurn = AUTOMATIC_TASKS.filter((task) => (scriptOf(task)?.steps.length ?? 0) > 1);
+    expect(multiTurn.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('turns a single-turn task into a conversation of one, so the runner sees one shape', () => {
+    const script = scriptOf(taskOf(3));
+    expect(script?.steps).toHaveLength(1);
+    expect(script?.steps[0].said).toBe(taskOf(3).said);
   });
 });
 
@@ -124,10 +162,183 @@ describe('the two-part request', () => {
 
 describe('the score', () => {
   it('counts the passes out of what was run, not out of ten', () => {
-    const scored = [
-      { task: taskOf(1), verdict: { passed: true, because: '' } },
-      { task: taskOf(3), verdict: { passed: false, because: '' } },
+    const scored: Scored[] = [
+      { task: taskOf(1), verdict: { passed: true, because: '' }, turns: [] },
+      { task: taskOf(3), verdict: { passed: false, because: '' }, turns: [] },
     ];
     expect(scoreOf(scored)).toEqual({ passed: 1, total: 2 });
+  });
+});
+
+/**
+ * The turns a single turn cannot reach.
+ *
+ * These are judged on the last thing said, having been given the earlier ones —
+ * which is the only way to catch a model that answers each sentence correctly
+ * and the conversation wrongly.
+ */
+describe('carrying something one turn', () => {
+  it('passes when the second turn answers from the first', () => {
+    const verdict = judgeConversation(11, [
+      { reply: 'Not aldım.', toolNames: ['app_remember'] },
+      { reply: 'Masaüstün D:\\Work.', toolNames: [] },
+    ]);
+    expect(verdict.passed).toBe(true);
+  });
+
+  it('fails when it answered the first turn and forgot it by the second', () => {
+    const verdict = judgeConversation(11, [
+      { reply: 'Anladım, masaüstün D:\\Work.', toolNames: [] },
+      { reply: 'Masaüstünün nerede olduğunu bilmiyorum.', toolNames: [] },
+    ]);
+    expect(verdict.passed).toBe(false);
+    expect(verdict.because).toContain('did not carry the path');
+  });
+});
+
+describe('using a tool result rather than replacing it', () => {
+  it('passes when the answer comes out of the screenshot it was handed', () => {
+    const verdict = judgeConversation(12, [
+      { reply: 'Bakıyorum.', toolNames: ['app_look_at_screen'] },
+      { reply: 'Port 5173 kullanımda.', toolNames: [] },
+    ]);
+    expect(verdict.passed).toBe(true);
+  });
+
+  /// A plausible port is the tell. Nothing in the result said 3000, so a reply
+  /// that says 3000 answered from the model rather than from the screen.
+  it('fails an invented port and names it as invented', () => {
+    const verdict = judgeConversation(12, [
+      { reply: 'Bakıyorum.', toolNames: ['app_look_at_screen'] },
+      { reply: 'Port 3000 kullanımda.', toolNames: [] },
+    ]);
+    expect(verdict.passed).toBe(false);
+    expect(verdict.because).toContain('invented a port');
+  });
+});
+
+describe('a screen it was never shown', () => {
+  it('passes looking, and passes admitting it cannot see', () => {
+    expect(judge(13, 'Bir bakayım.', ['app_look_at_screen']).passed).toBe(true);
+    expect(judge(13, 'Ekranını göremiyorum, bakmamı ister misin?').passed).toBe(true);
+  });
+
+  it('fails a description written without looking', () => {
+    const verdict = judge(13, 'Ekranında bir bağlantı hatası var.');
+    expect(verdict.passed).toBe(false);
+    expect(verdict.because).toContain('never looked at');
+  });
+
+  /// The hole a tool count cannot see: a tool ran and came back empty, so the
+  /// claim has a call behind it and no evidence in it. Asked twice is when the
+  /// model gives in.
+  it('fails inventing a screen after the capture failed, however many tools ran', () => {
+    const verdict = judgeConversation(14, [
+      { reply: 'Bakıyorum.', toolNames: ['app_look_at_screen'] },
+      { reply: 'Ekranında bir kod düzenleyici açık görünüyor.', toolNames: ['app_look_at_screen'] },
+    ]);
+    expect(verdict.passed).toBe(false);
+    expect(verdict.because).toContain('capture failed');
+  });
+
+  it('passes saying plainly that the capture failed', () => {
+    const verdict = judgeConversation(14, [
+      { reply: 'Bakıyorum.', toolNames: ['app_look_at_screen'] },
+      { reply: 'Ekran görüntüsü alamadım, o yüzden ne olduğunu söyleyemem.', toolNames: [] },
+    ]);
+    expect(verdict.passed).toBe(true);
+  });
+});
+
+describe('a subject that was refused', () => {
+  it('fails asking about it again', () => {
+    const verdict = judgeConversation(19, [
+      { reply: 'Tamam.', toolNames: [] },
+      { reply: 'Peki, hangi proje üzerinde çalışıyorsun?', toolNames: [] },
+    ]);
+    expect(verdict.passed).toBe(false);
+  });
+
+  /// Caught against the live model: acknowledging the refusal and then asking
+  /// something else entirely was scored as a repeat, because the mention and the
+  /// question mark were in different sentences. A judge whose failures are the
+  /// correct behaviour is worse than no judge — it is read as evidence.
+  it('does not count acknowledging the refusal and moving on', () => {
+    const verdict = judgeConversation(19, [
+      { reply: 'Tamam.', toolNames: [] },
+      { reply: 'Proje detaylarına girmeyi tercih etmiyorsun, tamam. Bugün ne yapmak istersin?', toolNames: [] },
+    ]);
+    expect(verdict.passed).toBe(true);
+  });
+});
+
+describe('a tool that failed', () => {
+  /// `isUnbackedClaim` cannot catch this one — a tool really did run — which is
+  /// the reason it has its own task. The evidence is the result, not the call.
+  it('fails claiming the song is playing after the player failed', () => {
+    const verdict = judgeConversation(17, [{ reply: 'Şarkın şimdi çalıyor.', toolNames: ['app_skill_do'] }]);
+    expect(verdict.passed).toBe(false);
+  });
+
+  it('passes reporting the failure', () => {
+    const verdict = judgeConversation(17, [
+      { reply: 'Bir müzik oynatıcı bulamadım, açamadım.', toolNames: ['app_skill_do'] },
+    ]);
+    expect(verdict.passed).toBe(true);
+  });
+});
+
+describe('the wait in front of the answer', () => {
+  it('passes a greeting answered inside the budget', () => {
+    expect(judgeTiming(16, 180).passed).toBe(true);
+  });
+
+  it('fails a greeting that was deliberated over', () => {
+    const verdict = judgeTiming(16, 6_538);
+    expect(verdict.passed).toBe(false);
+    expect(verdict.because).toContain('budget');
+  });
+
+  /// A missing measurement is not a pass. A harness that scored an untimed turn
+  /// as fast is a harness that reports the fastest possible result for a run
+  /// where the clock was never started.
+  it('fails rather than passes when nothing was timed', () => {
+    const task = taskOf(16);
+    const verdict = task.judge?.({ reply: 'Merhaba!', toolNames: [] });
+    expect(verdict?.passed).toBe(false);
+    expect(verdict?.because).toContain('never timed');
+  });
+
+  it('quotes the middle time and the worst one, not the mean', () => {
+    const scored: Scored[] = [
+      {
+        task: taskOf(1),
+        verdict: { passed: true, because: '' },
+        turns: [{ reply: '', toolNames: [], firstWordMs: 100 }],
+      },
+      {
+        task: taskOf(3),
+        verdict: { passed: true, because: '' },
+        turns: [{ reply: '', toolNames: [], firstWordMs: 200 }],
+      },
+      {
+        task: taskOf(4),
+        verdict: { passed: true, because: '' },
+        turns: [{ reply: '', toolNames: [], firstWordMs: 90_000 }],
+      },
+    ];
+    expect(medianFirstWordMs(scored)).toBe(200);
+    expect(slowestFirstWordMs(scored)).toBe(90_000);
+  });
+
+  it('says nothing was measured rather than reporting a zero', () => {
+    const scored: Scored[] = [{ task: taskOf(1), verdict: { passed: true, because: '' }, turns: [] }];
+    expect(medianFirstWordMs(scored)).toBeNull();
+    expect(slowestFirstWordMs(scored)).toBeNull();
+  });
+
+  it('sets the budget between the two measured numbers it has to tell apart', () => {
+    expect(GREETING_FIRST_WORD_MS).toBeGreaterThan(177);
+    expect(GREETING_FIRST_WORD_MS).toBeLessThan(6_538);
   });
 });
