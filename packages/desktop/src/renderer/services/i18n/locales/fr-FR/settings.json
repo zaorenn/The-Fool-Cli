@@ -2000,7 +2000,14 @@
     "learnMore": "En savoir plus",
     "signInNow": "Se connecter",
     "signInStarted": "Un terminal s'est ouvert. Connecte-toi là, puis reviens et vérifie à nouveau.",
-    "signInFallback": "Aucun terminal n'a pu être ouvert. Lance ceci toi-même :"
+    "signInFallback": "Aucun terminal n'a pu être ouvert. Lance ceci toi-même :",
+    "advice": {
+      "gpu": "Ta carte graphique peut faire tourner un modèle {{size}}. Commence par là.",
+      "no-gpu": "Aucune carte graphique utilisable n'a été trouvée, donc ce serait sur le processeur : un modèle {{size}} tient. Ce sera lent, mais ça marchera.",
+      "unknown": "La carte graphique n'a pas pu être mesurée ; voici une estimation prudente à partir de la mémoire système : essaie un modèle {{size}}.",
+      "tooSmall": "Cet ordinateur n'a pas la place pour un modèle local. Connecte plutôt un modèle cloud.",
+      "alsoFits": "Tient aussi : {{sizes}}"
+    }
   },
   "permissions": {
     "askTitle": "Autoriser ceci ?",

@@ -87,6 +87,7 @@ import type {
   UpdateProviderRequest,
 } from '../types/provider/providerApi';
 import type { LocalModelListResult } from '../types/provider/localModels';
+import type { MachineMemory } from '../config/localModelAdvice';
 import type {
   ITeamAgentRemovedEvent,
   ITeamAgentRenamedEvent,
@@ -366,6 +367,14 @@ export const agentBrowser = {
  */
 export const localModels = {
   listLmStudioModels: bridge.buildProvider<LocalModelListResult, void>('local-models.list-lmstudio'),
+  /**
+   * How much memory this machine can give a model, for `adviseLocalModel`.
+   *
+   * Read in the main process because neither figure is visible from a renderer:
+   * `navigator.deviceMemory` is capped at 8 and rounded to a power of two, and
+   * WebGL will name the card without ever saying how large it is.
+   */
+  machineMemory: bridge.buildProvider<MachineMemory, void>('local-models.machine-memory'),
 };
 
 // ---------------------------------------------------------------------------

@@ -2003,7 +2003,14 @@
     "learnMore": "Saiba mais",
     "signInNow": "Entrar",
     "signInStarted": "Um terminal foi aberto. Entre por lá e depois volte e verifique de novo.",
-    "signInFallback": "Não foi possível abrir um terminal. Execute isto você mesmo:"
+    "signInFallback": "Não foi possível abrir um terminal. Execute isto você mesmo:",
+    "advice": {
+      "gpu": "Sua placa de vídeo consegue rodar um modelo {{size}}. Comece por ele.",
+      "no-gpu": "Nenhuma placa de vídeo utilizável foi encontrada, então isso rodaria no processador: cabe um modelo {{size}}. Vai ser lento, mas funciona.",
+      "unknown": "Não foi possível medir a placa de vídeo, então esta é uma estimativa cuidadosa a partir da memória do sistema: tente um modelo {{size}}.",
+      "tooSmall": "Este computador não tem espaço para um modelo local. Conecte um modelo na nuvem.",
+      "alsoFits": "Também cabem: {{sizes}}"
+    }
   },
   "permissions": {
     "askTitle": "Permitir isso?",

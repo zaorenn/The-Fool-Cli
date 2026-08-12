@@ -2000,7 +2000,14 @@
     "learnMore": "Mehr erfahren",
     "signInNow": "Anmelden",
     "signInStarted": "Ein Terminal wurde geöffnet. Melde dich dort an und prüfe danach hier noch einmal.",
-    "signInFallback": "Es konnte kein Terminal geöffnet werden. Führe das selbst aus:"
+    "signInFallback": "Es konnte kein Terminal geöffnet werden. Führe das selbst aus:",
+    "advice": {
+      "gpu": "Deine Grafikkarte schafft ein {{size}}-Modell. Fang damit an.",
+      "no-gpu": "Es wurde keine brauchbare Grafikkarte gefunden, das liefe also auf dem Prozessor: Ein {{size}}-Modell passt. Langsam, aber es läuft.",
+      "unknown": "Die Grafikkarte ließ sich nicht auslesen, das ist eine vorsichtige Schätzung aus dem Arbeitsspeicher: Probier ein {{size}}-Modell.",
+      "tooSmall": "Dieser Rechner hat keinen Platz für ein lokales Modell. Verbinde stattdessen ein Cloud-Modell.",
+      "alsoFits": "Passt außerdem: {{sizes}}"
+    }
   },
   "permissions": {
     "askTitle": "Das erlauben?",

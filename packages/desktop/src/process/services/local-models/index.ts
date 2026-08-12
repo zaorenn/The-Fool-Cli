@@ -15,6 +15,7 @@ import type { LocalModelListResult } from '@/common/types/provider/localModels';
 import { readLmsCliModels, type LocalModelEntry } from './lmsCli';
 import { scanModelDirectory } from './modelDirScan';
 import { resolveLmStudioModels, type LmStudioSourceDeps, type ModelListTier } from './LmStudioModelSource';
+import { readMachineMemory } from './machineMemory';
 import { publishLmStudioModels } from './LocalProviderRegistrar';
 
 export { discoverAndRegisterLocalProviders, publishLmStudioModels } from './LocalProviderRegistrar';
@@ -202,6 +203,18 @@ export const registerLocalModelsBridge = (): void => {
       return { tier, models: models.map((model) => model.id) };
     } catch {
       return { tier: 'unavailable', models: [] };
+    }
+  });
+
+  ipcBridge.localModels.machineMemory.provider(async () => {
+    try {
+      return await readMachineMemory();
+    } catch {
+      // A machine that will not describe itself is treated as one with no
+      // readable card, which is what `adviseLocalModel` already handles: a
+      // conservative share of system memory, said as a guess rather than a
+      // measurement.
+      return { vramGb: null, ramGb: 0 };
     }
   });
 };

@@ -2001,7 +2001,14 @@
     "learnMore": "了解更多",
     "signInNow": "登录",
     "signInStarted": "已打开一个终端。请在那里登录，然后回来重新检查。",
-    "signInFallback": "没能打开终端。请自己运行："
+    "signInFallback": "没能打开终端。请自己运行：",
+    "advice": {
+      "gpu": "你的显卡可以运行 {{size}} 的模型，就从它开始。",
+      "no-gpu": "没有找到可用的显卡，所以会跑在处理器上：{{size}} 的模型放得下。会慢，但能用。",
+      "unknown": "无法读出显卡容量，这是根据系统内存做的保守估计：试试 {{size}} 的模型。",
+      "tooSmall": "这台电脑装不下本地模型，请改为连接云端模型。",
+      "alsoFits": "也放得下：{{sizes}}"
+    }
   },
   "permissions": {
     "askTitle": "允许这个操作吗？",

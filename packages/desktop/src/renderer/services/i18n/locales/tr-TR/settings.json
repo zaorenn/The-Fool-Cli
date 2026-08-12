@@ -2000,7 +2000,14 @@
     "learnMore": "Daha fazla",
     "signInNow": "Giriş yap",
     "signInStarted": "Bir terminal açıldı. Girişi orada tamamla, sonra buraya dönüp tekrar kontrol et.",
-    "signInFallback": "Terminal açılamadı. Bunu kendin çalıştır:"
+    "signInFallback": "Terminal açılamadı. Bunu kendin çalıştır:",
+    "advice": {
+      "gpu": "Ekran kartın {{size}} bir modeli çalıştırabilir. Oradan başla.",
+      "no-gpu": "Kullanılabilir bir ekran kartı bulunamadı, yani bu işlemcide çalışır: sığan {{size}} bir model. Yavaş olacak ama çalışacak.",
+      "unknown": "Ekran kartı ölçülemedi, bu yüzden sistem belleğinden temkinli bir tahmin: {{size}} bir model dene.",
+      "tooSmall": "Bu bilgisayarda yerel bir model için yer yok. Onun yerine bir bulut modeli bağla.",
+      "alsoFits": "Ayrıca sığar: {{sizes}}"
+    }
   },
   "permissions": {
     "askTitle": "Buna izin veriyor musun?",

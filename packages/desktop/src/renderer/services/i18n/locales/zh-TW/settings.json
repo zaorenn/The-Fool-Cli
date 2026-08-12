@@ -2002,7 +2002,14 @@
     "learnMore": "瞭解更多",
     "signInNow": "登入",
     "signInStarted": "已開啟一個終端機。請在那裡登入，然後回來重新檢查。",
-    "signInFallback": "沒能開啟終端機。請自己執行："
+    "signInFallback": "沒能開啟終端機。請自己執行：",
+    "advice": {
+      "gpu": "你的顯示卡可以執行 {{size}} 的模型，就從它開始。",
+      "no-gpu": "沒有找到可用的顯示卡，所以會跑在處理器上：{{size}} 的模型放得下。會慢，但能用。",
+      "unknown": "無法讀出顯示卡容量，這是依系統記憶體做的保守估計：試試 {{size}} 的模型。",
+      "tooSmall": "這台電腦裝不下本機模型，請改為連接雲端模型。",
+      "alsoFits": "也放得下：{{sizes}}"
+    }
   },
   "permissions": {
     "askTitle": "允許這個操作嗎？",

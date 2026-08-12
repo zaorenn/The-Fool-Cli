@@ -13,6 +13,7 @@ import {
   type GatewayState,
   type LocalGatewayId,
 } from '@/common/config/localGateways';
+import { adviseLocalModel, type LocalModelAdvice } from '@/common/config/localModelAdvice';
 
 /**
  * Looking at the machine before asking the user anything.
@@ -92,13 +93,37 @@ export const detectAgents = async (): Promise<Map<ConnectableAgentId, AgentPrese
   return found;
 };
 
+/**
+ * Which local model this machine should be asked to run.
+ *
+ * "Load a model" was the whole instruction the panel gave, and it is the step
+ * where local-first quietly fails: the catalogue is thousands of files, and the
+ * only way to learn that the 14B does not fit is to download twelve gigabytes
+ * and watch it not fit. `adviseLocalModel` has been able to answer this since it
+ * was written and nothing ever called it, because nothing measured the machine.
+ *
+ * Null when the main process cannot be reached — a missing recommendation is a
+ * panel with one fewer hint, and a thrown one is a panel that does not open.
+ */
+export const adviseForThisMachine = async (): Promise<LocalModelAdvice | null> => {
+  try {
+    const memory = await ipcBridge.localModels.machineMemory.invoke();
+    if (!memory || typeof memory.ramGb !== 'number') return null;
+    return adviseLocalModel(memory);
+  } catch {
+    return null;
+  }
+};
+
 export type SetupSnapshot = {
   agents: Map<ConnectableAgentId, AgentPresence>;
   gateways: Map<LocalGatewayId, GatewayState>;
+  /** What to load, for somebody who has a gateway and nothing in it. */
+  advice: LocalModelAdvice | null;
 };
 
-/** Both halves, together, in one wait rather than two. */
+/** Every half, together, in one wait rather than three. */
 export const detectSetup = async (): Promise<SetupSnapshot> => {
-  const [agents, gateways] = await Promise.all([detectAgents(), detectGateways()]);
-  return { agents, gateways };
+  const [agents, gateways, advice] = await Promise.all([detectAgents(), detectGateways(), adviseForThisMachine()]);
+  return { agents, gateways, advice };
 };

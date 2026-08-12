@@ -2000,7 +2000,14 @@
     "learnMore": "Más información",
     "signInNow": "Iniciar sesión",
     "signInStarted": "Se ha abierto un terminal. Inicia sesión ahí y luego vuelve y comprueba de nuevo.",
-    "signInFallback": "No se ha podido abrir un terminal. Ejecuta esto tú mismo:"
+    "signInFallback": "No se ha podido abrir un terminal. Ejecuta esto tú mismo:",
+    "advice": {
+      "gpu": "Tu tarjeta gráfica puede mover un modelo de {{size}}. Empieza por ahí.",
+      "no-gpu": "No se encontró una tarjeta gráfica utilizable, así que iría en el procesador: cabe un modelo de {{size}}. Será lento, pero funcionará.",
+      "unknown": "No se pudo medir la tarjeta gráfica, así que esto es una estimación prudente a partir de la memoria del sistema: prueba un modelo de {{size}}.",
+      "tooSmall": "Este ordenador no tiene sitio para un modelo local. Conecta un modelo en la nube.",
+      "alsoFits": "También caben: {{sizes}}"
+    }
   },
   "permissions": {
     "askTitle": "¿Permitir esto?",

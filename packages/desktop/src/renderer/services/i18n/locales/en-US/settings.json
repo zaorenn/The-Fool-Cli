@@ -2000,7 +2000,14 @@
     "learnMore": "Learn more",
     "signInNow": "Sign in",
     "signInStarted": "A terminal has opened. Sign in there, then come back and check again.",
-    "signInFallback": "That did not open a terminal. Run this yourself:"
+    "signInFallback": "That did not open a terminal. Run this yourself:",
+    "advice": {
+      "gpu": "Your graphics card can run a {{size}} model. Start there.",
+      "no-gpu": "No usable graphics card was found, so this would run on the processor: a {{size}} model is what fits. It will be slow but it will work.",
+      "unknown": "Your graphics card could not be measured, so this is a careful guess from system memory: try a {{size}} model.",
+      "tooSmall": "This computer does not have room for a local model. Connect a cloud model instead.",
+      "alsoFits": "Also fits: {{sizes}}"
+    }
   },
   "permissions": {
     "askTitle": "Allow this?",

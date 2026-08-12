@@ -8,6 +8,7 @@ import { ipcBridge } from '@/common';
 import { orderForSetup, type ConnectStep } from '@/common/config/connectableAgents';
 import { orderGateways, type GatewayState } from '@/common/config/localGateways';
 import { detectSetup, type SetupSnapshot } from '@renderer/services/setup/detectSetup';
+import type { LocalModelAdvice } from '@/common/config/localModelAdvice';
 import { Button, Message, Spin, Tag, Typography } from '@arco-design/web-react';
 import { Copy, Refresh } from '@icon-park/react';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -114,6 +115,49 @@ const SignInRow: React.FC<{ agentId: string; command: string }> = ({ agentId, co
   );
 };
 
+/**
+ * Which model to load, for a machine that has been measured.
+ *
+ * The one recommendation is the point. A list of six sizes is the catalogue
+ * problem in a smaller font, so the alternatives are named in one line
+ * underneath and the search terms are copyable, because "Qwen3 14B" typed by
+ * hand into LM Studio is where this goes wrong.
+ *
+ * It says which measurement it is standing on. A figure read from the card and
+ * a share of system memory are different claims, and presenting the second as
+ * the first is how somebody ends up with a model that swaps.
+ */
+const ModelAdviceRow: React.FC<{ advice: LocalModelAdvice }> = ({ advice }) => {
+  const { t } = useTranslation();
+
+  if (!advice.recommended) {
+    return (
+      <Typography.Text className='mt-6px block text-12px text-t-tertiary'>
+        {t('settings.setup.advice.tooSmall')}
+      </Typography.Text>
+    );
+  }
+
+  const { parameters, quantisation, examples, suitedTo } = advice.recommended;
+
+  return (
+    <div className='mt-8px'>
+      <Typography.Text className='block text-12px text-t-secondary'>
+        {t(`settings.setup.advice.${advice.reason}`, { size: `${parameters} ${quantisation}` })}
+      </Typography.Text>
+      <Typography.Text className='mt-2px block text-12px text-t-tertiary'>{suitedTo}</Typography.Text>
+      <CommandRow command={examples[0]} label={t('settings.setup.copy')} />
+      {advice.alsoFits.length > 0 ? (
+        <Typography.Text className='mt-4px block text-11px text-t-tertiary'>
+          {t('settings.setup.advice.alsoFits', {
+            sizes: advice.alsoFits.map((tier) => tier.parameters).join(', '),
+          })}
+        </Typography.Text>
+      ) : null}
+    </div>
+  );
+};
+
 const SetupPanel: React.FC = () => {
   const { t } = useTranslation();
   const [snapshot, setSnapshot] = useState<SetupSnapshot | null>(null);
@@ -204,9 +248,15 @@ const SetupPanel: React.FC = () => {
                   is up with nothing loaded needs "load a model", not "install". */}
               {state === 'absent' ? <CommandRow command={gateway.install} label={t('settings.setup.copy')} /> : null}
               {state === 'running-empty' ? (
-                <Typography.Text className='mt-6px block text-12px text-warning'>
-                  {t('settings.setup.loadAModel')}
-                </Typography.Text>
+                <>
+                  <Typography.Text className='mt-6px block text-12px text-warning'>
+                    {t('settings.setup.loadAModel')}
+                  </Typography.Text>
+                  {/* Only where it answers the question just asked. A gateway
+                      that is absent needs installing, and one that is ready has
+                      a model already. */}
+                  {snapshot?.advice ? <ModelAdviceRow advice={snapshot.advice} /> : null}
+                </>
               ) : null}
             </div>
           ))}
