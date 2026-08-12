@@ -139,26 +139,47 @@ html[data-fool-style='liquid'] {
     var(--fool-ground);
 }
 
+/*
+ * The travelling highlight, moved by its own background rather than by a
+ * transform — for exactly the reason the aurora section below states, which this
+ * rule was written in violation of.
+ *
+ * `inset: 0` and then `translateX(-125%)` does not park the highlight at the
+ * edge of the surface. It parks it **one and a quarter widths away from the
+ * surface**, and nothing clips it: `.fool-surface` has no `overflow`, and it
+ * must not have one, because half the elements this class goes on are scroll
+ * containers. So the sheen sat outside its own card, painting a diagonal band
+ * across whatever happened to be next to it — the whole width of the voice page
+ * in the reported case — and it was there at rest, not during a sweep, which is
+ * why it read as a misdrawn stripe rather than as an animation.
+ *
+ * A background cannot do this. It is anchored to the element's own box and
+ * clipped to it, so the highlight sweeps through and disappears at both ends
+ * with nothing to escape into. The band is a third of the image, so the two
+ * resting positions put it clear of the box on either side.
+ */
 html[data-fool-style='glass'] .fool-surface::after,
 html[data-fool-style='liquid'] .fool-surface::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(
+  background-image: linear-gradient(
     115deg,
     transparent 32%,
-    rgb(255 255 255 / calc(0.28 + var(--fool-sheen) * 0.4)) 46%,
+    rgb(255 255 255 / calc(0.28 + var(--fool-sheen, 0.5) * 0.4)) 46%,
     transparent 60%
   );
-  transform: translateX(-125%);
-  transition: transform calc(var(--fool-motion, 220ms) * 3) ease;
+  background-size: 300% 100%;
+  background-repeat: no-repeat;
+  background-position: 0% 0;
+  transition: background-position calc(var(--fool-motion, 220ms) * 3) ease;
   pointer-events: none;
 }
 
 html[data-fool-style='glass'] .fool-surface:hover::after,
 html[data-fool-style='liquid'] .fool-surface:hover::after {
-  transform: translateX(125%);
+  background-position: 100% 0;
 }
 
 html[data-fool-style='glass'] .fool-surface:hover {
