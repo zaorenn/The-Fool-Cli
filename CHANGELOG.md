@@ -2,9 +2,9 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
-## 2.4.0
+## 2.5.0
 
-The first release this project's own CI has built. Every `Build and Release` run since 2.3.4 stopped before it started — five lint errors in the quality gate, so the build pipeline was skipped every time and the installers on those releases were made by hand. That is fixed, which is why this entry exists at all.
+Carries everything 2.4.0 was going to. That version was tagged on 9 August and never built — the tag still points at the commit that bumped it, with none of the work below in it — so the number moves on rather than being quietly redefined.
 
 ### It opens, and the window is not blank
 
@@ -37,7 +37,9 @@ The first release this project's own CI has built. Every `Build and Release` run
 - **The image tool cannot read outside the workspace.** Paths arrived in a tool call the model wrote and were resolved with no boundary, so `../../../` was read and handed back.
 - **The backend has a version you can name.** CI claimed one was pinned in `package.json`; the key did not exist, so every binary this repository has produced reported the same string. It is declared and asserted now, the bundle records the commit, and both workflows cache the Rust build they had been doing from scratch every time.
 
-### Earlier in 2.4.0
+### Earlier in this line
+
+The first release this project's own CI has built. Every `Build and Release` run since 2.3.4 stopped before it started — five lint errors in the quality gate, so the build pipeline was skipped every time and the installers on those releases were made by hand. That is fixed, which is why this entry exists at all.
 
 The first release this project's own CI has built. Every `Build and Release` run since 2.3.4 stopped before it started — five lint errors in the quality gate, so the build pipeline was skipped every time and the installers on those releases were made by hand. That is fixed, which is why this entry exists at all.
 
