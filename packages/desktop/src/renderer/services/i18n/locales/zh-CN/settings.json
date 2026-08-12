@@ -1659,6 +1659,8 @@
     "spokenConversationName": "语音对话",
     "conversationAgentRuntime": "使用智能体运行时",
     "conversationAgentRuntimeHint": "语音对话使用与文字对话相同的运行时思考：可以读取文件、执行命令，并记住十二轮以前的内容。默认开启；关闭后回到内置的小循环。第一声可能会稍慢一些。",
+    "conversationLastTimeRecent": "上次你在忙{{what}}。",
+    "conversationLastTimeOlder": "我们上次聊的时候，你在忙{{what}}。",
     "conversationDidIt": "好了。",
     "conversationCouldNotDoIt": "这件事我没能做到。",
     "conversationThemeUnchanged": "本来就是这样。",

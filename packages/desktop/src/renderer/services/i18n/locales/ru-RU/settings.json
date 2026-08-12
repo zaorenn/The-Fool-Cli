@@ -1658,6 +1658,8 @@
     "spokenConversationName": "Голосовой разговор",
     "conversationAgentRuntime": "Использовать среду агента",
     "conversationAgentRuntimeHint": "Голосовой разговор думает тем же движком, что и переписка: может читать файлы, выполнять команды и помнить больше двенадцати ходов. По умолчанию включено; если выключить, вернётся небольшой встроенный цикл. Первый звук может прозвучать чуть позже.",
+    "conversationLastTimeRecent": "В прошлый раз вы были на {{what}}.",
+    "conversationLastTimeOlder": "Когда мы говорили в прошлый раз, вы были на {{what}}.",
     "conversationDidIt": "Готово.",
     "conversationCouldNotDoIt": "Я не смог этого сделать.",
     "conversationThemeUnchanged": "Так уже и было.",

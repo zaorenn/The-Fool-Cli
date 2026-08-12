@@ -2708,6 +2708,8 @@ export type I18nKey =
   | 'settings.voice.conversationLanguageName.tr'
   | 'settings.voice.conversationLanguageName.uk'
   | 'settings.voice.conversationLanguageName.zh'
+  | 'settings.voice.conversationLastTimeOlder'
+  | 'settings.voice.conversationLastTimeRecent'
   | 'settings.voice.conversationLearned'
   | 'settings.voice.conversationLearnedSkill'
   | 'settings.voice.conversationLocalEndpoint'

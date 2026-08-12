@@ -21,7 +21,8 @@
  * when the user is already walking away.
  */
 
-import { memoryLine, MAX_MEMORY_LINE } from './memoryDoc';
+import { memoryLine, MAX_MEMORY_LINE, readSection } from './memoryDoc';
+import { MEMORY_SECTIONS } from './memory';
 
 /** One thing that was said, by whichever side said it. */
 export type SpokenTurn = { role: 'user' | 'assistant'; text: string };
@@ -63,4 +64,92 @@ export const describeSpokenTurns = (turns: readonly SpokenTurn[]): string => {
   // Half each, so a long opening question cannot crowd the closing one out.
   const half = Math.floor((MAX_MEMORY_LINE - 3) / 2);
   return memoryLine(`${first.slice(0, half)} … ${last.slice(0, half)}`);
+};
+
+// ───────────────────────────────────────────────────────────────────────────
+// Picking the line back up.
+//
+// Writing a session line down is only half of it, and the half nobody feels.
+// What makes an assistant personal is that it knows what you were doing
+// yesterday — one sentence at the start, not a summary, and the difference
+// between an assistant and a search box is entirely in that sentence.
+//
+// **It is built here and not asked for.** A model told "mention last session"
+// will mention a last session whether or not there was one, and will improve
+// on it: the date drifts, the subject grows detail nobody supplied, and none of
+// the honesty gates catch it — `isEmptyRecall` only fires on an empty memory,
+// and this memory is not empty, it is merely being embellished. So the sentence
+// is assembled from the stored line verbatim, and the model is not consulted.
+// ───────────────────────────────────────────────────────────────────────────
+
+/** A session line as it was written down: the day, and what it came to. */
+export type PastSession = {
+  /** `YYYY-MM-DD`, exactly as stored. */
+  day: string;
+  summary: string;
+};
+
+/** One stored line, split back into its two halves. `null` if it is neither. */
+const readSessionLine = (line: string): PastSession | null => {
+  // Written by `rememberSession` as "YYYY-MM-DD — summary". An em dash, and the
+  // date is fixed width, so this does not have to guess.
+  const match = /^(\d{4}-\d{2}-\d{2})\s*—\s*(.+)$/.exec(line.trim());
+  if (match === null) return null;
+  const summary = match[2].trim();
+  return summary.length === 0 ? null : { day: match[1], summary };
+};
+
+/** The most recent conversation the memory holds, if it holds one. */
+export const lastSession = (userDoc: string): PastSession | null => {
+  const lines = readSection(userDoc, MEMORY_SECTIONS.sessions);
+  // Newest last, because that is the order `appendToSection` writes them in.
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    const parsed = readSessionLine(lines[index]);
+    if (parsed !== null) return parsed;
+  }
+  return null;
+};
+
+/**
+ * How old a conversation may be and still be worth opening with.
+ *
+ * Two weeks. Past that "last time you were on the installer" is not continuity,
+ * it is an assistant bringing up something the user has finished and forgotten,
+ * which reads as not having been paying attention since.
+ */
+export const CONTINUITY_MAX_DAYS = 14;
+
+/** Whole days between two dates, by calendar day rather than by elapsed hours. */
+const daysBetween = (from: string, now: Date): number => {
+  const then = new Date(`${from}T00:00:00`);
+  if (Number.isNaN(then.getTime())) return Number.POSITIVE_INFINITY;
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((today.getTime() - then.getTime()) / 86_400_000);
+};
+
+/** What to open with: which sentence, and what to put in it. */
+export type Continuity = {
+  /** `recent` for today or yesterday, `older` for anything further back. */
+  when: 'recent' | 'older';
+  summary: string;
+};
+
+/**
+ * The opening line's ingredients, or `null` for a conversation that gets none.
+ *
+ * `null` is the common answer and deliberately so. A first-ever conversation,
+ * a memory with nothing in it, a gap of three weeks, a clock that has gone
+ * backwards — all of them are silence, because an assistant that reaches for
+ * continuity it does not have produces exactly the invented sentence this is
+ * built to avoid.
+ */
+export const continuityFor = (userDoc: string, now: Date = new Date()): Continuity | null => {
+  const session = lastSession(userDoc);
+  if (session === null) return null;
+
+  const age = daysBetween(session.day, now);
+  // A negative age is a clock that moved, not a conversation from the future.
+  if (age < 0 || age > CONTINUITY_MAX_DAYS) return null;
+
+  return { when: age <= 1 ? 'recent' : 'older', summary: session.summary };
 };

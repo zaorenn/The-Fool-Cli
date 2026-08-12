@@ -1659,6 +1659,8 @@
     "spokenConversationName": "Голосова розмова",
     "conversationAgentRuntime": "Використовувати середовище агента",
     "conversationAgentRuntimeHint": "Голосова розмова думає тим самим середовищем, що й листування: може читати файли, виконувати команди та пам’ятати більше ніж дванадцять ходів. Типово увімкнено; якщо вимкнути, повернеться невеликий вбудований цикл. Перший звук може пролунати трохи пізніше.",
+    "conversationLastTimeRecent": "Минулого разу ви були на {{what}}.",
+    "conversationLastTimeOlder": "Коли ми говорили востаннє, ви були на {{what}}.",
     "conversationDidIt": "Готово.",
     "conversationCouldNotDoIt": "Я не зміг цього зробити.",
     "conversationThemeUnchanged": "Так уже й було.",

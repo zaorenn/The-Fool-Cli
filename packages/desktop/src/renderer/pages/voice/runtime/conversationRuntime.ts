@@ -38,6 +38,7 @@ import {
 import { peekVoiceSettings, subscribeVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import { guardSpokenSentence } from '@renderer/services/voice/session/spokenOutput';
 import { showedTheScreen } from '@/common/voice/actionClaims';
+import { continuityFor } from '@/common/voice/sessionSummary';
 import type { ConversationFile } from '@/common/voice/conversationFiles';
 import { LocalVoicePipeline } from '../localPipeline';
 import { PcmAudioOutput, PcmMicrophone } from '../pcmAudio';
@@ -856,12 +857,53 @@ class ConversationRuntime {
       // cut short still happened, and being asked your name again every time you
       // hang up early is worse than missing one follow-up question.
       void markVoiceIntroduced();
+      this.pickUpWhereWeLeftOff();
     } catch (startError) {
       const code = startError instanceof Error ? startError.message : String(startError);
       this.stop();
       this.emit({ error: this.t(`settings.voice.conversationError.${code}`, { defaultValue: code }) });
     }
   };
+
+  /**
+   * One sentence about last time, at the start of a conversation.
+   *
+   * The whole of what makes an assistant feel like it knows you, and the
+   * cheapest thing in this file. Said once, at the opening, and never mentioned
+   * again — this is a greeting, not a summary, and a second sentence about
+   * yesterday is somebody reading their notes at you.
+   *
+   * **Built here rather than asked for.** A model told to mention the last
+   * conversation will mention one whether or not there was one, and will
+   * improve on it: the date drifts and the subject grows detail nobody
+   * supplied. None of the honesty gates catch that — `isEmptyRecall` fires on an
+   * *empty* memory, and this memory is not empty, it is being embellished. So
+   * the sentence is assembled from the stored line word for word.
+   *
+   * It does not go through `maySpeakUnprompted`: the user opened this
+   * conversation a second ago, so nothing is being interrupted and nobody is
+   * being surprised. What would be wrong is saying it into a conversation that
+   * is already under way, which is why it happens here and only here.
+   */
+  private pickUpWhereWeLeftOff(): void {
+    const opener = continuityFor(peekVoiceMemory().user);
+    if (opener === null) return;
+
+    const line = this.t(
+      opener.when === 'recent'
+        ? 'settings.voice.conversationLastTimeRecent'
+        : 'settings.voice.conversationLastTimeOlder',
+      { what: opener.summary }
+    );
+    if (typeof line !== 'string' || line.trim().length === 0) return;
+
+    // Through `speakAside`, which is the one path that speaks without a turn
+    // behind it. It is also the only surface with a voice already resolved at
+    // this point in the start-up, which is why a socket provider gets the line
+    // spoken by the local voice rather than not at all.
+    void this.local?.speakAside(line.trim());
+    this.emit({ assistantTranscript: line.trim() });
+  }
 
   /** Keeps one finished turn, bounded so a long conversation is not a leak. */
   private record(role: SpokenTurn['role'], text: string): void {

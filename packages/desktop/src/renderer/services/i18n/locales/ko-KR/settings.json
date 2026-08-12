@@ -1660,6 +1660,8 @@
     "spokenConversationName": "음성 대화",
     "conversationAgentRuntime": "에이전트 런타임 사용",
     "conversationAgentRuntimeHint": "음성 대화가 채팅과 같은 런타임에서 생각합니다. 파일을 읽고, 명령을 실행하고, 열두 턴 이전까지 기억합니다. 기본값은 켜짐이며, 끄면 내장된 작은 루프로 돌아갑니다. 첫 소리가 조금 늦어질 수 있습니다.",
+    "conversationLastTimeRecent": "지난번에는 {{what}} 작업을 하고 계셨죠.",
+    "conversationLastTimeOlder": "지난번 대화 때는 {{what}} 작업을 하고 계셨죠.",
     "conversationDidIt": "완료했습니다.",
     "conversationCouldNotDoIt": "그건 하지 못했습니다.",
     "conversationThemeUnchanged": "이미 그렇게 되어 있었어요.",

@@ -1661,6 +1661,8 @@
     "spokenConversationName": "Conversa por voz",
     "conversationAgentRuntime": "Usar o motor do agente",
     "conversationAgentRuntimeHint": "A conversa falada pensa com o mesmo runtime do chat: pode ler arquivos, executar comandos e lembrar de mais de doze turnos. Ativado por padrão; desativá-lo volta ao pequeno laço interno. O primeiro som pode demorar um pouco mais.",
+    "conversationLastTimeRecent": "Da última vez você estava em {{what}}.",
+    "conversationLastTimeOlder": "Da última vez que conversamos, você estava em {{what}}.",
     "conversationDidIt": "Pronto.",
     "conversationCouldNotDoIt": "Não consegui fazer isso.",
     "conversationThemeUnchanged": "Já estava assim.",
