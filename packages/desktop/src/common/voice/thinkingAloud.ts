@@ -275,6 +275,72 @@ export const mayMentionAside = (moment: AsideMoment): boolean => {
 /** Shared, because an empty set allocated per call is a set allocated per tick. */
 const NOTHING_SAID_YET: ReadonlySet<string> = new Set<string>();
 
+/**
+ * Being told to be quiet, out loud.
+ *
+ * The contract has had a `hushed` field since it was written and nothing could
+ * ever set it. This is what sets it — and it has to be speech rather than a
+ * setting, because the moment somebody wants an assistant to stop talking is not
+ * a moment they will spend opening a settings page. An assistant that can only
+ * be silenced in Settings gets closed instead.
+ *
+ * Deliberately narrow, in both directions. "Sus" on its own is the whole of what
+ * people say, and it is also a word that turns up inside others — so it is
+ * matched as a word, and the phrases around it are the small closed set that
+ * cannot mean anything else. What is *not* matched is anything that could be
+ * part of a request: "sessiz moda al" is a thing to do to the computer, not a
+ * thing to do to the conversation.
+ */
+const ASKS_FOR_QUIET: readonly RegExp[] = [
+  edgedWord('sus|sussana|sus artik|sessiz ol|konusma|kes sesini|rahat birak'),
+  edgedWord('bir sey soyleme|artik konusma|simdilik sus'),
+  edgedWord('be quiet|shut up|stop talking|no more talking|leave me alone'),
+  edgedWord('quiet please|hush'),
+];
+
+/** Asking for it back, which has to exist or the hush is a trap. */
+const ASKS_TO_RESUME: readonly RegExp[] = [
+  edgedWord('konusabilirsin|yine konus|tekrar konus|devam edebilirsin|sesini ac'),
+  edgedWord('you can talk|talk again|start talking again|you can speak'),
+];
+
+/**
+ * Word boundaries that work in the alphabets this is spoken in.
+ *
+ * The same reason `actionClaims` has its own: `\b` is defined against ASCII and
+ * does not fire beside `ş` or `ı`, so `/\bsus\b/` matches nothing useful in the
+ * language most of these phrases are said in.
+ */
+function edgedWord(body: string): RegExp {
+  return new RegExp(`(?<!\\p{L})(?:${body})(?!\\p{L})`, 'iu');
+}
+
+/** Turkish folded to plain letters, because a transcript drops the diacritics. */
+const flatten = (said: string): string =>
+  said
+    .toLowerCase()
+    .replaceAll('ı', 'i')
+    .replaceAll('ş', 's')
+    .replaceAll('ğ', 'g')
+    .replaceAll('ü', 'u')
+    .replaceAll('ö', 'o')
+    .replaceAll('ç', 'c')
+    .replaceAll('İ', 'i');
+
+/** Whether this sentence asks the assistant to stop volunteering things. */
+export const asksForQuiet = (said: string): boolean => {
+  const line = flatten(said.trim());
+  if (line.length === 0) return false;
+  if (ASKS_TO_RESUME.some((pattern) => pattern.test(line))) return false;
+  return ASKS_FOR_QUIET.some((pattern) => pattern.test(line));
+};
+
+/** Whether this sentence asks for it back. */
+export const asksToResume = (said: string): boolean => {
+  const line = flatten(said.trim());
+  return line.length > 0 && ASKS_TO_RESUME.some((pattern) => pattern.test(line));
+};
+
 // ───────────────────────────────────────────────────────────────────────────
 // Speaking when nobody asked.
 //

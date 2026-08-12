@@ -39,6 +39,7 @@ import { peekVoiceSettings, subscribeVoiceSettings } from '@renderer/services/vo
 import { guardSpokenSentence } from '@renderer/services/voice/session/spokenOutput';
 import { showedTheScreen } from '@/common/voice/actionClaims';
 import { continuityFor } from '@/common/voice/sessionSummary';
+import { asksForQuiet, asksToResume } from '@/common/voice/thinkingAloud';
 import type { ConversationFile } from '@/common/voice/conversationFiles';
 import { LocalVoicePipeline } from '../localPipeline';
 import { PcmAudioOutput, PcmMicrophone } from '../pcmAudio';
@@ -465,7 +466,12 @@ class ConversationRuntime {
   private get asides(): DelegatedTasks {
     this.delegated ??= new DelegatedTasks({
       t: this.t,
-      moment: () => ({ phase: this.phase, standby: this.standby, quietForMs: this.quietForMs }),
+      moment: () => ({
+        phase: this.phase,
+        standby: this.standby,
+        quietForMs: this.quietForMs,
+        hushed: this.hushed,
+      }),
       // The same door the heartbeat uses, and it refuses for the same reasons:
       // an aside over an answer, or over the user, is worse than a late one.
       speak: (line) => void this.local?.speakAside(line),
@@ -503,6 +509,20 @@ class ConversationRuntime {
    */
   private sawScreen = false;
 
+  /**
+   * Told to stop volunteering things, for the rest of this conversation.
+   *
+   * Per conversation rather than persisted, and that is the right life for it: a
+   * hush is about this moment — somebody is on a call, somebody is concentrating
+   * — not about how they want the assistant to behave for ever. The setting is
+   * where "for ever" belongs.
+   *
+   * It silences only what nobody asked for. Answering a question is not
+   * volunteering, and an assistant that stopped replying because it was told to
+   * be quiet would have understood the wrong thing entirely.
+   */
+  private hushed = false;
+
   // ------------------------------------------------------------------- events
 
   private handleEvent = (event: NormalizedRealtimeEvent): void => {
@@ -513,7 +533,16 @@ class ConversationRuntime {
         // A new thing asked is a new turn, and the evidence starts again with
         // it. Counting across turns would let a tool from five minutes ago
         // vouch for a claim made now.
-        if (event.final) this.toolsRanThisTurn = 0;
+        if (event.final) {
+          this.toolsRanThisTurn = 0;
+          // Heard here rather than handed to the model, because "be quiet" is
+          // the one instruction that must not depend on the model choosing to
+          // honour it — and the model is about to answer this turn anyway, which
+          // is correct: being told to stop volunteering things is not being told
+          // to stop replying.
+          if (asksForQuiet(event.text)) this.hushed = true;
+          else if (asksToResume(event.text)) this.hushed = false;
+        }
         const heard = event.final ? event.text : `${this.snapshot.userTranscript}${event.text}`;
         this.emit({
           userTranscript: heard,

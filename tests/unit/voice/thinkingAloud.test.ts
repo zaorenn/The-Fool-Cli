@@ -19,6 +19,8 @@ import {
   fillerFor,
   fillerKey,
   gapBefore,
+  asksForQuiet,
+  asksToResume,
   mayMentionAside,
   maySpeakUnprompted,
   shortenForAside,
@@ -360,5 +362,47 @@ describe('an aside goes through the silence contract', () => {
 
   it('still keeps its own rule about the gap between two asides', () => {
     expect(mayMentionAside({ ...ready, sinceLastAsideMs: 0 })).toBe(false);
+  });
+});
+
+/**
+ * The off switch that has to be sayable.
+ *
+ * The moment somebody wants an assistant to stop talking is not a moment they
+ * will spend opening a settings page. One that can only be silenced in Settings
+ * gets closed instead.
+ */
+describe('being told to be quiet', () => {
+  it('hears the ways people actually say it', () => {
+    for (const said of ['Sus.', 'Sussana ya.', 'Şimdilik sus.', 'Kes sesini.', 'Be quiet.', 'Stop talking.']) {
+      expect(asksForQuiet(said), said).toBe(true);
+    }
+  });
+
+  /// Or the hush is a trap, and a trap is worse than no hush: the user turned
+  /// something off and cannot find where to turn it back on.
+  it('hears the way back', () => {
+    for (const said of ['Konuşabilirsin.', 'Yine konuş.', 'You can talk.', 'Talk again.']) {
+      expect(asksToResume(said), said).toBe(true);
+      expect(asksForQuiet(said), said).toBe(false);
+    }
+  });
+
+  /// `sus` is a word that lives inside other words, and this is matched against
+  /// a transcript where the diacritics are usually gone.
+  it('does not fire on a word that merely contains one', () => {
+    for (const said of ['Suskunluk üzerine bir şiir yaz.', 'Susam yağı al.', 'Bu konuşmayı kaydet.']) {
+      expect(asksForQuiet(said), said).toBe(false);
+    }
+  });
+
+  it('does not fire on a request about the computer', () => {
+    expect(asksForQuiet('Bilgisayarı sessiz moda al.')).toBe(false);
+    expect(asksForQuiet('Sesi kıs.')).toBe(false);
+  });
+
+  it('reads a transcript that dropped its diacritics', () => {
+    expect(asksForQuiet('Kes sesini')).toBe(true);
+    expect(asksForQuiet('Simdilik sus')).toBe(true);
   });
 });
