@@ -620,7 +620,10 @@
     "removeFailed": "Couldn't remove the folder",
     "contextMenu": {
       "rename": "이름 바꾸기",
-      "addToChat": "채팅에 추가"
+      "addToChat": "채팅에 추가",
+      "revealInFolder": "폴더에서 보기",
+      "copyPath": "경로 복사",
+      "copyRelativePath": "상대 경로 복사"
     },
     "namePlaceholder": "이름",
     "deleteConfirm": "“{{name}}”을(를) 삭제할까요? 이 작업은 취소할 수 없습니다.",

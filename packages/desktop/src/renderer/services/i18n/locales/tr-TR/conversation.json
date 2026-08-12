@@ -622,7 +622,10 @@
     "removeFailed": "Couldn't remove the folder",
     "contextMenu": {
       "rename": "Yeniden adlandır",
-      "addToChat": "Sohbete ekle"
+      "addToChat": "Sohbete ekle",
+      "revealInFolder": "Klasörde göster",
+      "copyPath": "Yolu kopyala",
+      "copyRelativePath": "Göreli yolu kopyala"
     },
     "namePlaceholder": "Ad",
     "deleteConfirm": "“{{name}}” silinsin mi? Bu geri alınamaz.",

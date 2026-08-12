@@ -21,9 +21,12 @@ import { useTranslation } from 'react-i18next';
 // File-tree icons (VSCode "vscode-icons" theme), now owned by the explorer.
 import FileTypeIcon from './fileIcon/FileTypeIcon';
 
+import { ipcBridge } from '@/common';
 import { getFilesFromDropEvent } from '@/renderer/services/FileService';
+import { copyText } from '@/renderer/utils/ui/clipboard';
+import { isElectronDesktop } from '@/renderer/utils/platform';
 import type { RootRef, TreeNode } from './explorerModel';
-import { canRemoveRoot, keyToRef, parentRel } from './explorerModel';
+import { absolutePathOf, canRemoveRoot, keyToRef, parentRel } from './explorerModel';
 import { openProject, select, setExpandedKeys } from './explorerStore';
 import { initExplorerRuntime } from './monitorTransport';
 import { useExplorerView } from './useExplorerView';
@@ -164,10 +167,18 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
       const isRoot = Boolean(data?.role);
       const removable = isRoot && data?.role ? canRemoveRoot(data.role, peId, workspacePeId) : false;
 
+      // Where this node is on the machine, when the app can know. Absent for a
+      // root whose folder the backend could not render as a path — in which case
+      // the three actions that need one are not offered rather than guessed at.
+      const absolutePath = absolutePathOf(roots, peId, rel);
+      // Revealing is a desktop act. In a browser talking to a remote backend it
+      // would open a window on somebody else's machine, so it is not offered.
+      const canReveal = Boolean(absolutePath) && isElectronDesktop();
+
       // Root nodes only expose "remove from project" + (when available) "add to
       // chat". Non-root nodes get add-to-chat + rename/delete. If a node would
       // have no menu items at all, render the bare title (no dropdown).
-      const hasMenu = onAddToChat || (isRoot ? onRemoveRoot : onRename || onDelete);
+      const hasMenu = onAddToChat || absolutePath || (isRoot ? onRemoveRoot : onRename || onDelete);
       if (!hasMenu) return title;
 
       const onClickMenuItem = (menuKey: string) => {
@@ -175,6 +186,15 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
         else if (menuKey === 'rename') onRename?.(peId, rel, name);
         else if (menuKey === 'delete') onDelete?.(peId, rel, name);
         else if (menuKey === 'remove' && removable) onRemoveRoot?.(peId);
+        else if (menuKey === 'reveal' && absolutePath) {
+          void ipcBridge.shell.showItemInFolder.invoke(absolutePath);
+        } else if (menuKey === 'copyPath' && absolutePath) {
+          void copyText(absolutePath);
+        } else if (menuKey === 'copyRelativePath') {
+          // The path as the project sees it, which is what goes in a message or
+          // a commit — the absolute one names a machine nobody else has.
+          void copyText(rel || name);
+        }
       };
 
       return (
@@ -202,6 +222,17 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
                     {t('conversation.explorer.removeFolder')}
                   </Menu.Item>
                 )}
+                {canReveal && (
+                  <Menu.Item key='reveal'>{t('conversation.explorer.contextMenu.revealInFolder')}</Menu.Item>
+                )}
+                {absolutePath && (
+                  <Menu.Item key='copyPath'>{t('conversation.explorer.contextMenu.copyPath')}</Menu.Item>
+                )}
+                {absolutePath && !isRoot && (
+                  <Menu.Item key='copyRelativePath'>
+                    {t('conversation.explorer.contextMenu.copyRelativePath')}
+                  </Menu.Item>
+                )}
               </Menu>
             </div>
           }
@@ -210,7 +241,7 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
         </Dropdown>
       );
     },
-    [onRemoveRoot, onRename, onDelete, onAddToChat, onImportFiles, dragOverKey, workspacePeId, t, view.expanded]
+    [onRemoveRoot, onRename, onDelete, onAddToChat, onImportFiles, dragOverKey, workspacePeId, roots, t, view.expanded]
   );
 
   // Container-level import target: the workspace root ('' rel). Node drops set

@@ -6,6 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const testState = vi.hoisted(() => ({
   pathname: '/conversation/conversation-1',
   desktop: true,
+  /** Which modifier this run means by "the shortcut key". */
+  mac: false,
 }));
 
 const serviceMocks = vi.hoisted(() => ({
@@ -28,6 +30,7 @@ vi.mock('@/renderer/pages/conversation/GroupedHistory/hooks/useVisibleConversati
 
 vi.mock('@/renderer/utils/platform', () => ({
   isElectronDesktop: () => testState.desktop,
+  isMacOS: () => testState.mac,
 }));
 
 vi.mock('@/renderer/utils/chat/messagePagination', () => ({
@@ -90,6 +93,7 @@ describe('common desktop UI shortcuts', () => {
   beforeEach(() => {
     testState.pathname = '/conversation/conversation-1';
     testState.desktop = true;
+    testState.mac = false;
   });
 
   afterEach(() => {
@@ -98,10 +102,14 @@ describe('common desktop UI shortcuts', () => {
     vi.clearAllMocks();
   });
 
+  // A shortcut answers to the platform's own modifier: Command on macOS,
+  // Control everywhere else. Accepting either on both was how Win+B fired an
+  // application shortcut on Windows.
   it.each([
-    ['Cmd', { metaKey: true }],
-    ['Ctrl', { ctrlKey: true }],
-  ])('toggles the sidebar with %s+B', (_label, modifiers) => {
+    ['Cmd', { metaKey: true }, true],
+    ['Ctrl', { ctrlKey: true }, false],
+  ])('toggles the sidebar with %s+B on its own platform', (_label, modifiers, mac) => {
+    testState.mac = mac;
     const { toggleSider } = renderConversationShortcuts();
 
     const event = dispatchShortcut(window, { key: 'b', ...modifiers });
@@ -110,13 +118,25 @@ describe('common desktop UI shortcuts', () => {
     expect(event.defaultPrevented).toBe(true);
   });
 
+  it.each([
+    ['Cmd on Windows', { metaKey: true }, false],
+    ['Ctrl on macOS', { ctrlKey: true }, true],
+  ])('ignores %s, which belongs to the other platform', (_label, modifiers, mac) => {
+    testState.mac = mac;
+    const { toggleSider } = renderConversationShortcuts();
+
+    dispatchShortcut(window, { key: 'b', ...modifiers });
+
+    expect(toggleSider).not.toHaveBeenCalled();
+  });
+
   it('toggles the sidebar while the composer textarea is focused', () => {
     const composer = document.createElement('textarea');
     document.body.appendChild(composer);
     composer.focus();
     const { toggleSider } = renderConversationShortcuts();
 
-    const event = dispatchShortcut(composer, { key: 'b', metaKey: true });
+    const event = dispatchShortcut(composer, { key: 'b', ctrlKey: true });
 
     expect(toggleSider).toHaveBeenCalledTimes(1);
     expect(event.defaultPrevented).toBe(true);
@@ -166,7 +186,7 @@ describe('common desktop UI shortcuts', () => {
       return workspace;
     });
 
-    const event = dispatchShortcut(window, { key: 'l', metaKey: true });
+    const event = dispatchShortcut(window, { key: 'l', ctrlKey: true });
 
     expect(result.current.rightSiderCollapsed).toBe(true);
     expect(event.defaultPrevented).toBe(false);
@@ -191,7 +211,7 @@ describe('common desktop UI shortcuts', () => {
       return workspace;
     });
 
-    const event = dispatchShortcut(composer, { key: 'l', metaKey: true });
+    const event = dispatchShortcut(composer, { key: 'l', ctrlKey: true });
 
     expect(result.current.rightSiderCollapsed).toBe(false);
     expect(event.defaultPrevented).toBe(true);
@@ -274,7 +294,7 @@ describe('common desktop UI shortcuts', () => {
     document.body.appendChild(wrapper);
 
     dispatchShortcut(textTarget, { key: 'b', ctrlKey: true });
-    dispatchShortcut(svgTarget, { key: 'b', metaKey: true });
+    dispatchShortcut(svgTarget, { key: 'b', ctrlKey: true });
 
     expect(toggleSider).toHaveBeenCalledTimes(2);
   });
@@ -379,10 +399,10 @@ describe('existing conversation search shortcuts', () => {
     vi.clearAllMocks();
   });
 
-  it('opens current-conversation search with Cmd/Ctrl+F on desktop', () => {
+  it('opens current-conversation search with the platform modifier + F on desktop', () => {
     const { result } = renderHook(() => useMinimapPanel('conversation-1'));
 
-    const event = dispatchShortcut(document.body, { key: 'f', metaKey: true });
+    const event = dispatchShortcut(document.body, { key: 'f', ctrlKey: true });
 
     expect(result.current.visible).toBe(true);
     expect(event.defaultPrevented).toBe(true);

@@ -152,6 +152,74 @@ const getUnhandledMessageType = (_message: never): string => 'unknown';
 // Image preview context
 export const ImagePreviewContext = createContext<{ inPreviewGroup: boolean }>({ inPreviewGroup: false });
 
+/** Where one AI turn's copy row goes, and the whole of what it copies. */
+export type AiCopyRow = {
+  /** The message the row is rendered under: the turn's last text. */
+  rowMessageId: string;
+  /** Every text the turn produced, in order. */
+  texts: string[];
+};
+
+/**
+ * Group an AI reply into turns, and decide what copying one of them means.
+ *
+ * A reply is not one message. Thinking, several texts and tool blocks arrive as
+ * separate items, so the hover copy row appears once per turn — under the turn's
+ * last text — rather than under every intermediate block. A turn runs until the
+ * next user message; tool, file and artifact items do not end one.
+ *
+ * The part that was wrong: the row knew which message it sat on, and copied that
+ * message. An answer interleaved with tool calls therefore copied from the last
+ * tool call onwards and silently dropped everything before it — the user got a
+ * fragment that reads like a whole answer, which is worse than getting nothing.
+ * So the turn's texts are collected here too, and the row copies the turn.
+ *
+ * While the conversation is still streaming, the final turn's row is withheld:
+ * it would otherwise appear and then shift down as more text arrives. Turns that
+ * have already finished always keep theirs.
+ */
+export function collectAiCopyRows(
+  items: readonly unknown[],
+  isProcessing: boolean,
+  readText: (item: unknown) => { id: string; text: string } | null = defaultReadAiText
+): Map<string, AiCopyRow> {
+  const rows = new Map<string, AiCopyRow>();
+  let pending: Array<{ id: string; text: string }> = [];
+
+  const flush = (): string | undefined => {
+    const last = pending.at(-1);
+    if (last) {
+      rows.set(last.id, { rowMessageId: last.id, texts: pending.map((entry) => entry.text) });
+    }
+    pending = [];
+    return last?.id;
+  };
+
+  for (const item of items) {
+    const record = item as { type?: string; position?: string };
+    if (record.type === 'file_summary' || record.type === 'tool_summary' || record.type === 'artifact') continue;
+    // A user message closes whatever turn was open.
+    if (record.position === 'right') {
+      flush();
+      continue;
+    }
+    const text = readText(item);
+    if (text) pending.push(text);
+  }
+
+  const lastTurnRowId = flush();
+  if (isProcessing && lastTurnRowId) rows.delete(lastTurnRowId);
+  return rows;
+}
+
+/** Reads an AI text message the way the list stores one. */
+function defaultReadAiText(item: unknown): { id: string; text: string } | null {
+  const message = item as { id?: string; type?: string; position?: string; content?: { content?: unknown } };
+  if (message.type !== 'text' || message.position === 'right' || !message.id) return null;
+  const raw = message.content?.content;
+  return { id: message.id, text: typeof raw === 'string' ? raw : '' };
+}
+
 const MessageListSkeleton: React.FC<{ rowWidthClass: string }> = ({ rowWidthClass }) => {
   const rows = [
     { align: 'left', bubbleWidth: '100%', lines: [72, 58, 64] },
@@ -223,6 +291,8 @@ const MessageItem: React.FC<{
   highlighted?: boolean;
   rowWidthClass: string;
   showCopyRow?: boolean;
+  /** Every text in this AI turn, when this message carries the turn's copy row. */
+  turnTexts?: string[];
 }> = React.memo(
   HOC((props) => {
     const { message, highlighted, rowWidthClass } = props as {
@@ -254,16 +324,18 @@ const MessageItem: React.FC<{
     ({
       message,
       showCopyRow,
+      turnTexts,
     }: {
       message: TMessage;
       highlighted?: boolean;
       rowWidthClass: string;
       showCopyRow?: boolean;
+      turnTexts?: string[];
     }) => {
       const { t } = useTranslation();
       switch (message.type) {
         case 'text':
-          return <MessageText message={message} showCopyRow={showCopyRow}></MessageText>;
+          return <MessageText message={message} showCopyRow={showCopyRow} turnTexts={turnTexts}></MessageText>;
         case 'tips':
           return <MessageTips message={message}></MessageTips>;
         case 'tool_call':
@@ -296,7 +368,8 @@ const MessageItem: React.FC<{
     prev.message.type === next.message.type &&
     prev.highlighted === next.highlighted &&
     prev.rowWidthClass === next.rowWidthClass &&
-    prev.showCopyRow === next.showCopyRow
+    prev.showCopyRow === next.showCopyRow &&
+    prev.turnTexts === next.turnTexts
 );
 
 const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }> = ({ emptySlot }) => {
@@ -426,45 +499,9 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
     );
   }, [artifacts, list]);
 
-  // An AI reply can be split into several messages (thinking / multiple text /
-  // tool blocks). The hover copy + timestamp row should appear once per turn,
-  // after the turn's last text — not under every intermediate text block.
-  // Collect the id of the last AI text in each turn; a turn runs until the next
-  // user (right) message. Tool/file/artifact items don't end a turn and, per the
-  // fallback strategy, the row stays on the turn's last text even when followed
-  // by tool blocks. While the conversation is still streaming, the final turn's
-  // row is withheld (it would otherwise appear then shift down as more text
-  // streams in); earlier, already-finished turns always keep their row.
-  const aiCopyRowTextIds = useMemo(() => {
-    const ids = new Set<string>();
-    let pendingTextId: string | undefined;
-    let lastTurnTextId: string | undefined;
-    const flush = () => {
-      if (pendingTextId) ids.add(pendingTextId);
-      pendingTextId = undefined;
-    };
-    for (const item of processedList) {
-      if (
-        'type' in item &&
-        (item.type === 'file_summary' || item.type === 'tool_summary' || item.type === 'artifact')
-      ) {
-        continue;
-      }
-      const message = item as TMessage;
-      if (message.position === 'right') {
-        flush();
-        continue;
-      }
-      if (message.type === 'text') {
-        pendingTextId = message.id;
-      }
-    }
-    lastTurnTextId = pendingTextId;
-    flush();
-    // The final turn is the one that may still be streaming; hide its row until done.
-    if (isProcessing && lastTurnTextId) ids.delete(lastTurnTextId);
-    return ids;
-  }, [processedList, isProcessing]);
+  // Where each AI turn's copy row goes, and what it should copy. See
+  // `collectAiCopyRows`.
+  const aiCopyRowTurns = useMemo(() => collectAiCopyRows(processedList, isProcessing), [processedList, isProcessing]);
 
   // Use auto-scroll hook
   const {
@@ -664,8 +701,9 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
       );
     }
     const message = item as TMessage;
+    const turn = aiCopyRowTurns.get(message.id);
     // User messages keep their own copy row; AI text only shows it at the turn end.
-    const showCopyRow = message.position !== 'left' || message.type !== 'text' || aiCopyRowTextIds.has(message.id);
+    const showCopyRow = message.position !== 'left' || message.type !== 'text' || turn !== undefined;
     return (
       <MessageItem
         message={message}
@@ -673,6 +711,7 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
         highlighted={highlighted}
         rowWidthClass={rowWidthClass}
         showCopyRow={showCopyRow}
+        turnTexts={turn?.texts}
       ></MessageItem>
     );
   };

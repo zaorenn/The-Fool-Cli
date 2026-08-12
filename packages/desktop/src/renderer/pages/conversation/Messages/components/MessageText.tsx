@@ -61,6 +61,27 @@ type ParsedFileMarker = {
 const URL_SCHEME_PATTERN = /^[a-z][a-z0-9+.-]*:\/\//i;
 const MARKDOWN_ATTACHMENT_LINE_PATTERN = /^(#{1,6}\s|[-*+]\s|\d+[.)]\s|>\s?|```|~~~|\|)/;
 
+/**
+ * One AI turn's texts as a single passage.
+ *
+ * Each segment is cleaned the way it was rendered — thinking and skill-suggest
+ * blocks are display artefacts, and pasting them into a document is nobody's
+ * intent — and empty segments are dropped so an interrupted turn does not copy
+ * as a run of blank lines. Joined with a blank line, because the segments were
+ * separated on screen by a tool call and reading them as one paragraph would
+ * merge two thoughts.
+ */
+export const joinTurnTexts = (texts: readonly string[]): string =>
+  texts
+    .map((segment) => {
+      let cleaned = segment;
+      if (hasThinkTags(cleaned)) cleaned = stripThinkTags(cleaned);
+      if (hasSkillSuggest(cleaned)) cleaned = stripSkillSuggest(cleaned);
+      return cleaned.trim();
+    })
+    .filter(Boolean)
+    .join('\n\n');
+
 const parseFileMarker = (content: string, canParseFileMarker: boolean): ParsedFileMarker => {
   if (!canParseFileMarker) {
     return { text: content, files: [] };
@@ -145,7 +166,11 @@ const useFormatContent = (content: string) => {
   }, [content]);
 };
 
-const MessageText: React.FC<{ message: IMessageText; showCopyRow?: boolean }> = ({ message, showCopyRow = true }) => {
+const MessageText: React.FC<{ message: IMessageText; showCopyRow?: boolean; turnTexts?: string[] }> = ({
+  message,
+  showCopyRow = true,
+  turnTexts,
+}) => {
   const logos = useAgentLogos();
   // Filter think tags from content before rendering
   // 在渲染前过滤 think 标签
@@ -189,7 +214,11 @@ const MessageText: React.FC<{ message: IMessageText; showCopyRow?: boolean }> = 
   }
 
   const handleCopy = () => {
-    const baseText = shouldRenderPlainText ? text : json ? JSON.stringify(data, null, 2) : text;
+    // The whole turn when this row owns one. An AI answer is several messages
+    // once a tool call interrupts it, and copying only the message the button
+    // sits on hands back the tail of an answer that reads like all of it.
+    const ownText = shouldRenderPlainText ? text : json ? JSON.stringify(data, null, 2) : text;
+    const baseText = turnTexts && turnTexts.length > 1 ? joinTurnTexts(turnTexts) : ownText;
     const fileList = files.length ? `Files:\n${files.map((path) => `- ${path}`).join('\n')}\n\n` : '';
     const textToCopy = fileList + baseText;
     copyText(textToCopy)

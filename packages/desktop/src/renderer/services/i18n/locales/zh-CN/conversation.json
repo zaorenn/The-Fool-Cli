@@ -620,7 +620,10 @@
     "removeFailed": "移除文件夹失败",
     "contextMenu": {
       "rename": "重命名",
-      "addToChat": "添加到聊天"
+      "addToChat": "添加到聊天",
+      "revealInFolder": "在文件夹中显示",
+      "copyPath": "复制路径",
+      "copyRelativePath": "复制相对路径"
     },
     "namePlaceholder": "名称",
     "deleteConfirm": "删除“{{name}}”？此操作无法撤销。",

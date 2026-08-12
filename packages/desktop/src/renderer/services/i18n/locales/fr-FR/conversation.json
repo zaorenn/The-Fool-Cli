@@ -619,7 +619,10 @@
     "removeFailed": "Couldn't remove the folder",
     "contextMenu": {
       "rename": "Renommer",
-      "addToChat": "Ajouter au chat"
+      "addToChat": "Ajouter au chat",
+      "revealInFolder": "Afficher dans le dossier",
+      "copyPath": "Copier le chemin",
+      "copyRelativePath": "Copier le chemin relatif"
     },
     "namePlaceholder": "Nom",
     "deleteConfirm": "Supprimer « {{name}} » ? Cette action est irréversible.",

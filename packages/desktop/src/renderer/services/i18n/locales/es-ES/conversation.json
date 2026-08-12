@@ -621,7 +621,10 @@
     "removeFailed": "Couldn't remove the folder",
     "contextMenu": {
       "rename": "Cambiar nombre",
-      "addToChat": "Añadir al chat"
+      "addToChat": "Añadir al chat",
+      "revealInFolder": "Mostrar en la carpeta",
+      "copyPath": "Copiar ruta",
+      "copyRelativePath": "Copiar ruta relativa"
     },
     "namePlaceholder": "Nombre",
     "deleteConfirm": "¿Eliminar «{{name}}»? Esto no se puede deshacer.",

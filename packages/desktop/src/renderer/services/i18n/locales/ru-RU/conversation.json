@@ -620,7 +620,10 @@
     "removeFailed": "Couldn't remove the folder",
     "contextMenu": {
       "rename": "Переименовать",
-      "addToChat": "Добавить в чат"
+      "addToChat": "Добавить в чат",
+      "revealInFolder": "Показать в папке",
+      "copyPath": "Скопировать путь",
+      "copyRelativePath": "Скопировать относительный путь"
     },
     "namePlaceholder": "Имя",
     "deleteConfirm": "Удалить «{{name}}»? Это действие нельзя отменить.",

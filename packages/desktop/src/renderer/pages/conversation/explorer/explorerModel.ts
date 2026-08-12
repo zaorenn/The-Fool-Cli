@@ -262,7 +262,44 @@ export type RootRef = {
   role?: RootRole;
   /** Folder availability — projected onto the root node for status display. */
   runtimeStatus?: RootRuntimeStatus;
+  /**
+   * Where this root actually is on disk.
+   *
+   * The tree speaks in `pe_id` + relative path, which is the right currency for
+   * everything inside the app — but "show me this in Explorer" and "copy the
+   * path" are questions about the machine, and they need a real one. The backend
+   * derives it from the folder's `file://` uri, so it is an absolute path rather
+   * than an abbreviated display string.
+   */
+  path?: string;
 };
+
+/**
+ * The separator this path is written with.
+ *
+ * Taken from the path rather than from the platform: the renderer may be a
+ * browser talking to a backend on a machine of a different shape, and a path
+ * that came back as `C:\work\app` should not be extended with a forward slash.
+ */
+const separatorOf = (rootPath: string): string => (rootPath.includes('\\') && !rootPath.includes('/') ? '\\' : '/');
+
+/**
+ * The absolute path of a node, or null when the root's own path is unknown.
+ *
+ * Null rather than a guess: an action that reveals the wrong folder is worse
+ * than one that is not offered.
+ */
+export function absolutePathOf(roots: readonly RootRef[], peId: string, relativePath: string): string | null {
+  const root = roots.find((candidate) => candidate.pe_id === peId);
+  if (!root?.path) return null;
+
+  const rel = relativePath.replace(/^[\\/]+/, '');
+  if (!rel) return root.path;
+
+  const separator = separatorOf(root.path);
+  const base = root.path.replace(/[\\/]+$/, '');
+  return `${base}${separator}${rel.split(/[\\/]+/).join(separator)}`;
+}
 
 /**
  * Project the fact cache + expanded set into arco `Tree` data. Starts at each

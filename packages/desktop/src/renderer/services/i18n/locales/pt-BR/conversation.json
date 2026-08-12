@@ -626,7 +626,10 @@
     "removeFailed": "Couldn't remove the folder",
     "contextMenu": {
       "rename": "Renomear",
-      "addToChat": "Adicionar ao chat"
+      "addToChat": "Adicionar ao chat",
+      "revealInFolder": "Mostrar na pasta",
+      "copyPath": "Copiar caminho",
+      "copyRelativePath": "Copiar caminho relativo"
     },
     "namePlaceholder": "Nome",
     "deleteConfirm": "Excluir “{{name}}”? Isso não pode ser desfeito.",

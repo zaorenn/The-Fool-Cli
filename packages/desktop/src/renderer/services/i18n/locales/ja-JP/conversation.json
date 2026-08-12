@@ -620,7 +620,10 @@
     "removeFailed": "Couldn't remove the folder",
     "contextMenu": {
       "rename": "名前を変更",
-      "addToChat": "チャットに追加"
+      "addToChat": "チャットに追加",
+      "revealInFolder": "フォルダーで表示",
+      "copyPath": "パスをコピー",
+      "copyRelativePath": "相対パスをコピー"
     },
     "namePlaceholder": "名前",
     "deleteConfirm": "「{{name}}」を削除しますか？この操作は取り消せません。",

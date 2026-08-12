@@ -1,3 +1,5 @@
+import { isMacOS } from '@/renderer/utils/platform';
+
 const EMBEDDED_EDITOR_SELECTOR = ['.cm-editor', '.cm-content', '.monaco-editor', '.xterm', 'webview', 'iframe'].join(
   ','
 );
@@ -48,7 +50,21 @@ export const isShortcutBlockedByTarget = (
   return typeof document !== 'undefined' && isBlockingElement(document.activeElement, targetGuard);
 };
 
-/** Match an exact Cmd/Ctrl application shortcut without consuming editor input. */
+/**
+ * The modifier this platform means by "the shortcut key".
+ *
+ * Command on macOS, Control everywhere else, and never both — a chord holding
+ * the other one as well is somebody reaching for a different shortcut.
+ *
+ * Asking only whether the two differ, which is what this did before, made every
+ * application shortcut fire on the wrong one too: Win+K on Windows, Ctrl+K on a
+ * Mac. Both are chords the OS or another app may own, and neither is what the
+ * user was pressing this app's shortcut with.
+ */
+export const isPlatformPrimaryModifier = (event: Pick<KeyboardEvent, 'metaKey' | 'ctrlKey'>): boolean =>
+  isMacOS() ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
+
+/** Match an exact platform-native Cmd/Ctrl shortcut without consuming editor input. */
 export const isPrimaryApplicationShortcut = (
   event: KeyboardEvent,
   { key, shiftKey = false, targetGuard = 'all-editable' }: PrimaryShortcutOptions
@@ -57,9 +73,7 @@ export const isPrimaryApplicationShortcut = (
     return false;
   }
 
-  // Exactly one primary modifier avoids treating Ctrl+Cmd as either platform's
-  // normal shortcut chord.
-  if (event.metaKey === event.ctrlKey || event.shiftKey !== shiftKey) {
+  if (!isPlatformPrimaryModifier(event) || event.shiftKey !== shiftKey) {
     return false;
   }
 

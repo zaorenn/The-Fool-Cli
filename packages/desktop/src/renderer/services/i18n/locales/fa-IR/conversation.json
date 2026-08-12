@@ -620,7 +620,10 @@
     "removeFailed": "Couldn't remove the folder",
     "contextMenu": {
       "rename": "تغییر نام",
-      "addToChat": "افزودن به گفتگو"
+      "addToChat": "افزودن به گفتگو",
+      "revealInFolder": "نمایش در پوشه",
+      "copyPath": "کپی مسیر",
+      "copyRelativePath": "کپی مسیر نسبی"
     },
     "namePlaceholder": "نام",
     "deleteConfirm": "«{{name}}» حذف شود؟ این عمل قابل بازگردانی نیست.",

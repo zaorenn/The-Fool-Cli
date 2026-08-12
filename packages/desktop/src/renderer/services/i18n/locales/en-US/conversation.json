@@ -620,7 +620,10 @@
     "removeFailed": "Couldn't remove the folder",
     "contextMenu": {
       "rename": "Rename",
-      "addToChat": "Add to chat"
+      "addToChat": "Add to chat",
+      "revealInFolder": "Reveal in folder",
+      "copyPath": "Copy path",
+      "copyRelativePath": "Copy relative path"
     },
     "namePlaceholder": "Name",
     "deleteConfirm": "Delete “{{name}}”? This can’t be undone.",

@@ -35,6 +35,9 @@ export const entryToRootRef = (entry: ProjectEntryDto): RootRef => ({
   title: entry.display_name?.trim() || basename(entry.display_path) || entry.pe_id,
   role: entry.role,
   runtimeStatus: entry.runtime_status,
+  // The backend derives this from the folder's `file://` uri, so it is a real
+  // absolute path — which is what "reveal in folder" and "copy path" need.
+  path: entry.display_path || undefined,
 });
 
 /** Full project detail → ordered pe roots for the projection. */
