@@ -292,7 +292,9 @@
     "applied": "적용된 테마: {{name}}",
     "applyFailed": "테마 적용 실패",
     "cleared": "기본 스타일로 복원됨",
-    "deleteConfirm": "이 테마를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+    "deleteConfirm": "이 테마를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    "cssError": "{{line}}행 CSS 오류: {{reason}}",
+    "fatalRules": "다음 규칙은 창 전체를 숨기므로 무시됩니다:"
   },
   "geminiBaseUrl": "Gemini API 기본 URL",
   "cacheDir": "캐시 디렉토리",

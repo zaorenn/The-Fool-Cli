@@ -14,7 +14,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { BUILTIN_IMAGE_GEN_ID, BUILTIN_IMAGE_GEN_NAME } from './constants';
-import { executeImageGeneration } from '@/common/chat/imageGenCore';
+import { executeImageGeneration, resolveWithinWorkspace } from '@/common/chat/imageGenCore';
 import type { TProviderWithModel } from '@/common/config/storage';
 
 // Read provider config from environment variables
@@ -109,7 +109,26 @@ IMPORTANT: When user provides multiple images, ALWAYS pass ALL images to the ima
       }
 
       const proxy = process.env.FOOL_IMG_PROXY || undefined;
-      const workspaceDir = workspace_dir || process.cwd();
+
+      // `workspace_dir` is written by the model, and it is the boundary every
+      // other path in this call is checked against — so on its own it is a
+      // boundary the model gets to move. It is narrowed to the directory this
+      // server was started in: a subfolder of the workspace is a reasonable
+      // thing to ask for, anywhere else is not.
+      let workspaceDir: string;
+      try {
+        workspaceDir = workspace_dir ? resolveWithinWorkspace(process.cwd(), workspace_dir) : process.cwd();
+      } catch {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: `Error: workspace_dir must be inside the current workspace. Received: ${workspace_dir}`,
+            },
+          ],
+          isError: true,
+        };
+      }
 
       const result = await executeImageGeneration({ prompt, image_uris }, provider, workspaceDir, proxy);
 

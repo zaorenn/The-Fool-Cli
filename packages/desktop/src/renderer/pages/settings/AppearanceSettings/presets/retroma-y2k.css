@@ -188,7 +188,10 @@
 }
 
 body {
-  font-family: 'Meiryo', 'Yu Gothic UI', 'Hiragino Kaku Gothic ProN', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  /* No Japanese face first. Meiryo and Yu Gothic draw U+005C as a yen sign, so
+     wearing this skin turned every Windows path into C:¥Users¥… and every
+     escape in a code block with it. */
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
   letter-spacing: 0.015em;
   background-color: var(--bg-base) !important;
 }

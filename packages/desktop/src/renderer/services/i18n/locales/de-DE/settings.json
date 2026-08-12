@@ -292,7 +292,9 @@
     "applied": "Theme angewendet: {{name}}",
     "applyFailed": "Theme anwenden fehlgeschlagen",
     "cleared": "Zum Standardstil zurückgesetzt",
-    "deleteConfirm": "Bist du sicher, dass du dieses Theme löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden."
+    "deleteConfirm": "Bist du sicher, dass du dieses Theme löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "cssError": "CSS-Fehler in Zeile {{line}}: {{reason}}",
+    "fatalRules": "Diese Regeln würden das gesamte Fenster ausblenden und werden daher ignoriert:"
   },
   "geminiBaseUrl": "Gemini API Basis-URL",
   "cacheDir": "Cache-Verzeichnis",

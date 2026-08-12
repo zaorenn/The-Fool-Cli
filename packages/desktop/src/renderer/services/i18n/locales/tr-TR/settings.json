@@ -292,7 +292,9 @@
     "applied": "Tema uygulandı: {{name}}",
     "applyFailed": "Tema uygulanamadı",
     "cleared": "Varsayılan stile dönüldü",
-    "deleteConfirm": "Bu temayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
+    "deleteConfirm": "Bu temayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+    "cssError": "{{line}}. satırda CSS hatası: {{reason}}",
+    "fatalRules": "Bu kurallar pencerenin tamamını gizlerdi, bu yüzden yok sayılacak:"
   },
   "geminiBaseUrl": "Gemini API Temel URL",
   "cacheDir": "Önbellek Dizini",

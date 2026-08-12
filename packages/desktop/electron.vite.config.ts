@@ -14,6 +14,61 @@ const rootPackageJson = JSON.parse(readFileSync(resolve(__dirname, '../../packag
   version: string;
 };
 
+/**
+ * Which vendor chunk a renderer dependency belongs to.
+ *
+ * React and everything tightly coupled to it go in ONE chunk. Splitting them
+ * (vendor-react, vendor-arco, vendor-markdown, vendor-highlight, vendor-editor)
+ * makes the emitted chunks import each other in a cycle:
+ *
+ *   vendor-editor -> vendor-highlight -> vendor-arco -> vendor-react -> vendor-editor
+ *
+ * The loose `/react/` test is part of it: it also swallows React wrappers such
+ * as `@monaco-editor/react`, wiring the React chunk to the editor chunk. With a
+ * cycle, ESM evaluation order can reach `React.createContext` at the top level
+ * of the Arco chunk before React's own exports are initialised — "Cannot read
+ * properties of undefined (reading 'createContext')", an empty `#root`, a white
+ * window in the packaged build. Co-locating removes the edges entirely, and a
+ * single vendor chunk is read from disk anyway, so the finer split bought
+ * nothing but the cycle.
+ *
+ * `@icon-park/react` is named by that same loose test and has always landed in
+ * the React chunk, so the `vendor-icons` branch below it never once ran. It is
+ * a React component library; the chunk it was never reaching was the wrong
+ * answer anyway. It is now grouped deliberately rather than by accident.
+ *
+ * Exported so a test can assert the group stays whole; rollup only ever calls it.
+ */
+export function rendererManualChunks(id: string): string | undefined {
+  if (!id.includes('node_modules')) return undefined;
+  if (
+    id.includes('/react-dom/') ||
+    id.includes('/react/') ||
+    id.includes('/@arco-design/') ||
+    id.includes('/react-markdown/') ||
+    id.includes('/remark-') ||
+    id.includes('/rehype-') ||
+    id.includes('/unified/') ||
+    id.includes('/mdast-') ||
+    id.includes('/hast-') ||
+    id.includes('/micromark') ||
+    id.includes('/react-syntax-highlighter/') ||
+    id.includes('/refractor/') ||
+    id.includes('/highlight.js/') ||
+    id.includes('/monaco-editor/') ||
+    id.includes('/@monaco-editor/') ||
+    id.includes('/codemirror/') ||
+    id.includes('/@codemirror/') ||
+    id.includes('/katex/') ||
+    id.includes('/@icon-park/')
+  )
+    return 'vendor';
+  // Renders diffs without touching React, so nothing in `vendor` imports it and
+  // a chunk of its own cannot form a cycle with one.
+  if (id.includes('/diff2html/')) return 'vendor-diff';
+  return undefined;
+}
+
 // Build builtin MCP servers after main process bundle so they survive out/main/ cleanup.
 function buildMcpServersPlugin() {
   return {
@@ -263,38 +318,7 @@ export default defineConfig(({ mode }) => {
             warn(warning);
           },
           output: {
-            manualChunks(id: string) {
-              if (!id.includes('node_modules')) return undefined;
-              if (id.includes('/react-dom/') || id.includes('/react/')) return 'vendor-react';
-              if (id.includes('/@arco-design/')) return 'vendor-arco';
-              if (
-                id.includes('/react-markdown/') ||
-                id.includes('/remark-') ||
-                id.includes('/rehype-') ||
-                id.includes('/unified/') ||
-                id.includes('/mdast-') ||
-                id.includes('/hast-') ||
-                id.includes('/micromark')
-              )
-                return 'vendor-markdown';
-              if (
-                id.includes('/react-syntax-highlighter/') ||
-                id.includes('/refractor/') ||
-                id.includes('/highlight.js/')
-              )
-                return 'vendor-highlight';
-              if (
-                id.includes('/monaco-editor/') ||
-                id.includes('/@monaco-editor/') ||
-                id.includes('/codemirror/') ||
-                id.includes('/@codemirror/')
-              )
-                return 'vendor-editor';
-              if (id.includes('/katex/')) return 'vendor-katex';
-              if (id.includes('/@icon-park/')) return 'vendor-icons';
-              if (id.includes('/diff2html/')) return 'vendor-diff';
-              return undefined;
-            },
+            manualChunks: rendererManualChunks,
           },
         },
       },

@@ -292,7 +292,9 @@
     "applied": "テーマを適用しました：{{name}}",
     "applyFailed": "テーマの適用に失敗しました",
     "cleared": "デフォルトスタイルに戻しました",
-    "deleteConfirm": "このテーマを削除してもよろしいですか？この操作は元に戻せません。"
+    "deleteConfirm": "このテーマを削除してもよろしいですか？この操作は元に戻せません。",
+    "cssError": "{{line}} 行目の CSS エラー: {{reason}}",
+    "fatalRules": "次のルールはウィンドウ全体を非表示にするため、無視されます:"
   },
   "geminiBaseUrl": "Gemini API ベース URL",
   "cacheDir": "キャッシュディレクトリ",

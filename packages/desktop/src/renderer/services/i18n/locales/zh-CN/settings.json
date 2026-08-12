@@ -292,7 +292,9 @@
     "applied": "已应用主题：{{name}}",
     "applyFailed": "应用主题失败",
     "cleared": "已恢复默认样式",
-    "deleteConfirm": "确定要删除该主题吗？此操作不可恢复。"
+    "deleteConfirm": "确定要删除该主题吗？此操作不可恢复。",
+    "cssError": "第 {{line}} 行 CSS 错误：{{reason}}",
+    "fatalRules": "以下规则会隐藏整个窗口，因此将被忽略："
   },
   "geminiBaseUrl": "Gemini API Base URL",
   "cacheDir": "缓存目录",

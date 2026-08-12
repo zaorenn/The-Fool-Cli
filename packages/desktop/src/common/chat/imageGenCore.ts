@@ -43,6 +43,41 @@ export function safeJsonParse<T = unknown>(jsonString: string, fallbackValue: T)
   }
 }
 
+/**
+ * Whether `candidate` resolves to somewhere inside `root`.
+ *
+ * Compared through `path.relative` rather than by string prefix, so a sibling
+ * that merely starts with the same characters — `/work` and `/workspace-other`
+ * — is correctly outside. `root` itself counts as inside.
+ */
+export function isWithin(root: string, candidate: string): boolean {
+  const relative = path.relative(path.resolve(root), path.resolve(candidate));
+  if (relative === '') return true;
+  return !relative.startsWith('..') && !path.isAbsolute(relative);
+}
+
+/**
+ * Resolves a path the model asked for, refusing anything outside the workspace.
+ *
+ * Every argument this module receives — the image URIs, the file paths parsed
+ * back out of a model's markdown — arrives in a tool call the model wrote. An
+ * absolute path or a `../../../` was resolved and read as-is, and the bytes
+ * were handed back to the model base64-encoded, which makes an image tool an
+ * arbitrary-file-read tool. The workspace is the boundary the user agreed to;
+ * this is where it is enforced.
+ *
+ * Throws rather than returning null so a caller cannot forget to check.
+ */
+export function resolveWithinWorkspace(workspaceDir: string, candidate: string): string {
+  const resolved = path.isAbsolute(candidate) ? path.resolve(candidate) : path.resolve(workspaceDir, candidate);
+
+  if (!isWithin(workspaceDir, resolved)) {
+    throw new Error(`Path is outside the workspace: ${candidate}`);
+  }
+
+  return resolved;
+}
+
 export function isImageFile(file_path: string): boolean {
   const ext = path.extname(file_path).toLowerCase();
   return IMAGE_EXTENSIONS.includes(ext as ImageExtension);
@@ -122,10 +157,10 @@ export async function processImageUri(imageUri: string, workspaceDir: string): P
     processedUri = imageUri.substring(1);
   }
 
-  let fullPath = processedUri;
-  if (!path.isAbsolute(processedUri)) {
-    fullPath = path.join(workspaceDir, processedUri);
-  }
+  // Refused before the file is touched, and outside the try below: "you asked
+  // for something outside the workspace" is not a missing file, and must not be
+  // rewritten into the "searched these paths" message.
+  const fullPath = resolveWithinWorkspace(workspaceDir, processedUri);
 
   try {
     await fs.promises.access(fullPath, fs.constants.F_OK);
@@ -271,8 +306,10 @@ export async function executeImageGeneration(
           const processedImages: Array<{ type: 'image_url'; image_url: { url: string } }> = [];
           for (const match of file_pathMatches) {
             const file_path = match[1];
-            const fullPath = path.isAbsolute(file_path) ? file_path : path.join(workspaceDir, file_path);
             try {
+              // The model wrote this path into its own reply, so it is no more
+              // trustworthy than a tool argument: bounded the same way.
+              const fullPath = resolveWithinWorkspace(workspaceDir, file_path);
               await fs.promises.access(fullPath);
               const base64Data = await fileToBase64(fullPath);
               const mimeType = getImageMimeType(fullPath);

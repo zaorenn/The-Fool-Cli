@@ -40,17 +40,39 @@ function tokensToCss(tokens?: Record<string, string>): string | null {
   return `:root {\n${body}\n}`;
 }
 
+/**
+ * Writes the two appearance attributes as one thing, because they are one thing.
+ *
+ * `data-theme` on `<html>` drives this app's own tokens; `arco-theme` on
+ * `<body>` drives Arco's colour scales and the `body[arco-theme='dark']` rules
+ * in `arco-override.css`. `<html>` always exists. `<body>` does not: the theme
+ * is applied as soon as `useTheme` is imported, which can be while the document
+ * is still parsing.
+ *
+ * Skipping the second write in that case is what the optional chaining used to
+ * do, and it is silent — the app's own surfaces go dark while every Arco
+ * component stays light, and nothing ever puts them back. So it is deferred
+ * instead: the two attributes always converge, just not always in the same tick.
+ */
+function applyAppearanceAttributes(root: Document, appearance: Theme['appearance']): void {
+  root.documentElement.setAttribute('data-theme', appearance);
+  if (root.body) {
+    root.body.setAttribute('arco-theme', appearance);
+    return;
+  }
+  root.addEventListener('DOMContentLoaded', () => root.body?.setAttribute('arco-theme', appearance), { once: true });
+}
+
 /** Apply a resolved theme to a document. Used by every app-chrome surface. */
 export function applyTheme(theme: Theme, root: Document = document): void {
-  root.documentElement.setAttribute('data-theme', theme.appearance);
-  // Which palette, not just whether it is a dark one. A theme's own stylesheet
-  // has every property rewritten to `!important` before it is injected, which
-  // silently voids any `@keyframes` inside it — a declaration marked important
-  // in a keyframe is ignored. So a palette that wants motion has to keep it in
-  // an ordinary stylesheet, and an ordinary stylesheet needs something on the
-  // document to say which palette is being worn.
+  applyAppearanceAttributes(root, theme.appearance);
+  // Which palette, not just whether it is a dark one, so an ordinary stylesheet
+  // under `renderer/styles/` can dress one particular palette — that is how
+  // `jarvis-cinema.css` finds its own theme. It used to be the only way a
+  // palette could move at all, because the injected copy had `!important`
+  // stamped into its `@keyframes`; the processor walks past those blocks now, so
+  // this is a convenience rather than the only escape.
   root.documentElement.setAttribute('data-theme-id', theme.id);
-  root.body?.setAttribute('arco-theme', theme.appearance);
   upsertStyle(TOKENS_STYLE_ID, tokensToCss(theme.tokens), root);
   // Stripped before it is processed, because processing is what adds the
   // `!important` that would make a window-hiding rule unbeatable.

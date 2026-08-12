@@ -13,10 +13,12 @@ import FoolModal from '@renderer/components/base/FoolModal.tsx';
 import { Plus, Delete } from '@icon-park/react';
 import CodeMirror from '@uiw/react-codemirror';
 import { css as cssLang } from '@codemirror/lang-css';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CSSProperties } from 'react';
 import { injectBackgroundCssBlock } from './backgroundUtils.ts';
+import { validateCss } from '@renderer/utils/theme/customCssProcessor';
+import { findFatalThemeCss } from '@renderer/utils/theme/themeSafetyNet';
 
 /** CodeMirror 编辑器样式 / CodeMirror editor styles */
 const CODE_MIRROR_STYLE: CSSProperties = {
@@ -114,6 +116,20 @@ const CssThemeModal: React.FC<CssThemeModalProps> = ({ visible, theme, onClose, 
   }, [name, cover, css, appearance, onSave]);
 
   const isEditing = !!theme;
+
+  /**
+   * What is wrong with this stylesheet, said while it is still being written.
+   *
+   * Both checks already existed and neither was reachable: the parser's own
+   * error was thrown away, and the rule that would blank the window was
+   * stripped at apply time without ever telling the person who wrote it. So a
+   * theme that did nothing looked exactly like a theme that worked.
+   *
+   * Neither blocks saving. A stylesheet mid-edit is allowed to be broken, and a
+   * window-hiding rule is already removed on the way in — this only says so.
+   */
+  const cssProblem = useMemo(() => validateCss(css), [css]);
+  const fatalRules = useMemo(() => (cssProblem.valid ? findFatalThemeCss(css) : []), [css, cssProblem.valid]);
 
   return (
     <FoolModal
@@ -214,6 +230,26 @@ const CssThemeModal: React.FC<CssThemeModalProps> = ({ visible, theme, onClose, 
             className='[&_.cm-editor]:rounded-[6px]'
             height='200px'
           />
+
+          {!cssProblem.valid && (
+            <div className='mt-8px text-12px text-[var(--color-danger)]' data-testid='css-theme-error'>
+              {t('settings.cssTheme.cssError', {
+                line: cssProblem.line ?? 1,
+                reason: cssProblem.error ?? '',
+              })}
+            </div>
+          )}
+
+          {fatalRules.length > 0 && (
+            <div className='mt-8px text-12px text-t-secondary' data-testid='css-theme-fatal'>
+              <div>{t('settings.cssTheme.fatalRules')}</div>
+              <ul className='mt-4px pl-16px'>
+                {fatalRules.map((rule) => (
+                  <li key={rule}>{rule}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     </FoolModal>
