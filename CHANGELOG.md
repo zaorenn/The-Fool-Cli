@@ -2,6 +2,70 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.5.3
+
+### The release that was being withheld by the platform it was not for
+
+The release job required **every** entry in a six-platform matrix. One platform
+failing for a reason of its own therefore threw away the artifacts of the five
+that had built — and in 2.5.1 the Windows installers were finished, correct, and
+discarded. Nothing has been published since 2.3.10 on 8 August for that reason.
+The gate is the artifacts now, not the jobs: a Windows installer is required
+because that is what the updater feed serves, and anything else missing is named
+in a warning and shipped without. A user on a platform that failed to build is
+no worse off than a user of a release that was never cut.
+
+Underneath it, two more single-platform failures, each of which had been enough
+on its own:
+
+- **An absent Sentry token stopped the build.** A step declared three secrets
+  "required for desktop source map uploads" and exited 1 without them. Source
+  maps are how a crash report names a line rather than a minified column; that
+  is worth having and it is not worth the release. Missing secrets switch the
+  upload off and leave a warning. (The same step could not see the secrets even
+  when they existed — a step's environment does not contain a repository secret
+  unless the step asks for it, which is a failure that looks exactly like
+  success.)
+- **The rebuild tool failed before it rebuilt anything.** `bunx electron-rebuild`
+  resolves the deprecated package name, which still depends on `lzma-native`,
+  which has no prebuilt binary for arm64 Linux. So installing the _tool_
+  compiled that dependency, and the step's Electron headers URL was handed
+  Node's own version — a 404 on `v22.23.1/node-v22.23.1-headers.tar.gz`, before
+  a line of this project's code was built. `@electron/rebuild` carries no such
+  dependency.
+
+### It stops talking when you start typing
+
+The silence contract has had a "the user is typing" rule since it was written,
+and every caller answered it with `false`, on the grounds that nothing in a
+spoken conversation can watch a keyboard in another window. Something can: the
+hold-to-talk hook already reads every keystroke on the machine for the
+combination rule. It now asks one more question of a key that is not the talk
+key — whether one arrived, never which — and repeats the answer while typing
+continues, so a long message is not read as having ended after its first
+character.
+
+Wiring it turned up the larger fault. **A finished background task was being
+announced out loud to somebody who had said "be quiet"**, or who had switched
+unprompted speech off entirely. The conversation was supplying the hush, the off
+switch and the talk key; the type in between named three fields and dropped the
+other three on the floor.
+
+### It tells you which model your computer can run
+
+"It is running, but no model is loaded yet" was the whole instruction the setup
+panel gave, in front of a catalogue of thousands of files named like
+`Qwen3-14B-Q4_K_M.gguf`. This is where local-first quietly fails: the only way
+to learn that the 14B does not fit in 8 GB is to download twelve gigabytes and
+watch it not fit.
+
+The panel now names one size, says what it is realistically good for, gives a
+search term you can copy, and lists the alternatives in a line. It also says
+which measurement it is standing on, because a figure read from the card and a
+share of system memory are different claims — `Win32_VideoController.AdapterRAM`
+is a 32-bit field, so every card above 4 GB reports exactly 4 GB, which is worse
+than no answer at all.
+
 ## 2.5.2
 
 The last two things standing between this line and a published release, both
