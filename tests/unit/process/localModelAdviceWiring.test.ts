@@ -63,6 +63,26 @@ describe('the whole machine', () => {
     expect(totalmem).toHaveBeenCalledTimes(1);
     vi.doUnmock('node:os');
   });
+
+  /**
+   * Off Windows there is no shell to time out and `null` is the final answer,
+   * so it is kept. On Windows it is the one reading that might have been
+   * different next time — caching it would turn a busy machine into a
+   * permanently worse recommendation.
+   */
+  it('keeps an unmeasurable card off Windows, where null is the real answer', async () => {
+    const totalmem = vi.fn(() => 16 * 1024 ** 3);
+    vi.doMock('node:os', () => ({ totalmem }));
+    vi.stubGlobal('process', { ...process, platform: 'darwin' });
+    const { readMachineMemory, forgetMachineMemory } = await loadModule();
+    forgetMachineMemory();
+
+    expect((await readMachineMemory()).vramGb).toBeNull();
+    await readMachineMemory();
+
+    expect(totalmem).toHaveBeenCalledTimes(1);
+    vi.doUnmock('node:os');
+  });
 });
 
 /**

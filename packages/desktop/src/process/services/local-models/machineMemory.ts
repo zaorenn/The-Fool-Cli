@@ -93,6 +93,18 @@ export type MachineMemoryReading = {
  */
 let cached: MachineMemoryReading | null = null;
 
+/**
+ * Whether an answer is worth keeping.
+ *
+ * A reading with no graphics figure on Windows is the one that might have been
+ * different: the shell can time out on a busy machine, and caching that turns a
+ * momentary failure into a permanently worse recommendation — the panel would
+ * go on saying "this is a careful guess" about a card it could have measured.
+ * Everywhere else `null` is the final answer, so it is kept.
+ */
+const worthKeeping = (reading: MachineMemoryReading, platform: string): boolean =>
+  reading.vramGb !== null || platform !== 'win32';
+
 export const readMachineMemory = async (): Promise<MachineMemoryReading> => {
   if (cached) return cached;
 
@@ -101,7 +113,7 @@ export const readMachineMemory = async (): Promise<MachineMemoryReading> => {
     // Floored, because a machine that reports 15.9 has 15.
     ramGb: Math.floor(totalmem() / BYTES_PER_GB),
   };
-  cached = reading;
+  if (worthKeeping(reading, process.platform)) cached = reading;
   return reading;
 };
 
