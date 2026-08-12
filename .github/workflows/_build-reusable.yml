@@ -169,9 +169,20 @@ jobs:
         with:
           vs-version: '17.0'
 
+      # Only the module that actually needs it. `install-app-deps` rebuilds
+      # everything native, which drags in `uiohook-napi` — and that one ships a
+      # prebuilt N-API binary precisely so it does not have to be rebuilt. N-API
+      # is ABI-stable across Node and Electron versions, so the rebuild buys
+      # nothing and costs the build: on Linux it needs X11 development headers
+      # the runner does not have, and it took down every macOS and Linux job of
+      # the v2.5.0 release with
+      # `../libuiohook/src/x11/input_helper.c:23:10: fatal error: X11/keysym.h`.
+      #
+      # The Windows path below already rebuilds `better-sqlite3` and only that.
+      # This is the same decision, made on the platforms where it had not been.
       - name: Rebuild native modules for Electron
         if: "!startsWith(matrix.platform, 'windows')"
-        run: bunx electron-builder install-app-deps
+        run: bunx electron-rebuild -f -w better-sqlite3
         env:
           npm_config_runtime: electron
           npm_config_disturl: https://electronjs.org/headers

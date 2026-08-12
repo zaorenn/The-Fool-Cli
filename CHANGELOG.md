@@ -2,6 +2,25 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.5.1
+
+The build that 2.5.0 could not finish. Its quality gate passed — the one that had
+stopped every release since 2.3.4 — and then every macOS and Linux job failed on
+two things that had never been reached before, because no run had ever got that
+far.
+
+- **`backend/core/Cargo.lock` was not committed.** The workspace inherited a
+  library `.gitignore` from the project it was forked from, whose own comment
+  says to remove the line when the crate builds an executable. Nobody had.
+  `buildFoolcore.js` compiles with `--locked`, which cannot create a lockfile it
+  does not find, so CI could never build the backend from source — and the
+  dependency set was resolved fresh on every machine that ever built it.
+- **`uiohook-napi` was being rebuilt on Linux and macOS.** It ships a prebuilt
+  N-API binary precisely so it does not have to be; N-API is ABI-stable across
+  Node and Electron versions, so the rebuild bought nothing and needed X11
+  development headers the runner does not have. The Windows path already
+  rebuilt only `better-sqlite3`; the other platforms do the same now.
+
 ## 2.5.0
 
 Carries everything 2.4.0 was going to. That version was tagged on 9 August and never built — the tag still points at the commit that bumped it, with none of the work below in it — so the number moves on rather than being quietly redefined.
