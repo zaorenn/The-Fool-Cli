@@ -169,7 +169,20 @@ const CHAT_ONLY = [
 ] as const;
 
 /** Whole words on their own, which longer ones must not match inside. */
-const CHAT_ONLY_ALONE = new Set(['hi', 'hey', 'yo', 'tamam', 'evet', 'hayır', 'hayir', 'peki', 'olur', 'ok', 'okay', 'bye']);
+const CHAT_ONLY_ALONE = new Set([
+  'hi',
+  'hey',
+  'yo',
+  'tamam',
+  'evet',
+  'hayır',
+  'hayir',
+  'peki',
+  'olur',
+  'ok',
+  'okay',
+  'bye',
+]);
 
 export const speaksOnlyToChat = (said: string): boolean => {
   const line = said.trim().toLowerCase();

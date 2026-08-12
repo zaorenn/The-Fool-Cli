@@ -133,7 +133,7 @@ const MobileActionSheet: React.FC<MobileActionSheetProps> = ({ open, onClose, ti
     <Fragment>
       <div className={`${styles.mask} ${visible ? styles.visible : ''}`} onClick={onClose} />
       <div
-        className={`${styles.sheet} ${visible ? styles.visible : ''}`}
+        className={`fool-surface ${styles.sheet} ${visible ? styles.visible : ''}`}
         role='dialog'
         aria-modal='true'
         onClick={(e) => e.stopPropagation()}
@@ -179,7 +179,7 @@ const MobileActionSheet: React.FC<MobileActionSheetProps> = ({ open, onClose, ti
 
           {renderedSub && (
             <div
-              className={`${styles.pane} ${styles.paneSub} ${subPhase === 'shown' ? styles.paneActive : styles.paneOutRight}`}
+              className={`fool-surface ${styles.pane} ${styles.paneSub} ${subPhase === 'shown' ? styles.paneActive : styles.paneOutRight}`}
               aria-hidden={subPhase !== 'shown'}
             >
               <div className={styles.subbar}>

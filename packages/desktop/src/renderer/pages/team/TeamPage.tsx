@@ -22,6 +22,7 @@ import TeamTabs from './components/TeamTabs';
 import TeamChatView from './components/TeamChatView';
 import TeamAgentIdentity from './components/TeamAgentIdentity';
 import TeamViewToggle from './components/TeamViewToggle';
+import TeamActivityView from './activity/TeamActivityView';
 import TeamWarmupOverlay from './components/TeamWarmupOverlay';
 import { useTeamViewMode } from './hooks/useTeamViewMode';
 import { useTeamWarmup, type TeamWarmupMemberState, type TeamWarmupPhase } from './hooks/useTeamWarmup';
@@ -511,7 +512,12 @@ const TeamPageContent: React.FC<TeamPageContentProps> = ({
               colorOf={colorOf}
               onRetry={onRetryWarmup}
             />
-            {isSingleView ? (
+            {viewMode === 'board' ? (
+              // 看板视图：只读展现全队 mailbox 与 task-board。
+              <div className='flex-1 h-full min-w-0'>
+                <TeamActivityView team={team} />
+              </div>
+            ) : isSingleView ? (
               // 单聊视图：全屏显示当前选中成员（activeSlotId），找不到时回退到 Leader。
               (() => {
                 const assistant =
@@ -541,7 +547,7 @@ const TeamPageContent: React.FC<TeamPageContentProps> = ({
                 {showLeftArrow && (
                   <div
                     className='absolute left-0 top-0 bottom-0 w-48px z-20 flex items-center justify-center cursor-pointer opacity-80 hover:opacity-100 transition-opacity'
-                    style={{ background: 'linear-gradient(90deg, var(--color-bg-1) 40%, transparent)' }}
+                    style={{ background: 'linear-gradient(90deg, var(--bg-1) 40%, transparent)' }}
                     onClick={scrollToPrev}
                   >
                     <div
@@ -604,7 +610,7 @@ const TeamPageContent: React.FC<TeamPageContentProps> = ({
                 {showRightArrow && (
                   <div
                     className='absolute right-0 top-0 bottom-0 w-48px z-20 flex items-center justify-center cursor-pointer opacity-80 hover:opacity-100 transition-opacity'
-                    style={{ background: 'linear-gradient(270deg, var(--color-bg-1) 40%, transparent)' }}
+                    style={{ background: 'linear-gradient(270deg, var(--bg-1) 40%, transparent)' }}
                     onClick={scrollToNext}
                   >
                     <div

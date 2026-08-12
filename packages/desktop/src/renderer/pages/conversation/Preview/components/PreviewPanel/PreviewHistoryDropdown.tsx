@@ -72,12 +72,12 @@ const PreviewHistoryDropdown: React.FC<PreviewHistoryDropdownProps> = ({
       className='min-w-220px rd-6px shadow-lg'
       style={{
         backgroundColor: currentTheme === 'dark' ? '#1d1d1f' : '#ffffff',
-        border: '1px solid var(--border-base, #e5e6eb)',
+        border: '1px solid var(--border-base)',
         zIndex: 9999,
       }}
     >
       {/* 头部：历史版本标题 + 文件名 / Header: History title + filename */}
-      <div className='px-8px py-6px' style={{ borderColor: 'var(--border-base, #e5e6eb)' }}>
+      <div className='px-8px py-6px' style={{ borderColor: 'var(--border-base)' }}>
         <div className='text-12px text-t-secondary'>{t('preview.historyVersions')}</div>
         <div className='text-11px text-t-tertiary truncate'>
           {historyTarget?.file_name || historyTarget?.title || t('preview.currentFile')}
@@ -89,7 +89,7 @@ const PreviewHistoryDropdown: React.FC<PreviewHistoryDropdownProps> = ({
         {historyLoading ? (
           <div className='py-16px text-center text-12px text-t-secondary'>{t('preview.loading')}</div>
         ) : historyError ? (
-          <div className='py-16px text-center text-12px' style={{ color: 'var(--danger, #f53f3f)' }}>
+          <div className='py-16px text-center text-12px' style={{ color: 'var(--danger)' }}>
             {historyError}
           </div>
         ) : historyVersions.length === 0 ? (

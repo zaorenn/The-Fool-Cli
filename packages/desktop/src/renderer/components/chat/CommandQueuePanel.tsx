@@ -166,7 +166,7 @@ const QueueItemCard: React.FC<QueueItemCardProps> = ({
       aria-label={preview}
       style={{
         background: isDragging
-          ? 'color-mix(in srgb, var(--color-fill-2) 88%, var(--color-bg-1))'
+          ? 'color-mix(in srgb, var(--color-fill-2) 88%, var(--bg-1))'
           : 'color-mix(in srgb, var(--color-fill-1) 76%, transparent)',
         touchAction: dragViaCard && !dragDisabled ? 'none' : undefined,
       }}
@@ -452,8 +452,8 @@ const CommandQueuePanel: React.FC<CommandQueuePanelProps> = ({
         aria-label={title}
         className='overflow-hidden rd-t-18px border b-solid'
         style={{
-          borderColor: 'color-mix(in srgb, var(--color-border-2) 56%, transparent)',
-          background: 'color-mix(in srgb, var(--color-fill-1) 84%, var(--color-bg-1))',
+          borderColor: 'color-mix(in srgb, var(--bg-3) 56%, transparent)',
+          background: 'color-mix(in srgb, var(--color-fill-1) 84%, var(--bg-1))',
         }}
       >
         <div className='flex items-center justify-between gap-8px px-12px pt-8px pb-4px'>

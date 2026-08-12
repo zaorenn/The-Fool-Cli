@@ -48,7 +48,10 @@ describe('spoken-turn context budget', () => {
 
 describe('fitHistoryToBudget', () => {
   const system = { role: 'system' as const, content: 'S'.repeat(400) };
-  const turn = (n: number) => ({ role: (n % 2 === 0 ? 'user' : 'assistant') as 'user' | 'assistant', content: `${n} `.repeat(200) });
+  const turn = (n: number) => ({
+    role: (n % 2 === 0 ? 'user' : 'assistant') as 'user' | 'assistant',
+    content: `${n} `.repeat(200),
+  });
 
   it('never drops the system message, however tight the budget', () => {
     const history = [system, ...Array.from({ length: 40 }, (_, n) => turn(n))];

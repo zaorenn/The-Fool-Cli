@@ -26,6 +26,14 @@ export interface WebviewHostProps {
   onDidFinishLoad?: () => void;
   /** Called when the page fails to load */
   onDidFailLoad?: (errorCode: number, errorDescription: string) => void;
+  /** Resolves URL input from the address bar */
+  resolveUrlInput?: (raw: string) => string | null;
+  /** Called when the URL changes (e.g. navigation) */
+  onUrlChange?: (url: string) => void;
+  /** Called when the page title changes */
+  onTitleChange?: (title: string) => void;
+  /** Called when the page favicon changes */
+  onFaviconChange?: (favicon: string) => void;
   /**
    * Hands the underlying `<webview>` to the owner, and `null` on unmount.
    *
@@ -57,6 +65,10 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
   style,
   onDidFinishLoad,
   onDidFailLoad,
+  resolveUrlInput,
+  onUrlChange,
+  onTitleChange,
+  onFaviconChange,
   onWebviewRef,
 }) => {
   const { t } = useTranslation();
@@ -231,7 +243,18 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
       if (newUrl && newUrl !== currentUrl) {
         setCurrentUrl(newUrl);
         setInputUrl(newUrl);
+        onUrlChange?.(newUrl);
       }
+    };
+
+    const handlePageTitleUpdated = (event: Event & { title?: string }) => {
+      const newTitle = (event as any).title;
+      if (newTitle) onTitleChange?.(newTitle);
+    };
+
+    const handlePageFaviconUpdated = (event: Event & { favicons?: string[] }) => {
+      const favicons = (event as any).favicons;
+      if (favicons && favicons.length > 0) onFaviconChange?.(favicons[0]);
     };
 
     const handleDomReady = () => {
@@ -345,6 +368,8 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
     webviewEl.addEventListener('dom-ready', handleDomReady);
     webviewEl.addEventListener('did-navigate', handleDidNavigate as EventListener);
     webviewEl.addEventListener('did-navigate-in-page', handleDidNavigate as EventListener);
+    webviewEl.addEventListener('page-title-updated', handlePageTitleUpdated as EventListener);
+    webviewEl.addEventListener('page-favicon-updated', handlePageFaviconUpdated as EventListener);
     webviewEl.addEventListener('console-message', handleConsoleMessage as EventListener);
     webviewEl.addEventListener('did-finish-load', handleDidFinishLoad);
     webviewEl.addEventListener('did-fail-load', handleDidFailLoad as EventListener);
@@ -355,11 +380,22 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
       webviewEl.removeEventListener('dom-ready', handleDomReady);
       webviewEl.removeEventListener('did-navigate', handleDidNavigate as EventListener);
       webviewEl.removeEventListener('did-navigate-in-page', handleDidNavigate as EventListener);
+      webviewEl.removeEventListener('page-title-updated', handlePageTitleUpdated as EventListener);
+      webviewEl.removeEventListener('page-favicon-updated', handlePageFaviconUpdated as EventListener);
       webviewEl.removeEventListener('console-message', handleConsoleMessage as EventListener);
       webviewEl.removeEventListener('did-finish-load', handleDidFinishLoad);
       webviewEl.removeEventListener('did-fail-load', handleDidFailLoad as EventListener);
     };
-  }, [navigateToWithHistory, currentUrl, onDidFinishLoad, onDidFailLoad, isStarOfficeUrl]);
+  }, [
+    navigateToWithHistory,
+    currentUrl,
+    onDidFinishLoad,
+    onDidFailLoad,
+    isStarOfficeUrl,
+    onUrlChange,
+    onTitleChange,
+    onFaviconChange,
+  ]);
 
   // Resize observer for content area
   useEffect(() => {
@@ -465,12 +501,15 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
       e.preventDefault();
       let targetUrl = inputUrl.trim();
       if (!targetUrl) return;
-      if (!/^https?:\/\//i.test(targetUrl)) {
+      if (resolveUrlInput) {
+        const resolved = resolveUrlInput(targetUrl);
+        if (resolved) targetUrl = resolved;
+      } else if (!/^https?:\/\//i.test(targetUrl)) {
         targetUrl = 'https://' + targetUrl;
       }
       navigateToWithHistory(targetUrl);
     },
-    [inputUrl, navigateToWithHistory]
+    [inputUrl, navigateToWithHistory, resolveUrlInput]
   );
 
   const handleUrlKeyDown = useCallback(
@@ -502,9 +541,9 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
         <style>
           {`
             .fool-url-viewer-toolbar {
-              --viewer-border: var(--color-border-2);
-              --viewer-border-hover: var(--color-border-3);
-              --viewer-bg: var(--color-bg-3);
+              --viewer-border: var(--bg-3);
+              --viewer-border-hover: var(--bg-4);
+              --viewer-bg: var(--bg-3);
               --viewer-bg-hover: var(--color-fill-2);
               --viewer-text: var(--color-text-2);
               --viewer-text-muted: var(--color-text-3);
@@ -548,7 +587,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
               opacity: 0.55;
               cursor: not-allowed;
               color: var(--viewer-text-muted);
-              background: var(--color-bg-2);
+              background: var(--bg-2);
             }
             .fool-url-viewer-toolbar .toolbar-chip {
               display: inline-flex;
@@ -559,7 +598,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
               padding: 0 10px;
               border-radius: 10px;
               border: 1px solid var(--viewer-border);
-              background: var(--color-bg-2);
+              background: var(--bg-2);
               color: var(--viewer-text-muted);
               font-size: 11px;
               line-height: 1;

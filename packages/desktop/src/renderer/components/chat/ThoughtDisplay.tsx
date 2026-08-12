@@ -29,8 +29,10 @@ type ThoughtDisplayProps = {
 };
 
 // Background gradient constants
-const GRADIENT_DARK = 'linear-gradient(135deg, #464767 0%, #323232 100%)';
-const GRADIENT_LIGHT = 'linear-gradient(90deg, #F0F3FF 0%, #F2F2F2 100%)';
+const GRADIENT_DARK =
+  'linear-gradient(135deg, color-mix(in srgb, var(--primary) 15%, var(--bg-1)) 0%, var(--bg-2) 100%)';
+const GRADIENT_LIGHT =
+  'linear-gradient(90deg, color-mix(in srgb, var(--primary) 10%, var(--bg-1)) 0%, var(--bg-2) 100%)';
 
 const ThoughtDisplay: React.FC<ThoughtDisplayProps> = ({
   thought,

@@ -91,7 +91,10 @@ export const DEFAULT_ASSUMED_CONTEXT_TOKENS = 8192;
  * How much of the window is left for the conversation, once the fixed cost and
  * the room the reply needs are taken out.
  */
-export const historyBudgetTokens = (contextLimit?: number, fixedOverheadTokens = FIXED_OVERHEAD_BUDGET_TOKENS): number => {
+export const historyBudgetTokens = (
+  contextLimit?: number,
+  fixedOverheadTokens = FIXED_OVERHEAD_BUDGET_TOKENS
+): number => {
   const window = contextLimit && contextLimit > 0 ? contextLimit : DEFAULT_ASSUMED_CONTEXT_TOKENS;
   // A quarter of the window, or a thousand tokens, is kept back for the answer:
   // a request that fits exactly leaves the model nowhere to put its reply.

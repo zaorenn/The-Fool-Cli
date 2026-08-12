@@ -40,17 +40,17 @@
 
 [data-theme='dark'] .conversation-search-modal,
 body[arco-theme='dark'] .conversation-search-modal {
-  --conversation-search-mask-bg: color-mix(in srgb, var(--color-bg-5) 58%, transparent);
-  --conversation-search-panel-bg: color-mix(in srgb, var(--color-bg-2) 76%, transparent);
-  --conversation-search-panel-inner-bg: color-mix(in srgb, var(--color-bg-3) 82%, transparent);
-  --conversation-search-panel-border: var(--color-border-2);
+  --conversation-search-mask-bg: color-mix(in srgb, var(--bg-5) 58%, transparent);
+  --conversation-search-panel-bg: color-mix(in srgb, var(--bg-2) 76%, transparent);
+  --conversation-search-panel-inner-bg: color-mix(in srgb, var(--bg-3) 82%, transparent);
+  --conversation-search-panel-border: var(--bg-3);
   --conversation-search-panel-shadow: 0 20px 44px rgba(0, 0, 0, 0.38);
-  --conversation-search-panel-outline: color-mix(in srgb, var(--color-border-3) 56%, transparent);
+  --conversation-search-panel-outline: color-mix(in srgb, var(--bg-4) 56%, transparent);
   --conversation-search-surface-bg: color-mix(in srgb, var(--color-fill-2) 88%, transparent);
   --conversation-search-input-bg: color-mix(in srgb, var(--color-fill-2) 92%, transparent);
-  --conversation-search-input-border: var(--color-border-2);
+  --conversation-search-input-border: var(--bg-3);
   --conversation-search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.22), 0 8px 18px rgba(0, 0, 0, 0.18);
-  --conversation-search-divider: var(--color-border-2);
+  --conversation-search-divider: var(--bg-3);
   --conversation-search-hover-bg: var(--color-fill-2);
   --conversation-search-highlight-fg: #93c5fd;
 }

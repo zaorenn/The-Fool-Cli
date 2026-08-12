@@ -4,29 +4,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { EventEmitter } from 'eventemitter3'
+import type { EventEmitter } from 'eventemitter3';
 
 /**
  * Speech Recognition Configuration Options
  */
 export interface STTConfig {
   /** STT engine to use (whisper-turbo, whisper-large-v3) */
-  engine: 'whisper-turbo' | 'whisper-large-v3'
+  engine: 'whisper-turbo' | 'whisper-large-v3';
 
   /** Language code for transcription */
-  language?: string
+  language?: string;
 
   /** Whether to detect language automatically */
-  detectLanguage?: boolean
+  detectLanguage?: boolean;
 
   /** Maximum number of alternative transcriptions */
-  beamSize?: number
+  beamSize?: number;
 
   /** Sample rate in Hz (default: 16000) */
-  sampleRate?: number
+  sampleRate?: number;
 
   /** Whether to return timestamps with transcription */
-  includeTimestamps?: boolean
+  includeTimestamps?: boolean;
 }
 
 /**
@@ -34,25 +34,25 @@ export interface STTConfig {
  */
 export interface TranscriptionResult {
   /** Full transcription text */
-  text: string
+  text: string;
 
   /** Language code detected */
-  language: string
+  language: string;
 
   /** Timestamp when transcription completed */
-  timestamp: number
+  timestamp: number;
 
   /** Duration in seconds */
-  duration: number
+  duration: number;
 
   /** Confidence score (0.0 - 1.0) */
-  confidence: number
+  confidence: number;
 
   /** Individual segments with timestamps */
-  segments: TranscriptionSegment[]
+  segments: TranscriptionSegment[];
 
   /** Error messages if any */
-  errors?: string[]
+  errors?: string[];
 }
 
 /**
@@ -60,19 +60,19 @@ export interface TranscriptionResult {
  */
 export interface TranscriptionSegment {
   /** Start time in seconds */
-  start: number
+  start: number;
 
   /** End time in seconds */
-  end: number
+  end: number;
 
   /** Text of this segment */
-  text: string
+  text: string;
 
   /** Language for this segment */
-  language?: string
+  language?: string;
 
   /** Confidence for this segment */
-  confidence?: number
+  confidence?: number;
 }
 
 /**
@@ -80,28 +80,28 @@ export interface TranscriptionSegment {
  */
 export interface VoiceState {
   /** Is currently listening? */
-  isListening: boolean
+  isListening: boolean;
 
   /** Is currently speaking? */
-  isSpeaking: boolean
+  isSpeaking: boolean;
 
   /** Current STT engine */
-  sttEngine: string | null
+  sttEngine: string | null;
 
   /** Current TTS engine */
-  ttsEngine: string | null
+  ttsEngine: string | null;
 
   /** Wake word being used */
-  wakeWord: string | null
+  wakeWord: string | null;
 
   /** Current volume level */
-  volume: number
+  volume: number;
 
   /** Latency mode (fast/balanced/accurate) */
-  latencyMode: 'fast' | 'balanced' | 'accurate'
+  latencyMode: 'fast' | 'balanced' | 'accurate';
 
   /** Processing queue size */
-  processingQueueSize: number
+  processingQueueSize: number;
 }
 
 /**
@@ -109,22 +109,27 @@ export interface VoiceState {
  */
 export interface TTSConfig {
   /** TTS engine to use (piper, kokoro, kitten, pocket, zipvoice) */
-  engine: 'piper-en-libritts-r' | 'kokoro-common_voice-v3' | 'kitten-v1-small' | 'pocket-english-large' | 'zipvoice-base'
+  engine:
+    | 'piper-en-libritts-r'
+    | 'kokoro-common_voice-v3'
+    | 'kitten-v1-small'
+    | 'pocket-english-large'
+    | 'zipvoice-base';
 
   /** Voice gender (male/female/neutral) */
-  gender?: 'male' | 'female' | 'neutral'
+  gender?: 'male' | 'female' | 'neutral';
 
   /** Speech speed (0.2 - 4.0, default: 1.0) */
-  speed?: number
+  speed?: number;
 
   /** Output volume (0.0 - 1.0) */
-  volume?: number
+  volume?: number;
 
   /** Pitch shift (-2 to 2) */
-  pitch?: number
+  pitch?: number;
 
   /** Whether to use high-quality audio */
-  highQuality?: boolean
+  highQuality?: boolean;
 }
 
 /**
@@ -132,25 +137,25 @@ export interface TTSConfig {
  */
 export interface TTSResult {
   /** Generated speech text */
-  text: string
+  text: string;
 
   /** Duration in seconds */
-  duration: number
+  duration: number;
 
   /** Speech speed used */
-  speed: number
+  speed: number;
 
   /** Volume level used */
-  volume: number
+  volume: number;
 
   /** Audio format */
-  format: string
+  format: string;
 
   /** Sample rate */
-  sampleRate: number
+  sampleRate: number;
 
   /** Bites generated */
-  bites: string[]
+  bites: string[];
 }
 
 /**
@@ -158,86 +163,86 @@ export interface TTSResult {
  */
 export interface IVoiceAPI {
   /** Initialize voice system with STT/TTS engines */
-  initSTT(engine: 'whisper-turbo' | 'whisper-large-v3'): Promise<void>
+  initSTT(engine: 'whisper-turbo' | 'whisper-large-v3'): Promise<void>;
 
   /** Initialize TTS engine */
-  initTTS(engine: string): Promise<void>
+  initTTS(engine: string): Promise<void>;
 
   /** Get current voice state */
-  getState(): VoiceState
+  getState(): VoiceState;
 
   /** Start listening for speech */
-  startListening(options?: { autoStartTTS?: boolean }): Promise<TranscriptionResult>
+  startListening(options?: { autoStartTTS?: boolean }): Promise<TranscriptionResult>;
 
   /** Stop listening */
-  stopListening(): Promise<void>
+  stopListening(): Promise<void>;
 
   /** Generate speech from text */
-  speak(text: string, config?: TTSConfig): Promise<TTSResult>
+  speak(text: string, config?: TTSConfig): Promise<TTSResult>;
 
   /** Cancel current speech generation */
-  cancelSpeech(): Promise<void>
+  cancelSpeech(): Promise<void>;
 
   /** Check if STT is initialized */
-  isSTTInitialized(): boolean
+  isSTTInitialized(): boolean;
 
   /** Check if TTS is initialized */
-  isTTSInitialized(): boolean
+  isTTSInitialized(): boolean;
 
   /** Get supported STT engines */
-  getSupportedSTTEngines(): string[]
+  getSupportedSTTEngines(): string[];
 
   /** Get supported TTS engines */
-  getSupportedTTSEngines(): string[]
+  getSupportedTTSEngines(): string[];
 
   /** Load custom wake word model */
-  loadWakeWordModel(modelPath?: string): Promise<void>
+  loadWakeWordModel(modelPath?: string): Promise<void>;
 
   /** Configure voice settings */
   configure(config: {
-    sttEngine?: string
-    ttsEngine?: string
-    wakeWord?: string
-    volume?: number
-    speed?: number
-  }): Promise<void>
+    sttEngine?: string;
+    ttsEngine?: string;
+    wakeWord?: string;
+    volume?: number;
+    speed?: number;
+  }): Promise<void>;
 
   /** Listen for voice state changes */
-  onVoiceStateChange(callback: (state: VoiceState) => void): () => void
+  onVoiceStateChange(callback: (state: VoiceState) => void): () => void;
 
   /** Load custom TTS model from file */
-  loadTTSPreset(presetPath: string): Promise<void>
+  loadTTSPreset(presetPath: string): Promise<void>;
 }
 
 /**
  * Voice Event Emitter Types
  */
-export type VoiceEventEmitter = EventEmitter<VoiceEvents>
+export type VoiceEventEmitter = EventEmitter<VoiceEvents>;
 
 export interface VoiceEvents {
   /** Fired when STT is initialized successfully */
-  sttInitialized: () => void
+  sttInitialized: () => void;
 
   /** Fired when TTS is initialized successfully */
-  ttsInitialized: () => void
+  ttsInitialized: () => void;
 
   /** Fired when voice state changes */
-  voiceStateChanged: (state: VoiceState) => void
+  voiceStateChanged: (state: VoiceState) => void;
 
   /** Fired when transcription segment is received */
-  segmentReceived: (segment: TranscriptionSegment) => void
+  segmentReceived: (segment: TranscriptionSegment) => void;
 
   /** Fired when transcription completes */
-  transcriptionComplete: (result: TranscriptionResult) => void
+  transcriptionComplete: (result: TranscriptionResult) => void;
 
   /** Fired when speech starts playing */
-  speakingStarted: () => void
+  speakingStarted: () => void;
 
   /** Fired when speech ends playing */
-  speakingEnded: () => void
+  speakingEnded: () => void;
 
   /** Fired on error */
-  onError: (error: Error) => void
+  onError: (error: Error) => void;
 }
 
 /**
@@ -245,25 +250,25 @@ export interface VoiceEvents {
  */
 export interface VoiceStats {
   /** Total STT tokens processed */
-  sttTokensProcessed: number
+  sttTokensProcessed: number;
 
   /** Total TTS bytes generated */
-  ttsBytesGenerated: number
+  ttsBytesGenerated: number;
 
   /** Average STT latency in ms */
-  averageSTTLatency: number
+  averageSTTLatency: number;
 
   /** Average TTS latency in ms */
-  averageTTSLatency: number
+  averageTTSLatency: number;
 
   /** Current memory usage for voice system */
-  memoryUsageMB: number
+  memoryUsageMB: number;
 
   /** Number of successful transcriptions */
-  transcriptionCount: number
+  transcriptionCount: number;
 
   /** Number of successful speech generations */
-  speechGenerationCount: number
+  speechGenerationCount: number;
 }
 
 /**
@@ -272,17 +277,17 @@ export interface VoiceStats {
 export interface EnginePerformance {
   /** STT engine name and stats */
   sttEngine: {
-    name: string
-    tokensPerSecond: number
-    accuracyScore: number
-    memoryUsageMB: number
-  }
+    name: string;
+    tokensPerSecond: number;
+    accuracyScore: number;
+    memoryUsageMB: number;
+  };
 
   /** TTS engine name and stats */
   ttsEngine: {
-    name: string
-    msPerSentence: number
-    qualityScore: number
-    memoryUsageMB: number
-  }
+    name: string;
+    msPerSentence: number;
+    qualityScore: number;
+    memoryUsageMB: number;
+  };
 }

@@ -58,3 +58,5 @@ export const isChatFileRef = (value: unknown): value is ChatFileRef => {
   if (ref.kind === 'upload' || ref.kind === 'local') return typeof ref.path === 'string';
   return false;
 };
+
+export type ContentEncoding = 'utf8' | 'dataurl' | 'base64';

@@ -666,8 +666,8 @@ const SendBox: React.FC<{
       <div
         className='rounded-14px border border-solid overflow-hidden p-12px flex flex-col gap-10px'
         style={{
-          borderColor: 'var(--color-border-2)',
-          background: 'color-mix(in srgb, var(--color-bg-1) 88%, transparent)',
+          borderColor: 'var(--bg-3)',
+          background: 'color-mix(in srgb, var(--bg-1) 88%, transparent)',
           backdropFilter: 'blur(14px) saturate(1.1)',
           WebkitBackdropFilter: 'blur(14px) saturate(1.1)',
         }}

@@ -4,50 +4,50 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { AssistantConfig, SkillDefinition } from './common/types/skills'
+import type { AssistantConfig, SkillDefinition } from './common/types/skills';
 
 /**
  * Fool AI Application Configuration
- * 
+ *
  * Defines assistants, skills, MCP servers, and agent behavior for the Fool application.
  */
 
 export interface AppConfiguration {
   /** Application-wide settings */
   app: {
-    name: string
-    version: string
-    description: string
-    homepage: string
-    author: string
-    email: string
-    license: string
-    keywords: string[]
-  }
-  
+    name: string;
+    version: string;
+    description: string;
+    homepage: string;
+    author: string;
+    email: string;
+    license: string;
+    keywords: string[];
+  };
+
   /** AI Assistants configuration */
   assistants: {
     /** Default system assistant */
-    default?: AssistantConfig
-    
+    default?: AssistantConfig;
+
     /** Voice-enabled voice assistant */
-    voice?: AssistantConfig
-    
+    voice?: AssistantConfig;
+
     /** Code generation expert */
-    code?: AssistantConfig
-    
+    code?: AssistantConfig;
+
     /** Creative writing specialist */
-    creative?: AssistantConfig
-    
+    creative?: AssistantConfig;
+
     /** System analysis expert */
-    system?: AssistantConfig
-  }
-  
+    system?: AssistantConfig;
+  };
+
   /** Skills catalog - what capabilities are available */
-  skills: SkillDefinition[]
-  
+  skills: SkillDefinition[];
+
   /** MCP Server connections for external tools */
-  mcpServers: Record<string, { command: string; args: string[]; env?: Record<string, string> }>
+  mcpServers: Record<string, { command: string; args: string[]; env?: Record<string, string> }>;
 }
 
 /**
@@ -64,7 +64,7 @@ export const DEFAULT_CONFIG: AppConfiguration = {
     license: 'Apache-2.0',
     keywords: ['ai', 'voice-assistant', 'code-generation', 'llm', 'sherpa-onnx'],
   },
-  
+
   assistants: {
     /**
      * Default system assistant - balanced for general use
@@ -81,9 +81,9 @@ export const DEFAULT_CONFIG: AppConfiguration = {
         - Creative writing and documentation
         - System design and architecture planning
         
-        Respond in a helpful, professional manner. When showing code, use appropriate markdown formatting.`
+        Respond in a helpful, professional manner. When showing code, use appropriate markdown formatting.`,
     },
-    
+
     /**
      * Voice-enabled assistant with STT/TTS capabilities
      */
@@ -99,9 +99,9 @@ export const DEFAULT_CONFIG: AppConfiguration = {
         - Listen to user voice commands via STT (Whisper Turbo for fast responses, Whisper Large-v3 for accuracy)
         - Respond with natural-sounding voice using TTS (Piper for speed, Kokoro/Pocket for realism)
         
-        Always acknowledge voice interactions clearly. When listening, use concise responses. When speaking, be conversational and engaging.`
+        Always acknowledge voice interactions clearly. When listening, use concise responses. When speaking, be conversational and engaging.`,
     },
-    
+
     /**
      * Code generation specialist
      */
@@ -131,9 +131,9 @@ export const DEFAULT_CONFIG: AppConfiguration = {
         1. Type safety (no 'any' types)
         2. Proper error handling
         3. Performance considerations
-        4. Security best practices`
+        4. Security best practices`,
     },
-    
+
     /**
      * System analysis expert
      */
@@ -157,10 +157,10 @@ export const DEFAULT_CONFIG: AppConfiguration = {
         2. Memory usage and resource consumption
         3. Security implications of design choices
         4. Maintainability and testability
-        5. Cost efficiency and operational overhead`
-    }
+        5. Cost efficiency and operational overhead`,
+    },
   },
-  
+
   /**
    * Skills catalog - available capabilities
    */
@@ -176,7 +176,7 @@ export const DEFAULT_CONFIG: AppConfiguration = {
         wakeWord: 'fool',
         autoListen: false,
         recordingTimeout: 30000,
-      }
+      },
     },
     {
       id: 'code-generation',
@@ -216,7 +216,7 @@ export const DEFAULT_CONFIG: AppConfiguration = {
       enabled: true,
     },
   ],
-  
+
   /**
    * MCP Server configurations for external tool integration
    */
@@ -226,35 +226,34 @@ export const DEFAULT_CONFIG: AppConfiguration = {
     //   command: 'npx',
     //   args: ['-y', '@modelcontextprotocol/server-git'],
     // },
-    
     // Example: Browser MCP for web automation
     // browser: {
     //   command: 'npx',
     //   args: ['-y', '@modelcontextprotocol/server-browser'],
     // },
   },
-}
+};
 
 /**
  * Load configuration from environment variables with defaults
  */
 export function loadConfig(): AppConfiguration {
-  const config = { ...DEFAULT_CONFIG }
-  
+  const config = { ...DEFAULT_CONFIG };
+
   // Override model based on environment
   if (process.env.AI_MODEL) {
     if (config.assistants.voice?.model !== 'anthropic/claude-3.5-sonnet') {
-      config.assistants.voice!.model = process.env.AI_MODEL
+      config.assistants.voice!.model = process.env.AI_MODEL;
     }
   }
-  
+
   // Enable/disable voice assistant based on environment
-  const enableVoiceAssist = process.env.DISABLE_VOICE_ASSISTANT !== '1'
+  const enableVoiceAssist = process.env.DISABLE_VOICE_ASSISTANT !== '1';
   if (enableVoiceAssist) {
-    config.assistants.voice!.enabled = true
+    config.assistants.voice!.enabled = true;
   }
-  
-  return config
+
+  return config;
 }
 
-export default loadConfig()
+export default loadConfig();

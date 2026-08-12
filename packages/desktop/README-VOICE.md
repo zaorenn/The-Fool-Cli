@@ -5,6 +5,7 @@
 ### Speech-to-Text (STT) Motorları
 
 #### Whisper Turbo (Varsayılan)
+
 ```typescript
 // Hızlı transkripsiyon için ideal (~93 tokens/saniye)
 await foolVoice.initSTT('whisper-turbo');
@@ -16,6 +17,7 @@ await foolVoice.initSTT('whisper-turbo');
 ```
 
 #### Whisper Large-v3 (Yüksek Doğruluk)
+
 ```typescript
 await foolVoice.initSTT('whisper-large-v3');
 
@@ -28,6 +30,7 @@ await foolVoice.initSTT('whisper-large-v3');
 ### Text-to-Speech (TTS) Motorları
 
 #### Piper (En Hızlı) ⚡
+
 ```typescript
 await foolVoice.initTTS('piper-en-libritts-r');
 
@@ -39,6 +42,7 @@ await foolVoice.initTTS('piper-en-libritts-r');
 ```
 
 #### Kokoro (En Doğal) 🎭
+
 ```typescript
 await foolVoice.initTTS('kokoro-common_voice-v3');
 
@@ -50,6 +54,7 @@ await foolVoice.initTTS('kokoro-common_voice-v3');
 ```
 
 #### Kitten (En Küçük) 📦
+
 ```typescript
 await foolVoice.initTTS('kitten-v1-small');
 
@@ -62,11 +67,13 @@ await foolVoice.initTTS('kitten-v1-small');
 ### Wake Word Sistemi
 
 #### Standart Wake Words
+
 - `FOOL` (varsayılan)
 - `Hey Fool`
 - `Assistant`
 
 #### Custom Wake Word Modeli
+
 ```typescript
 await foolVoice.loadWakeWordModel('/path/to/model');
 ```
@@ -74,17 +81,19 @@ await foolVoice.loadWakeWordModel('/path/to/model');
 ## 📊 Performans Metrikleri
 
 ### STT (Speech-to-Text)
-| Motor | Hız | Doğruluk | Bellek | Diller |
-|-------|-----|----------|--------|-------|
-| Turbo | 93 tok/s | %95 | 750MB | 98+ |
-| Large-v3 | 40 tok/s | %98+ | 2.5GB | 98+ |
+
+| Motor    | Hız      | Doğruluk | Bellek | Diller |
+| -------- | -------- | -------- | ------ | ------ |
+| Turbo    | 93 tok/s | %95      | 750MB  | 98+    |
+| Large-v3 | 40 tok/s | %98+     | 2.5GB  | 98+    |
 
 ### TTS (Text-to-Speech)
-| Motor | Hız/Kalite | Bellek | Ses Tonu |
-|-------|-----------|--------|----------|
-| Piper | ~82ms/cümle | 180MB | Yüksek |
-| Kokoro | ~50ms/cümle | 500MB | Çok Doğal |
-| Kitten | ~120ms/cümle | 50MB | Temel |
+
+| Motor  | Hız/Kalite   | Bellek | Ses Tonu  |
+| ------ | ------------ | ------ | --------- |
+| Piper  | ~82ms/cümle  | 180MB  | Yüksek    |
+| Kokoro | ~50ms/cümle  | 500MB  | Çok Doğal |
+| Kitten | ~120ms/cümle | 50MB   | Temel     |
 
 ## 🔌 IPC API Kullanımı
 
@@ -104,7 +113,7 @@ console.log(transcription.language);
 console.log(transcription.segments);
 
 // Metin okuma
-await voice.speak("Merhaba, size nasıl yardımcı olabilirim?", {
+await voice.speak('Merhaba, size nasıl yardımcı olabilirim?', {
   speed: 1.0,
   volume: 80,
 });
@@ -117,6 +126,7 @@ console.log(state.isListening); // true/false
 ## 🛠️ Geliştirici İpuçları
 
 ### Dinamik Ses Ayarları
+
 ```typescript
 await voice.configure({
   sttEngine: 'whisper-turbo',
@@ -127,6 +137,7 @@ await voice.configure({
 ```
 
 ### Voice State Listener'ı
+
 ```typescript
 const unsubscribe = voice.onVoiceStateChange((state) => {
   if (state.isListening) {
@@ -139,6 +150,7 @@ const unsubscribe = voice.onVoiceStateChange((state) => {
 ```
 
 ### Transcription Segmentleri
+
 ```typescript
 // Her bir segment için işleme
 transcription.segments.forEach((segment, index) => {
@@ -149,15 +161,17 @@ transcription.segments.forEach((segment, index) => {
 ## 🎯 Kullanım Senaryoları
 
 ### 1. Kod Genişletme İçin Sesli Komut
+
 ```typescript
 // "Generate a TypeScript utility to validate user input"
 await voice.startListening();
 // ... transcribe ...
 await generateCode(transcription.text);
-await voice.speak("İşte istediğiniz utility fonksiyonu");
+await voice.speak('İşte istediğiniz utility fonksiyonu');
 ```
 
 ### 2. Kod Açıklama
+
 ```typescript
 // "Explain this code" + kod dosyasını seçme
 await readFile(filePath);
@@ -166,28 +180,32 @@ await voice.speak(KOD_AÇIKLAMASI);
 ```
 
 ### 3. Debug Yardım
+
 ```typescript
 // "Show me the error in console.log"
 await voice.startListening();
 // ... transcribe ...
 await showDebugInfo(transcription.text);
-await voice.speak("Hata logunu gösteriyorum");
+await voice.speak('Hata logunu gösteriyorum');
 ```
 
 ## 📈 Optimizasyon İpuçları
 
 ### Bellek Kullanımı
+
 - Turbo STT + Piper TTS: ~1GB
 - Large-v3 STT + Kokoro TTS: ~2.8GB
 - Minimum önerilen RAM: 4GB
 
 ### Performans
+
 - Turbo için: CPU öncelikli
 - Large-v3 için: GPU kullanımı önerilir (CUDA)
 - Piper TTS: Tüm platformlarda hızlı
 - Kokoro TTS: GPU ile hız artışı %50
 
 ### Ses Kalitesi
+
 - Mikrofon: 16kHz minimum, 48kHz önerilir
 - Çevre gürültüsü: STT doğruluğunu etkiler
 - Ses tonu: Piper daha nötr, Kokoro daha doğal

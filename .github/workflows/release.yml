@@ -17,25 +17,25 @@ jobs:
   bump-version:
     name: Bump Version
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.RELEASE_TOKEN }}
-      
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
-      
+
       - name: Bump Version
         run: |
           NEW_VERSION=${{ github.event.inputs.version }}
-          
+
           # Update package.json
           bun run npm:version $NEW_VERSION
-          
+
           # Update git tags and push
           git config user.name "Fool Release Bot"
           git config user.email "release@fool.ai"
@@ -48,24 +48,24 @@ jobs:
     name: Build Release
     runs-on: ubuntu-latest
     needs: bump-version
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           ref: main
-      
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
-      
+
       - name: Install Dependencies
         run: bun install --frozen-lockfile
-      
+
       - name: Build Desktop Application
         run: bun run build
-      
+
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -76,11 +76,11 @@ jobs:
     name: GitHub Release
     runs-on: ubuntu-latest
     needs: build-release
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
@@ -102,7 +102,7 @@ jobs:
             ### Bug Fixes
             - Fixed various stability issues
             - Improved crash recovery
-      
+
       - name: Upload Desktop App
         uses: softprops/action-gh-release@v1
         with:
@@ -112,7 +112,7 @@ jobs:
     name: Notify Team
     runs-on: ubuntu-latest
     needs: release-github
-    
+
     steps:
       - name: Slack Notification
         run: |

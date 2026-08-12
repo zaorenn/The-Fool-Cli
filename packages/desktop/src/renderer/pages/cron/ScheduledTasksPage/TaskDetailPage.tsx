@@ -393,7 +393,7 @@ const TaskDetailPage: React.FC = () => {
               </span>
             )}
           </div>
-          <div className='h-1px w-full bg-[var(--color-border-2)]' />
+          <div className='h-1px w-full bg-[var(--bg-3)]' />
         </div>
 
         <div className='grid w-full min-w-0 grid-cols-1 gap-28px md:grid-cols-[minmax(0,1fr)_280px] md:items-start md:gap-32px'>
@@ -447,7 +447,7 @@ const TaskDetailPage: React.FC = () => {
                       <span>{t('conversation.history.selectedCount', { count: selectedConversationIds.size })}</span>
                     </div>
                   )}
-                  <div className='h-1px w-full bg-[var(--color-border-2)]' />
+                  <div className='h-1px w-full bg-[var(--bg-3)]' />
                   {conversations.map((conv, index) => (
                     <React.Fragment key={conv.id}>
                       <div
@@ -473,7 +473,7 @@ const TaskDetailPage: React.FC = () => {
                           {formatNextRun(getActivityTime(conv))}
                         </span>
                       </div>
-                      {index < conversations.length - 1 && <div className='h-1px w-full bg-[var(--color-border-2)]' />}
+                      {index < conversations.length - 1 && <div className='h-1px w-full bg-[var(--bg-3)]' />}
                     </React.Fragment>
                   ))}
                 </div>
@@ -493,7 +493,7 @@ const TaskDetailPage: React.FC = () => {
           <aside data-testid='task-detail-sidebar-column' className='flex min-w-0 flex-col gap-24px'>
             <section className='flex flex-col gap-12px'>
               <h2 className='m-0 text-13px font-medium text-t-secondary'>{t('cron.detail.instructions')}</h2>
-              <div className='box-border rounded-12px border border-solid border-[var(--color-border-2)] bg-fill-2 px-16px py-14px'>
+              <div className='box-border rounded-12px border border-solid border-[var(--bg-3)] bg-fill-2 px-16px py-14px'>
                 <div className='whitespace-pre-wrap break-words text-14px leading-22px text-t-primary'>
                   {job.target.payload.text || '-'}
                 </div>
@@ -536,10 +536,10 @@ const TaskDetailPage: React.FC = () => {
                 <span className='text-14px leading-22px text-t-primary'>{currentExecutionModeLabel}</span>
                 <Attention theme='outline' size={12} className='line-height-0 shrink-0 text-t-secondary' />
               </div>
-              <div className='box-border rounded-12px border border-solid border-[var(--color-border-2)] bg-fill-2 px-16px py-14px'>
+              <div className='box-border rounded-12px border border-solid border-[var(--bg-3)] bg-fill-2 px-16px py-14px'>
                 <div className='flex flex-col gap-10px'>
                   <p className='m-0 text-13px leading-20px text-t-primary'>{executionModeExplanation}</p>
-                  <div className='h-1px w-full bg-[var(--color-border-2)]' />
+                  <div className='h-1px w-full bg-[var(--bg-3)]' />
                   <p className='m-0 text-12px leading-18px text-t-secondary'>
                     {t('cron.page.form.executionModeEditHint')}
                   </p>

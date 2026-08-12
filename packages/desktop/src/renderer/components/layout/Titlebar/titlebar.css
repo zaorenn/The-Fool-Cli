@@ -249,11 +249,11 @@
 }
 
 .app-window-controls__button--close:hover {
-  background-color: #e81123;
-  color: #fff;
+  background-color: var(--danger);
+  color: var(--inverse);
 }
 
 .app-window-controls__button--close:active {
-  background-color: #c10f1f;
-  color: #fff;
+  background-color: color-mix(in srgb, var(--danger) 80%, black);
+  color: var(--inverse);
 }

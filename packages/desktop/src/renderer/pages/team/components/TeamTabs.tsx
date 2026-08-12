@@ -360,7 +360,7 @@ const TeamTabs: React.FC<TeamTabsProps> = ({ onTabClick, pendingCounts, warmingU
         {showLeftFade && (
           <div
             className='pointer-events-none absolute left-0 top-0 bottom-0 w-28px z-10'
-            style={{ background: 'linear-gradient(90deg, var(--color-bg-1), transparent)' }}
+            style={{ background: 'linear-gradient(90deg, var(--bg-1), transparent)' }}
           />
         )}
         {showRightFade && (
@@ -368,7 +368,7 @@ const TeamTabs: React.FC<TeamTabsProps> = ({ onTabClick, pendingCounts, warmingU
             className='pointer-events-none absolute top-0 bottom-0 w-28px z-10'
             style={{
               right: 'var(--team-add-w, 132px)',
-              background: 'linear-gradient(270deg, var(--color-bg-1), transparent)',
+              background: 'linear-gradient(270deg, var(--bg-1), transparent)',
             }}
           />
         )}

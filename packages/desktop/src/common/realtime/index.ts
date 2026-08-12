@@ -319,7 +319,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_learn',
     description:
-      "Get better at working for this person, so they never say the same thing twice. Use `lesson` the moment they correct you or something you did was wrong. Use `skillName` with `skillSteps` when they are teaching you how they want something done. Both are read back at the start of every future conversation, so write them as instructions to yourself rather than as notes about what happened.",
+      'Get better at working for this person, so they never say the same thing twice. Use `lesson` the moment they correct you or something you did was wrong. Use `skillName` with `skillSteps` when they are teaching you how they want something done. Both are read back at the start of every future conversation, so write them as instructions to yourself rather than as notes about what happened.',
     parameters: {
       type: 'object',
       properties: {

@@ -390,7 +390,7 @@ const ModelModalContent: React.FC = () => {
         />
       ) : (
         /* Modal mode keeps its compact self-contained header. */
-        <div className='flex-shrink-0 border-b border-[var(--color-border-2)] pb-12px mb-14px flex flex-col gap-10px'>
+        <div className='flex-shrink-0 border-b border-[var(--bg-3)] pb-12px mb-14px flex flex-col gap-10px'>
           <div className='flex items-center justify-between gap-8px flex-wrap'>
             <div className='text-20px font-600 text-t-primary leading-34px'>{t('settings.model')}</div>
             <div className='flex items-center gap-8px flex-wrap'>{headerActions}</div>
@@ -433,7 +433,7 @@ const ModelModalContent: React.FC = () => {
                   key={key}
                   bordered
                   expandIconPosition='left'
-                  className={`[&_.arco-collapse-item]:!border-0 [&_.arco-collapse-item]:!rounded-12px [&_.arco-collapse-item]:!overflow-hidden [&_.arco-collapse-item]:!bg-[var(--color-bg-2)] [&_.arco-collapse-item-header]:!bg-[var(--fill-0)] [&_.arco-collapse-item-header]:!pl-36px [&_.arco-collapse-item-header]:!pr-12px [&_.arco-collapse-item-header]:!py-8px [&_.arco-collapse-item-header]:transition-colors [&_.arco-collapse-item-header]:hover:!bg-[var(--color-bg-2)] [&_.arco-collapse-item-header]:!gap-8px [&_.arco-collapse-item-header-title]:!min-w-0 [&_.arco-collapse-item-header-icon]:!text-2 [&_.arco-collapse-item-header:hover_.arco-collapse-item-header-icon]:!text-1 [&_.arco-collapse-item-content]:!bg-fill-1 [&_.arco-collapse-item-content-box]:!px-10px [&_.arco-collapse-item-content-box]:!py-8px [&_.arco-collapse-item-content]:!border-t [&_.arco-collapse-item-content]:!border-[var(--color-border-2)] ${
+                  className={`[&_.arco-collapse-item]:!border-0 [&_.arco-collapse-item]:!rounded-12px [&_.arco-collapse-item]:!overflow-hidden [&_.arco-collapse-item]:!bg-[var(--bg-2)] [&_.arco-collapse-item-header]:!bg-[var(--fill-0)] [&_.arco-collapse-item-header]:!pl-36px [&_.arco-collapse-item-header]:!pr-12px [&_.arco-collapse-item-header]:!py-8px [&_.arco-collapse-item-header]:transition-colors [&_.arco-collapse-item-header]:hover:!bg-[var(--bg-2)] [&_.arco-collapse-item-header]:!gap-8px [&_.arco-collapse-item-header-title]:!min-w-0 [&_.arco-collapse-item-header-icon]:!text-2 [&_.arco-collapse-item-header:hover_.arco-collapse-item-header-icon]:!text-1 [&_.arco-collapse-item-content]:!bg-fill-1 [&_.arco-collapse-item-content-box]:!px-10px [&_.arco-collapse-item-content-box]:!py-8px [&_.arco-collapse-item-content]:!border-t [&_.arco-collapse-item-content]:!border-[var(--bg-3)] ${
                     isExpanded
                       ? '[&_.arco-collapse-item-header]:!rounded-t-12px [&_.arco-collapse-item-header]:!rounded-b-0 [&_.arco-collapse-item-content]:!rounded-b-12px'
                       : '[&_.arco-collapse-item-header]:!rounded-12px'
@@ -620,7 +620,7 @@ const ModelModalContent: React.FC = () => {
                               <Tooltip content={t('settings.configureModel')}>
                                 <Button
                                   size='mini'
-                                  className='!w-28px !h-28px !min-w-28px !bg-[var(--color-bg-1)] text-t-secondary hover:text-t-primary hover:!bg-[var(--fill-0)]'
+                                  className='!w-28px !h-28px !min-w-28px !bg-[var(--bg-1)] text-t-secondary hover:text-t-primary hover:!bg-[var(--fill-0)]'
                                   icon={<SettingTwo theme='outline' size='16' />}
                                   onClick={() => addModelModalCtrl.open({ data: platform, model })}
                                 />
@@ -630,7 +630,7 @@ const ModelModalContent: React.FC = () => {
                               <Tooltip content={t('settings.healthCheck')}>
                                 <Button
                                   size='mini'
-                                  className='!w-28px !h-28px !min-w-28px !bg-[var(--color-bg-1)] text-t-secondary hover:text-t-primary hover:!bg-[var(--fill-0)]'
+                                  className='!w-28px !h-28px !min-w-28px !bg-[var(--bg-1)] text-t-secondary hover:text-t-primary hover:!bg-[var(--fill-0)]'
                                   icon={<Heartbeat theme='outline' size='16' />}
                                   loading={healthCheckLoading[`${platform.id}-${model}`]}
                                   onClick={() => performHealthCheck(platform, model)}
@@ -668,13 +668,13 @@ const ModelModalContent: React.FC = () => {
                               >
                                 <Button
                                   size='mini'
-                                  className='!w-28px !h-28px !min-w-28px !bg-[var(--color-bg-1)] text-t-secondary hover:text-t-primary hover:!bg-[var(--fill-0)]'
+                                  className='!w-28px !h-28px !min-w-28px !bg-[var(--bg-1)] text-t-secondary hover:text-t-primary hover:!bg-[var(--fill-0)]'
                                   icon={<DeleteFour theme='outline' size='18' strokeWidth={2} />}
                                 />
                               </Popconfirm>
                             </div>
                           </div>
-                          {index < arr.length - 1 && <Divider className='!my-0 !border-[var(--color-border-2)]/70' />}
+                          {index < arr.length - 1 && <Divider className='!my-0 !border-[var(--bg-3)]/70' />}
                         </div>
                       );
                     })}

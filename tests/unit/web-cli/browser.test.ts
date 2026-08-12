@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * Copyright 2025 AionUi (aionui.com)
  * SPDX-License-Identifier: Apache-2.0
@@ -34,16 +34,16 @@ describe('shouldAutoOpenBrowser', () => {
       shouldAutoOpenBrowser({
         allowRemote: false,
         noOpenFlag: true,
-        env: { FOOL_OPEN_BROWSER: 'true' },
+        env: { AIONUI_OPEN_BROWSER: 'true' },
       })
     ).toBe(false);
   });
 
-  it('honors FOOL_OPEN_BROWSER=false for local launches', () => {
+  it('honors AIONUI_OPEN_BROWSER=false for local launches', () => {
     expect(
       shouldAutoOpenBrowser({
         allowRemote: false,
-        env: { FOOL_OPEN_BROWSER: 'false' },
+        env: { AIONUI_OPEN_BROWSER: 'false' },
       })
     ).toBe(false);
   });

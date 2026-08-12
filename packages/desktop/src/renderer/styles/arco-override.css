@@ -410,7 +410,7 @@ body[arco-theme='dark'] .arco-message-error {
 /* 设置弹窗移动端 Tabs 样式 */
 .settings-mobile-tabs {
   .arco-tabs-nav {
-    border-bottom: 1px solid var(--color-border-2);
+    border-bottom: 1px solid var(--bg-3);
   }
 
   .arco-tabs-nav-tab {
@@ -438,7 +438,7 @@ body[arco-theme='dark'] .arco-message-error {
 /* WebUI / Channels tabs in Remote settings */
 .settings-remote-tabs {
   .arco-tabs-nav {
-    border-bottom: 1px solid var(--color-border-2);
+    border-bottom: 1px solid var(--bg-3);
   }
 
   .arco-tabs-nav-tab {

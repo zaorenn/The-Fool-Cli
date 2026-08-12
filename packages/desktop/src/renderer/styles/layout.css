@@ -96,7 +96,7 @@
    per channel against the content, which the eye reads as a straight edge.
    Painting the seam in the sider's own colour is what makes the curve visible. */
 .layout:has(.layout-content--beside-sider) {
-  background-color: var(--color-bg-2);
+  background-color: var(--bg-2);
 }
 
 /* Disable transition during drag for smooth dragging */

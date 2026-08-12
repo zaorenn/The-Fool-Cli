@@ -449,7 +449,7 @@ const InlineAgentEditor: React.FC<InlineAgentEditorProps> = ({ agent, onSave, on
             type='outline'
             size='mini'
             data-testid='btn-agent-avatar-upload'
-            className='!h-auto !w-full !rounded-8px !border-[var(--color-border-2)] !px-6px !py-1px !text-11px'
+            className='!h-auto !w-full !rounded-8px !border-[var(--bg-3)] !px-6px !py-1px !text-11px'
             onClick={() => void handlePickAvatarImage()}
           >
             {t('settings.assistantAvatarUploadImage', { defaultValue: 'Upload image' })}
@@ -549,7 +549,7 @@ const InlineAgentEditor: React.FC<InlineAgentEditorProps> = ({ agent, onSave, on
       </div>
 
       {/* Advanced JSON Editor */}
-      <div className='overflow-hidden rounded-12px border border-solid border-[var(--color-border-2)] bg-[var(--color-fill-1)]'>
+      <div className='overflow-hidden rounded-12px border border-solid border-[var(--bg-3)] bg-[var(--color-fill-1)]'>
         <Collapse
           activeKey={showAdvanced ? ['advanced'] : []}
           onChange={(_key, keys) => setShowAdvanced(keys.includes('advanced'))}
@@ -570,7 +570,7 @@ const InlineAgentEditor: React.FC<InlineAgentEditorProps> = ({ agent, onSave, on
                 basicSetup={{ lineNumbers: true, foldGutter: true, dropCursor: false, allowMultipleSelections: false }}
                 style={{
                   fontSize: '12px',
-                  border: jsonError ? '1px solid var(--danger)' : '1px solid var(--color-border-2)',
+                  border: jsonError ? '1px solid var(--danger)' : '1px solid var(--bg-3)',
                   borderRadius: '10px',
                   overflow: 'hidden',
                 }}

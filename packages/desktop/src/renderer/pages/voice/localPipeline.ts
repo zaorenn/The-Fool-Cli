@@ -27,7 +27,12 @@ import {
   refusedTheField,
   rememberRefusal,
 } from '@/common/realtime/reasoning';
-import { beginScreenLook, dropPreloadedCapture, forgetScreenLook, preloadScreenCapture } from '@renderer/services/voice/screenSight';
+import {
+  beginScreenLook,
+  dropPreloadedCapture,
+  forgetScreenLook,
+  preloadScreenCapture,
+} from '@renderer/services/voice/screenSight';
 import { MEMORY_REVIEW_PROMPT, readProposals } from '@/common/voice/memoryProposal';
 import { isBackchannel } from '@/common/voice/backchannel';
 import { concernsFor, describeTurn } from '@/common/voice/turnMetrics';

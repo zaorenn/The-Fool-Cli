@@ -15,8 +15,8 @@
  * menu (new/delete/rename), and the Files/Changes tabs are out of this round.
  */
 
-import { Button, Input, Message, Modal, Spin } from '@arco-design/web-react';
-import { FolderPlus } from '@icon-park/react';
+import { Button, Input, Message, Modal, Spin, Dropdown, Menu } from '@arco-design/web-react';
+import { FolderPlus, Plus } from '@icon-park/react';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useSWR from 'swr';
@@ -35,12 +35,15 @@ import { emitter } from '@/renderer/utils/emitter';
 import { projectFileRef } from '@/common/types/chatFile';
 import type { FileOrFolderItem } from '@/renderer/utils/file/fileTypes';
 
+import { copyText } from '@/renderer/utils/ui/clipboard';
+
 import { ExplorerPanel } from './ExplorerPanel';
 import { buildRemoveRequest, buildRenameRequest, parentRel, peKey, type RenameRequest } from './explorerModel';
 import { initExplorerRuntime } from './monitorTransport';
 import { toRootRefs } from './projectRoots';
 import { select } from './explorerStore';
 import { useCurrentConversation } from './currentConversationStore';
+import { ScmPanel } from '../SourceControl/ScmPanel';
 
 export type ExplorerContainerProps = {
   /** Owning project id — scopes the store's fact cache + localStorage UI state. */
@@ -232,6 +235,25 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
     }
   };
 
+  const handleRevealInFolder = (peId: string, rel: string): void => {
+    void (ipcBridge.fs as any).reveal?.invoke({ pe_id: peId, relative_path: rel }).catch(() => {
+      Message.error(t('conversation.workspace.contextMenu.revealFailed'));
+    });
+  };
+
+  const handleCopyRelativePath = (_peId: string, rel: string): void => {
+    void copyText(rel === '' ? '.' : rel)
+      .then(() => Message.success(t('conversation.explorer.pathCopied')))
+      .catch(() => Message.error(t('conversation.explorer.copyFailed')));
+  };
+
+  const handleCopyAbsolutePath = (peId: string, rel: string): void => {
+    void (ipcBridge.fs as any).copyAbsolutePath
+      ?.invoke({ pe_id: peId, relative_path: rel })
+      .then(() => Message.success(t('conversation.explorer.pathCopied')))
+      .catch(() => Message.error(t('conversation.explorer.copyFailed')));
+  };
+
   if (!projectId) return null;
   if (isLoading && !data) return <Spin loading />;
 
@@ -267,14 +289,35 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
           {tabButton('changes', t('conversation.explorer.tabs.changes'))}
         </div>
         <div className='flex items-center gap-2px flex-shrink-0'>
-          <Button
-            type='text'
-            size='mini'
-            icon={<FolderPlus theme='outline' size='16' />}
-            aria-label={t('conversation.explorer.addFolder')}
-            title={t('conversation.explorer.addFolder')}
-            onClick={handleAddFolder}
-          />
+          <Dropdown
+            trigger='click'
+            position='br'
+            droplist={
+              <Menu>
+                <Menu.Item key='addFolder' onClick={handleAddFolder}>
+                  {t('conversation.explorer.addFolder')}
+                </Menu.Item>
+                <Menu.Item
+                  key='browser'
+                  onClick={() => {
+                    openPreview('about:blank', 'browser' as any, {
+                      title: t('preview.browser.newTab', { defaultValue: 'New Tab' }),
+                    });
+                  }}
+                >
+                  {t('preview.browser.name', { defaultValue: 'Browser' })}
+                </Menu.Item>
+              </Menu>
+            }
+          >
+            <Button
+              type='text'
+              size='mini'
+              icon={<Plus theme='outline' size='16' />}
+              aria-label={t('common.add')}
+              title={t('common.add')}
+            />
+          </Dropdown>
           {workspacePath && <WorkspaceOpenButton workspacePath={workspacePath} isTemporary={false} />}
         </div>
       </div>
@@ -294,12 +337,15 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
           onRename={handleRename}
           onDelete={handleDelete}
           onAddToChat={activeConversationId ? handleAddToChat : undefined}
+          onRevealInFolder={handleRevealInFolder}
+          onCopyRelativePath={handleCopyRelativePath}
+          onCopyAbsolutePath={handleCopyAbsolutePath}
           onImportFiles={handleImportFiles}
         />
       </div>
       {activeTab === 'changes' && (
-        <div className='flex-1 min-h-0 flex items-center justify-center px-16px text-center text-t-secondary text-13px'>
-          {t('conversation.explorer.changesPlaceholder')}
+        <div className='flex-1 min-h-0'>
+          <ScmPanel projectId={projectId} />
         </div>
       )}
       <Modal

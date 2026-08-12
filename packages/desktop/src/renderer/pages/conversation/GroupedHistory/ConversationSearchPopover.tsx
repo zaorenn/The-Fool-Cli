@@ -440,7 +440,7 @@ const ConversationSearchPopover: React.FC<ConversationSearchPopoverProps> = ({
             triggerClassName,
             {
               'hover:bg-fill-3 active:bg-fill-4': !disabled && fullWidth,
-              'hover:bg-fill-2 hover:border-[color:var(--color-border-2)]': !disabled && !fullWidth,
+              'hover:bg-fill-2 hover:border-[color:var(--bg-3)]': !disabled && !fullWidth,
               'opacity-50 cursor-not-allowed': disabled,
               'bg-aou-2 text-primary border-[color:var(--color-primary-light-3)]': visible && !disabled && !fullWidth,
             },

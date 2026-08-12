@@ -3,14 +3,14 @@
   background:
     radial-gradient(circle at 18% 18%, color-mix(in srgb, rgb(var(--primary-6)) 12%, transparent), transparent 34%),
     radial-gradient(circle at 82% 82%, color-mix(in srgb, rgb(var(--success-6)) 7%, transparent), transparent 28%),
-    var(--color-bg-1);
+    var(--bg-1);
 }
 
 .providerCard {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--color-border-2);
-  background: color-mix(in srgb, var(--color-bg-2) 88%, transparent);
+  border: 1px solid var(--bg-3);
+  background: color-mix(in srgb, var(--bg-2) 88%, transparent);
   transition:
     transform 180ms ease,
     border-color 180ms ease,
@@ -19,8 +19,8 @@
 
 .providerCard:hover {
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, rgb(var(--primary-6)) 45%, var(--color-border-2));
-  box-shadow: 0 18px 50px color-mix(in srgb, var(--color-bg-5) 12%, transparent);
+  border-color: color-mix(in srgb, rgb(var(--primary-6)) 45%, var(--bg-3));
+  box-shadow: 0 18px 50px color-mix(in srgb, var(--bg-5) 12%, transparent);
 }
 
 .providerGlow {

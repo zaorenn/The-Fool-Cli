@@ -21,7 +21,7 @@ import { injectBackgroundCssBlock } from './backgroundUtils.ts';
 /** CodeMirror 编辑器样式 / CodeMirror editor styles */
 const CODE_MIRROR_STYLE: CSSProperties = {
   fontSize: '13px',
-  border: '1px solid var(--color-border-2)',
+  border: '1px solid var(--bg-3)',
   borderRadius: '6px',
   overflow: 'hidden',
 } as const;

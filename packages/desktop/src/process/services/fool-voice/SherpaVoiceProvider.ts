@@ -567,7 +567,9 @@ export class SherpaVoiceProvider {
       audioData = synthesizer.generateAsync ? await synthesizer.generateAsync(request) : synthesizer.generate(request);
     } catch (err) {
       console.error('[SherpaVoiceProvider] Native addon crashed during synthesis:', err);
-      throw new Error(`Sherpa native synthesis failed: ${err instanceof Error ? err.message : String(err)}`, { cause: err });
+      throw new Error(`Sherpa native synthesis failed: ${err instanceof Error ? err.message : String(err)}`, {
+        cause: err,
+      });
     }
     if (!audioData?.samples?.length) throw new Error('Synthesis produced no audio');
     if (signal?.aborted) throw new Error('cancelled');

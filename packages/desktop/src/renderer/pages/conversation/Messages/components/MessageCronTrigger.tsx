@@ -51,7 +51,7 @@ const MessageCronTrigger: React.FC<{ artifact: ICronTriggerArtifact }> = ({ arti
     >
       <div
         className='flex items-center gap-8px px-16px py-12px rd-12px b-1 b-solid bg-fill-0 hover:bg-fill-1 transition-colors'
-        style={{ borderColor: 'color-mix(in srgb, var(--color-border-2) 70%, transparent)' }}
+        style={{ borderColor: 'color-mix(in srgb, var(--bg-3) 70%, transparent)' }}
       >
         <AlarmClock
           theme='outline'

@@ -196,7 +196,7 @@ const WebFsPicker: React.FC<PickerProps> = ({ options, onDone }) => {
         style={{
           height: 320,
           overflowY: 'auto',
-          border: '1px solid var(--color-border-2)',
+          border: '1px solid var(--bg-3)',
           borderRadius: 4,
           padding: 4,
         }}

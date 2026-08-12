@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Message } from '@arco-design/web-react';
+import { Message, Button } from '@arco-design/web-react';
 import { Copy, Down, Up } from '@icon-park/react';
 import katex from 'katex';
 import React, { useRef, useState } from 'react';
@@ -14,6 +14,7 @@ import { vs, vs2015 } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { copyText } from '@/renderer/utils/ui/clipboard';
 import MermaidBlock from './MermaidBlock';
 import { formatCode, getDiffLineStyle } from './markdownUtils';
+import styles from './CodeBlock.module.css';
 
 const PREVIEW_LINES = 3;
 // code span: font-size 13px, line-height 20px (per ShadowView injection)
@@ -183,6 +184,7 @@ function CodeBlock(props: CodeBlockProps) {
             maxHeight: canCollapse && !expanded ? `${COLLAPSED_HEIGHT}px` : 'none',
             overflowY: 'hidden',
             overflowX: 'visible',
+            position: 'relative',
           }}
         >
           <SyntaxHighlighter
@@ -218,6 +220,14 @@ function CodeBlock(props: CodeBlockProps) {
               },
             }}
           />
+          {canCollapse && !expanded && (
+            <div
+              className={styles.gradientFade}
+              style={{
+                background: `linear-gradient(to bottom, transparent, ${bgColor})`,
+              }}
+            />
+          )}
         </div>
 
         {/* Footer */}
@@ -227,21 +237,19 @@ function CodeBlock(props: CodeBlockProps) {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              padding: '6px 12px',
-              cursor: 'pointer',
-              gap: '4px',
+              padding: '8px 12px',
               borderTop: `1px solid ${borderColor}`,
             }}
-            onClick={toggleExpanded}
           >
-            <span style={{ color: footerTextColor, fontSize: '12px' }}>
+            <Button
+              type='text'
+              size='mini'
+              onClick={toggleExpanded}
+              icon={expanded ? <Up /> : <Down />}
+              style={{ color: footerTextColor }}
+            >
               {expanded ? t('common.collapse') : t('common.viewMoreLines', { count: totalLines - PREVIEW_LINES })}
-            </span>
-            {expanded ? (
-              <Up theme='outline' size='12' fill={footerTextColor} />
-            ) : (
-              <Down theme='outline' size='12' fill={footerTextColor} />
-            )}
+            </Button>
           </div>
         )}
       </div>

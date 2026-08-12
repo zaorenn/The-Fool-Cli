@@ -251,10 +251,7 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
             />
             {/* Divider between fixed top nav and scrollable content area */}
             <div
-              className={classNames(
-                'shrink-0 mt-6px mb-2px h-1px bg-[var(--color-border-2)]',
-                collapsed ? 'mx-6px' : 'mx-10px'
-              )}
+              className={classNames('shrink-0 mt-6px mb-2px h-1px bg-[var(--bg-3)]', collapsed ? 'mx-6px' : 'mx-10px')}
             />
             {/* Scrollable content: pinned → team (slot) → projects → conversations */}
             <div className={classNames('flex-1 min-h-0 overflow-y-auto', siderStyles.scrollArea)}>

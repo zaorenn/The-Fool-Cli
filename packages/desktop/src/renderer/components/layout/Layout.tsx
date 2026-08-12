@@ -456,7 +456,7 @@ const Layout: React.FC<{
               collapsedWidth={isMobile ? 0 : 0}
               collapsed={collapsed}
               width={siderWidth}
-              className={classNames('!bg-2 layout-sider', {
+              className={classNames('fool-surface layout-sider', {
                 collapsed: collapsed,
               })}
               style={siderStyle}
@@ -536,7 +536,7 @@ const Layout: React.FC<{
                   onMouseDown={beginSiderResizeDrag}
                   aria-hidden='true'
                 >
-                  <div className='absolute top-0 left-1/2 h-full w-1px -translate-x-1/2 bg-transparent group-hover:bg-[var(--color-border-2)] transition-colors duration-150' />
+                  <div className='absolute top-0 left-1/2 h-full w-1px -translate-x-1/2 bg-transparent group-hover:bg-[var(--bg-3)] transition-colors duration-150' />
                 </div>
               )}
             </ArcoLayout.Sider>
@@ -548,7 +548,7 @@ const Layout: React.FC<{
                 per-conversation subtree → persists across same-project switches. */}
             <div ref={mainRowRef} className='flex flex-1 min-h-0 overflow-hidden'>
               <ArcoLayout.Content
-                className={classNames('bg-1 layout-content flex flex-col min-h-0 flex-1', {
+                className={classNames('fool-page layout-content flex flex-col min-h-0 flex-1', {
                   // Rounded only while the sider is actually beside it. Collapsed
                   // or on mobile the content runs to the window edge, where a
                   // radius would cut a notch out of the app frame.

@@ -139,7 +139,7 @@ export const AgentHubModal: React.FC<AgentHubModalProps> = ({ visible, onCancel 
                 <div
                   key={agent.name}
                   data-testid='agent-hub-card'
-                  className='flex min-h-[144px] flex-col rounded-12px border border-solid border-[var(--color-border-2)] bg-[var(--color-bg-2)] p-10px transition-colors hover:border-[var(--color-border-3)]'
+                  className='flex min-h-[144px] flex-col rounded-12px border border-solid border-[var(--bg-3)] bg-[var(--bg-2)] p-10px transition-colors hover:border-[var(--bg-4)]'
                 >
                   <Typography.Text
                     bold
