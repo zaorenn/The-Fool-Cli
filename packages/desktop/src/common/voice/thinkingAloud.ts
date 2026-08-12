@@ -239,6 +239,13 @@ export type AsideMoment = {
   enabled?: boolean;
   /** True while the push-to-talk key is held: they are mid-sentence. */
   holdingToTalk?: boolean;
+  /**
+   * True while the user is typing: they are mid-sentence in another window.
+   *
+   * Optional for the same reason as the rest, and absent means not typing —
+   * which is what a caller with no keyboard hook can honestly say.
+   */
+  userIsTyping?: boolean;
 };
 
 /**
@@ -267,15 +274,13 @@ export const mayMentionAside = (moment: AsideMoment): boolean => {
     // Deduplication is the caller's here: a delegated task is mentioned once
     // because it finishes once, and `DelegatedTasks` already holds the queue.
     about: '',
-    // Answered by the caller where the caller can answer them. `userIsTyping`
-    // is the one that still cannot: nothing in a spoken conversation watches a
-    // keyboard in another window, so it is written as the value that changes
-    // nothing rather than left out — wiring it later is an edit at the call
-    // site and not a change to the rule.
+    // Answered by the caller, where the caller can answer them. Absent means
+    // the answer that changes nothing, so a caller that cannot see a keyboard
+    // or a settings page still gets the rest of the contract.
     enabled: moment.enabled !== false,
     hushed: moment.hushed === true,
     holdingToTalk: moment.holdingToTalk === true,
-    userIsTyping: false,
+    userIsTyping: moment.userIsTyping === true,
     phase: moment.phase,
     standby: moment.standby,
     quietForMs: moment.quietForMs,
@@ -451,6 +456,38 @@ export type SilenceContract = {
   /** What has already been volunteered, so nothing is said twice. */
   alreadySaid: ReadonlySet<string>;
 };
+
+/**
+ * How often the keyboard hook says "still typing" while somebody is typing.
+ *
+ * The hook in the main process sees every keystroke and the conversation is in a
+ * renderer, so the fact has to cross a process boundary. Not once per keystroke:
+ * that is a message per character for the length of an email, and it would carry
+ * the *rhythm* of someone's typing across a channel for a question that only
+ * needs "yes". One message per burst is not enough either — type for a minute
+ * and the renderer would believe the typing ended when it started. So the hook
+ * repeats itself on this interval and says nothing else: not the key, not how
+ * many, only that a key was pressed.
+ */
+export const TYPING_REPORT_EVERY_MS = 1_500;
+
+/**
+ * How long after the last report someone still counts as typing.
+ *
+ * Comfortably longer than the interval above, so an ordinary gap between two
+ * words is not read as having finished, and short enough that a pause to think
+ * is not silence the assistant has to sit out.
+ */
+export const STILL_TYPING_FOR_MS = 4_000;
+
+/**
+ * Whether the user was typing recently enough to still be mid-sentence.
+ *
+ * Takes the elapsed time rather than a clock so the rule is the same on both
+ * sides of the boundary and can be read without one.
+ */
+export const isStillTyping = (sinceLastKeystrokeMs: number): boolean =>
+  sinceLastKeystrokeMs >= 0 && sinceLastKeystrokeMs < STILL_TYPING_FOR_MS;
 
 export type SilenceVerdict =
   | { speak: true }

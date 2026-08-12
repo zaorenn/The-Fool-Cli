@@ -204,6 +204,11 @@ const startHoldToTalk = (): void => {
         console.info(`[HoldToTalk] turn abandoned: ${effect.reason}`);
       }
     },
+    // The hook already sees every keystroke for the combination rule. This asks
+    // it one more question of the same kind — whether one arrived, never which —
+    // so that a remark nobody asked for does not land in the middle of a
+    // sentence being typed in another window.
+    onTyping: () => ipcBridge.foolVoice.typing.emit(),
     logWarn: (message, error) => console.warn(message, error),
   });
 

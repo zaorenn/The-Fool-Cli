@@ -4,7 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { fillerKey, mayMentionAside, shortenForAside, VARIANTS_PER_KIND } from '@/common/voice/thinkingAloud';
+import {
+  fillerKey,
+  mayMentionAside,
+  shortenForAside,
+  VARIANTS_PER_KIND,
+  type AsideMoment,
+} from '@/common/voice/thinkingAloud';
 import type { Translate } from './types';
 
 /**
@@ -49,8 +55,16 @@ type Waiting = { what: string; outcome: DelegatedOutcome };
 
 export type DelegatedTasksOptions = {
   t: Translate;
-  /** What the conversation is doing, asked fresh every time it matters. */
-  moment: () => { phase: string; standby: boolean; quietForMs: number };
+  /**
+   * What the conversation is doing, asked fresh every time it matters.
+   *
+   * Everything the silence contract can be told, rather than the three fields
+   * this used to name. The conversation was already supplying the other three —
+   * the hush, the off switch, the talk key — and this type dropped them on the
+   * floor, so a completion could be announced to somebody who had said "be
+   * quiet" or had switched unprompted speech off entirely.
+   */
+  moment: () => Omit<AsideMoment, 'sinceLastAsideMs'>;
   /** Says one line outside the turn, the way the heartbeat does. */
   speak: (line: string) => void;
   /**
@@ -139,8 +153,10 @@ export class DelegatedTasks {
     }
 
     const now = Date.now();
-    const { phase, standby, quietForMs } = this.options.moment();
-    if (!mayMentionAside({ phase, standby, quietForMs, sinceLastAsideMs: now - this.lastAsideAt })) return;
+    // Spread rather than destructured: naming the fields here is what lost the
+    // hush and the off switch, and it would lose the next field added the same
+    // way.
+    if (!mayMentionAside({ ...this.options.moment(), sinceLastAsideMs: now - this.lastAsideAt })) return;
 
     const next = this.waiting.shift();
     if (!next) return;

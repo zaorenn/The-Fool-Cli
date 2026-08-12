@@ -27,7 +27,15 @@ const t = (key: string, values?: Record<string, unknown>): string =>
       : ''
   }`;
 
-type Moment = { phase: string; standby: boolean; quietForMs: number };
+type Moment = {
+  phase: string;
+  standby: boolean;
+  quietForMs: number;
+  hushed?: boolean;
+  enabled?: boolean;
+  holdingToTalk?: boolean;
+  userIsTyping?: boolean;
+};
 
 const setup = (moment: Moment) => {
   const spoken: string[] = [];
@@ -52,6 +60,37 @@ describe('DelegatedTasks', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  /**
+   * The conversation was already answering these three and this class dropped
+   * them, because `tick` named the fields it read. A completion was therefore
+   * announced to somebody who had said "be quiet", or who had switched
+   * unprompted speech off entirely — the switch reached for instead of
+   * uninstalling.
+   */
+  it.each([
+    ['a hush', { hushed: true }],
+    ['the off switch', { enabled: false }],
+    ['the talk key being held', { holdingToTalk: true }],
+    ['the user typing', { userIsTyping: true }],
+  ])('holds a finished task for %s', async (_name, refusing) => {
+    const { tasks, spoken, current } = setup({
+      phase: 'listening',
+      standby: false,
+      quietForMs: 60_000,
+      ...refusing,
+    });
+
+    tasks.follow('book a flight', Promise.resolve({ ok: true, detail: 'Booked.' }));
+    await settle();
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(spoken).toEqual([]);
+
+    // And says it once the reason goes away, so this is a wait and not a loss.
+    Object.assign(current, { hushed: false, enabled: true, holdingToTalk: false, userIsTyping: false });
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(spoken).toHaveLength(1);
   });
 
   it('says nothing until the task finishes', async () => {

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { TYPING_REPORT_EVERY_MS } from '@/common/voice/thinkingAloud';
 import { HoldToTalk, type HoldToTalkEffect, type HoldToTalkOptions } from './holdToTalk';
 
 /**
@@ -60,6 +61,16 @@ export const choiceDigitFor = (keycode: number): number | null => {
 export type HoldToTalkHookDeps = {
   /** Called with what the machine decided. */
   onEffect: (effect: HoldToTalkEffect) => void;
+  /**
+   * Called while the user is typing, at most once every
+   * {@link TYPING_REPORT_EVERY_MS} and never with anything about the keystroke.
+   *
+   * The third and last question this hook asks of a key that is not the talk
+   * key. It exists because the assistant is not supposed to speak into the
+   * middle of a sentence, and a sentence being typed in another window was the
+   * one kind it could not see.
+   */
+  onTyping?: () => void;
   /** The keycode that starts a turn. Right Ctrl by default. */
   keycode?: number;
   hold?: HoldToTalkOptions;
@@ -92,6 +103,8 @@ export class HoldToTalkHook {
   private hook: UiohookLike | null = null;
   private onKeyDown: ((event: { keycode: number }) => void) | null = null;
   private onKeyUp: ((event: { keycode: number }) => void) | null = null;
+  /** Zero rather than null: the first keystroke of a session should report. */
+  private lastTypingReportAt = 0;
 
   public constructor(deps: HoldToTalkHookDeps) {
     this.deps = deps;
@@ -120,6 +133,13 @@ export class HoldToTalkHook {
         report(this.machine.press(Date.now()));
         return;
       }
+
+      // Before the rest, because the questions below can each return and this
+      // one is true regardless of what the key turns out to mean. The talk key
+      // is excluded above: reaching for the microphone is not typing, and
+      // counting it would have the assistant fall silent because somebody was
+      // about to talk to it.
+      this.reportTyping();
       // V is asked about first, because it can only mean anything while the
       // hold is still live and the abandon below ends it.
       if (event.keycode === STOP_LISTENING_KEYCODE) report(this.machine.stopKeyPressed());
@@ -176,6 +196,24 @@ export class HoldToTalkHook {
 
   public get isRunning(): boolean {
     return this.hook !== null;
+  }
+
+  /**
+   * Says "still typing", no more often than the interval allows.
+   *
+   * The throttle is the privacy boundary as much as it is the performance one:
+   * a call per keystroke would carry the rhythm of someone's typing out of this
+   * module, and nothing downstream needs more than the fact.
+   */
+  private reportTyping(): void {
+    const onTyping = this.deps.onTyping;
+    if (!onTyping) return;
+
+    const now = Date.now();
+    if (now - this.lastTypingReportAt < TYPING_REPORT_EVERY_MS) return;
+
+    this.lastTypingReportAt = now;
+    onTyping();
   }
 
   /**

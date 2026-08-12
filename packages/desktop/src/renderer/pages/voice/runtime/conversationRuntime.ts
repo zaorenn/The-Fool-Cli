@@ -45,7 +45,7 @@ import {
   openSubjects,
   sanitizeRefusedSubjects,
 } from '@/common/voice/memoryProposal';
-import { asksForQuiet, asksToResume, maySpeakUnprompted } from '@/common/voice/thinkingAloud';
+import { asksForQuiet, asksToResume, isStillTyping, maySpeakUnprompted } from '@/common/voice/thinkingAloud';
 import { configService } from '@/common/config/configService';
 import type { ConversationFile } from '@/common/voice/conversationFiles';
 import { LocalVoicePipeline } from '../localPipeline';
@@ -218,6 +218,14 @@ class ConversationRuntime {
   /** Whether right Ctrl is down right now, when hold-to-talk is switched on. */
   private holding = false;
   /**
+   * When the keyboard hook last said somebody was typing.
+   *
+   * `-Infinity` rather than 0 so that on a machine where the native hook never
+   * loaded — which is a supported state; the app loses hold-to-talk and keeps
+   * everything else — the assistant is not permanently mid-sentence.
+   */
+  private lastTypedAt = Number.NEGATIVE_INFINITY;
+  /**
    * The microphone's current level, for whatever is drawing it.
    *
    * A box rather than state: this changes many times a second, and putting it
@@ -231,6 +239,9 @@ class ConversationRuntime {
 
   /** And the request to open a conversation, which the same key makes. */
   private releaseStartKey: (() => void) | null = null;
+
+  /** And the report that somebody is typing, from the same keyboard hook. */
+  private releaseTyping: (() => void) | null = null;
 
   /** The installed voices, read once when a conversation opens. */
   private voices: readonly SpokenVoice[] = [];
@@ -265,6 +276,7 @@ class ConversationRuntime {
   constructor() {
     this.listenForHoldKey();
     this.listenForStartRequest();
+    this.listenForTyping();
   }
 
   // ---------------------------------------------------------------- subscribe
@@ -515,6 +527,7 @@ class ConversationRuntime {
         hushed: this.hushed,
         enabled: peekVoiceSettings().activation.unpromptedSpeech,
         holdingToTalk: this.holding,
+        userIsTyping: this.userIsTyping,
       }),
       // The same door the heartbeat uses, and it refuses for the same reasons:
       // an aside over an answer, or over the user, is worse than a late one.
@@ -1035,7 +1048,7 @@ class ConversationRuntime {
       phase: this.phase,
       standby: this.standby,
       holdingToTalk: this.holding,
-      userIsTyping: false,
+      userIsTyping: this.userIsTyping,
       quietForMs: this.quietForMs,
       sinceVolunteeredMs: this.askedThisSession > 0 ? 0 : Number.POSITIVE_INFINITY,
       volunteeredInLastHour: this.askedThisSession,
@@ -1194,6 +1207,28 @@ class ConversationRuntime {
     this.releaseStartKey = emitter.on(() => void this.start());
   }
 
+  /**
+   * Somebody typing, anywhere on the machine.
+   *
+   * The silence contract has had a `userIsTyping` field since it was written and
+   * every caller passed `false`, because nothing in a spoken conversation could
+   * see a keyboard in another window. The keyboard hook could — it reads every
+   * keystroke for the combination rule — so the answer was one channel away the
+   * whole time. What crosses it is the bare fact and nothing else.
+   */
+  private listenForTyping(): void {
+    const emitter = ipcBridge.foolVoice?.typing;
+    if (typeof emitter?.on !== 'function') return;
+    this.releaseTyping = emitter.on(() => {
+      this.lastTypedAt = Date.now();
+    });
+  }
+
+  /** True while the user is mid-sentence at the keyboard. */
+  private get userIsTyping(): boolean {
+    return isStillTyping(Date.now() - this.lastTypedAt);
+  }
+
   private listenForHoldKey(): void {
     const emitter = ipcBridge.foolVoice?.holdToTalk;
     if (typeof emitter?.on !== 'function') return;
@@ -1217,6 +1252,8 @@ class ConversationRuntime {
     this.stop();
     this.releaseHoldKey?.();
     this.releaseHoldKey = null;
+    this.releaseTyping?.();
+    this.releaseTyping = null;
     this.listeners.clear();
     this.snapshot = IDLE_SNAPSHOT;
     this.translate = passthrough;

@@ -270,6 +270,15 @@ export const foolVoice = {
    */
   holdToTalk: bridge.buildEmitter<{ holding: boolean }>('fool.voice.hold-to-talk'),
   /**
+   * The user is typing, somewhere, right now.
+   *
+   * Carries nothing — not the key, not the window, not how many. The assistant
+   * only ever asks whether somebody is mid-sentence before it volunteers a
+   * remark, and that is the whole answer. Repeated while typing continues; see
+   * `TYPING_REPORT_EVERY_MS`.
+   */
+  typing: bridge.buildEmitter<void>('fool.voice.typing'),
+  /**
    * A spoken conversation claiming the talk key, for as long as it is open.
    *
    * Said rather than observed: the conversation lives in the renderer and the
