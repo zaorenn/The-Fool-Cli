@@ -40,6 +40,26 @@ if (!app.isPackaged && !e2eUserDataDir) {
   app.setPath('userData', path.join(appSupportDir, devAppName));
 }
 
+// ============ Windows notifications ============
+// Without an explicit AppUserModelID, a toast raised from an NSIS-installed
+// Electron app is silently dropped: Windows matches the notification against the
+// shortcut in the Start menu, the shortcut carries the ID electron-builder wrote
+// into it, and the running process claims a default one derived from the exe. No
+// error is raised anywhere — the notification simply never appears, which is why
+// this went unnoticed (upstream AionUi #3890).
+//
+// The value has to be exactly the `appId` from `electron-builder.yml`, because
+// that is what the installer stamps on the shortcut. In development there is no
+// shortcut to match, so the dev name keeps the two builds from claiming the same
+// identity and stealing each other's toasts.
+//
+// Before ready, and on Windows only: the call is a no-op elsewhere but its
+// argument is not, and a macOS build should not be told it is called
+// `com.thefool.app.dev`.
+if (process.platform === 'win32') {
+  app.setAppUserModelId(app.isPackaged && !e2eUserDataDir ? 'com.thefool.app' : `com.thefool.app.${getDevAppName()}`);
+}
+
 // app.disableHardwareAcceleration() must run before app is ready.
 applyGpuRecoveryFlags();
 

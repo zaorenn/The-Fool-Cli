@@ -230,3 +230,127 @@ export const sanitizeRefusals = (value: unknown): string[] => {
     .map((entry) => entry.trim())
     .slice(0, MAX_REFUSALS);
 };
+
+// ───────────────────────────────────────────────────────────────────────────
+// Wanting to know something.
+//
+// Everything above is the assistant *reviewing* a conversation that happened.
+// This is the other direction: noticing that something worth knowing is missing
+// and deciding whether now is a moment to ask about it.
+//
+// The distinction is the whole design. Reviewing is free — nobody is
+// interrupted by it, and the user sees the result in Settings when they choose
+// to. Asking spends something: their attention, and a little of their patience
+// each time. So a review may happen after every conversation, and a question
+// has a budget.
+// ───────────────────────────────────────────────────────────────────────────
+
+/**
+ * Something worth knowing about a person.
+ *
+ * Not a questionnaire. The list is what makes an answer *worth having* — a
+ * handful of things that change how every later turn goes — and the question
+ * itself is never scripted from it: what to say comes from the conversation
+ * that has just happened, and this only decides whether there is a gap to ask
+ * into at all.
+ *
+ * Kept short on purpose. A longer list is a longer interrogation, and the
+ * failure it produces is the one nobody forgives: an assistant that treats a
+ * person as a form to be completed.
+ */
+export type Knowable = {
+  /** Stable, because a refusal is remembered against it for good. */
+  id: string;
+  /**
+   * Words whose presence in the memory means this is already answered.
+   *
+   * Matched against the folded document, so a note written in any casing or with
+   * any punctuation still counts. Generous rather than exact: the cost of
+   * deciding something is known when it is only nearly known is one question not
+   * asked, and the cost of the other mistake is a question the user has already
+   * answered — which is the thing that makes people stop talking to it.
+   */
+  answeredBy: readonly string[];
+};
+
+export const WORTH_KNOWING: readonly Knowable[] = [
+  { id: 'name', answeredBy: ['called', 'name is', 'calls themselves', 'address them'] },
+  { id: 'work', answeredBy: ['works', 'works as', 'job', 'builds', 'studies'] },
+  { id: 'hours', answeredBy: ['evenings', 'mornings', 'works at night', 'hours', 'weekends'] },
+  { id: 'project', answeredBy: ['project', 'working on', 'repo', 'the app they'] },
+  { id: 'register', answeredBy: ['prefers short', 'prefers long', 'formal', 'informal', 'spoken to'] },
+  // Not a preference like the others: a thing they never want read out loud.
+  // It is on the list because getting it wrong is the one that is remembered —
+  // an address said aloud in a room with other people in it cannot be taken
+  // back, and the memory already carries a rule of exactly this shape.
+  { id: 'never-aloud', answeredBy: ['never read', 'do not read', 'not out loud', 'aloud'] },
+];
+
+/**
+ * The gaps: things worth knowing that the memory does not answer.
+ *
+ * A subject that has been refused is not a gap. That is the difference between
+ * "I do not know this" and "I have been told not to ask", and treating them the
+ * same is how an assistant comes to ask the same unwelcome question every week.
+ */
+export const openSubjects = (
+  memory: { user: string; agent: string },
+  refusedSubjects: readonly string[] = []
+): Knowable[] => {
+  const known = foldTitle(`${memory.user}\n${memory.agent}`);
+  const refused = new Set(refusedSubjects);
+  return WORTH_KNOWING.filter(
+    (subject) => !refused.has(subject.id) && !subject.answeredBy.some((phrase) => known.includes(foldTitle(phrase)))
+  );
+};
+
+/** How many questions one conversation may ask. */
+export const QUESTIONS_PER_SESSION = 1;
+
+/** What decides whether a question can be asked now. */
+export type AskingMoment = {
+  /** The subject this question would be about. */
+  subject: string;
+  /** How many have already been asked this session. */
+  askedThisSession: number;
+  /**
+   * Whether something is being worked on right now.
+   *
+   * The single most important of these. A question in the middle of a task is
+   * not curiosity, it is an interruption of the thing the user actually asked
+   * for, and it is remembered as the assistant not paying attention.
+   */
+  midTask: boolean;
+  /** Subjects the user has declined. Refused once is refused for good. */
+  refusedSubjects: ReadonlySet<string>;
+};
+
+/**
+ * Whether the assistant may ask about this now.
+ *
+ * Composed with `maySpeakUnprompted` rather than duplicating it: that decides
+ * whether speaking unasked is acceptable at this moment at all, and this decides
+ * whether *a question* is, which is a stricter thing. Both have to say yes.
+ */
+export const mayAskAbout = (moment: AskingMoment): boolean => {
+  if (moment.midTask) return false;
+  if (moment.refusedSubjects.has(moment.subject)) return false;
+  return moment.askedThisSession < QUESTIONS_PER_SESSION;
+};
+
+/** Where the refused subjects and the session's question count are kept. */
+export const CURIOSITY_REFUSALS_CONFIG_KEY = 'voice.curiosityRefusals';
+
+/**
+ * The refused subjects as they can be trusted.
+ *
+ * Only ids that are still on the list, so a subject removed from
+ * {@link WORTH_KNOWING} does not leave a refusal behind that nothing can ever
+ * clear — and so a corrupted store cannot suppress a question by naming
+ * something that was never a subject.
+ */
+export const sanitizeRefusedSubjects = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  const known = new Set(WORTH_KNOWING.map((subject) => subject.id));
+  return [...new Set(value.filter((entry): entry is string => typeof entry === 'string' && known.has(entry)))];
+};

@@ -14,11 +14,16 @@ import {
 } from '@/common/voice/memorySnapshots';
 import {
   MAX_PROPOSALS,
+  QUESTIONS_PER_SESSION,
+  WORTH_KNOWING,
   acceptedLines,
   MEMORY_REVIEW_PROMPT,
+  mayAskAbout,
+  openSubjects,
   readProposals,
   alreadyKnown,
   alreadyRefused,
+  sanitizeRefusedSubjects,
   worthOffering,
 } from '@/common/voice/memoryProposal';
 
@@ -246,5 +251,78 @@ describe('what the review asks for', () => {
   /// session summary is written in English whatever was spoken.
   it('asks for the line in English whatever was spoken', () => {
     expect(MEMORY_REVIEW_PROMPT).toContain('in English');
+  });
+});
+
+/**
+ * Wanting to know something, which is the other direction entirely.
+ *
+ * Reviewing a finished conversation is free — nobody is interrupted and the
+ * result waits in Settings. Asking spends the user's attention, and a little of
+ * their patience each time, so it has a budget and reviewing does not.
+ */
+describe('noticing what it does not know', () => {
+  const empty = { user: '', agent: '' };
+
+  it('finds every subject open when the memory is empty', () => {
+    expect(openSubjects(empty)).toHaveLength(WORTH_KNOWING.length);
+  });
+
+  it('drops a subject the memory already answers', () => {
+    const known = { user: '- Called: Serhan\n', agent: '' };
+    expect(openSubjects(known).map((subject) => subject.id)).not.toContain('name');
+  });
+
+  /// The difference between "I do not know this" and "I have been told not to
+  /// ask", which is the difference between an assistant and a nuisance.
+  it('does not count a refused subject as a gap', () => {
+    expect(openSubjects(empty, ['project']).map((subject) => subject.id)).not.toContain('project');
+  });
+
+  it('reads the whole memory, not only the user document', () => {
+    const inAgentDoc = { user: '', agent: '- Never read addresses out loud.\n' };
+    expect(openSubjects(inAgentDoc).map((subject) => subject.id)).not.toContain('never-aloud');
+  });
+});
+
+describe('whether it may ask', () => {
+  const moment = {
+    subject: 'project',
+    askedThisSession: 0,
+    midTask: false,
+    refusedSubjects: new Set<string>(),
+  };
+
+  it('asks when there is room to', () => {
+    expect(mayAskAbout(moment)).toBe(true);
+  });
+
+  /// The most important of them. A question in the middle of a task is not
+  /// curiosity, it is an interruption of the thing that was actually asked for.
+  it('never asks in the middle of a task', () => {
+    expect(mayAskAbout({ ...moment, midTask: true })).toBe(false);
+  });
+
+  it('asks once a session and then stops', () => {
+    expect(mayAskAbout({ ...moment, askedThisSession: QUESTIONS_PER_SESSION })).toBe(false);
+  });
+
+  it('never asks again about something refused', () => {
+    expect(mayAskAbout({ ...moment, refusedSubjects: new Set(['project']) })).toBe(false);
+  });
+});
+
+describe('remembering what was refused', () => {
+  it('keeps only subjects that are still on the list', () => {
+    expect(sanitizeRefusedSubjects(['project', 'favourite-colour', 42, null])).toEqual(['project']);
+  });
+
+  it('does not keep the same refusal twice', () => {
+    expect(sanitizeRefusedSubjects(['name', 'name'])).toEqual(['name']);
+  });
+
+  it('answers nothing for a store that is not a list', () => {
+    expect(sanitizeRefusedSubjects('project')).toEqual([]);
+    expect(sanitizeRefusedSubjects(undefined)).toEqual([]);
   });
 });
