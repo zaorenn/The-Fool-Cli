@@ -1712,7 +1712,10 @@
       "project": "今は何を作っていますか。",
       "register": "返事は短めがいいですか、それともきちんと説明したほうがいいですか。",
       "never-aloud": "声に出して読まないでほしいものはありますか。"
-    }
+    },
+    "conversationUnprompted": "自分から話す",
+    "conversationUnpromptedOnHint": "終わった作業を伝えたり質問したりします。1時間に1回まで、作業の途中では決して話しません。",
+    "conversationUnpromptedOffHint": "答えるだけです。あなたが話さない限り何も言いません。"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",

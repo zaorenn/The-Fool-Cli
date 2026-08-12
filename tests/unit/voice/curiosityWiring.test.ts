@@ -150,3 +150,34 @@ describe('the refusal store', () => {
     expect(sanitizeRefusedSubjects(['name', 'a-subject-we-removed'])).toEqual(['name']);
   });
 });
+
+describe('the off switch', () => {
+  /** The contract as the runtime calls it, with the setting turned off. */
+  const askedWithSetting = (enabled: boolean, holdingToTalk = false): boolean =>
+    maySpeakUnprompted({
+      reason: 'curiosity',
+      about: askedKey('name'),
+      enabled,
+      hushed: false,
+      phase: 'listening',
+      standby: false,
+      holdingToTalk,
+      userIsTyping: false,
+      quietForMs: 10_000,
+      sinceVolunteeredMs: Number.POSITIVE_INFINITY,
+      volunteeredInLastHour: 0,
+      alreadySaid: new Set<string>(),
+    }).speak;
+
+  it('says nothing at all when unprompted speech is switched off', () => {
+    expect(askedWithSetting(false)).toBe(false);
+  });
+
+  it('speaks when it is switched on and nothing else objects', () => {
+    expect(askedWithSetting(true)).toBe(true);
+  });
+
+  it('stays quiet while the talk key is held, whatever the setting says', () => {
+    expect(askedWithSetting(true, true)).toBe(false);
+  });
+});

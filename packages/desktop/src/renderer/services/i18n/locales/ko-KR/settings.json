@@ -1712,7 +1712,10 @@
       "project": "요즘 무엇을 만들고 계세요?",
       "register": "대답을 짧게 할까요, 아니면 제대로 설명할까요?",
       "never-aloud": "소리 내어 읽지 않았으면 하는 것이 있나요?"
-    }
+    },
+    "conversationUnprompted": "먼저 말 걸기",
+    "conversationUnpromptedOnHint": "끝난 작업을 알리거나 질문할 수 있습니다. 한 시간에 한 번까지, 무언가의 도중에는 절대 하지 않습니다.",
+    "conversationUnpromptedOffHint": "답만 합니다. 당신이 먼저 말하지 않으면 아무 말도 하지 않습니다."
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",

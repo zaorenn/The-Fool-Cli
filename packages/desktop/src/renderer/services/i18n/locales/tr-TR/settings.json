@@ -1710,7 +1710,10 @@
       "project": "Şu sıralar ne üzerinde çalışıyorsun?",
       "register": "Cevaplarımı kısa mı tutayım, yoksa düzgünce anlatayım mı?",
       "never-aloud": "Sesli olarak asla okumamı istemediğin bir şey var mı?"
-    }
+    },
+    "conversationUnprompted": "Sorulmadan konuşsun",
+    "conversationUnpromptedOnHint": "Biten bir işi kendisi söyleyebilir ya da sana bir şey sorabilir; saatte en fazla bir kez ve asla bir şeyin ortasında değil.",
+    "conversationUnpromptedOffHint": "Sadece cevap verir. Sen bir şey söylemeden hiçbir şey söylemez."
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

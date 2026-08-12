@@ -1712,7 +1712,10 @@
       "project": "你最近在做什麼專案？",
       "register": "你希望我回答簡短一些，還是講清楚一些？",
       "never-aloud": "有什麼是你不希望我念出來的嗎？"
-    }
+    },
+    "conversationUnprompted": "主動開口",
+    "conversationUnpromptedOnHint": "它可以主動告知已完成的任務或向你提問，每小時最多一次，且絕不打斷。",
+    "conversationUnpromptedOffHint": "只回答。你不開口，它就不說話。"
   },
   "themeCustomizer": {
     "title": "自訂主題",

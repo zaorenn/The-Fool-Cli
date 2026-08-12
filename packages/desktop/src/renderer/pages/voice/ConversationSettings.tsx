@@ -407,6 +407,26 @@ const ConversationSettings: React.FC<ConversationSettingsProps> = ({ settings, d
               }
             />
 
+            {/* Beside hold-to-talk because they are the same question from the
+                two sides: that one decides when it listens, this one decides
+                whether it ever speaks first. */}
+            <Toggle
+              testId='voice-unprompted-speech'
+              label={t('settings.voice.conversationUnprompted')}
+              hint={
+                settings.activation.unpromptedSpeech
+                  ? t('settings.voice.conversationUnpromptedOnHint')
+                  : t('settings.voice.conversationUnpromptedOffHint')
+              }
+              checked={settings.activation.unpromptedSpeech}
+              onChange={(value) =>
+                onChange((previous) => ({
+                  ...previous,
+                  activation: { ...previous.activation, unpromptedSpeech: value },
+                }))
+              }
+            />
+
             <Toggle
               label={t('settings.voice.conversationAgentRuntime')}
               hint={t('settings.voice.conversationAgentRuntimeHint')}

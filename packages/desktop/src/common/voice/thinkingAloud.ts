@@ -228,6 +228,17 @@ export type AsideMoment = {
    * threaded through afterwards is one that gets threaded through some paths.
    */
   hushed?: boolean;
+  /**
+   * The setting: whether anything unasked may be said at all.
+   *
+   * Optional so a caller that has no access to settings still compiles, and
+   * absent means on — which matches the shipped default. A caller that can
+   * answer it must, because this is the switch somebody reaches for instead of
+   * uninstalling.
+   */
+  enabled?: boolean;
+  /** True while the push-to-talk key is held: they are mid-sentence. */
+  holdingToTalk?: boolean;
 };
 
 /**
@@ -256,12 +267,14 @@ export const mayMentionAside = (moment: AsideMoment): boolean => {
     // Deduplication is the caller's here: a delegated task is mentioned once
     // because it finishes once, and `DelegatedTasks` already holds the queue.
     about: '',
-    // Neither signal reaches this path yet. Written as the values that change
-    // nothing rather than left out, so that wiring them later is an edit at the
-    // call site and not a change to the rule.
-    enabled: true,
+    // Answered by the caller where the caller can answer them. `userIsTyping`
+    // is the one that still cannot: nothing in a spoken conversation watches a
+    // keyboard in another window, so it is written as the value that changes
+    // nothing rather than left out — wiring it later is an edit at the call
+    // site and not a change to the rule.
+    enabled: moment.enabled !== false,
     hushed: moment.hushed === true,
-    holdingToTalk: false,
+    holdingToTalk: moment.holdingToTalk === true,
     userIsTyping: false,
     phase: moment.phase,
     standby: moment.standby,

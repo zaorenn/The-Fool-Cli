@@ -1710,7 +1710,10 @@
       "project": "Woran arbeiten Sie gerade?",
       "register": "Soll ich mich kurz fassen oder lieber richtig erklären?",
       "never-aloud": "Gibt es etwas, das ich nie vorlesen soll?"
-    }
+    },
+    "conversationUnprompted": "Von sich aus sprechen",
+    "conversationUnpromptedOnHint": "Darf eine fertige Aufgabe melden oder etwas fragen — höchstens einmal pro Stunde und nie mitten in etwas hinein.",
+    "conversationUnpromptedOffHint": "Antwortet nur. Es sagt nichts, bevor Sie etwas sagen."
   },
   "themeCustomizer": {
     "title": "Design anpassen",

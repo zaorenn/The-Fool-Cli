@@ -1711,7 +1711,10 @@
       "project": "你最近在做什么项目？",
       "register": "你希望我回答简短一些，还是讲清楚一些？",
       "never-aloud": "有什么是你不希望我念出来的吗？"
-    }
+    },
+    "conversationUnprompted": "主动开口",
+    "conversationUnpromptedOnHint": "它可以主动告知已完成的任务或向你提问，每小时最多一次，且绝不打断。",
+    "conversationUnpromptedOffHint": "只回答。你不开口，它就不说话。"
   },
   "themeCustomizer": {
     "title": "自定义主题",

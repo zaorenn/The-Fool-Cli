@@ -1710,7 +1710,10 @@
       "project": "¿En qué estás trabajando ahora?",
       "register": "¿Prefieres respuestas cortas o que te lo explique bien?",
       "never-aloud": "¿Hay algo que prefieras que nunca lea en voz alta?"
-    }
+    },
+    "conversationUnprompted": "Hablar sin que se le pregunte",
+    "conversationUnpromptedOnHint": "Puede avisar de una tarea terminada o preguntarte algo, como mucho una vez por hora y nunca en medio de algo.",
+    "conversationUnpromptedOffHint": "Solo responde. No dice nada hasta que hables tú."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

@@ -1710,7 +1710,10 @@
       "project": "What are you building at the moment?",
       "register": "Would you rather I kept my answers short, or explained things properly?",
       "never-aloud": "Is there anything you would rather I never read out loud?"
-    }
+    },
+    "conversationUnprompted": "Speak up unasked",
+    "conversationUnpromptedOnHint": "It may volunteer a finished task or ask you something, at most once an hour and never in the middle of anything.",
+    "conversationUnpromptedOffHint": "It only answers. Nothing is said unless you say something first."
   },
   "themeCustomizer": {
     "title": "Customize theme",

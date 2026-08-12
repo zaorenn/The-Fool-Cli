@@ -1710,7 +1710,10 @@
       "project": "Sur quoi travaillez-vous en ce moment ?",
       "register": "Vous préférez des réponses courtes ou des explications complètes ?",
       "never-aloud": "Y a-t-il quelque chose que je ne devrais jamais lire à voix haute ?"
-    }
+    },
+    "conversationUnprompted": "Prendre la parole",
+    "conversationUnpromptedOnHint": "Peut signaler une tâche terminée ou vous poser une question, au plus une fois par heure et jamais au milieu de quelque chose.",
+    "conversationUnpromptedOffHint": "Il répond, rien de plus. Il ne dit rien tant que vous n’avez pas parlé."
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

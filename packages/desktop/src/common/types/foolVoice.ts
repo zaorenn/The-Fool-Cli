@@ -311,6 +311,20 @@ export type FoolVoiceSettings = {
      * for certainty.
      */
     conversationHoldToTalk: boolean;
+    /**
+     * Whether the assistant may say anything nobody asked for.
+     *
+     * A finished task volunteering itself, a question about the person — all of
+     * it, one switch. On by default, because an assistant that only ever
+     * answers is a command line with a microphone, and this is the whole
+     * difference between the two.
+     *
+     * It exists at all because proactive speech that cannot be turned off is
+     * the reason proactive assistants get uninstalled rather than configured.
+     * Saying "be quiet" hushes it for the session; this is the answer for
+     * somebody who never wants it, and it is checked before every other rule.
+     */
+    unpromptedSpeech: boolean;
     wakePhrase: {
       enabled: boolean;
       modelId: 'stt-phrase-v1';
@@ -731,6 +745,7 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     pushToTalkShortcut: PUSH_TO_TALK_DEFAULT,
     // Off: talking without touching anything is the reason to have this at all.
     conversationHoldToTalk: false,
+    unpromptedSpeech: true,
     wakePhrase: {
       // On by default because the desktop pet is the real switch: the listener
       // only opens the microphone while the pet is on screen.
@@ -903,6 +918,9 @@ const settingsSchema = z
         talkModeEnabled: z.boolean().default(false),
         pushToTalkShortcut: z.string().max(128).default(PUSH_TO_TALK_DEFAULT),
         conversationHoldToTalk: z.boolean().default(false),
+        // Defaults on, matching DEFAULT_FOOL_VOICE_SETTINGS: a record written
+        // before this existed reads as somebody who never turned it off.
+        unpromptedSpeech: z.boolean().default(true),
         wakePhrase: z
           .object({
             enabled: z.boolean().default(true),

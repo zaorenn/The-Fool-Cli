@@ -513,6 +513,8 @@ class ConversationRuntime {
         standby: this.standby,
         quietForMs: this.quietForMs,
         hushed: this.hushed,
+        enabled: peekVoiceSettings().activation.unpromptedSpeech,
+        holdingToTalk: this.holding,
       }),
       // The same door the heartbeat uses, and it refuses for the same reasons:
       // an aside over an answer, or over the user, is worse than a late one.
@@ -1028,11 +1030,11 @@ class ConversationRuntime {
       // nobody's idea but the assistant's.
       reason: 'curiosity',
       about: ConversationRuntime.askedKey(subject.id),
-      enabled: true,
+      enabled: peekVoiceSettings().activation.unpromptedSpeech,
       hushed: this.hushed,
       phase: this.phase,
       standby: this.standby,
-      holdingToTalk: false,
+      holdingToTalk: this.holding,
       userIsTyping: false,
       quietForMs: this.quietForMs,
       sinceVolunteeredMs: this.askedThisSession > 0 ? 0 : Number.POSITIVE_INFINITY,
