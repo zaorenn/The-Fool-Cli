@@ -130,9 +130,21 @@ describe('whether a turn needs thinking about', () => {
     }
   });
 
-  it('sends the switch only for the turns that need no thought', () => {
+  // Three answers, not two. Sending nothing is not "think a normal amount", it
+  // is "think as much as you like" — measured at 68 seconds on a turn whose
+  // answer was one line above it.
+  it('answers a pleasantry with no deliberation at all', () => {
     expect(deliberationFor('merhaba', ENDPOINT)).toEqual({ reasoning_effort: 'none' });
-    expect(deliberationFor('Ekranıma bak.', ENDPOINT)).toEqual({});
+  });
+
+  it('gives a request room to think, bounded rather than open-ended', () => {
+    expect(deliberationFor('Ekranıma bak.', ENDPOINT)).toEqual({ reasoning_effort: 'minimal' });
+  });
+
+  it('never leaves a turn unbounded, whatever was said', () => {
+    for (const said of ['merhaba', 'Ekranıma bak.', 'Bana Tokyo bileti al.', 'Masaüstüm nerede?']) {
+      expect(deliberationFor(said, ENDPOINT), said).not.toEqual({});
+    }
   });
 
   /// An endpoint that refused the field gets nothing either way, rather than a
@@ -140,5 +152,7 @@ describe('whether a turn needs thinking about', () => {
   it('sends nothing to an endpoint that refused the field', () => {
     rememberRefusal(ENDPOINT);
     expect(deliberationFor('merhaba', ENDPOINT)).toEqual({});
+    // Both values of the same field, because one 400 answers for both.
+    expect(deliberationFor('Ekranıma bak.', ENDPOINT)).toEqual({});
   });
 });

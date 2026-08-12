@@ -75,6 +75,36 @@ export const noDeliberation = (endpoint: string): Record<string, unknown> =>
   refused.has(endpoint) ? {} : { ...NO_DELIBERATION };
 
 /**
+ * What is added to keep a turn's deliberation from running away.
+ *
+ * Sending nothing does not mean "think a normal amount", it means "think as
+ * much as you like", and measured against `qwen/qwen3.5-9b` that is not a
+ * figure of speech: asked where a folder was — a fact one line above it in the
+ * conversation — the same turn produced **20,905 characters of reasoning and
+ * took 68 seconds** to its first spoken word. The same turn with this field
+ * took 1.9 seconds.
+ *
+ * `minimal` rather than `none` because the turn still gets to think. What it
+ * does not get is the whole evening, and the difference between those two is
+ * not capability, it is whether anybody is still listening.
+ *
+ * Beware `low`: measured on the same turn it produced *more* reasoning than
+ * sending nothing at all (22,145 characters, 67 seconds). It is accepted and
+ * ignored, which is the worst of both — see the note about unknown fields above.
+ */
+export const BOUNDED_DELIBERATION = { reasoning_effort: 'minimal' } as const;
+
+/**
+ * Room to think, bounded — or nothing, once the endpoint has objected.
+ *
+ * Shares the refusal set with {@link noDeliberation}: an endpoint that rejects
+ * the field rejects it whatever the value, and one 400 is enough to learn that
+ * for both.
+ */
+export const boundedDeliberation = (endpoint: string): Record<string, unknown> =>
+  refused.has(endpoint) ? {} : { ...BOUNDED_DELIBERATION };
+
+/**
  * Whether a failed response failed *because of* the field.
  *
  * Deliberately narrow. A 400 has many causes and treating all of them as this
@@ -253,4 +283,4 @@ export const speaksOnlyToChat = (said: string): boolean => {
  * The one place the trade-off is decided, so a caller cannot get half of it.
  */
 export const deliberationFor = (said: string, endpoint: string): Record<string, unknown> =>
-  speaksOnlyToChat(said) ? noDeliberation(endpoint) : {};
+  speaksOnlyToChat(said) ? noDeliberation(endpoint) : boundedDeliberation(endpoint);

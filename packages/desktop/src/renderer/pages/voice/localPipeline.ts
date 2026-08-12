@@ -1433,14 +1433,19 @@ export class LocalVoicePipeline {
           // The whole of "the first message takes forever". This model writes
           // its entire deliberation into `reasoning_content` before it says a
           // character, and the app rightly refuses to read that aloud — so from
-          // the room it is silence. Measured on the real request: 6,538 ms to
-          // the first word without this, 177 ms with.
+          // the room it is silence.
           //
-          // Per sentence rather than always, because switching it off outright
-          // cost three of eight tasks — asked to look at the screen or warm the
-          // accent, it answered conversationally and called no tool. A greeting
-          // is answered at once; anything that might be a request to act gets
-          // the model's full attention. See `common/realtime/reasoning.ts`.
+          // Three settings, not two. A greeting is answered with no deliberation
+          // at all; everything else is deliberated but *bounded*, because
+          // sending nothing does not mean "think a normal amount", it means
+          // "think as much as you like" — measured on qwen/qwen3.5-9b, asked
+          // where a folder was that had been named one line earlier, that was
+          // 20,905 characters of reasoning and 68 seconds of silence.
+          //
+          // Bounding it cost nothing that could be measured: 17 of 17 eval tasks
+          // either way, three runs each, with the median first word falling from
+          // 2,863 ms to 976 ms and the slowest from 10,495 ms to 1,494 ms. See
+          // `common/realtime/reasoning.ts`.
           ...(skipDeliberation ? deliberationFor(this.newestThingSaid(), readiness.endpoint) : {}),
           // Only when there is something to run them: a server handed tools it is
           // then never allowed to use spends its turn describing what it would do.
