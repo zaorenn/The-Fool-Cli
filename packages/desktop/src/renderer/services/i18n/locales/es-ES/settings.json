@@ -1763,7 +1763,12 @@
       "evidence": "Dijiste:",
       "accept": "Recordar esto",
       "refuse": "Esto no"
-    }
+    },
+    "undo": "Deshacer",
+    "undoHint": "Devolver la memoria al estado anterior al último cambio.",
+    "undone": "Memoria restaurada",
+    "nothingToUndo": "No hay una versión anterior a la que volver",
+    "undoFailed": "No se pudo restaurar la memoria"
   },
   "layout": {
     "title": "Disposición",

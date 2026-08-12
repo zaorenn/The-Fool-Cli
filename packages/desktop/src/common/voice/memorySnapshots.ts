@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { VoiceMemory } from './memory';
+import { sanitizeVoiceMemory, type VoiceMemory } from './memory';
 
 /**
  * What the memory said before something changed it.
@@ -70,3 +70,27 @@ export const versionsNewestFirst = (kept: readonly MemorySnapshot[]): MemorySnap
  * them about their own memory.
  */
 export const afterRestoring = (kept: readonly MemorySnapshot[]): MemorySnapshot[] => kept.slice(0, -1);
+
+/**
+ * The kept versions as they can be trusted.
+ *
+ * These come off disk, and every entry here is a memory the application will
+ * put back into force on one click. So each is repaired through the same
+ * sanitiser a stored memory goes through, a reason that is not a string becomes
+ * an empty one rather than reaching a label, and a bad timestamp becomes now —
+ * a version with no date is still worth restoring, and refusing the whole list
+ * over one of them would throw away every undo the user had.
+ */
+export const sanitizeSnapshots = (value: unknown, now: number = Date.now()): MemorySnapshot[] => {
+  if (!Array.isArray(value)) return [];
+
+  const kept = value
+    .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+    .map((entry) => ({
+      memory: sanitizeVoiceMemory(entry.memory),
+      reason: typeof entry.reason === 'string' ? entry.reason : '',
+      takenAt: typeof entry.takenAt === 'number' && Number.isFinite(entry.takenAt) ? entry.takenAt : now,
+    }));
+
+  return kept.length > MAX_SNAPSHOTS ? kept.slice(kept.length - MAX_SNAPSHOTS) : kept;
+};

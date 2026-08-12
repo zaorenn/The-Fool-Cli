@@ -1763,7 +1763,12 @@
       "evidence": "You said:",
       "accept": "Remember this",
       "refuse": "Not this one"
-    }
+    },
+    "undo": "Undo",
+    "undoHint": "Put the memory back to how it was before the last change.",
+    "undone": "Memory restored",
+    "nothingToUndo": "There is no earlier version to go back to",
+    "undoFailed": "Couldn't restore the memory"
   },
   "layout": {
     "title": "Layout",

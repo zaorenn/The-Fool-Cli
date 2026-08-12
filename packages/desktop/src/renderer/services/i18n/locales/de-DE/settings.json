@@ -1763,7 +1763,12 @@
       "evidence": "Du hast gesagt:",
       "accept": "Das merken",
       "refuse": "Das nicht"
-    }
+    },
+    "undo": "Rückgängig",
+    "undoHint": "Das Gedächtnis auf den Stand vor der letzten Änderung zurücksetzen.",
+    "undone": "Gedächtnis wiederhergestellt",
+    "nothingToUndo": "Es gibt keine frühere Version, zu der zurückgekehrt werden kann",
+    "undoFailed": "Das Gedächtnis konnte nicht wiederhergestellt werden"
   },
   "layout": {
     "title": "Layout",

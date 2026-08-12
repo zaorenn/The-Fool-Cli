@@ -1765,7 +1765,12 @@
       "evidence": "你說過：",
       "accept": "記住這個",
       "refuse": "這個不要"
-    }
+    },
+    "undo": "復原",
+    "undoHint": "把記憶恢復到上次變更之前的狀態。",
+    "undone": "記憶已復原",
+    "nothingToUndo": "沒有可以回退的舊版本",
+    "undoFailed": "無法復原記憶"
   },
   "layout": {
     "title": "版面",

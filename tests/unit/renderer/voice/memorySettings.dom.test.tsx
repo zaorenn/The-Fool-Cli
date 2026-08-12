@@ -25,6 +25,10 @@ const saved: { which: string; text: string }[] = [];
 
 vi.mock('@renderer/services/voice/session/voiceMemoryStore', () => ({
   peekVoiceMemory: () => stored,
+  // The undo control asks what earlier versions exist. These tests are about the
+  // editor, so there are none and the control renders nothing.
+  peekMemoryVersions: () => [],
+  undoLastMemoryChange: async () => null,
   readVoiceMemory: async () => stored,
   subscribeVoiceMemory: (listener: (memory: VoiceMemory) => void) => {
     listeners.add(listener);

@@ -11,6 +11,7 @@ import { writeMemoryDoc } from '@renderer/services/voice/session/voiceMemoryStor
 import LocalSkillList from './LocalSkillList';
 import MemoryDocEditor from './MemoryDocEditor';
 import ProposalList from './ProposalList';
+import UndoLastChange from './UndoLastChange';
 import { useMemoryDocs } from './useMemoryDocs';
 
 /**
@@ -51,6 +52,11 @@ const MemoryModalContent: React.FC = () => {
           behind a tab is a decision nobody makes. It renders nothing at all
           when there is nothing to agree with, which is most of the time. */}
       <ProposalList />
+
+      {/* Under the proposals and above the documents: it is about what is
+          already written, which is what the documents show. Renders nothing
+          when there is no earlier version to go back to. */}
+      <UndoLastChange />
 
       <Tabs defaultActiveTab='user' size='small'>
         <Tabs.TabPane key='user' title={t('settings.memory.userTab')}>

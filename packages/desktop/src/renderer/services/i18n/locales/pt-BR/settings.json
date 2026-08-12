@@ -1766,7 +1766,12 @@
       "evidence": "Você disse:",
       "accept": "Lembrar disso",
       "refuse": "Esse não"
-    }
+    },
+    "undo": "Desfazer",
+    "undoHint": "Voltar a memória ao estado anterior à última alteração.",
+    "undone": "Memória restaurada",
+    "nothingToUndo": "Não há uma versão anterior para voltar",
+    "undoFailed": "Não foi possível restaurar a memória"
   },
   "layout": {
     "title": "Layout",

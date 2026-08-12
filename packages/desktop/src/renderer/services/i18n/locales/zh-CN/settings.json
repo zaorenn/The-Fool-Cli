@@ -1764,7 +1764,12 @@
       "evidence": "你说过：",
       "accept": "记住这个",
       "refuse": "这个不要"
-    }
+    },
+    "undo": "撤销",
+    "undoHint": "把记忆恢复到上次更改之前的状态。",
+    "undone": "记忆已恢复",
+    "nothingToUndo": "没有可以回退的旧版本",
+    "undoFailed": "无法恢复记忆"
   },
   "layout": {
     "title": "布局",

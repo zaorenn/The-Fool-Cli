@@ -53,7 +53,18 @@ import { getClientBusinessSetting, setClientBusinessSetting } from '@renderer/se
  * it can still find.
  */
 
+import {
+  afterRestoring,
+  previousVersion,
+  sanitizeSnapshots,
+  withSnapshot,
+  type MemorySnapshot,
+} from '@/common/voice/memorySnapshots';
+
 export const MEMORY_CONFIG_KEY = 'fool.voice.memory';
+
+/** Where the versions before each change are kept. */
+export const MEMORY_SNAPSHOTS_CONFIG_KEY = 'fool.voice.memorySnapshots';
 
 type Listener = (memory: VoiceMemory) => void;
 
@@ -110,10 +121,61 @@ const write = async (memory: VoiceMemory): Promise<void> => {
  * first — which is exactly what a conversation does when the user answers two
  * questions in one breath.
  */
-export const updateVoiceMemory = async (change: (previous: VoiceMemory) => VoiceMemory): Promise<VoiceMemory> => {
-  const next = change(await readVoiceMemory());
+export const updateVoiceMemory = async (
+  change: (previous: VoiceMemory) => VoiceMemory,
+  reason = 'a change'
+): Promise<VoiceMemory> => {
+  const previous = await readVoiceMemory();
+  const next = change(previous);
+  // The version before, kept before the new one is saved. This is the whole of
+  // what makes an assistant that writes to its own memory safe to leave running:
+  // being wrong about somebody is not rare, and without this the only repair is
+  // for the user to work out what changed and retype it.
+  await keepVersion(previous, reason);
   await write(next);
   return next;
+};
+
+/**
+ * What the memory was before each of the last changes, newest last.
+ *
+ * Read through `sanitizeSnapshots` because it comes off disk and every entry is
+ * a memory this application will happily restore.
+ */
+export const peekMemoryVersions = (): MemorySnapshot[] =>
+  sanitizeSnapshots(configService.get(MEMORY_SNAPSHOTS_CONFIG_KEY));
+
+const keepVersion = async (memory: VoiceMemory, reason: string): Promise<void> => {
+  try {
+    await configService.set(MEMORY_SNAPSHOTS_CONFIG_KEY, withSnapshot(peekMemoryVersions(), memory, reason));
+  } catch {
+    // A version that could not be kept must not stop the change itself. Losing
+    // an undo is worse than nothing; losing what was just learned is worse than
+    // that.
+  }
+};
+
+/**
+ * Puts the memory back to how it was before the last change.
+ *
+ * Returns null when there is nothing to go back to, so a caller can hide the
+ * control rather than offer one that does nothing. The restored version is
+ * dropped from the list — otherwise pressing undo twice puts the change back,
+ * which reads as the application arguing with the user about their own memory.
+ */
+export const undoLastMemoryChange = async (): Promise<VoiceMemory | null> => {
+  const kept = peekMemoryVersions();
+  const previous = previousVersion(kept);
+  if (!previous) return null;
+
+  await write(previous.memory);
+  try {
+    await configService.set(MEMORY_SNAPSHOTS_CONFIG_KEY, afterRestoring(kept));
+  } catch {
+    // The memory is back either way; a stale list offers one undo too many,
+    // which is recoverable, and failing the restore over it would not be.
+  }
+  return previous.memory;
 };
 
 export const rememberVoiceFact = (text: string): Promise<VoiceMemory> =>

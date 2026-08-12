@@ -1763,7 +1763,12 @@
       "evidence": "Tu as dit :",
       "accept": "Retenir ça",
       "refuse": "Pas celui-là"
-    }
+    },
+    "undo": "Annuler",
+    "undoHint": "Rétablir la mémoire telle qu’elle était avant le dernier changement.",
+    "undone": "Mémoire rétablie",
+    "nothingToUndo": "Il n’y a pas de version antérieure à retrouver",
+    "undoFailed": "Impossible de rétablir la mémoire"
   },
   "layout": {
     "title": "Disposition",

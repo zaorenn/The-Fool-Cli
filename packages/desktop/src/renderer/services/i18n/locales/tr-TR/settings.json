@@ -1763,7 +1763,12 @@
       "evidence": "Şöyle demiştin:",
       "accept": "Bunu hatırla",
       "refuse": "Bunu değil"
-    }
+    },
+    "undo": "Geri al",
+    "undoHint": "Hafızayı son değişiklikten önceki hâline döndür.",
+    "undone": "Hafıza geri alındı",
+    "nothingToUndo": "Dönülecek daha eski bir sürüm yok",
+    "undoFailed": "Hafıza geri alınamadı"
   },
   "layout": {
     "title": "Yerleşim",

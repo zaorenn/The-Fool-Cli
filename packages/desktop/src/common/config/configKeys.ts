@@ -7,6 +7,7 @@ import type { ConnectorGrant } from '@/common/permissions/connectors';
 import type { Rule } from '@/common/permissions/types';
 import type { SavedPersona } from '@/common/realtime/personas';
 import type { MemoryProposal } from '@/common/voice/memoryProposal';
+import type { MemorySnapshot } from '@/common/voice/memorySnapshots';
 import type { LocalSkill } from '@/common/voice/localSkills';
 import type { SurfaceStyleChoice } from '@/common/theme/surfaceChoice';
 import type { SurfaceBackground } from '@/common/theme/surfaceBackground';
@@ -113,6 +114,17 @@ export type ConfigKeyMap = {
    * off. Repaired on read by `sanitizeRefusedSubjects`.
    */
   'voice.curiosityRefusals': string[] | undefined;
+  /**
+   * What the memory said before each of the last changes, oldest first.
+   *
+   * The memory is two documents about a person, written by a model, out of
+   * conversations that may have carried a web page or somebody else's message
+   * into them. Every write used to be final. Keeping the version before each
+   * one is what makes a memory the assistant writes to itself safe to leave
+   * running — a record the user cannot correct is one they cannot disown.
+   * Bounded by `MAX_SNAPSHOTS`; repaired on read by `sanitizeSnapshots`.
+   */
+  'fool.voice.memorySnapshots': MemorySnapshot[] | undefined;
   /**
    * Which orb the pet window draws while a conversation is running.
    *
