@@ -178,11 +178,14 @@ jobs:
       # the v2.5.0 release with
       # `../libuiohook/src/x11/input_helper.c:23:10: fatal error: X11/keysym.h`.
       #
-      # The Windows path below already rebuilds `better-sqlite3` and only that.
-      # This is the same decision, made on the platforms where it had not been.
+      # `--only` rather than `-w`: `--which-module` adds a module to the set,
+      # it does not restrict it, so `-w better-sqlite3` still walked into
+      # `uiohook-napi` and failed the same way. `--only` is the one that means
+      # only. The Windows fallback below had the same latent bug and the same
+      # fix.
       - name: Rebuild native modules for Electron
         if: "!startsWith(matrix.platform, 'windows')"
-        run: bunx electron-rebuild -f -w better-sqlite3
+        run: bunx electron-rebuild -f --only better-sqlite3
         env:
           npm_config_runtime: electron
           npm_config_disturl: https://electronjs.org/headers
@@ -334,7 +337,7 @@ jobs:
             Write-Host ""
             Write-Host "[Step 2] prebuild-install didn't produce binary, trying electron-rebuild..."
             try {
-              bunx electron-rebuild -f -w better-sqlite3
+              bunx electron-rebuild -f --only better-sqlite3
               if ($LASTEXITCODE -eq 0) {
                 Write-Host "✅ electron-rebuild succeeded"
                 $success = $true
