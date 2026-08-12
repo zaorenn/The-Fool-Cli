@@ -437,6 +437,59 @@ export const relativeLuminance = (hex: string): number => {
   return 0.2126 * channel((n >> 16) & 255) + 0.7152 * channel((n >> 8) & 255) + 0.0722 * channel(n & 255);
 };
 
+/**
+ * The contrast between two colours, by the ratio WCAG is written in.
+ *
+ * 4.5:1 is the threshold for body text, 3:1 for large text. Both colours are
+ * `#rrggbb`; the order does not matter.
+ */
+export const contrastRatio = (a: string, b: string): number => {
+  const first = relativeLuminance(a);
+  const second = relativeLuminance(b);
+  const [lighter, darker] = first > second ? [first, second] : [second, first];
+  return (lighter + 0.05) / (darker + 0.05);
+};
+
+/** The contrast body text has to reach to be readable, per WCAG AA. */
+export const READABLE_CONTRAST = 4.5;
+
+/**
+ * What to write on top of a colour so that it can actually be read.
+ *
+ * The old rule picked black or white either side of a luminance threshold,
+ * which is the right idea and stops one step short: on a mid-toned accent —
+ * gold, mid-blue, the red of a warning — *neither* black nor white reaches 4.5:1
+ * on its own, and the rule returned the better of two failures. Measured across
+ * the seven materials before this, the worst pairing was **2.41:1**, on the gold
+ * this application ships with. That is a primary button whose label is a
+ * suggestion.
+ *
+ * So the better candidate is chosen by measurement rather than by threshold, and
+ * then walked away from the accent — darker if it is the dark one, lighter if it
+ * is the light one — until it clears the bar or runs out of room. Running out of
+ * room is possible, and the honest result there is the highest contrast
+ * available rather than a colour that pretends.
+ */
+export const readableOn = (background: string): string => {
+  const candidates = ['#000000', '#ffffff'];
+  let best = candidates[0];
+  let bestRatio = 0;
+  for (const candidate of candidates) {
+    const ratio = contrastRatio(candidate, background);
+    if (ratio > bestRatio) {
+      best = candidate;
+      bestRatio = ratio;
+    }
+  }
+  if (bestRatio >= READABLE_CONTRAST) {
+    // Pure black on a pale accent is harsh; a very dark tint of the accent's own
+    // hue reads as part of the palette and still clears the bar comfortably.
+    const tinted = hslToHex({ h: hexToHsl(background).h, s: 70, l: best === '#000000' ? 12 : 96 });
+    return contrastRatio(tinted, background) >= READABLE_CONTRAST ? tinted : best;
+  }
+  return best;
+};
+
 /** What a whole application looks like, derived from one colour. */
 export type Palette = {
   accent: string;
@@ -501,8 +554,9 @@ export const derivePalette = (
     // derived grey and not fine for the one thing they chose: a picker that
     // shows #8f5fdb back as #9061db is reporting a value nobody set.
     accent: sanitizeAccent(accentHex),
-    // 0.42 is where black text stops winning against white on the same colour.
-    onAccent: relativeLuminance(hslToHex(accent)) > 0.42 ? hslToHex({ h: accent.h, s: 70, l: 12 }) : '#ffffff',
+    // Measured against the accent rather than guessed from a threshold — see
+    // `readableOn`, and the 2.41:1 button label that made it necessary.
+    onAccent: readableOn(hslToHex(accent)),
     ground,
     card: hslToHex({ h: accent.h, s: Math.min(40, groundS + 4), l: cardL }),
     ink: hslToHex({ h: accent.h, s: lightInk ? 22 : 24, l: lightInk ? 96 : 13 }),

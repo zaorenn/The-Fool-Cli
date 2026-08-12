@@ -123,9 +123,16 @@ describe('colour', () => {
 });
 
 describe('the palette derived from one colour', () => {
-  it('puts dark text on a light accent and white on a dark one', () => {
-    expect(derivePalette('#f2d024', 'neu', false).onAccent).not.toBe('#ffffff');
-    expect(derivePalette('#2b3a67', 'neu', false).onAccent).toBe('#ffffff');
+  // Which end of the scale, not which literal: the label is a very dark or very
+  // light tint of the accent's own hue when that still clears the readability
+  // bar, because pure white on navy reads as a sticker rather than as part of
+  // the palette. `readableOnAccent.test.ts` holds the contrast floor itself.
+  it('puts dark text on a light accent and light text on a dark one', () => {
+    const onLight = derivePalette('#f2d024', 'neu', false).onAccent;
+    const onDark = derivePalette('#2b3a67', 'neu', false).onAccent;
+
+    expect(relativeLuminance(onLight)).toBeLessThan(0.2);
+    expect(relativeLuminance(onDark)).toBeGreaterThan(0.7);
   });
 
   /// The failure this exists to prevent: text the colour of the thing behind it.
