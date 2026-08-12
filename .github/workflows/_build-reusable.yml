@@ -264,6 +264,14 @@ jobs:
 
           echo "SENTRY_UPLOAD_SOURCE_MAPS=true" >> "$GITHUB_ENV"
           echo "Sentry source map upload configured for $SENTRY_ORG/$SENTRY_PROJECT ($SENTRY_RELEASE)"
+        env:
+          # Secrets are not in a step's environment unless the step asks for
+          # them. Without this the check above would find them missing even on a
+          # repository that has them configured, and quietly switch the upload
+          # off forever — a failure that looks exactly like success.
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
 
       - name: Setup macOS code signing (macOS only)
         if: startsWith(matrix.platform, 'macos')
