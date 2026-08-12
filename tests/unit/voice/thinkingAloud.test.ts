@@ -20,8 +20,12 @@ import {
   fillerKey,
   gapBefore,
   mayMentionAside,
+  maySpeakUnprompted,
   shortenForAside,
+  AN_HOUR_MS,
+  VOLUNTEERED_PER_HOUR,
   type AsideMoment,
+  type SilenceContract,
   type ThinkingState,
 } from '@/common/voice/thinkingAloud';
 
@@ -243,5 +247,93 @@ describe('whether a step can be said out loud', () => {
   /// A single ordinary word is a phrase, not an identifier.
   it('allows a plain word', () => {
     expect(worthSaying('searching')).toBe(true);
+  });
+});
+
+/**
+ * The door everything unprompted goes through.
+ *
+ * Written before anything that speaks unprompted exists. Every proactive
+ * assistant that has been switched off was switched off for the same reason: the
+ * rules about staying quiet were added one at a time, after each complaint, and
+ * by then the user had already decided.
+ */
+describe('speaking when nobody asked', () => {
+  /** A moment in which everything is as permissive as it gets. */
+  const open: SilenceContract = {
+    reason: 'curiosity',
+    about: 'working-hours',
+    enabled: true,
+    hushed: false,
+    phase: 'listening',
+    standby: false,
+    holdingToTalk: false,
+    userIsTyping: false,
+    quietForMs: 30_000,
+    sinceVolunteeredMs: Number.POSITIVE_INFINITY,
+    volunteeredInLastHour: 0,
+    alreadySaid: new Set<string>(),
+  };
+
+  const why = (contract: SilenceContract): string => {
+    const verdict = maySpeakUnprompted(contract);
+    return verdict.speak === false ? verdict.because : '';
+  };
+
+  it('speaks when every rule is satisfied', () => {
+    expect(maySpeakUnprompted(open).speak).toBe(true);
+  });
+
+  it('says nothing at all when the setting is off', () => {
+    expect(maySpeakUnprompted({ ...open, enabled: false }).speak).toBe(false);
+  });
+
+  /// It has to work when said out loud, in the moment, without anybody opening
+  /// a settings page. An assistant that cannot be hushed by saying "be quiet"
+  /// gets closed instead.
+  it('stays quiet for the session once told to', () => {
+    expect(why({ ...open, hushed: true })).toContain('quiet');
+  });
+
+  it('never speaks over somebody who is mid-sentence', () => {
+    expect(maySpeakUnprompted({ ...open, holdingToTalk: true }).speak).toBe(false);
+    expect(maySpeakUnprompted({ ...open, userIsTyping: true }).speak).toBe(false);
+  });
+
+  it('waits for a gap rather than talking over the conversation', () => {
+    expect(maySpeakUnprompted({ ...open, phase: 'speaking' }).speak).toBe(false);
+    expect(maySpeakUnprompted({ ...open, standby: true }).speak).toBe(false);
+    expect(maySpeakUnprompted({ ...open, quietForMs: 0 }).speak).toBe(false);
+  });
+
+  /// The rule that matters most, and the one invisible to whoever wrote the
+  /// feature — they only ever see the first time.
+  it('never volunteers the same thing twice', () => {
+    expect(why({ ...open, alreadySaid: new Set(['working-hours']) })).toContain('already said');
+  });
+
+  it('holds a volunteered remark to one an hour', () => {
+    expect(maySpeakUnprompted({ ...open, volunteeredInLastHour: VOLUNTEERED_PER_HOUR }).speak).toBe(false);
+    expect(maySpeakUnprompted({ ...open, sinceVolunteeredMs: AN_HOUR_MS - 1 }).speak).toBe(false);
+  });
+
+  /// A task the user started and a question they asked are owed to them.
+  /// Rationing those by the hour would mean starting three tasks and being told
+  /// about one.
+  it('does not ration what the user is already waiting for', () => {
+    const owed = { ...open, reason: 'task-finished' as const, volunteeredInLastHour: 5, sinceVolunteeredMs: 0 };
+    expect(maySpeakUnprompted(owed).speak).toBe(true);
+  });
+
+  /// Owed is not a way through the door — it only means the door is not also
+  /// rate-limited. Every silence rule still applies.
+  it('still refuses an owed remark over somebody talking', () => {
+    expect(maySpeakUnprompted({ ...open, reason: 'task-finished', holdingToTalk: true }).speak).toBe(false);
+    expect(maySpeakUnprompted({ ...open, reason: 'task-finished', hushed: true }).speak).toBe(false);
+    expect(maySpeakUnprompted({ ...open, reason: 'answer-arrived', enabled: false }).speak).toBe(false);
+  });
+
+  it('says which rule held, rather than only saying no', () => {
+    expect(why({ ...open, phase: 'acting' })).toContain('acting');
   });
 });

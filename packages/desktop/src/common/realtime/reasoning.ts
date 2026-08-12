@@ -104,7 +104,42 @@ export const forgetRefusals = (): void => {
 /**
  * Whether this turn can be answered without thinking about it.
  *
- * Switching the deliberation off made the first spoken word 37 times sooner and
+ * ## Measured again, and the trade is much smaller than it was
+ *
+ * The numbers above are real and were taken on a cold server. Re-measured
+ * against the full task list — nineteen tasks, several of them conversations,
+ * timed to the first character of `content` — the same endpoint says something
+ * different, and it changes what should be done about it:
+ *
+ * | | score | first word, median | slowest |
+ * | --- | --- | --- | --- |
+ * | per sentence, as this ships | **16/17** | 940 ms | 4,941 ms |
+ * | deliberate over everything | **16/17** | 942 ms | 4,601 ms |
+ * | deliberation off everywhere | 13/17 | **112 ms** | 225 ms |
+ *
+ * Deliberating costs about **0.8 seconds a turn**, not the four minutes that
+ * started this file, and it buys three tasks in seventeen. Switching it off
+ * loses the same kinds of turn it always lost — "open YouTube and find it" and
+ * "learn this for next time" get answered conversationally with no tool at all —
+ * and it loses a multi-turn one too: handed a screenshot and asked which port,
+ * the model that did not think answered without reading it.
+ *
+ * Two things follow, and the second is the one worth writing down.
+ *
+ * **The policy here is already on the right side of the trade.** Deliberating
+ * over everything scores the same and takes the same time; the only turn it
+ * makes worse is the greeting, at 975 ms against 238 ms. That difference is the
+ * whole of what this function buys, and it is worth having.
+ *
+ * **Do not widen it.** The obvious next thought — that if thinking is nearly
+ * free to skip, more turns should skip it — has the sign backwards. Every turn
+ * moved into the fast path is a turn moved from the 16/17 column to the 13/17
+ * column, and it saves 0.8 seconds to do it. `speaksOnlyToChat` should stay as
+ * narrow as it is.
+ *
+ * ## Why the trade exists at all
+ *
+ * Switching the deliberation off made the first spoken word much sooner and
  * cost three of eight tasks: asked to look at the screen, to warm the accent, or
  * to learn a rule for next time, the model answered *conversationally* and
  * reached for no tool at all. Neither end of that is shippable — four minutes is
@@ -169,7 +204,20 @@ const CHAT_ONLY = [
 ] as const;
 
 /** Whole words on their own, which longer ones must not match inside. */
-const CHAT_ONLY_ALONE = ['hi', 'hey', 'yo', 'tamam', 'evet', 'hayır', 'hayir', 'peki', 'olur', 'ok', 'okay', 'bye'];
+const CHAT_ONLY_ALONE = new Set([
+  'hi',
+  'hey',
+  'yo',
+  'tamam',
+  'evet',
+  'hayır',
+  'hayir',
+  'peki',
+  'olur',
+  'ok',
+  'okay',
+  'bye',
+]);
 
 export const speaksOnlyToChat = (said: string): boolean => {
   const line = said.trim().toLowerCase();
@@ -192,7 +240,7 @@ export const speaksOnlyToChat = (said: string): boolean => {
   // with one and is a request, which is the case this whole rule exists for.
   return words.every(
     (word) =>
-      CHAT_ONLY_ALONE.includes(word) ||
+      CHAT_ONLY_ALONE.has(word) ||
       // Contained rather than equal, for the languages that glue their endings
       // on: "teşekkürler" and "teşekkür ederim" are the same pleasantry.
       CHAT_ONLY.some((phrase) => !phrase.includes(' ') && word.includes(phrase))

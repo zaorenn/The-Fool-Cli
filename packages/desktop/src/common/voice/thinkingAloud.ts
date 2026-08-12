@@ -235,6 +235,149 @@ export const mayMentionAside = (moment: AsideMoment): boolean => {
   return moment.sinceLastAsideMs >= BETWEEN_ASIDES_MS;
 };
 
+// ───────────────────────────────────────────────────────────────────────────
+// Speaking when nobody asked.
+//
+// Written before anything that speaks unprompted exists, and that order is the
+// whole point. Every proactive assistant that has been switched off was
+// switched off for the same reason: the rules about when to stay quiet were
+// added one at a time, after each complaint, and by then the user had already
+// decided. So the rules come first and the reasons come through them — a new
+// reason to speak is a new entry in a list, not a new code path with its own
+// idea of when it is welcome.
+//
+// `mayMentionAside` above is the first thing to go through this door; it is
+// kept as its own function because a finished task is a different kind of
+// remark from the rest, and the difference is written down below.
+// ───────────────────────────────────────────────────────────────────────────
+
+/**
+ * Why the assistant wants to say something nobody asked for.
+ *
+ * A closed list, and it is code rather than a line in the persona. A model that
+ * can decide for itself when it feels like talking is a model that talks when it
+ * feels like it, and there is no setting that fixes that afterwards.
+ */
+export type UnpromptedReason =
+  /** A task it was given has come back. */
+  | 'task-finished'
+  /** The answer to something it asked earlier has arrived. */
+  | 'answer-arrived'
+  /** Something it can genuinely see has gone wrong: a build broke, a disk filled. */
+  | 'problem-noticed'
+  /** Something scheduled is about to happen. */
+  | 'schedule-due'
+  /** It would like to ask something about the user. */
+  | 'curiosity';
+
+/**
+ * The two kinds, which is the only distinction that changes the budget.
+ *
+ * A task the user started themselves and a question they asked are **owed** to
+ * them: hearing the outcome is the thing they were waiting for, and rationing it
+ * by the hour would mean starting three tasks and being told about one. The rest
+ * is genuinely volunteered — nobody asked, nobody is waiting — and that is what
+ * a budget is for.
+ *
+ * Both kinds still pass every silence rule. Owed is not a way through the door;
+ * it only means the door is not also rate-limited.
+ */
+const OWED: ReadonlySet<UnpromptedReason> = new Set<UnpromptedReason>(['task-finished', 'answer-arrived']);
+
+/** At most this many volunteered remarks in an hour. */
+export const VOLUNTEERED_PER_HOUR = 1;
+
+export const AN_HOUR_MS = 60 * 60 * 1000;
+
+/** Everything that decides whether speaking now is acceptable. */
+export type SilenceContract = {
+  /** What this remark is for. */
+  reason: UnpromptedReason;
+  /**
+   * What it is about, in a stable form.
+   *
+   * Used for one rule and it is the most important one: the same thing is never
+   * volunteered twice. Repetition is what turns a helpful assistant into a
+   * nagging one faster than anything else, and it is invisible to whoever wrote
+   * the feature because they only ever see the first time.
+   */
+  about: string;
+
+  /** The setting. Off means off, with no exceptions anywhere below. */
+  enabled: boolean;
+  /**
+   * Told to be quiet, for the rest of this session.
+   *
+   * Separate from the setting because it has to work when said out loud, in the
+   * moment, without anybody opening a settings page. An assistant that cannot be
+   * hushed by saying "be quiet" is one that gets closed instead.
+   */
+  hushed: boolean;
+
+  /** What the conversation is doing. Only a listening one has room. */
+  phase: string;
+  /** Told to wait: connected, listening, and not to be spoken to. */
+  standby: boolean;
+  /** True while the push-to-talk key is held. They are mid-sentence. */
+  holdingToTalk: boolean;
+  /** True while the user is typing. They are mid-sentence in another window. */
+  userIsTyping: boolean;
+
+  /** Milliseconds since anything was said, by either side. */
+  quietForMs: number;
+  /** Milliseconds since the last volunteered remark, or `Infinity` if none. */
+  sinceVolunteeredMs: number;
+  /** How many volunteered remarks were made in the last hour. */
+  volunteeredInLastHour: number;
+  /** What has already been volunteered, so nothing is said twice. */
+  alreadySaid: ReadonlySet<string>;
+};
+
+export type SilenceVerdict =
+  | { speak: true }
+  /** Why not, in words, so a log says which rule held rather than "no". */
+  | { speak: false; because: string };
+
+const SPEAK: SilenceVerdict = { speak: true };
+const hold = (because: string): SilenceVerdict => ({ speak: false, because });
+
+/**
+ * Whether the assistant may say this now.
+ *
+ * Ordered from the rules that are about the user to the rules that are about the
+ * assistant, because that is the order they matter in: being talked over is
+ * worse than being told something twice, which is worse than being told
+ * something too often.
+ */
+export const maySpeakUnprompted = (contract: SilenceContract): SilenceVerdict => {
+  if (!contract.enabled) return hold('unprompted speech is switched off');
+  if (contract.hushed) return hold('asked to be quiet for this session');
+
+  // Mid-sentence, in either direction. The key being held is the clearest
+  // signal there is that somebody is about to speak, and typing is the same
+  // signal from a different window.
+  if (contract.holdingToTalk) return hold('the talk key is held');
+  if (contract.userIsTyping) return hold('the user is typing');
+
+  // `listening` is the one phase in which nobody is talking. Anything else is
+  // an answer being spoken or a question being heard, and both are worse to
+  // interrupt than any remark is worth.
+  if (contract.phase !== 'listening') return hold(`the conversation is ${contract.phase}`);
+  if (contract.standby) return hold('told to wait');
+  if (contract.quietForMs < QUIET_BEFORE_ASIDE_MS) return hold('something was said a moment ago');
+
+  // Never twice about the same thing. Checked before the budget, so a repeat
+  // does not even spend one.
+  if (contract.alreadySaid.has(contract.about)) return hold('already said this one');
+
+  if (OWED.has(contract.reason)) return SPEAK;
+
+  if (contract.volunteeredInLastHour >= VOLUNTEERED_PER_HOUR) return hold('nothing more unasked this hour');
+  if (contract.sinceVolunteeredMs < AN_HOUR_MS) return hold('spoke unasked too recently');
+
+  return SPEAK;
+};
+
 /** How much of a request survives into the sentence that mentions it. */
 export const ASIDE_NAME_MAX = 60;
 
