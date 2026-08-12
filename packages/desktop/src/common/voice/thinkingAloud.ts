@@ -219,6 +219,15 @@ export type AsideMoment = {
   quietForMs: number;
   /** Milliseconds since the last aside, or `Infinity` when there has been none. */
   sinceLastAsideMs: number;
+  /**
+   * Told to be quiet for the rest of this session.
+   *
+   * Optional because the only caller cannot answer it yet — nothing listens for
+   * "be quiet" out loud. It is here rather than added later on purpose: the
+   * field being absent is a gap somebody can see, and a hush that has to be
+   * threaded through afterwards is one that gets threaded through some paths.
+   */
+  hushed?: boolean;
 };
 
 /**
@@ -228,12 +237,43 @@ export type AsideMoment = {
  * answer, over the user, and over the previous aside. The first two are what
  * `phase` rules out — `listening` is the only phase in which nobody is talking
  * — and the third is why the last one is timed.
+ *
+ * Answered through {@link maySpeakUnprompted} rather than beside it. This is the
+ * only thing that speaks unasked today, so it is also the only chance to make
+ * the contract load-bearing before the second one arrives — and a door that
+ * nothing goes through is a door the next reason routes around without anybody
+ * noticing. What is left here is the one rule the contract does not have: the
+ * gap between two asides, which is about them being *asides* rather than about
+ * silence in general.
  */
 export const mayMentionAside = (moment: AsideMoment): boolean => {
-  if (moment.phase !== 'listening' || moment.standby) return false;
-  if (moment.quietForMs < QUIET_BEFORE_ASIDE_MS) return false;
-  return moment.sinceLastAsideMs >= BETWEEN_ASIDES_MS;
+  if (moment.sinceLastAsideMs < BETWEEN_ASIDES_MS) return false;
+
+  return maySpeakUnprompted({
+    // A task the user started themselves. They are waiting for this, which is
+    // why it is not rationed by the hour.
+    reason: 'task-finished',
+    // Deduplication is the caller's here: a delegated task is mentioned once
+    // because it finishes once, and `DelegatedTasks` already holds the queue.
+    about: '',
+    // Neither signal reaches this path yet. Written as the values that change
+    // nothing rather than left out, so that wiring them later is an edit at the
+    // call site and not a change to the rule.
+    enabled: true,
+    hushed: moment.hushed === true,
+    holdingToTalk: false,
+    userIsTyping: false,
+    phase: moment.phase,
+    standby: moment.standby,
+    quietForMs: moment.quietForMs,
+    sinceVolunteeredMs: Number.POSITIVE_INFINITY,
+    volunteeredInLastHour: 0,
+    alreadySaid: NOTHING_SAID_YET,
+  }).speak;
 };
+
+/** Shared, because an empty set allocated per call is a set allocated per tick. */
+const NOTHING_SAID_YET: ReadonlySet<string> = new Set<string>();
 
 // ───────────────────────────────────────────────────────────────────────────
 // Speaking when nobody asked.

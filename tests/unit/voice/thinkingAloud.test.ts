@@ -337,3 +337,28 @@ describe('speaking when nobody asked', () => {
     expect(why({ ...open, phase: 'acting' })).toContain('acting');
   });
 });
+
+/**
+ * That the aside path really goes through the door.
+ *
+ * A door nothing goes through is a door the next reason routes around without
+ * anybody noticing, so the one thing that speaks unasked today was the only
+ * chance to make the contract load-bearing before the second one arrives.
+ */
+describe('an aside goes through the silence contract', () => {
+  const ready: AsideMoment = { phase: 'listening', standby: false, quietForMs: 10_000, sinceLastAsideMs: 10_000 };
+
+  it('mentions a finished task in a real gap', () => {
+    expect(mayMentionAside(ready)).toBe(true);
+  });
+
+  /// Not asserted anywhere before this: the aside gate had no idea a hush
+  /// existed, and would have talked straight through one.
+  it('stays quiet when the session has been hushed', () => {
+    expect(mayMentionAside({ ...ready, hushed: true })).toBe(false);
+  });
+
+  it('still keeps its own rule about the gap between two asides', () => {
+    expect(mayMentionAside({ ...ready, sinceLastAsideMs: 0 })).toBe(false);
+  });
+});
