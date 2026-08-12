@@ -2655,6 +2655,7 @@ export type I18nKey =
   | 'settings.voice.conversationContinueWithJester'
   | 'settings.voice.conversationCouldNotDoIt'
   | 'settings.voice.conversationDelegated'
+  | 'settings.voice.conversationDidIt'
   | 'settings.voice.conversationEndpoint'
   | 'settings.voice.conversationError.GEMINI_CONNECTION_CLOSING'
   | 'settings.voice.conversationError.LOCAL_HEARD_NOTHING'

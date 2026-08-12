@@ -38,7 +38,7 @@ import {
 } from '@renderer/services/voice/session/voiceMemoryStore';
 import { PendingInstructions } from '@/common/voice/pendingInstructions';
 import { openSpokenSession } from '@renderer/services/voice/session/spokenSession';
-import { guardSpokenSentence } from '@renderer/services/voice/session/spokenOutput';
+import { guardSpokenSentence, stillOwed } from '@renderer/services/voice/session/spokenOutput';
 import { runSpokenTurn } from '@renderer/services/voice/session/spokenTurn';
 import { findWakePhrase } from '@renderer/services/voice/wakePhrase';
 import { createIncrementalSentenceDetector } from '@renderer/services/voice/narration/incrementalSentences';
@@ -305,6 +305,19 @@ const MAX_TOOL_ROUNDS = 4;
 const couldNotDoIt = (): string => {
   const fallback = 'I could not do that.';
   const translated = i18next.t('settings.voice.conversationCouldNotDoIt', { defaultValue: fallback });
+  return typeof translated === 'string' && translated.length > 0 ? translated : fallback;
+};
+
+/**
+ * What is said when the work happened and no sentence about it did.
+ *
+ * The other end of the same silence. Both are read at the moment they are
+ * needed for the same reason: the language can change mid conversation, because
+ * the user can change it by speaking.
+ */
+const didIt = (): string => {
+  const fallback = 'Done.';
+  const translated = i18next.t('settings.voice.conversationDidIt', { defaultValue: fallback });
   return typeof translated === 'string' && translated.length > 0 ? translated : fallback;
 };
 
@@ -1337,6 +1350,8 @@ export class LocalVoicePipeline {
     /** Every call made, finished or not, which is what the metrics count. */
     let toolCalls = 0;
     let rounds = 0;
+    /** True if the loop was stopped by its budget rather than by the model. */
+    let ranOutOfRounds = true;
     for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
       rounds += 1;
       const calls = await this.streamReply(readiness, controller, toolsRan);
@@ -1354,10 +1369,25 @@ export class LocalVoicePipeline {
         continue;
       }
 
-      if (calls.length === 0) break;
+      if (calls.length === 0) {
+        ranOutOfRounds = false;
+        break;
+      }
       toolCalls += calls.length;
       toolsRan += await this.runTools(calls, controller);
       if (controller.signal.aborted) return;
+    }
+
+    // Reported: it opened the song and never said it had. The rounds end, the
+    // phase goes back to listening, and if the last one produced no text the
+    // room is silent — from where the user is sitting, indistinguishable from
+    // not having been heard at all. A finished piece of work is worth a word.
+    if (!controller.signal.aborted) {
+      const owed = stillOwed({ spokeAnything: this.firstAudioAt !== null, toolsRan, ranOutOfRounds });
+      if (owed !== 'nothing') {
+        this.voice ??= this.resolveVoice(readiness);
+        this.queueForSpeech(owed === 'confirmation' ? didIt() : couldNotDoIt(), controller);
+      }
     }
 
     const metrics = {
@@ -1503,6 +1533,11 @@ export class LocalVoicePipeline {
     }
     if (tail.length > 0) {
       this.voice ??= this.resolveVoice(readiness);
+      // The last sentence counts as having spoken too. Left out, a reply that
+      // arrived as a single unterminated sentence was recorded as silence —
+      // which made the turn metric wrong and now would make the turn apologise
+      // for something it had just said.
+      this.firstAudioAt ??= Date.now();
       this.queueForSpeech(tail, controller);
       this.startDraining(controller);
     }
@@ -1612,6 +1647,8 @@ export class LocalVoicePipeline {
 
     /** Whether anything at all reached the speaker, across every round. */
     let spokeAnything = false;
+    /** And how much work went into it, which decides what a silent turn owes. */
+    let toolsRan = 0;
 
     const turn = async (said: string, instructions: readonly string[]): Promise<string | null> => {
       let refusal: string | null = null;
@@ -1675,6 +1712,7 @@ export class LocalVoicePipeline {
           message: `LOCAL_AGENT_${result.reason.toUpperCase().replaceAll('-', '_')}`,
         });
       }
+      if (result.ok === true) toolsRan += result.toolsRan;
       return refusal;
     };
 
@@ -1692,8 +1730,16 @@ export class LocalVoicePipeline {
     // produce — it is indistinguishable from a crash, and it is what the whole
     // guarantee exists to avoid. Refusing to lie is not permission to say
     // nothing, so it says the true thing instead.
-    if (!spokeAnything && !controller.signal.aborted) {
-      this.queueForSpeech(couldNotDoIt(), controller);
+    //
+    // *Which* true thing depends on whether anything happened. Saying "I could
+    // not do that" after the song started playing is the same lie the gate
+    // exists to stop, pointed the other way.
+    if (!controller.signal.aborted) {
+      // The agent path has no round budget of its own — it is bounded at one
+      // extra round for a refusal, and a refusal is not the same thing as a
+      // model that will not stop calling tools.
+      const owed = stillOwed({ spokeAnything, toolsRan, ranOutOfRounds: false });
+      if (owed !== 'nothing') this.queueForSpeech(owed === 'confirmation' ? didIt() : couldNotDoIt(), controller);
     }
 
     if (controller.signal.aborted) return;

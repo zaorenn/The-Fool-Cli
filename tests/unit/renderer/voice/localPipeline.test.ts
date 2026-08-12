@@ -904,7 +904,18 @@ describe('LocalVoicePipeline acting on the computer', () => {
     await settleRounds();
 
     expect(runTool.mock.calls.length).toBeLessThanOrEqual(4);
-    expect(events.at(-1)).toEqual({ kind: 'phase', phase: 'listening' });
+    // That the turn ended, rather than which phase happens to be last: the
+    // admission below is spoken after the loop returns, so the final phase is
+    // now whatever the speaker is doing, and asserting on it would be a test of
+    // drain timing rather than of the round bound.
+    expect(events).toContainEqual({ kind: 'phase', phase: 'listening' });
+
+    // And it does not go quiet. A turn that ran four tools and never made a
+    // sound is indistinguishable from not having been heard — but what it says
+    // is the admission, not "Done.": it exhausted its rounds, so it finished
+    // nothing that was asked for, and confirming here would be a false claim
+    // arriving through the door built to prevent silence.
+    expect(synthesizeInvoke.mock.calls.map((call) => call[0].payload.text)).toEqual(['I could not do that.']);
   });
 
   /**

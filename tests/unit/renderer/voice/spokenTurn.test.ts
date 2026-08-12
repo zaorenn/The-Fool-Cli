@@ -76,13 +76,16 @@ describe('runSpokenTurn', () => {
     expect(spoken).toEqual(['Good morning.', 'It is raining.']);
   });
 
-  it('hands back everything it said', async () => {
+  it('hands back everything it said, and how much work was behind it', async () => {
     const turn = runSpokenTurn({ conversationId: 'c1', said: 'hello', onSentence: () => undefined });
     await settle();
     emit({ type: 'content', data: 'All done.' });
     emit({ type: 'finish' });
 
-    await expect(turn).resolves.toEqual({ ok: true, spoken: 'All done.' });
+    // The count comes back because only this function sees it, and the caller
+    // needs it to know what a turn that said nothing owes: a confirmation for
+    // work that went unmentioned, an admission for a turn that did nothing.
+    await expect(turn).resolves.toEqual({ ok: true, spoken: 'All done.', toolsRan: 0 });
   });
 
   it('reports a run error rather than resolving silently', async () => {

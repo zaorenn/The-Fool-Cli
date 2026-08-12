@@ -120,7 +120,13 @@ export type SpokenTurnInput = {
 };
 
 export type SpokenTurnResult =
-  | { ok: true; spoken: string }
+  /**
+   * `toolsRan` comes back because only this function counts it, and the caller
+   * needs it to know what a silent turn owes: work that finished and went
+   * unmentioned wants a confirmation, and a turn that did nothing at all wants
+   * an admission. Answering both with the same sentence gets one of them wrong.
+   */
+  | { ok: true; spoken: string; toolsRan: number }
   | {
       ok: false;
       reason:
@@ -363,7 +369,7 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
       }
       if (message.type === 'finish') {
         sayTheRest();
-        finish({ ok: true, spoken: spoken.trim() });
+        finish({ ok: true, spoken: spoken.trim(), toolsRan });
         return;
       }
       if (message.status === 'error') {
@@ -405,7 +411,7 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
         return;
       }
       sayTheRest();
-      finish({ ok: true, spoken: spoken.trim() });
+      finish({ ok: true, spoken: spoken.trim(), toolsRan });
     })
   );
 

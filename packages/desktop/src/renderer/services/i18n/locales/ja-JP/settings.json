@@ -1660,6 +1660,7 @@
     "spokenConversationName": "音声での会話",
     "conversationAgentRuntime": "エージェントのランタイムを使う",
     "conversationAgentRuntimeHint": "音声会話がチャットと同じランタイムで考えます。ファイルを読み、コマンドを実行し、12 ターンより前のことも覚えていられます。既定でオン。オフにすると内蔵の小さなループに戻ります。最初の音声は少し遅くなることがあります。",
+    "conversationDidIt": "完了しました。",
     "conversationCouldNotDoIt": "それはできませんでした。",
     "conversationThemeUnchanged": "すでにそうなっていました。",
     "conversationThemeMaterial": "{{name}} にしました。",

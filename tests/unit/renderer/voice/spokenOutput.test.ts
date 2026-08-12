@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { guardSpokenSentence, type SpokenTurnEvidence } from '@renderer/services/voice/session/spokenOutput';
+import { guardSpokenSentence, stillOwed, type SpokenTurnEvidence } from '@renderer/services/voice/session/spokenOutput';
 
 /** A turn that has done nothing and seen nothing, which is the interesting case. */
 const nothing: SpokenTurnEvidence = { toolsRan: 0, remembered: 3, lookedAtScreen: false };
@@ -73,5 +73,39 @@ describe('describing a screen', () => {
   it('never refuses the honest answer, whatever the evidence', () => {
     expect(guardSpokenSentence('Ekranını göremiyorum.', nothing).speak).toBe(true);
     expect(guardSpokenSentence('Bir bakayım.', nothing).speak).toBe(true);
+  });
+});
+
+/**
+ * The other half of honesty: not leaving something true unsaid.
+ *
+ * Reported from the app — it opened the song and never mentioned it. The turn
+ * loop had no opinion about a round that ended without text, so the room simply
+ * stayed quiet, and from where the user is sitting that is indistinguishable
+ * from not having been heard.
+ */
+describe('what a silent turn still owes', () => {
+  it('owes nothing when it spoke', () => {
+    expect(stillOwed({ spokeAnything: true, toolsRan: 0, ranOutOfRounds: false })).toBe('nothing');
+    expect(stillOwed({ spokeAnything: true, toolsRan: 3, ranOutOfRounds: true })).toBe('nothing');
+  });
+
+  it('owes a confirmation when the work happened and no sentence about it did', () => {
+    expect(stillOwed({ spokeAnything: false, toolsRan: 1, ranOutOfRounds: false })).toBe('confirmation');
+  });
+
+  /// The distinction the agent path got wrong in the other direction: it said
+  /// "I could not do that" whenever nothing was spoken, which is a lie of its
+  /// own once the song is already playing.
+  it('owes an admission when nothing was done either', () => {
+    expect(stillOwed({ spokeAnything: false, toolsRan: 0, ranOutOfRounds: false })).toBe('admission');
+  });
+
+  /// A model that answers every round with another tool call has run plenty of
+  /// tools and finished nothing that was asked for. "Done." there is the small
+  /// false claim the gate exists to stop, arriving through the door built to
+  /// prevent silence.
+  it('does not confirm a turn that only ran out of rounds', () => {
+    expect(stillOwed({ spokeAnything: false, toolsRan: 4, ranOutOfRounds: true })).toBe('admission');
   });
 });

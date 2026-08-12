@@ -93,3 +93,58 @@ export const guardSpokenSentence = (sentence: string, evidence: SpokenTurnEviden
 
   return SPEAK;
 };
+
+/**
+ * What a turn still owes the user once the model has stopped writing.
+ *
+ * The gate above is about not saying false things, and it is only half of
+ * honesty. The other half is not leaving something true unsaid — and the turn
+ * loop had no opinion about that at all: it ran its rounds, went back to
+ * listening, and if the last round produced no text the room simply stayed
+ * quiet.
+ *
+ * Which is what was reported. It opened the song and never said it had. The old
+ * behaviour was deliberate — reporting a finished thing costs a round trip and
+ * about a second — but a second is not the price of that silence. The price is
+ * that the user has no idea whether anything happened, and the only way to find
+ * out is to go and look, which is the thing an assistant is for.
+ */
+export type UnsaidTurn = {
+  /** Whether any sentence at all reached the speaker. */
+  spokeAnything: boolean;
+  /** How many tools finished something this turn. */
+  toolsRan: number;
+  /**
+   * Whether the turn ended by running out of rounds rather than by finishing.
+   *
+   * The distinction is the difference between a confirmation and a lie. A model
+   * that answers every round with another tool call and never says a word has
+   * run plenty of tools and completed nothing the user asked for — "Done." there
+   * is exactly the small false claim the gate above exists to stop, arriving
+   * through the door built to prevent silence.
+   */
+  ranOutOfRounds: boolean;
+};
+
+export type StillOwed =
+  /** It spoke. Nothing is owed, whatever else happened. */
+  | 'nothing'
+  /** Work finished and went unmentioned: say so, briefly. */
+  | 'confirmation'
+  /** Nothing was done and nothing was said, which is indistinguishable from a crash. */
+  | 'admission';
+
+/**
+ * Which of the three a finished turn is in.
+ *
+ * Written here rather than as an `if` in each loop because the two loops had
+ * *different* answers: the agent path said "I could not do that" whenever
+ * nothing was spoken, which is a lie in the opposite direction when the work
+ * succeeded and only the sentence about it went missing; and the local loop
+ * said nothing at all in either case.
+ */
+export const stillOwed = (turn: UnsaidTurn): StillOwed => {
+  if (turn.spokeAnything) return 'nothing';
+  if (turn.ranOutOfRounds) return 'admission';
+  return turn.toolsRan > 0 ? 'confirmation' : 'admission';
+};

@@ -1658,6 +1658,7 @@
     "spokenConversationName": "Conversation vocale",
     "conversationAgentRuntime": "Utiliser le moteur de l'agent",
     "conversationAgentRuntimeHint": "La conversation vocale réfléchit avec le même moteur que le chat : elle peut lire des fichiers, exécuter des commandes et se souvenir de plus de douze tours. Activé par défaut ; le désactiver ramène la petite boucle intégrée. Le premier son peut mettre un peu plus de temps.",
+    "conversationDidIt": "C'est fait.",
     "conversationCouldNotDoIt": "Je n'ai pas pu le faire.",
     "conversationThemeUnchanged": "C'était déjà comme ça.",
     "conversationThemeMaterial": "Maintenant {{name}}.",

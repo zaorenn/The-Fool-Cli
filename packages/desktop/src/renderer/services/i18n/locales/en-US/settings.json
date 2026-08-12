@@ -1658,6 +1658,7 @@
     "spokenConversationName": "Spoken conversation",
     "conversationAgentRuntime": "Run on the agent runtime",
     "conversationAgentRuntimeHint": "The spoken conversation thinks with the same runtime the chat uses, so it can read files, run commands and remember past twelve turns. On by default; turning it off goes back to the small built-in loop. The first sound may take a moment longer.",
+    "conversationDidIt": "Done.",
     "conversationCouldNotDoIt": "I could not do that.",
     "conversationThemeUnchanged": "That was already how it looked.",
     "conversationThemeMaterial": "Now {{name}}.",

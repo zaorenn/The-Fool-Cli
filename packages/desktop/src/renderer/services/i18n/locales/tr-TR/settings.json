@@ -1658,6 +1658,7 @@
     "spokenConversationName": "Sesli sohbet",
     "conversationAgentRuntime": "Ajan çalışma zamanını kullan",
     "conversationAgentRuntimeHint": "Sesli sohbet, yazılı sohbetin kullandığı çalışma zamanıyla düşünür: dosya okuyabilir, komut çalıştırabilir ve on iki turdan fazlasını hatırlar. Varsayılan olarak açık; kapatırsan eski küçük döngüye döner. İlk ses biraz gecikebilir.",
+    "conversationDidIt": "Tamam, oldu.",
     "conversationCouldNotDoIt": "Bunu yapamadım.",
     "conversationThemeUnchanged": "Zaten öyleydi.",
     "conversationThemeMaterial": "Artık {{name}}.",
