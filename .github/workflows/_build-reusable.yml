@@ -183,9 +183,17 @@ jobs:
       # `uiohook-napi` and failed the same way. `--only` is the one that means
       # only. The Windows fallback below had the same latent bug and the same
       # fix.
+      #
+      # `@electron/rebuild` rather than `electron-rebuild`: the old package name
+      # still resolves, and it still depends on `lzma-native`, which has no
+      # prebuilt binary for arm64 Linux. Installing the tool therefore compiled
+      # that dependency, and the `npm_config_disturl` below sent node-gyp to the
+      # Electron headers with Node's own version — a 404 for
+      # `v22.23.1/node-v22.23.1-headers.tar.gz`, before a single line of our own
+      # code was built. The maintained package has no such dependency.
       - name: Rebuild native modules for Electron
         if: "!startsWith(matrix.platform, 'windows')"
-        run: bunx electron-rebuild -f --only better-sqlite3
+        run: bunx @electron/rebuild@4 -f --only better-sqlite3
         env:
           npm_config_runtime: electron
           npm_config_disturl: https://electronjs.org/headers
@@ -332,7 +340,7 @@ jobs:
             Write-Host ""
             Write-Host "[Step 2] prebuild-install didn't produce binary, trying electron-rebuild..."
             try {
-              bunx electron-rebuild -f --only better-sqlite3
+              bunx @electron/rebuild@4 -f --only better-sqlite3
               if ($LASTEXITCODE -eq 0) {
                 Write-Host "✅ electron-rebuild succeeded"
                 $success = $true
