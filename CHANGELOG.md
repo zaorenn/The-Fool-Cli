@@ -6,6 +6,41 @@ The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0)
 
 The first release this project's own CI has built. Every `Build and Release` run since 2.3.4 stopped before it started — five lint errors in the quality gate, so the build pipeline was skipped every time and the installers on those releases were made by hand. That is fixed, which is why this entry exists at all.
 
+### It opens, and the window is not blank
+
+- **The packaged build emitted circular vendor chunks.** React, Arco, the markdown stack and the editors were split into separate chunks that imported each other in a ring, and with a ring the evaluation order can reach `React.createContext` before React's own exports exist — an empty window, in a build whose exit code was 0. They share one chunk now, and the build is checked for the warning rather than for its status.
+
+### Themes that actually apply
+
+- **A theme's stylesheet is read rather than pattern-matched.** Every declaration is marked `!important` on the way in so a theme can outrank the app, and the thing doing the marking was a regular expression that could not tell a declaration from the colon in a selector. `.btn:hover` became `.btn: hover`, and the browser dropped the rule with it — 41 rules in Retro Windows, 39 in Misaka Mikoto, 25 in Hello Kitty. It also cut `url(data:image/png;base64,…)` in half, which is what the theme editor writes when you give a theme a background. All of it applies now, including the animations, which were being voided by the same pass.
+- **The words on a button can be read.** The label on an accent-coloured surface was chosen by a luminance threshold, and on a mid-toned accent neither black nor white clears the bar — the gold this app ships with measured 2.41:1 against a floor of 4.5. It is measured now, across every material and both appearances, and the worst pairing is 4.51:1.
+- **Five settings stopped fighting over the same colours.** A palette, a material, the layout dials, the motions and the colours you pick by hand all write the same variables, all marked important, and each one re-appended itself last on every change — so the winner was whichever setting you touched most recently, and on a cold start the material always won. A colour you chose no longer disappears when you restart.
+- **The theme gallery shows what clicking will do**: each card drawn in that theme's own appearance rather than the app's current one, and the two flagship palettes no longer fall back to a preview belonging to no theme at all.
+- **Backslashes are backslashes** in the Y2K skin, which was leading with a font that draws them as yen signs.
+
+### The voice, and the silence in front of it
+
+- **The wait before the first word fell from 2.9 seconds to under one.** Sending no deliberation setting does not mean "think a normal amount", it means "think as much as you like": asked where a folder was that had been named one line earlier, the model produced 20,905 characters of reasoning and took 68 seconds to speak. Thinking is bounded now, and it cost nothing measurable — the same 17 of 17 eval tasks pass, three runs each.
+- **It cannot describe a screen it has not looked at.** The gate that catches "I did that" now catches "the screen says" too, and the evidence is a capture that succeeded rather than one that was attempted.
+- **It asks you one thing, and never the same thing twice.** A question after a pause, at most one a conversation, never during a task — and a subject is written down when it is asked rather than when it is answered, because a question ignored once was an answer.
+- **What it learned about you can be taken back.** Every write keeps the version before it, and one button in Settings → Memory puts it back.
+- **Anything it says unasked has a switch**, and saying "be quiet" hushes it for the session.
+- **It knows what you were doing yesterday**, assembled from the stored line word for word rather than asked for — a model asked to recall the last conversation will recall one whether or not there was one.
+- **A finished piece of work is worth a word**, and the filler said while it thinks no longer arrives as the answer.
+
+### Everywhere else
+
+- **Copying an answer copies the answer.** A reply interrupted by a tool call is several messages, and the copy button took the last one — handing back a fragment that reads like the whole thing.
+- **The first screen offers every agent it found**, not two named in a constant. The backend already resolves around thirty on `$PATH`.
+- **Right-click in the file tree**: reveal in folder, copy path, copy relative path.
+- **A shortcut answers to this platform's modifier**, rather than to either.
+- **The image tool cannot read outside the workspace.** Paths arrived in a tool call the model wrote and were resolved with no boundary, so `../../../` was read and handed back.
+- **The backend has a version you can name.** CI claimed one was pinned in `package.json`; the key did not exist, so every binary this repository has produced reported the same string. It is declared and asserted now, the bundle records the commit, and both workflows cache the Rust build they had been doing from scratch every time.
+
+### Earlier in 2.4.0
+
+The first release this project's own CI has built. Every `Build and Release` run since 2.3.4 stopped before it started — five lint errors in the quality gate, so the build pipeline was skipped every time and the installers on those releases were made by hand. That is fixed, which is why this entry exists at all.
+
 ### One harness behind every conversation
 
 - **The spoken assistant thinks on the same runtime typed chat does.** It had its own small loop with a handful of app tools; talking to it and typing to it were two different assistants with two different memories and two different sets of abilities. Now a spoken conversation opens a real session — same context handling, same tools, same skills — and this app keeps what it was always good at, which is sound. The old loop is still there, silently, for a machine that cannot open a session.
