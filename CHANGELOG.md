@@ -2,6 +2,21 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.5.2
+
+The last two things standing between this line and a published release, both
+found by the 2.5.1 run getting further than any run before it.
+
+- **`electron-rebuild -w` does not narrow anything.** `--which-module` adds a
+  module to the set rather than restricting it, so the 2.5.1 fix looked right
+  and changed nothing — Linux and macOS walked into `uiohook-napi` exactly as
+  before. `--only` is the flag that means only.
+- **The Linux binary was built against a glibc most machines do not have.**
+  Compiled on the newest runner, `foolcore` linked `GLIBC_2.38` and `2.39`; the
+  smoke test runs in `debian:bookworm-slim`, which has 2.36, and said so. glibc
+  is forward compatible and not backward, so the Linux jobs build on 22.04 now.
+  The smoke test was right and had simply never been reached before.
+
 ## 2.5.1
 
 The build that 2.5.0 could not finish. Its quality gate passed — the one that had

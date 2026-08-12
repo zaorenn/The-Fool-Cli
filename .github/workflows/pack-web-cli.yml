@@ -79,7 +79,14 @@ jobs:
         include:
           - { platform: darwin, arch: arm64, os: macos-14 }
           - { platform: darwin, arch: x64, os: macos-14 }
-          - { platform: linux, arch: x64, os: ubuntu-latest }
+          # Built on 22.04 rather than latest so the binary runs on the
+          # distributions people have. foolcore compiled on 24.04 links against
+          # glibc 2.38/2.39, and the smoke test — which runs in
+          # `debian:bookworm-slim`, glibc 2.36 — caught it exactly as it should:
+          # `libc.so.6: version GLIBC_2.38 not found`. glibc is forward
+          # compatible, not backward, so the oldest runner that still builds is
+          # the right one.
+          - { platform: linux, arch: x64, os: ubuntu-22.04 }
           - { platform: linux, arch: arm64, os: ubuntu-24.04-arm }
           - { platform: win32, arch: x64, os: windows-2022 }
 
