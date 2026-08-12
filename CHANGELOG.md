@@ -2,6 +2,47 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.5.4
+
+### A file name that two files spelled differently
+
+2.5.3 was the first run in which every platform built. All six desktop jobs were
+green, all five web-cli jobs were green, and the release still could not have
+been cut — because of a space.
+
+`artifactName` in `electron-builder.yml` is `TheFool-${version}-${os}-${arch}`,
+deliberately without a space: electron-builder writes the name into `latest.yml`
+with spaces turned into hyphens, GitHub hosts the upload with spaces turned into
+dots, and every installed copy then asks for a URL the release does not have.
+Three other files never got the message.
+
+- **The macOS zips were built and then dropped.** The upload step globbed
+  `out/The Fool-*-mac-*.zip`, which matches nothing a real build produces. In
+  2.5.3 macOS x64 wrote a 477 MB zip next to its 472 MB DMG and uploaded an
+  artifact of 493 MB — the DMG alone. `prepare-release-assets.sh` would then
+  have failed the release looking for the zip that had just been thrown away.
+- **The asset validation was checking for files no build has ever made.** It
+  required `The Fool-${VERSION}-mac-${arch}.dmg`, so it would have called a
+  complete six-platform build incomplete.
+- **`verify-release-assets.sh` was checking nothing at all.** Its list of
+  distributables was unquoted, so the shell split on the space and it looked for
+  a file called `The`.
+
+None of this had ever been caught because the mock artifacts the PR check runs
+against carried the old spaced names too — the check validated a fiction. The
+mock now writes the names a real build writes, and a test asserts that the
+upload glob matches what `artifactName` expands to, rather than asserting the
+two strings separately and never comparing them.
+
+Underneath that, the tolerance added in 2.5.3 was sitting behind a stricter
+check and could never fire: `prepare-release-assets.sh` still exited on the
+first missing platform, before the step that warns and continues was reached.
+Validation is consistency rather than completeness now — a platform that did not
+build is named in a warning, while a platform that _did_ build and is missing
+the metadata the updater needs still fails the job. The web-cli packing was
+likewise still required outright, and could withhold a desktop release on its
+own.
+
 ## 2.5.3
 
 ### The release that was being withheld by the platform it was not for
