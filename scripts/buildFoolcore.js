@@ -18,6 +18,10 @@
  * app's need for them, so they are staged from an existing bundle rather than
  * rebuilt.
  *
+ * The version it produces is declared in the root `package.json` as
+ * `foolcoreVersion` and asserted against `backend/core/Cargo.toml` before
+ * anything is compiled — see below for why that is worth a failed build.
+ *
  * Environment:
  *  - FOOL_BACKEND_ARCH: target architecture (default: process.arch)
  *  - FOOL_BACKEND_PROFILE: cargo profile (default: release)
@@ -54,6 +58,75 @@ function fail(message) {
 if (!existsSync(path.join(coreDir, 'Cargo.toml'))) {
   fail(`No backend source at ${coreDir}. Expected the workspace manifest there.`);
 }
+
+/**
+ * The version this app expects its backend to be, and the check that it is.
+ *
+ * The backend lives in this repository rather than arriving as a release from
+ * another one, which is deliberate — a build here should not depend on somebody
+ * else's infrastructure staying up. What it cost was the backend's identity:
+ * two builds of two very different trees both called themselves `v0.1.54`,
+ * because nothing but `backend/core/Cargo.toml` ever said otherwise, and CI
+ * carried a comment claiming a `foolcoreVersion` pin in `package.json` that did
+ * not exist.
+ *
+ * So the version is declared in one place a person reads — the root
+ * `package.json`, the way `aioncoreVersion` is declared upstream — and this
+ * refuses to build a backend that disagrees with it. Bumping the workspace
+ * without bumping the declaration is then a failed build rather than a silent
+ * mislabelling of every installer produced afterwards.
+ */
+const declaredBackendVersion = (() => {
+  const pkg = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
+  return typeof pkg.foolcoreVersion === 'string' ? pkg.foolcoreVersion : null;
+})();
+
+const workspaceVersion = (() => {
+  const source = readFileSync(path.join(coreDir, 'Cargo.toml'), 'utf8');
+  const found = source.match(/^version\s*=\s*"([^"]+)"/m);
+  return found ? `v${found[1]}` : null;
+})();
+
+if (!declaredBackendVersion) {
+  fail('package.json has no `foolcoreVersion`. It declares which backend this app ships with.');
+}
+if (!workspaceVersion) {
+  fail(`Could not read a version from ${path.join(coreDir, 'Cargo.toml')}.`);
+}
+if (declaredBackendVersion !== workspaceVersion) {
+  fail(
+    `Backend version disagreement: package.json says ${declaredBackendVersion}, ` +
+      `backend/core/Cargo.toml says ${workspaceVersion}. Bump both, or neither.`
+  );
+}
+
+/**
+ * Which commit of the backend this is.
+ *
+ * The declared version answers "which backend", and stays put for months; this
+ * answers "which build of it", and is the only thing that separates two
+ * binaries that both call themselves the same version. Taken from the last
+ * commit that touched `backend/`, not from HEAD, so a run of renderer commits
+ * does not keep restamping an unchanged binary as something new.
+ *
+ * Best effort: a source archive with no git history still builds, it just
+ * cannot say which commit it came from.
+ */
+const backendCommit = (() => {
+  try {
+    return (
+      execFileSync('git', ['log', '-1', '--format=%h', '--', 'backend'], {
+        cwd: projectRoot,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      })
+        .trim()
+        .slice(0, 12) || null
+    );
+  } catch {
+    return null;
+  }
+})();
 
 /**
  * Link the MSVC runtime into the binary on Windows.
@@ -260,16 +333,17 @@ if (existsSync(path.join(managedDir, 'manifest.json'))) {
 // The bundle manifest is what `afterPack.js` reads to confirm the right
 // platform and arch were staged, and what the app reports in its install
 // diagnostics. It describes a binary compiled here, not a downloaded one.
-const workspaceManifest = path.join(coreDir, 'Cargo.toml');
-const version = (readFileSync(workspaceManifest, 'utf8').match(/^version\s*=\s*"([^"]+)"/m) || [])[1];
-
 writeFileSync(
   path.join(stageDir, 'manifest.json'),
   `${JSON.stringify(
     {
       platform: process.platform,
       arch,
-      version: version ? `v${version}` : 'unknown',
+      version: workspaceVersion,
+      // Which build of that version. Without it, every binary this repository
+      // has ever produced reports the same string, and a bug report naming a
+      // version names several months of them.
+      commit: backendCommit,
       generatedAt: new Date().toISOString(),
       sourceType: 'build',
       source: { profile, repository: 'backend/core' },

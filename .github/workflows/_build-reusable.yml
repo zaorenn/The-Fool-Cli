@@ -23,10 +23,6 @@ on:
         description: 'Only upload primary installers (exe/msi/dmg/deb), skip zip/yml/blockmap'
         type: boolean
         default: false
-      foolcore_run_id:
-        description: 'Optional The Fool Core Manual Build workflow run id to bundle instead of the pinned release'
-        type: string
-        default: ''
 
 env:
   BUN_INSTALL_REGISTRY: 'https://registry.npmjs.org/'
@@ -362,16 +358,35 @@ jobs:
           MSVS_VERSION: 2022
           GYP_MSVS_VERSION: 2022
 
+      # The backend is a 27-crate Rust workspace compiled from source in this
+      # repository, and without this every build of every platform compiled all
+      # of it from nothing — the Electron caches directly above have been here
+      # the whole time, which is what made the omission look accidental rather
+      # than deliberate. Keyed on the lockfile and the arch: a dependency change
+      # invalidates it, a renderer change does not.
+      - name: Cache cargo registry and backend build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            backend/core/target
+          key: foolcore-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('backend/core/Cargo.lock') }}
+          restore-keys: |
+            foolcore-${{ matrix.platform }}-${{ matrix.arch }}-
+
       - name: Prepare foolcore binary
         shell: bash
         run: node scripts/buildFoolcore.js
         env:
-          # Version is pinned in repo-root package.json (foolcoreVersion).
-          # Set FOOL_BACKEND_VERSION here only to override for ad-hoc builds.
-          FOOL_BACKEND_RUN_ID: ${{ inputs.foolcore_run_id }}
+          # The version is declared in the root package.json as `foolcoreVersion`
+          # and asserted against backend/core/Cargo.toml by the script itself, so
+          # there is nothing to pass here. This step used to be handed
+          # FOOL_BACKEND_RUN_ID and a token as well; the script has never read
+          # either — they are left over from when the backend was downloaded
+          # instead of compiled.
           FOOL_BACKEND_ARCH: ${{ matrix.arch }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build with electron-builder (Windows)
         if: startsWith(matrix.platform, 'windows')
@@ -399,7 +414,6 @@ jobs:
           }
         env:
           WINDOWS_BUILD_COMMAND: ${{ matrix.command }}
-          FOOL_BACKEND_RUN_ID: ${{ inputs.foolcore_run_id }}
           # Node.js memory limit for vite bundling (prevents OOM during build)
           # Node.js 内存限制，防止 vite 打包时内存不足
           NODE_OPTIONS: '--max-old-space-size=8192'
@@ -502,7 +516,6 @@ jobs:
           exit 1
         env:
           NODE_OPTIONS: '--max-old-space-size=8192'
-          FOOL_BACKEND_RUN_ID: ${{ inputs.foolcore_run_id }}
           npm_config_arch: ${{ matrix.arch }}
           APP_ID: ${{ secrets.APP_ID }}
           appleId: ${{ secrets.APPLE_ID }}
@@ -540,7 +553,6 @@ jobs:
           command: ${{ matrix.command }}
         env:
           NODE_OPTIONS: '--max-old-space-size=8192'
-          FOOL_BACKEND_RUN_ID: ${{ inputs.foolcore_run_id }}
           npm_config_arch: ${{ matrix.arch }}
           npm_config_cache: ${{ runner.temp }}/.npm
           ELECTRON_CACHE: ${{ runner.temp }}/.cache/electron

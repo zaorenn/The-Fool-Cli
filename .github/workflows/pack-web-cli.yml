@@ -114,14 +114,26 @@ jobs:
         env:
           NODE_OPTIONS: '--max-old-space-size=8192'
 
+      # This job compiles the backend too — `pack-web-cli.js` runs
+      # `buildFoolcore.js` — so it wants the same cache the desktop build has.
+      - name: Cache cargo registry and backend build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            backend/core/target
+          key: foolcore-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('backend/core/Cargo.lock') }}
+          restore-keys: |
+            foolcore-${{ matrix.platform }}-${{ matrix.arch }}-
+
       - name: Pack web-cli tarball
         shell: bash
         run: node scripts/pack-web-cli.js
         env:
           PACK_PLATFORM: ${{ matrix.platform }}
           PACK_ARCH: ${{ matrix.arch }}
-          # Version is pinned in repo-root package.json (foolcoreVersion).
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload tarball artifact
         uses: actions/upload-artifact@v6
