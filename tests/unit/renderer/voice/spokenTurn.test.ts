@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type StreamMessage = Record<string, unknown>;
 
@@ -257,4 +257,160 @@ describe('a turn where the gate refuses everything', () => {
     expect(refusals).toHaveLength(1);
     expect(refusals[0]).toContain('bileti aldım');
   });
+});
+
+/**
+ * The third thing the gate refuses, and the only one whose evidence outlives
+ * the turn.
+ */
+describe('runSpokenTurn and a screen it has not seen', () => {
+  beforeEach(() => {
+    streamListeners.length = 0;
+    completedListeners.length = 0;
+    sendMessage.mockClear();
+    sendMessage.mockResolvedValue({ msg_id: 'm1', turn_id: 'turn-9', runtime: {} });
+  });
+
+  it('refuses a description of a screen nothing has looked at', async () => {
+    const spoken: string[] = [];
+    const refused: string[] = [];
+    const turn = runSpokenTurn({
+      conversationId: 'c1',
+      said: 'şu hata ne diyor',
+      onSentence: (s) => spoken.push(s),
+      onRefused: (c) => refused.push(c),
+      lookedAtScreen: () => false,
+    });
+    await settle();
+
+    emit({ type: 'content', data: 'Ekranında bir bağlantı hatası var.' });
+    emit({ type: 'finish' });
+    await turn;
+
+    expect(spoken).toEqual([]);
+    expect(refused[0]).toContain('app_look_at_screen');
+  });
+
+  /// The reason the evidence is a function and not a value. The model asks to
+  /// look, the look comes back mid-turn, and the sentence after it is the
+  /// correct answer to the question the gate itself forced.
+  it('speaks the description once the look has come back in the same turn', async () => {
+    const spoken: string[] = [];
+    let seen = false;
+    const turn = runSpokenTurn({
+      conversationId: 'c1',
+      said: 'şu hata ne diyor',
+      onSentence: (s) => spoken.push(s),
+      lookedAtScreen: () => seen,
+      onLookedAtScreen: () => (seen = true),
+    });
+    await settle();
+
+    emit({ type: 'tool_call', data: { name: 'app_look_at_screen' } });
+    emit({ type: 'content', data: 'Ekranında bir bağlantı hatası var.' });
+    emit({ type: 'finish' });
+    await turn;
+
+    expect(seen).toBe(true);
+    expect(spoken).toEqual(['Ekranında bir bağlantı hatası var.']);
+  });
+
+  it('does not take any other tool as having looked', async () => {
+    const spoken: string[] = [];
+    let seen = false;
+    const turn = runSpokenTurn({
+      conversationId: 'c1',
+      said: 'şu hata ne diyor',
+      onSentence: (s) => spoken.push(s),
+      lookedAtScreen: () => seen,
+      onLookedAtScreen: () => (seen = true),
+    });
+    await settle();
+
+    emit({ type: 'tool_call', data: { name: 'app_search' } });
+    emit({ type: 'content', data: 'Ekranında bir bağlantı hatası var.' });
+    emit({ type: 'finish' });
+    await turn;
+
+    expect(seen).toBe(false);
+    expect(spoken).toEqual([]);
+  });
+});
+
+/**
+ * Where a filler goes, and when it is worth saying at all.
+ *
+ * Both halves were reported from the app at once: the fillers were printed in
+ * the answer box as though they were the answer — "Bir saniye.Hmm, düşüneyim.Az
+ * kaldı." — and they seemed to delay the reply rather than cover the wait for
+ * it. One cause each, and the second is the one that matters, because a filler
+ * that makes the answer later is worse than no filler.
+ */
+describe('runSpokenTurn and filling a silence', () => {
+  beforeEach(() => {
+    streamListeners.length = 0;
+    completedListeners.length = 0;
+    sendMessage.mockClear();
+    sendMessage.mockResolvedValue({ msg_id: 'm1', turn_id: 'turn-9', runtime: {} });
+    vi.useFakeTimers();
+  });
+
+  // Restored explicitly: fake timers outlive the block that installed them, and
+  // a suite that leaks them fails somewhere else entirely.
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('speaks a filler without writing it into the answer', async () => {
+    const spoken: string[] = [];
+    const fillers: string[] = [];
+    const turn = runSpokenTurn({
+      conversationId: 'c1',
+      said: 'klasörü topla',
+      onSentence: (s) => spoken.push(s),
+      onFiller: (line) => fillers.push(line),
+      fillerLine: () => 'Bir saniye.',
+    });
+    await vi.advanceTimersByTimeAsync(0);
+
+    // A tool came back, so there is genuinely something to be waiting for.
+    emit({ type: 'tool_call', data: { name: 'app_ask_jester' } });
+    await vi.advanceTimersByTimeAsync(3_000);
+
+    expect(fillers).toContain('Bir saniye.');
+    // The whole point: nothing a person said, so nothing in the transcript.
+    expect(spoken).toEqual([]);
+
+    emit({ type: 'finish' });
+    await turn;
+  });
+
+  /// The queue is spoken in order, so a filler that wins the race by a moment
+  /// puts a whole synthesised clip in front of the first real sentence.
+  it('says nothing while the speaker still has the answer to get through', async () => {
+    const fillers: string[] = [];
+    const turn = runSpokenTurn({
+      conversationId: 'c1',
+      said: 'klasörü topla',
+      onSentence: () => undefined,
+      onFiller: (line) => fillers.push(line),
+      fillerLine: () => 'Bir saniye.',
+      speakerBusy: () => true,
+    });
+    await vi.advanceTimersByTimeAsync(0);
+
+    emit({ type: 'tool_call', data: { name: 'app_ask_jester' } });
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    expect(fillers).toEqual([]);
+
+    emit({ type: 'finish' });
+    await turn;
+  });
+
+  // There is deliberately no test for "a caller that passes `fillerLine` and no
+  // `onFiller`". Written, it asserts that nothing is spoken — and nothing is
+  // spoken if the filler timer is deleted outright, so it would pass against
+  // the absence of the whole feature. A test whose target can be removed
+  // without failing it is not protecting anything.
 });

@@ -13,13 +13,7 @@ import {
   type SpokenVoice,
 } from '@/common/realtime';
 import { synthesisProviderFor, type FoolVoiceSettings, type VoiceModel } from '@/common/types/foolVoice';
-import {
-  backsCompletedAction,
-  emptyRecallCorrection,
-  isEmptyRecall,
-  isUnbackedClaim,
-  unbackedClaimCorrection,
-} from '@/common/voice/actionClaims';
+import { backsCompletedAction, showedTheScreen } from '@/common/voice/actionClaims';
 import {
   deliberationFor,
   mayAskForNoDeliberation,
@@ -44,6 +38,7 @@ import {
 } from '@renderer/services/voice/session/voiceMemoryStore';
 import { PendingInstructions } from '@/common/voice/pendingInstructions';
 import { openSpokenSession } from '@renderer/services/voice/session/spokenSession';
+import { guardSpokenSentence } from '@renderer/services/voice/session/spokenOutput';
 import { runSpokenTurn } from '@renderer/services/voice/session/spokenTurn';
 import { findWakePhrase } from '@renderer/services/voice/wakePhrase';
 import { createIncrementalSentenceDetector } from '@renderer/services/voice/narration/incrementalSentences';
@@ -1306,14 +1301,25 @@ export class LocalVoicePipeline {
    * nothing to recall.
    */
   private refuse(sentence: string, toolsRan: number): string | null {
-    if (isUnbackedClaim(sentence, toolsRan)) return unbackedClaimCorrection(sentence);
-
     const memory = peekVoiceMemory();
     const remembered = memory.user.trim().length + memory.agent.trim().length + (this.options.carried?.length ?? 0);
-    if (isEmptyRecall(sentence, remembered)) return emptyRecallCorrection(sentence);
-
-    return null;
+    // Through the shared gate rather than re-implemented here. This function had
+    // grown its own copy of two of the three checks, which is how the third one
+    // would have been added to `spokenOutput` and quietly missed on the local
+    // loop — the surface that talks to the user most.
+    const verdict = guardSpokenSentence(sentence, { toolsRan, remembered, lookedAtScreen: this.sawScreen });
+    return verdict.speak === false ? verdict.correction : null;
   }
+
+  /**
+   * Whether a screen has genuinely been seen since this conversation started.
+   *
+   * Conversation-wide on purpose. Scoped to a turn, the follow-up question —
+   * "what did that error say again?" — would be refused one turn after a look
+   * that really happened, and the answer thrown away is a correct one drawn from
+   * a screenshot that is still in the history.
+   */
+  private sawScreen = false;
 
   private async speakReply(
     readiness: Extract<LocalReadiness, { ok: true }>,
@@ -1569,6 +1575,11 @@ export class LocalVoicePipeline {
       }
 
       if (backsCompletedAction(result)) finished += 1;
+      // The one tool whose result is weighed rather than counted. Everywhere
+      // else "a tool came back" is evidence enough; a look that came back with
+      // an error is the case where the call exists and the screen does not, and
+      // it is the case the model was watched exploiting.
+      if (showedTheScreen(call.function.name, result)) this.sawScreen = true;
       this.history.push({
         role: 'tool',
         tool_call_id: call.id,
@@ -1635,6 +1646,23 @@ export class LocalVoicePipeline {
         // The line is looked up here because this is where the translation
         // lives; when to say one is `thinkingAloud`'s decision.
         fillerLine: (key, values) => i18next.t(key as never, { defaultValue: '', ...values }) as string,
+        // Spoken, and not written down. A filler went through `onSentence`
+        // above, and `onSentence` also emits the transcript — which is how
+        // "Bir saniye.Hmm, düşüneyim.Az kaldı." came to be displayed as the
+        // answer to a question. It is the sound of somebody thinking, not a
+        // thing anybody said.
+        onFiller: (line) => {
+          this.markProgress(controller);
+          this.voice ??= this.resolveVoice(this.ready);
+          this.queueForSpeech(line, controller);
+        },
+        // And never in front of the answer. The queue is spoken in order, so a
+        // filler that wins the race by a moment costs the reply a whole clip.
+        speakerBusy: () => this.pending.length > 0 || this.renders.length > 0,
+        // What the gate weighs for a claim about the screen, read per sentence:
+        // a look that comes back mid-turn must license the sentence after it.
+        lookedAtScreen: () => this.sawScreen,
+        onLookedAtScreen: () => (this.sawScreen = true),
         // What the turn is doing, in the agent's own words, so a filler can name
         // it instead of saying "still working on it" about nothing.
         currentStep: () => this.options.currentStep?.() ?? null,

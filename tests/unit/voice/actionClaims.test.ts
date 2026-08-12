@@ -8,12 +8,15 @@ import { describe, expect, it } from 'vitest';
 import {
   asksToBeReminded,
   backsCompletedAction,
+  claimsAboutScreen,
   claimsCompletedAction,
   claimsRecall,
   emptyRecallCorrection,
   isEmptyRecall,
   isUnbackedClaim,
+  isUnseenScreenClaim,
   unbackedClaimCorrection,
+  unseenScreenCorrection,
 } from '@/common/voice/actionClaims';
 
 describe('claimsCompletedAction', () => {
@@ -303,5 +306,99 @@ describe('what a tool result is evidence of', () => {
     expect(backsCompletedAction('done')).toBe(true);
     expect(backsCompletedAction(null)).toBe(true);
     expect(backsCompletedAction(undefined)).toBe(true);
+  });
+});
+
+/**
+ * The lie a persona rule could not stop.
+ *
+ * "Never describe a screen you have not looked at" has been in the persona from
+ * the beginning and cut the frequency to roughly one turn in six. The remaining
+ * one is the one that matters, because an invented screen is *confirmed* by the
+ * user looking at their own: they find something, and something is usually close
+ * enough to whatever was guessed.
+ */
+describe('claimsAboutScreen', () => {
+  it('catches a description of a screen', () => {
+    for (const said of [
+      'Ekranında bir bağlantı hatası var.',
+      'Ekranda VS Code açık.',
+      'Şu an ekranında bir uyarı mesajı görünüyor.',
+      'Hata mesajı portun kullanımda olduğunu söylüyor.',
+      'Your screen shows a connection error.',
+      'I can see a dialog asking for permission.',
+      'There is an error in the terminal.',
+      'The page says the file was not found.',
+    ]) {
+      expect(claimsAboutScreen(said), said).toBe(true);
+    }
+  });
+
+  /// Hedging is the same mistake said less clearly, and it is the form the model
+  /// reaches for once it has been told off once.
+  it('catches the hedged version, which is what it retreats to', () => {
+    expect(claimsAboutScreen('Ekranda bir hata var gibi görünüyor.')).toBe(true);
+    expect(claimsAboutScreen('It looks like there is an error dialog open.')).toBe(true);
+  });
+
+  /// The sentence this whole gate is trying to produce more of. Refusing it
+  /// would leave the assistant with no honest answer at all.
+  it('leaves saying plainly that it cannot see', () => {
+    for (const said of [
+      'Ekranını göremiyorum.',
+      'Ekranına bakmadım, o yüzden ne yazdığını bilmiyorum.',
+      "I can't see your screen.",
+      'I have not looked at the screen yet.',
+    ]) {
+      expect(claimsAboutScreen(said), said).toBe(false);
+    }
+  });
+
+  /// Announce, then call. The same exemption the action gate gives, for the same
+  /// reason: it is the behaviour the prompt is asking for.
+  it('leaves saying it is about to look', () => {
+    for (const said of [
+      'Ekranına bakıyorum.',
+      'Bir bakayım, ekran görüntüsü alıyorum.',
+      'Let me look at your screen.',
+      "I'm checking the screen now.",
+    ]) {
+      expect(claimsAboutScreen(said), said).toBe(false);
+    }
+  });
+
+  it('leaves a question alone', () => {
+    expect(claimsAboutScreen('Ekranında bir hata mı var?')).toBe(false);
+    expect(claimsAboutScreen('Is there an error on your screen?')).toBe(false);
+  });
+
+  it('does not fire on a sentence that is about nothing visible', () => {
+    for (const said of [
+      'Bugün hava güzel görünüyor.',
+      'Tamam, şarkıyı açıyorum.',
+      'I have written that down.',
+      'Merhaba, nasılsın?',
+    ]) {
+      expect(claimsAboutScreen(said), said).toBe(false);
+    }
+  });
+});
+
+describe('isUnseenScreenClaim', () => {
+  it('refuses a description when nothing was looked at', () => {
+    expect(isUnseenScreenClaim('Ekranında bir hata var.', false)).toBe(true);
+  });
+
+  /// Conversation-wide rather than per turn, and deliberately so: "what did that
+  /// error say again?" one turn after a real look is a correct answer drawn from
+  /// a screenshot that is genuinely in the history.
+  it('allows it once a look has actually happened', () => {
+    expect(isUnseenScreenClaim('Ekranında bir hata var.', true)).toBe(false);
+  });
+
+  it('names the tool in the correction, not just the mistake', () => {
+    const correction = unseenScreenCorrection('Ekranda bir hata var.');
+    expect(correction).toContain('Ekranda bir hata var.');
+    expect(correction).toContain('app_look_at_screen');
   });
 });

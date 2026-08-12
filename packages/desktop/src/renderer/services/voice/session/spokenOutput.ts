@@ -8,7 +8,9 @@ import {
   emptyRecallCorrection,
   isEmptyRecall,
   isUnbackedClaim,
+  isUnseenScreenClaim,
   unbackedClaimCorrection,
+  unseenScreenCorrection,
 } from '@/common/voice/actionClaims';
 
 /**
@@ -39,6 +41,19 @@ export type SpokenTurnEvidence = {
   toolsRan: number;
   /** How much is in the memory, so a claim to recall can be checked. */
   remembered: number;
+  /**
+   * Whether a screen has genuinely been seen in this conversation.
+   *
+   * Required rather than optional, and that is the point of it. Three surfaces
+   * ask this gate the same question, and an optional field is one a fourth can
+   * forget to answer — which is how the guarantee this application is sold on
+   * came to hold for one of the four ways a person can talk to it. A missing
+   * answer has to be a compile error.
+   *
+   * "Seen" means a screen tool came back *with a screen in it*; a capture that
+   * failed is not a look. See `showedTheScreen`.
+   */
+  lookedAtScreen: boolean;
 };
 
 export type SpokenSentenceVerdict =
@@ -67,6 +82,13 @@ export const guardSpokenSentence = (sentence: string, evidence: SpokenTurnEviden
 
   if (isEmptyRecall(said, evidence.remembered)) {
     return { speak: false, correction: emptyRecallCorrection(said) };
+  }
+
+  // Last of the three, and the one a tool count cannot stand in for. The other
+  // two ask whether anything ran; this asks whether the one thing that could
+  // have made the sentence true ran *and came back with something*.
+  if (isUnseenScreenClaim(said, evidence.lookedAtScreen)) {
+    return { speak: false, correction: unseenScreenCorrection(said) };
   }
 
   return SPEAK;

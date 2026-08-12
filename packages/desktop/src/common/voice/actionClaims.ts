@@ -341,6 +341,201 @@ export const isUnbackedClaim = (reply: string, toolsRan: number): boolean =>
   toolsRan === 0 && claimsCompletedAction(reply);
 
 /**
+ * Describing a screen nobody looked at.
+ *
+ * The third lie, and the one still being told. The persona has carried the rule
+ * since the beginning — "you cannot see the screen; never describe one you have
+ * not looked at" — and a persona rule cut it to roughly one turn in six rather
+ * than to none, which is what a rule can do and no more. `claimsCompletedAction`
+ * catches "I did it"; nothing caught "there is a connection error on your
+ * screen", which is worse in the way that matters: an invented action can be
+ * checked by looking, and an invented screen is *confirmed* by looking, because
+ * the user looks at their own screen and finds something, and something is
+ * usually close enough to whatever was guessed.
+ *
+ * The shape of the check follows `screenIntent.ts`, which asks the same question
+ * about the other side of the conversation, and for the same reason: a screen
+ * noun on its own is not a claim ("shall I look at your screen?") and an
+ * assertion on its own is not about a screen. It is the two together.
+ */
+
+/** Nouns that exist only because somebody is looking at a display. */
+const SCREEN_SUBJECTS: readonly RegExp[] = [
+  // ── Turkish ──────────────────────────────────────────────────────────────
+  edged('ekran\\w*'),
+  edged('pencere\\w*'),
+  edged('sekme\\w*'),
+  edged('(hata|uyari|bildirim|mesaj)\\w*'),
+  edged('(terminal|konsol|tarayici)\\w*'),
+  edged('(sayfa|sayfada|sayfanin|sayfada?ki)'),
+  edged('(buton|dugme|menu|pencerede)\\w*'),
+  // ── English ──────────────────────────────────────────────────────────────
+  edged('screens?'),
+  edged('windows?'),
+  edged('tabs?'),
+  edged('(error|warning|dialog|notification|message)s?'),
+  edged('(terminal|console|browser)s?'),
+  edged('pages?'),
+  edged('(button|menu)s?'),
+];
+
+/**
+ * Asserting that something is visible, or that it says a particular thing.
+ *
+ * Present tense and first-person sight, because that is the grammar of a
+ * description: "it says", "there is", "I can see", "yazıyor", "görünüyor". A
+ * past-tense report of a screen it once looked at is a different sentence and is
+ * governed by whether the look ever happened, which is the caller's half.
+ */
+const ASSERTS_VISIBLE: readonly RegExp[] = [
+  // ── Turkish ──────────────────────────────────────────────────────────────
+  edged('(yaziyor|yazan|yazmis)'),
+  edged('(goruyorum|goruyor|gorunuyor|gorunmekte|gozukuyor)'),
+  edged('(diyor|demis|belirtiyor|soyluyor)'),
+  edged('(gosteriyor|gosterilen|gosterilmekte)'),
+  edged('(acik|aciktir|acilmis)'),
+  edged('var(dir)?'),
+  edged('(yok|yoktur)'),
+  edged('(bir|su|bu) (hata|uyari|mesaj)\\w*'),
+  // ── English ──────────────────────────────────────────────────────────────
+  edged('(i|you) can see'),
+  edged('i (see|can make out)'),
+  // Bare, rather than after a pointing word: "the page says …" is the sentence,
+  // and requiring "it says" caught only half of the ways it is written.
+  edged('(says|say|said)'),
+  edged('(shows|showing|displays|displaying|reads)'),
+  edged('there (is|are|seems? to be)'),
+  edged("(it'?s|it is|that'?s) (open|showing|displaying)"),
+  edged('(looks like|appears to be|seems to be)'),
+];
+
+/**
+ * Saying plainly that it cannot see, which is the sentence this wants more of.
+ *
+ * Checked before anything else and wins outright. "I cannot see your screen" is
+ * built from a screen noun and an assertion and is the exact opposite of a
+ * claim; refusing it would train the assistant out of the only honest answer it
+ * has.
+ */
+const CANNOT_SEE: readonly RegExp[] = [
+  edged('(goremiyorum|goremem|goremedim|gormuyorum|gormedim)'),
+  edged('(bakmadim|bakamadim|bakamiyorum|bakamam)'),
+  edged('(ekrani|ekranini|ekraninizi)\\s+\\w*(goremiyorum|goremem|gormuyorum)'),
+  edged('(bilmiyorum|emin degilim)'),
+  edged("(i )?(can'?t|cannot|could not|couldn'?t) see"),
+  edged("(i )?(haven'?t|have not|did not|didn'?t) (looked|seen)"),
+  edged("(i )?don'?t know what"),
+  edged("(i am|i'?m) not able to see"),
+  edged('no access to (your |the )?screen'),
+];
+
+/**
+ * About to look, rather than reporting what was seen.
+ *
+ * The same exemption `UNDER_WAY` gives an action, for the same reason: "let me
+ * look at your screen" is the behaviour the prompt is asking for, and a gate
+ * that refused it would leave the assistant with nothing it is allowed to say
+ * between the question and the screenshot.
+ */
+const ABOUT_TO_LOOK: readonly RegExp[] = [
+  edged('(bakiyorum|bakayim|bakacagim|bakalim|inceliyorum)'),
+  edged('(goruntusunu|ekran goruntusu) (aliyorum|alayim|alacagim)'),
+  edged("i'?m (looking|taking a look|checking)"),
+  edged('let me (look|see|check|take a look)'),
+  edged("i'?ll (look|check|take a look)"),
+];
+
+/**
+ * Whether this reply describes what is on a screen.
+ *
+ * Read together with its caller, exactly like {@link claimsCompletedAction}:
+ * this is consulted only when no screen has been looked at, so the question is
+ * never "is this description accurate" — it is "could this sentence be about
+ * anything real, given that nothing has been seen". Nothing has, so it cannot.
+ */
+export const claimsAboutScreen = (reply: string): boolean => {
+  const text = reply.trim();
+  if (text.length === 0) return false;
+  // A question is a question in every one of these gates. "Is there an error on
+  // your screen?" is the assistant doing the right thing.
+  if (ASKING.test(text)) return false;
+
+  const folded = fold(text);
+  if (CANNOT_SEE.some((pattern) => pattern.test(folded))) return false;
+  if (ABOUT_TO_LOOK.some((pattern) => pattern.test(folded))) return false;
+
+  return (
+    SCREEN_SUBJECTS.some((pattern) => pattern.test(folded)) && ASSERTS_VISIBLE.some((pattern) => pattern.test(folded))
+  );
+};
+
+/**
+ * Whether this sentence describes a screen that was never looked at.
+ *
+ * `lookedAtScreen` is conversation-wide rather than per turn, and that is a
+ * deliberate weakening. Scoped to the turn, "what did the error say again?" one
+ * turn after a genuine look would be refused — a correct answer, drawn from a
+ * screenshot that really is in the history, thrown away. A stale description is
+ * a smaller wrong than an assistant that cannot refer back to what it saw ten
+ * seconds ago.
+ */
+export const isUnseenScreenClaim = (reply: string, lookedAtScreen: boolean): boolean =>
+  !lookedAtScreen && claimsAboutScreen(reply);
+
+/**
+ * What to tell the model when it has described a screen it never saw.
+ *
+ * Names the tool, because "you did not look" without "here is how to look" is a
+ * correction the model answers by apologising and then describing the screen
+ * again in softer words.
+ */
+/**
+ * The only tools through which this assistant ever sees a screen.
+ *
+ * A set rather than a comparison, because the answer to "has it looked" must not
+ * be spread across three files that each remember a different spelling — and
+ * because a second way of looking is a thing somebody will add, and this is
+ * where they will find the list.
+ */
+export const SCREEN_TOOLS: ReadonlySet<string> = new Set(['app_look_at_screen']);
+
+/**
+ * Whether a screen tool's result actually contains a screen.
+ *
+ * The distinction the eval found and nothing in the product could see. Asked to
+ * look with the capture permission missing, the tool ran, failed, and came back
+ * — and *a tool ran* is the whole of what the older gate checks, so the model
+ * was free to describe the screen with a call behind it and nothing in the call.
+ * Pressed a second time, it did.
+ *
+ * So the evidence is the result, never the invocation. `ok: false`, an `error`,
+ * or nothing where the screen should be all mean the same thing: it has not seen
+ * anything, and it is not allowed to say what is there.
+ */
+export const showedTheScreen = (name: string, result: unknown): boolean => {
+  if (!SCREEN_TOOLS.has(name)) return false;
+  if (result === null || result === undefined) return false;
+  if (typeof result === 'string') return result.trim().length > 0;
+  if (typeof result !== 'object') return false;
+
+  const record = result as { ok?: unknown; error?: unknown; screen?: unknown };
+  if (record.ok === false) return false;
+  if (typeof record.error === 'string' && record.error.trim().length > 0) return false;
+  // A description that came back empty is a capture that technically succeeded
+  // and saw nothing, which is the same as not having looked.
+  if (typeof record.screen === 'string') return record.screen.trim().length > 0;
+  return true;
+};
+
+export const unseenScreenCorrection = (reply: string): string =>
+  [
+    `You just said: "${reply.trim()}"`,
+    'That describes what is on the screen, and you have not looked at it this conversation, so you are describing something you have never seen.',
+    'Do not soften it into "it seems to be" or "it might say" — a guess about a screen is the same mistake said less clearly.',
+    'Call `app_look_at_screen` now and answer only from what comes back.',
+  ].join(' ');
+
+/**
  * Whether a tool result is evidence that something was *finished*.
  *
  * Not every tool that comes back has done anything yet. A task handed to the

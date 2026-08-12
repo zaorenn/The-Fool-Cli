@@ -37,6 +37,7 @@ import {
 } from '@renderer/services/voice/session/voiceMemoryStore';
 import { peekVoiceSettings, subscribeVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import { guardSpokenSentence } from '@renderer/services/voice/session/spokenOutput';
+import { showedTheScreen } from '@/common/voice/actionClaims';
 import type { ConversationFile } from '@/common/voice/conversationFiles';
 import { LocalVoicePipeline } from '../localPipeline';
 import { PcmAudioOutput, PcmMicrophone } from '../pcmAudio';
@@ -364,7 +365,13 @@ class ConversationRuntime {
   private refuses(text: string): boolean {
     const memory = peekVoiceMemory();
     const remembered = memory.user.trim().length + memory.agent.trim().length;
-    return guardSpokenSentence(text, { toolsRan: this.toolsRanThisTurn, remembered }).speak === false;
+    return (
+      guardSpokenSentence(text, {
+        toolsRan: this.toolsRanThisTurn,
+        remembered,
+        lookedAtScreen: this.sawScreen,
+      }).speak === false
+    );
   }
 
   /**
@@ -477,8 +484,23 @@ class ConversationRuntime {
       detail: this.t('settings.voice.conversationActionRunning'),
       state: 'running',
     });
-    return runVoiceTool(this.toolHost, invocation);
+    const result = await runVoiceTool(this.toolHost, invocation);
+    // Weighed, not counted. A look that came back with an error is a call with
+    // no screen in it, and the gate has to be able to tell those apart — that is
+    // the whole difference between "a tool ran" and "it has seen something".
+    if (showedTheScreen(invocation.name, result)) this.sawScreen = true;
+    return result;
   };
+
+  /**
+   * Whether a screen has genuinely been seen since this conversation started.
+   *
+   * Unlike {@link toolsRanThisTurn} this is *not* reset per turn, and the
+   * asymmetry is deliberate: a tool from five minutes ago must not vouch for a
+   * claim made now, but a screenshot from five minutes ago is still in the
+   * history and the model may still refer to what was in it.
+   */
+  private sawScreen = false;
 
   // ------------------------------------------------------------------- events
 
