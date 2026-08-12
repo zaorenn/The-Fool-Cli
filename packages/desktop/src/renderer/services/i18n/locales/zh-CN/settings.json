@@ -1703,7 +1703,15 @@
     "personaLibraryEmpty": "还没有保存过。在上面写下指令，起个名字，然后保存。",
     "personaLibraryNamePlaceholder": "起个名字",
     "personaLibrarySave": "保存",
-    "personaLibraryFull": "已保存 {{count}} 个，这是上限。删除一个才能再保存。"
+    "personaLibraryFull": "已保存 {{count}} 个，这是上限。删除一个才能再保存。",
+    "conversationCuriosity": {
+      "name": "顺便问一下——我该怎么称呼你？",
+      "work": "想起来了：你是做什么工作的？",
+      "hours": "有件事我还不知道：你一般什么时候工作？",
+      "project": "你最近在做什么项目？",
+      "register": "你希望我回答简短一些，还是讲清楚一些？",
+      "never-aloud": "有什么是你不希望我念出来的吗？"
+    }
   },
   "themeCustomizer": {
     "title": "自定义主题",

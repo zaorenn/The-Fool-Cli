@@ -1702,7 +1702,15 @@
     "personaLibraryEmpty": "Rien d'enregistré pour l'instant. Écris des instructions au-dessus, donne-leur un nom et garde-les.",
     "personaLibraryNamePlaceholder": "Donne un nom",
     "personaLibrarySave": "Garder",
-    "personaLibraryFull": "Tu en as {{count}} enregistrés, c'est le maximum. Supprimes-en un pour en garder un autre."
+    "personaLibraryFull": "Tu en as {{count}} enregistrés, c'est le maximum. Supprimes-en un pour en garder un autre.",
+    "conversationCuriosity": {
+      "name": "Au fait — comment dois-je vous appeler ?",
+      "work": "Pendant que j’y pense : que faites-vous comme travail ?",
+      "hours": "Une chose que j’ignore : quand travaillez-vous d’habitude ?",
+      "project": "Sur quoi travaillez-vous en ce moment ?",
+      "register": "Vous préférez des réponses courtes ou des explications complètes ?",
+      "never-aloud": "Y a-t-il quelque chose que je ne devrais jamais lire à voix haute ?"
+    }
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",

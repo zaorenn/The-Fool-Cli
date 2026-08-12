@@ -102,6 +102,18 @@ export type ConfigKeyMap = {
    */
   'voice.memoryRefusals': string[] | undefined;
   /**
+   * Subjects the assistant has already had its one chance to ask about.
+   *
+   * The curiosity layer asks at most one question per conversation, and never
+   * the same subject twice — not "not twice in a session", never again. A
+   * subject goes on this list the moment it is asked, not when it is answered,
+   * because the two failures are not symmetric: forgetting something the user
+   * told you is repairable by asking once more, and asking a question somebody
+   * has already declined to answer is the thing that gets an assistant switched
+   * off. Repaired on read by `sanitizeRefusedSubjects`.
+   */
+  'voice.curiosityRefusals': string[] | undefined;
+  /**
    * Which orb the pet window draws while a conversation is running.
    *
    * Here rather than beside the skins themselves because the main process reads

@@ -1704,7 +1704,15 @@
     "personaLibraryEmpty": "還沒有保存過。在上面寫下指示，取個名字，然後保存。",
     "personaLibraryNamePlaceholder": "取個名字",
     "personaLibrarySave": "保存",
-    "personaLibraryFull": "已保存 {{count}} 個，這是上限。刪除一個才能再保存。"
+    "personaLibraryFull": "已保存 {{count}} 個，這是上限。刪除一個才能再保存。",
+    "conversationCuriosity": {
+      "name": "順便問一下——我該怎麼稱呼你？",
+      "work": "想起來了：你是做什麼工作的？",
+      "hours": "有件事我還不知道：你一般什麼時候工作？",
+      "project": "你最近在做什麼專案？",
+      "register": "你希望我回答簡短一些，還是講清楚一些？",
+      "never-aloud": "有什麼是你不希望我念出來的嗎？"
+    }
   },
   "themeCustomizer": {
     "title": "自訂主題",

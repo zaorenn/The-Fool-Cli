@@ -1702,7 +1702,15 @@
     "personaLibraryEmpty": "Nothing saved yet. Write instructions above, name them, and keep them.",
     "personaLibraryNamePlaceholder": "Name it",
     "personaLibrarySave": "Keep",
-    "personaLibraryFull": "You have {{count}} saved, which is the most this keeps. Remove one to keep another."
+    "personaLibraryFull": "You have {{count}} saved, which is the most this keeps. Remove one to keep another.",
+    "conversationCuriosity": {
+      "name": "By the way — what should I call you?",
+      "work": "While I think of it: what do you work on?",
+      "hours": "One thing I do not know: when do you usually work?",
+      "project": "What are you building at the moment?",
+      "register": "Would you rather I kept my answers short, or explained things properly?",
+      "never-aloud": "Is there anything you would rather I never read out loud?"
+    }
   },
   "themeCustomizer": {
     "title": "Customize theme",

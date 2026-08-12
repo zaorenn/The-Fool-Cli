@@ -39,7 +39,14 @@ import { peekVoiceSettings, subscribeVoiceSettings } from '@renderer/services/vo
 import { guardSpokenSentence } from '@renderer/services/voice/session/spokenOutput';
 import { showedTheScreen } from '@/common/voice/actionClaims';
 import { continuityFor } from '@/common/voice/sessionSummary';
-import { asksForQuiet, asksToResume } from '@/common/voice/thinkingAloud';
+import {
+  CURIOSITY_REFUSALS_CONFIG_KEY,
+  mayAskAbout,
+  openSubjects,
+  sanitizeRefusedSubjects,
+} from '@/common/voice/memoryProposal';
+import { asksForQuiet, asksToResume, maySpeakUnprompted } from '@/common/voice/thinkingAloud';
+import { configService } from '@/common/config/configService';
 import type { ConversationFile } from '@/common/voice/conversationFiles';
 import { LocalVoicePipeline } from '../localPipeline';
 import { PcmAudioOutput, PcmMicrophone } from '../pcmAudio';
@@ -139,6 +146,17 @@ const MAX_ACTIVITIES = 8;
  * the summary. Generous enough that nothing realistic reaches it.
  */
 const MAX_REMEMBERED_TURNS = 200;
+
+/**
+ * How long the room stays quiet before the assistant may ask something.
+ *
+ * Comfortably past `QUIET_BEFORE_ASIDE_MS`, which is the floor the silence
+ * contract enforces anyway. A question is the least urgent thing this assistant
+ * ever says, so it waits longer than anything else does — long enough that the
+ * user has plainly finished, short enough to still belong to the conversation
+ * rather than arriving out of nowhere.
+ */
+const CURIOSITY_AFTER_MS = 8_000;
 
 export type ConversationSnapshot = {
   phase: ConversationPhase;
@@ -293,7 +311,31 @@ class ConversationRuntime {
     // starts on entering it and is thrown away on leaving.
     if (next === 'listening') this.quietSince ??= Date.now();
     else this.quietSince = null;
+    this.scheduleCuriosity(next);
     this.emit({ phase: next });
+  }
+
+  /**
+   * Waits out the pause, then considers asking one thing.
+   *
+   * A timer rather than a check at the moment the turn ends, because the moment
+   * a turn ends is the moment the user is most likely to say the next thing —
+   * and a question landing on top of that is the interruption this whole layer
+   * exists to avoid. The timer is armed on entering `listening` and thrown away
+   * on leaving it, so speaking again cancels the question rather than queueing
+   * it, and everything the contract checks is re-checked when it fires.
+   */
+  private scheduleCuriosity(next: ConversationPhase): void {
+    if (this.curiosityTimer !== null) {
+      window.clearTimeout(this.curiosityTimer);
+      this.curiosityTimer = null;
+    }
+    if (next !== 'listening' || this.standby) return;
+
+    this.curiosityTimer = window.setTimeout(() => {
+      this.curiosityTimer = null;
+      this.askSomethingAboutYou();
+    }, CURIOSITY_AFTER_MS);
   }
 
   /** Milliseconds of quiet, or zero while anything is being said or heard. */
@@ -934,6 +976,85 @@ class ConversationRuntime {
     this.emit({ assistantTranscript: line.trim() });
   }
 
+  /** Subjects asked about in this conversation, so the per-session limit means something. */
+  private askedThisSession = 0;
+
+  /** The pending "may I ask something" check, cancelled whenever anyone speaks. */
+  private curiosityTimer: number | null = null;
+
+  /** One subject, in the form the silence contract dedups on. */
+  private static askedKey = (subjectId: string): string => `curiosity:${subjectId}`;
+
+  /**
+   * Asking one thing about the person, at most once, and never twice ever.
+   *
+   * The gap this closes is not a missing feature so much as a missing wire:
+   * `openSubjects` and `mayAskAbout` were written and tested and nothing in the
+   * application called either, so an assistant designed to get to know somebody
+   * never asked them anything.
+   *
+   * Three rules decide it and all three are here rather than in the prompt. A
+   * model asked to "get to know the user" invents the premise — *you mentioned
+   * you work in finance* — and none of the honesty gates catch an embellished
+   * question, because the memory it is embellishing is not empty. So the
+   * question is a written sentence chosen by subject, the same way
+   * `pickUpWhereWeLeftOff` assembles its opener word for word.
+   *
+   * Both doors have to open: `maySpeakUnprompted` decides whether speaking
+   * unasked is acceptable at this moment at all, `mayAskAbout` decides whether
+   * *a question* is, which is stricter. And the subject is written down as
+   * asked, not as answered — a question ignored once was an answer.
+   */
+  private askSomethingAboutYou(): void {
+    if (this.askedThisSession >= 1) return;
+
+    const refused = new Set(sanitizeRefusedSubjects(configService.get(CURIOSITY_REFUSALS_CONFIG_KEY)));
+    const subject = openSubjects(peekVoiceMemory(), [...refused])[0];
+    if (!subject) return;
+
+    const asking = mayAskAbout({
+      subject: subject.id,
+      askedThisSession: this.askedThisSession,
+      // A question during a task is not curiosity, it is an interruption of the
+      // thing that was actually asked for.
+      midTask: this.phase !== 'listening' || this.standby,
+      refusedSubjects: refused,
+    });
+    if (!asking) return;
+
+    const allowed = maySpeakUnprompted({
+      // Deliberately not one of the owed reasons: nobody is waiting for this,
+      // so it spends from the hourly budget like any other remark that was
+      // nobody's idea but the assistant's.
+      reason: 'curiosity',
+      about: ConversationRuntime.askedKey(subject.id),
+      enabled: true,
+      hushed: this.hushed,
+      phase: this.phase,
+      standby: this.standby,
+      holdingToTalk: false,
+      userIsTyping: false,
+      quietForMs: this.quietForMs,
+      sinceVolunteeredMs: this.askedThisSession > 0 ? 0 : Number.POSITIVE_INFINITY,
+      volunteeredInLastHour: this.askedThisSession,
+      // The subjects already spent, in the same form as `about`, so the
+      // contract's own "never twice" rule covers this too rather than relying
+      // on the check above to be the only one.
+      alreadySaid: new Set([...refused].map(ConversationRuntime.askedKey)),
+    });
+    if (!allowed.speak) return;
+
+    const line = this.t(`settings.voice.conversationCuriosity.${subject.id}`);
+    if (typeof line !== 'string' || line.trim().length === 0) return;
+
+    this.askedThisSession += 1;
+    // Recorded before it is spoken. If speaking throws, the subject has still
+    // had its turn — a question asked into a failure is not one to repeat.
+    void configService.set(CURIOSITY_REFUSALS_CONFIG_KEY, [...refused, subject.id]).catch(() => {});
+    void this.local?.speakAside(line.trim());
+    this.emit({ assistantTranscript: line.trim() });
+  }
+
   /** Keeps one finished turn, bounded so a long conversation is not a leak. */
   private record(role: SpokenTurn['role'], text: string): void {
     const line = text.trim();
@@ -1000,6 +1121,13 @@ class ConversationRuntime {
     // timer nothing will ever clear.
     this.delegated?.close();
     this.delegated = null;
+    if (this.curiosityTimer !== null) {
+      window.clearTimeout(this.curiosityTimer);
+      this.curiosityTimer = null;
+    }
+    // A new conversation gets its one question back; the store is what stops
+    // the same subject being asked in it.
+    this.askedThisSession = 0;
     this.microphone?.stop();
     this.microphone = null;
     this.client?.disconnect();

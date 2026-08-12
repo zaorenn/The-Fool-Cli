@@ -1702,7 +1702,15 @@
     "personaLibraryEmpty": "Henüz kayıtlı bir şey yok. Yukarıya talimatları yaz, bir ad ver ve sakla.",
     "personaLibraryNamePlaceholder": "Ad ver",
     "personaLibrarySave": "Sakla",
-    "personaLibraryFull": "{{count}} tane kayıtlı, en fazla bu kadar tutuluyor. Yenisi için birini sil."
+    "personaLibraryFull": "{{count}} tane kayıtlı, en fazla bu kadar tutuluyor. Yenisi için birini sil.",
+    "conversationCuriosity": {
+      "name": "Bu arada — sana nasıl hitap edeyim?",
+      "work": "Aklıma gelmişken: ne iş yapıyorsun?",
+      "hours": "Bilmediğim bir şey: genelde hangi saatlerde çalışıyorsun?",
+      "project": "Şu sıralar ne üzerinde çalışıyorsun?",
+      "register": "Cevaplarımı kısa mı tutayım, yoksa düzgünce anlatayım mı?",
+      "never-aloud": "Sesli olarak asla okumamı istemediğin bir şey var mı?"
+    }
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",

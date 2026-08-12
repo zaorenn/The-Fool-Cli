@@ -1702,7 +1702,15 @@
     "personaLibraryEmpty": "Noch nichts gespeichert. Schreib oben Anweisungen, gib ihnen einen Namen und behalte sie.",
     "personaLibraryNamePlaceholder": "Benennen",
     "personaLibrarySave": "Behalten",
-    "personaLibraryFull": "Du hast {{count}} gespeichert, mehr geht nicht. Entferne einen, um einen anderen zu behalten."
+    "personaLibraryFull": "Du hast {{count}} gespeichert, mehr geht nicht. Entferne einen, um einen anderen zu behalten.",
+    "conversationCuriosity": {
+      "name": "Übrigens — wie soll ich Sie nennen?",
+      "work": "Wo ich gerade daran denke: womit arbeiten Sie?",
+      "hours": "Eines weiß ich noch nicht: wann arbeiten Sie normalerweise?",
+      "project": "Woran arbeiten Sie gerade?",
+      "register": "Soll ich mich kurz fassen oder lieber richtig erklären?",
+      "never-aloud": "Gibt es etwas, das ich nie vorlesen soll?"
+    }
   },
   "themeCustomizer": {
     "title": "Design anpassen",

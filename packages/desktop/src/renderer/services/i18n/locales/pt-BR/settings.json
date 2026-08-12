@@ -1705,7 +1705,15 @@
     "personaLibraryEmpty": "Nada salvo ainda. Escreva as instruções acima, dê um nome e guarde.",
     "personaLibraryNamePlaceholder": "Dê um nome",
     "personaLibrarySave": "Guardar",
-    "personaLibraryFull": "Você tem {{count}} salvos, que é o máximo. Remova um para guardar outro."
+    "personaLibraryFull": "Você tem {{count}} salvos, que é o máximo. Remova um para guardar outro.",
+    "conversationCuriosity": {
+      "name": "A propósito — como devo chamar você?",
+      "work": "Já que lembrei: com o que você trabalha?",
+      "hours": "Uma coisa que não sei: quando você costuma trabalhar?",
+      "project": "No que você está trabalhando agora?",
+      "register": "Prefere que eu responda de forma curta ou que explique direito?",
+      "never-aloud": "Tem algo que você prefere que eu nunca leia em voz alta?"
+    }
   },
   "themeCustomizer": {
     "title": "Personalizar tema",

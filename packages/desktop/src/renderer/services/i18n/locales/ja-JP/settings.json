@@ -1704,7 +1704,15 @@
     "personaLibraryEmpty": "まだ保存されていません。上に指示を書いて、名前をつけて保存してください。",
     "personaLibraryNamePlaceholder": "名前をつける",
     "personaLibrarySave": "保存",
-    "personaLibraryFull": "{{count}} 件保存済みで、これが上限です。別のものを保存するには一つ削除してください。"
+    "personaLibraryFull": "{{count}} 件保存済みで、これが上限です。別のものを保存するには一つ削除してください。",
+    "conversationCuriosity": {
+      "name": "ところで——何とお呼びすればいいですか。",
+      "work": "思い出したのですが、どんなお仕事をされていますか。",
+      "hours": "まだ知らないことがあります。普段はいつ作業されますか。",
+      "project": "今は何を作っていますか。",
+      "register": "返事は短めがいいですか、それともきちんと説明したほうがいいですか。",
+      "never-aloud": "声に出して読まないでほしいものはありますか。"
+    }
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",
