@@ -27,6 +27,8 @@
     "start": "Commencer",
     "skip": "Passer",
     "clicks": "{{clicks}} clics sur {{budget}}",
-    "changeLater": "Tout cela se change plus tard — dans les réglages, ou simplement en le demandant."
+    "changeLater": "Tout cela se change plus tard — dans les réglages, ou simplement en le demandant.",
+    "noAgentsFound": "Aucun agent de programmation trouvé sur cet ordinateur. Passez cette étape : l’assistant vous aidera à en installer un.",
+    "agentNoDescription": "Trouvé sur cet ordinateur."
   }
 }

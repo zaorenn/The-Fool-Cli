@@ -23,7 +23,7 @@ import AccentPicker from '@renderer/pages/settings/AppearanceSettings/MaterialSt
 import MaterialCards from '@renderer/pages/settings/AppearanceSettings/MaterialStudio/MaterialCards';
 import type { ManagedAgent } from '@/renderer/utils/model/agentTypes';
 import AgentStep from './AgentStep';
-import { findOnboardingAgent, getOnboardingStatus, type OnboardingProvider } from './welcomeModel';
+import type { OnboardingChoice } from './welcomeModel';
 import styles from './WelcomePage.module.css';
 
 /**
@@ -60,12 +60,12 @@ const WelcomePage: React.FC = () => {
 
   const [agents, setAgents] = useState<ManagedAgent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [checking, setChecking] = useState<OnboardingProvider | null>(null);
+  const [checking, setChecking] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [step, setStep] = useState<Step>('agent');
   const [clicks, setClicks] = useState(0);
   /** The agent that was chosen, and whether it still needs connecting. */
-  const [picked, setPicked] = useState<{ provider: OnboardingProvider; connected: boolean } | null>(null);
+  const [picked, setPicked] = useState<{ name: string; connected: boolean } | null>(null);
 
   const count = useCallback(() => setClicks((previous) => previous + 1), []);
 
@@ -115,15 +115,13 @@ const WelcomePage: React.FC = () => {
    * somebody out of a three-step setup into a conversation on step one.
    */
   const choose = useCallback(
-    async (provider: OnboardingProvider): Promise<void> => {
+    async ({ agent, status }: OnboardingChoice): Promise<void> => {
       count();
       setError('');
-      const agent = findOnboardingAgent(agents, provider);
-      const status = getOnboardingStatus(agent);
       let connected = status === 'connected';
 
-      if (!connected && agent && status !== 'missing') {
-        setChecking(provider);
+      if (!connected && status !== 'missing') {
+        setChecking(agent.id);
         try {
           const result = await ipcBridge.acpConversation.checkManagedAgentHealthById.invoke({ id: agent.id });
           connected = result.status === 'online';
@@ -134,18 +132,16 @@ const WelcomePage: React.FC = () => {
         }
       }
 
-      setPicked({ provider, connected });
+      setPicked({ name: agent.name, connected });
       setStep('material');
     },
-    [agents, count]
+    [count]
   );
 
   /** The message the assistant opens with, given what is still missing. */
   const openingMessage = useCallback((): string => {
     if (picked && !picked.connected) {
-      return t('settings.voice.conversationProviderSetupPrompt', {
-        provider: picked.provider === 'codex' ? 'Codex' : 'Claude',
-      });
+      return t('settings.voice.conversationProviderSetupPrompt', { provider: picked.name });
     }
     return t('guid.firstRun.openingMessage');
   }, [picked, t]);
@@ -204,7 +200,7 @@ const WelcomePage: React.FC = () => {
             agents={agents}
             loading={loading}
             checking={checking}
-            onChoose={(provider) => void choose(provider).catch((cause: unknown) => setError(String(cause)))}
+            onChoose={(choice) => void choose(choice).catch((cause: unknown) => setError(String(cause)))}
           />
         ) : null}
 

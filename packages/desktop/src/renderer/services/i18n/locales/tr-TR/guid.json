@@ -27,6 +27,8 @@
     "start": "Kullanmaya başla",
     "skip": "Atla",
     "clicks": "{{clicks}} / {{budget}} tık",
-    "changeLater": "Bunların hepsini sonra da değiştirebilirsin — ayarlardan ya da söyleyerek."
+    "changeLater": "Bunların hepsini sonra da değiştirebilirsin — ayarlardan ya da söyleyerek.",
+    "noAgentsFound": "Bu bilgisayarda henüz bir kodlama ajanı bulunamadı. Geçebilirsin — asistan kurmana yardım eder.",
+    "agentNoDescription": "Bu bilgisayarda bulundu."
   }
 }

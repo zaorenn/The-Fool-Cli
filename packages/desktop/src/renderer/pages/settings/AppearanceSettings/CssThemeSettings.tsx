@@ -11,13 +11,15 @@ import { uuid } from '@/common/utils';
 import { useThemeContext } from '@renderer/hooks/context/ThemeContext.tsx';
 import { Button, Message, Modal } from '@arco-design/web-react';
 import { EditTwo, CheckOne } from '@icon-park/react';
+import { parse } from 'postcss';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import CssThemeModal from './CssThemeModal.tsx';
 import { BUILTIN_THEMES, DEFAULT_THEME_ID } from './presets.ts';
 import { BACKGROUND_BLOCK_START, injectBackgroundCssBlock } from './backgroundUtils.ts';
 import { resolveExtensionAssetUrl } from '@renderer/utils/platform.ts';
-import { LIGHT_THEME_ID, SYSTEM_THEME_ID } from '@/common/theme/constants';
+import { DARK_THEME_ID, LIGHT_THEME_ID, SYSTEM_THEME_ID } from '@/common/theme/constants';
+import { relativeLuminance } from '@/common/theme/surfaceStyle';
 
 interface ThemePreviewPalette {
   appBg: string;
@@ -57,7 +59,6 @@ const fallbackThemePreviewPaletteByMode: Record<'light' | 'dark', ThemePreviewPa
 };
 
 const stripImportant = (value: string) => value.replace(/\s*!important\s*/gi, '').trim();
-const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const normalizeColorLike = (value: string, fallback: string) => {
   const cleaned = stripImportant(value);
@@ -73,19 +74,35 @@ const normalizeColorLike = (value: string, fallback: string) => {
   return cleaned;
 };
 
+/**
+ * The custom properties a stylesheet declares for one selector.
+ *
+ * Read from a parsed tree rather than matched, because the presets that matter
+ * most here do not write `:root {` on its own line — The Fool and JARVIS both
+ * open with `:root, [data-theme='dark'], body[arco-theme='dark'] {`, which a
+ * pattern anchored on the selector never saw. Their cards fell back to a generic
+ * palette belonging to no theme at all, so the default theme's own card did not
+ * show the default theme.
+ */
 const parseCssVarsFromBlocks = (css: string, selector: string) => {
   if (!css) return {};
-  const regex = new RegExp(`${escapeRegExp(selector)}\\s*\\{([\\s\\S]*?)\\}`, 'gi');
+
+  const wanted = selector.trim().toLowerCase();
   const map: Record<string, string> = {};
-  let blockMatch: RegExpExecArray | null;
-  while ((blockMatch = regex.exec(css)) !== null) {
-    const block = blockMatch[1] || '';
-    const varRegex = /--([a-zA-Z0-9-_]+)\s*:\s*([^;]+);/g;
-    let varMatch: RegExpExecArray | null;
-    while ((varMatch = varRegex.exec(block)) !== null) {
-      map[varMatch[1]] = varMatch[2].trim();
-    }
+
+  try {
+    parse(css).walkRules((rule) => {
+      const declaresIt = rule.selectors.some((one) => one.trim().toLowerCase() === wanted);
+      if (!declaresIt) return;
+      rule.walkDecls((declaration) => {
+        if (!declaration.prop.startsWith('--')) return;
+        map[declaration.prop.slice(2)] = stripImportant(declaration.value);
+      });
+    });
+  } catch {
+    // A stylesheet the user is still writing has no preview, not a broken page.
   }
+
   return map;
 };
 
@@ -113,13 +130,15 @@ const readFromVarMap = (vars: Record<string, string>, keys: string[]) => {
   return '';
 };
 
-const extractThemePreviewPalette = (css: string, mode: 'light' | 'dark'): ThemePreviewPalette => {
+/** Exported for tests: a card that previews the wrong palette is a lie about what clicking it does. */
+export const extractThemePreviewPalette = (css: string, mode: 'light' | 'dark'): ThemePreviewPalette => {
   const modeFallback = fallbackThemePreviewPaletteByMode[mode];
   const rootVars = parseCssVarsFromBlocks(css, ':root');
   const darkVars = {
     ...parseCssVarsFromBlocks(css, "[data-theme='dark']"),
     ...parseCssVarsFromBlocks(css, '[data-theme="dark"]'),
     ...parseCssVarsFromBlocks(css, '[data-theme=dark]'),
+    ...parseCssVarsFromBlocks(css, "body[arco-theme='dark']"),
   };
   const activeVars = mode === 'dark' ? { ...rootVars, ...darkVars } : rootVars;
 
@@ -142,6 +161,36 @@ const extractThemePreviewPalette = (css: string, mode: 'light' | 'dark'): ThemeP
     userBubble: normalizeColorLike(userBubbleRaw, modeFallback.userBubble),
     aiBubble: normalizeColorLike(aiBubbleRaw, modeFallback.aiBubble),
   };
+};
+
+/**
+ * Whether a stylesheet paints a dark room, judged by what it says its ground is.
+ *
+ * An extension contributes a name, a cover and some CSS, and nothing that says
+ * whether it is light or dark. Calling every one of them light — which is what
+ * happened before — writes `data-theme=light` for a dark skin, and every Arco
+ * component then renders light-on-dark for the whole session. The stylesheet
+ * already answers the question; this reads the answer instead of assuming one.
+ */
+export const inferAppearance = (css: string): 'light' | 'dark' => {
+  const vars = { ...parseCssVarsFromBlocks(css, ':root'), ...parseCssVarsFromBlocks(css, "[data-theme='dark']") };
+  const ground = normalizeColorLike(readFromVarMap(vars, ['color-bg-1', 'bg-1', 'color-bg-base', 'bg-base']), '');
+
+  // `relativeLuminance` measures six-digit hex and quietly measures the default
+  // accent for anything else, so a short form is expanded here rather than
+  // handed over to be silently mismeasured. Anything that is not a hex colour
+  // at all — a gradient, a `var()` that did not resolve — is not a question this
+  // can answer, and light is the safer of the two wrong answers.
+  const expanded = /^#[0-9a-f]{3}$/i.test(ground)
+    ? `#${ground
+        .slice(1)
+        .split('')
+        .map((digit) => digit + digit)
+        .join('')}`
+    : ground;
+  if (!/^#[0-9a-f]{6}$/i.test(expanded)) return 'light';
+
+  return relativeLuminance(expanded) < 0.4 ? 'dark' : 'light';
 };
 
 const ThemeLayoutPreview: React.FC<{ palette: ThemePreviewPalette }> = ({ palette }) => {
@@ -248,16 +297,25 @@ const CssThemeSettings: React.FC = () => {
 
   const activeThemeId = activeId ?? activeTheme?.id ?? DEFAULT_THEME_ID;
 
+  // Each card is drawn in the theme's own appearance, not the app's. A card is a
+  // promise about what happens when it is clicked, and previewing a dark theme
+  // with its light variables while the app happens to be light broke that
+  // promise for every card whose appearance differed from the current one.
   const themePreviewPalettes = useMemo(() => {
     const map = new Map<string, ThemePreviewPalette>();
     themes.forEach((cssTheme) => {
-      map.set(cssTheme.id, extractThemePreviewPalette(cssTheme.css || '', currentTheme === 'dark' ? 'dark' : 'light'));
+      map.set(cssTheme.id, extractThemePreviewPalette(cssTheme.css || '', cssTheme.appearance));
     });
     return map;
-  }, [themes, currentTheme]);
+  }, [themes]);
 
-  // Virtual "Follow System" card, third in the gallery (after Light and Dark).
-  // Not part of BUILTIN_THEMES — it must never enter resolution/dedup/persistence.
+  // Virtual "Follow System" card, placed directly after Light and Dark because
+  // it is the third answer to the same question. Found by id rather than by a
+  // fixed index: the list starts with The Fool, so counting to two put this card
+  // between the pair it belongs after.
+  //
+  // Not part of BUILTIN_THEMES — it must never enter resolution, dedup or
+  // persistence.
   const displayThemes = useMemo(() => {
     if (themes.length === 0) return themes;
     const systemCard: Theme = {
@@ -269,7 +327,11 @@ const CssThemeSettings: React.FC = () => {
       updated_at: 0,
     };
     const arr = [...themes];
-    arr.splice(Math.min(2, arr.length), 0, systemCard);
+    const lastOfPair = Math.max(
+      arr.findIndex((theme) => theme.id === LIGHT_THEME_ID),
+      arr.findIndex((theme) => theme.id === DARK_THEME_ID)
+    );
+    arr.splice(lastOfPair < 0 ? arr.length : lastOfPair + 1, 0, systemCard);
     return arr;
   }, [themes, t]);
 
@@ -290,13 +352,15 @@ const CssThemeSettings: React.FC = () => {
         let extensionThemes: Theme[] = [];
         try {
           const loadedExtensionThemes = await ipcBridge.extensions.getThemes.invoke();
-          // Map extension themes to Theme shape (css-only, builtin: true, appearance inferred as 'light')
+          // Map extension themes to Theme shape. An extension carries no
+          // appearance field, so it is read out of the stylesheet rather than
+          // assumed — see `inferAppearance`.
           extensionThemes = loadedExtensionThemes.map((theme) => ({
             id: theme.id,
             name: theme.name,
             cover: resolveExtensionAssetUrl(theme.cover),
             css: theme.css,
-            appearance: 'light' as const,
+            appearance: inferAppearance(theme.css || ''),
             builtin: true,
             created_at: theme.created_at ?? 0,
             updated_at: theme.updated_at ?? 0,
@@ -429,9 +493,11 @@ const CssThemeSettings: React.FC = () => {
             const userThemes = updatedThemes.filter((t) => !t.builtin);
             await configService.set('theme.userThemes', userThemes);
 
-            // 如果删除的是当前激活主题，回退到 Light / If deleting active theme, fall back to Light
+            // Deleting the theme you are wearing falls back to the app's own
+            // default rather than to Light — landing on a theme nobody chose is
+            // a second surprise on top of the deletion.
             if (activeThemeId === themeId) {
-              await selectTheme(LIGHT_THEME_ID);
+              await selectTheme(DEFAULT_THEME_ID);
             }
 
             setThemes(updatedThemes);

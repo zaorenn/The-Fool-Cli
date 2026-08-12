@@ -11,6 +11,7 @@ import {
   tokensAreDefault,
   type LayoutTokens,
 } from '@/common/config/layoutTokens';
+import { restackThemeStyles } from './applyThemeOverrides';
 
 /**
  * Putting the user's dials on the page.
@@ -31,14 +32,7 @@ const styleElement = (): HTMLStyleElement | null => {
   if (typeof document === 'undefined') return null;
 
   const existing = document.getElementById(STYLE_ID);
-  if (existing instanceof HTMLStyleElement) {
-    // Appended again rather than left where it was. Applying a theme moves the
-    // preset's stylesheet to the end of the head, and a dial the user turned has
-    // to sit after it — otherwise picking a palette straightens corners somebody
-    // rounded, and nothing on screen explains why.
-    document.head.appendChild(existing);
-    return existing;
-  }
+  if (existing instanceof HTMLStyleElement) return existing;
 
   const created = document.createElement('style');
   created.id = STYLE_ID;
@@ -64,6 +58,9 @@ export const applyLayoutTokens = (tokens: LayoutTokens): void => {
   // cheaper than a stylesheet asserting the defaults over the app's own, and it
   // keeps `!important` out of the page for anyone who never opened the editor.
   element.textContent = tokensAreDefault(tokens) ? '' : tokenStylesheet(tokens);
+  // The dials sit above the material and below the colours somebody picked by
+  // hand; `restackThemeStyles` is where that order is decided.
+  restackThemeStyles();
 };
 
 /** What is on the page right now, for a preview that starts where the app is. */

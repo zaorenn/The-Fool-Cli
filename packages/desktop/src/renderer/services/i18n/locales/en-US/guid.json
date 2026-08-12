@@ -27,6 +27,8 @@
     "start": "Start using it",
     "skip": "Skip",
     "clicks": "{{clicks}} of {{budget}} clicks",
-    "changeLater": "All of this can change later — in settings, or just by saying so."
+    "changeLater": "All of this can change later — in settings, or just by saying so.",
+    "noAgentsFound": "No coding agent found on this computer yet. Skip ahead — the assistant will help you install one.",
+    "agentNoDescription": "Found on this computer."
   }
 }

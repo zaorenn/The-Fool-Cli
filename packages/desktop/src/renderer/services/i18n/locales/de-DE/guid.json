@@ -45,6 +45,8 @@
     "start": "Loslegen",
     "skip": "Überspringen",
     "clicks": "{{clicks}} von {{budget}} Klicks",
-    "changeLater": "Das alles lässt sich später ändern — in den Einstellungen oder einfach, indem du es sagst."
+    "changeLater": "Das alles lässt sich später ändern — in den Einstellungen oder einfach, indem du es sagst.",
+    "noAgentsFound": "Auf diesem Computer wurde noch kein Coding-Agent gefunden. Überspringen Sie — der Assistent hilft bei der Installation.",
+    "agentNoDescription": "Auf diesem Computer gefunden."
   }
 }

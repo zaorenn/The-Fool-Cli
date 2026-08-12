@@ -9,7 +9,7 @@ import { configService } from '@/common/config/configService';
 import { ipcBridge } from '@/common';
 import { resolveActiveTheme } from '@/common/theme/resolveTheme';
 import { BUILTIN_THEMES } from '@renderer/theme/builtinThemes';
-import { reassertThemeOverrides } from './applyThemeOverrides';
+import { reassertThemeOverrides, restackThemeStyles } from './applyThemeOverrides';
 import { reapplyLayoutMotions } from './applyLayoutMotions';
 import { reapplyLayoutTokens } from './applyLayoutTokens';
 import { processCustomCss } from './customCssProcessor';
@@ -77,20 +77,19 @@ export function applyTheme(theme: Theme, root: Document = document): void {
   // Stripped before it is processed, because processing is what adds the
   // `!important` that would make a window-hiding rule unbeatable.
   upsertStyle(DECORATION_STYLE_ID, theme.css ? processCustomCss(stripFatalThemeCss(theme.css)) : null, root);
-  // The theme's stylesheet has just been moved to the end of <head>; the user's
-  // colour overrides have to follow it or the preset wins on source order.
+  // A theme may restyle the application freely; it may not leave the user
+  // looking at a blank window with no way back to the settings that would undo
+  // it. Written here, ordered below.
+  upsertStyle(SAFETY_NET_STYLE_ID, THEME_SAFETY_NET_CSS, root);
+  // Everything else the user chose is rewritten too — the colours, the dials and
+  // any movements they built are style elements in this same head, and each of
+  // these calls ends by restacking the whole set. Without that, choosing a
+  // palette straightened corners somebody had rounded and discarded a colour
+  // they had picked, because the last thing written was the thing that won.
   reassertThemeOverrides(root);
-  // And so does everything else the user chose. The dials and any movements they
-  // built are style elements in this same head, so a theme appended after them
-  // would win — choosing a palette would straighten corners somebody had
-  // rounded, and a workspace bringing a palette with it would undo its own
-  // layout on the way in.
   reapplyLayoutTokens();
   reapplyLayoutMotions();
-  // Last of all, and re-appended on every change so it stays last: a theme may
-  // restyle the application freely, but it may not leave the user looking at a
-  // blank window with no way back to the settings that would undo it.
-  upsertStyle(SAFETY_NET_STYLE_ID, THEME_SAFETY_NET_CSS, root);
+  restackThemeStyles(root);
 }
 
 /** Resolve `activeId` locally, apply, persist, and publish to main for cross-window broadcast. */

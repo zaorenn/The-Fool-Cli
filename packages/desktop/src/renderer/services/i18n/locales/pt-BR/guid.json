@@ -27,6 +27,8 @@
     "start": "Começar a usar",
     "skip": "Pular",
     "clicks": "{{clicks}} de {{budget}} cliques",
-    "changeLater": "Tudo isso pode mudar depois — nas configurações, ou só pedindo."
+    "changeLater": "Tudo isso pode mudar depois — nas configurações, ou só pedindo.",
+    "noAgentsFound": "Nenhum agente de programação encontrado neste computador. Pule — o assistente ajuda você a instalar um.",
+    "agentNoDescription": "Encontrado neste computador."
   }
 }

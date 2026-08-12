@@ -6,6 +6,7 @@
 
 import { motionStylesheet, type LayoutMotion } from '@/common/config/layoutMotions';
 import { SURFACE_IDS, type SurfaceId } from '@/common/config/surfaceLayouts';
+import { restackThemeStyles } from './applyThemeOverrides';
 
 /**
  * Putting a built movement on the page.
@@ -27,12 +28,7 @@ const styleElement = (surface: SurfaceId): HTMLStyleElement | null => {
   if (typeof document === 'undefined') return null;
 
   const existing = document.getElementById(styleId(surface));
-  if (existing instanceof HTMLStyleElement) {
-    // Moved to the end, for the reason the dials are: a theme applied afterwards
-    // would otherwise sit on top of a movement the user built.
-    document.head.appendChild(existing);
-    return existing;
-  }
+  if (existing instanceof HTMLStyleElement) return existing;
 
   const created = document.createElement('style');
   created.id = styleId(surface);
@@ -52,6 +48,7 @@ export const applyLayoutMotions = (surface: SurfaceId, motions: readonly LayoutM
   // Empty when nothing was built. Somebody who never opened the movement editor
   // gets no stylesheet at all rather than one asserting that nothing moves.
   element.textContent = motionStylesheet(surface, motions);
+  restackThemeStyles();
 };
 
 /** Puts back what was built, for anything that has just rewritten the head. */

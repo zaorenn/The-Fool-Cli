@@ -27,6 +27,8 @@
     "start": "開始使用",
     "skip": "略過",
     "clicks": "{{clicks}} / {{budget}} 次點擊",
-    "changeLater": "這些之後都能改——在設定裡，或者直接說一聲。"
+    "changeLater": "這些之後都能改——在設定裡，或者直接說一聲。",
+    "noAgentsFound": "這台電腦上還沒有找到編碼智慧代理。可以先跳過——助手會幫你安裝一個。",
+    "agentNoDescription": "在這台電腦上找到的。"
   }
 }

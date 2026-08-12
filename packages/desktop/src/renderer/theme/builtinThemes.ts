@@ -23,6 +23,8 @@ import helloKittyCss from '@renderer/pages/settings/AppearanceSettings/presets/h
 import retroWindowsCss from '@renderer/pages/settings/AppearanceSettings/presets/retro-windows.css?raw';
 import retromaY2kCss from '@renderer/pages/settings/AppearanceSettings/presets/retroma-y2k.css?raw';
 import retromaObsidianBookCss from '@renderer/pages/settings/AppearanceSettings/presets/retroma-obsidian-book.css?raw';
+import retromaObsidianBookDarkPatchCss from '@renderer/pages/settings/AppearanceSettings/presets/retroma-obsidian-book-2-1-dark.css?raw';
+import retromaNocturneParchmentCss from '@renderer/pages/settings/AppearanceSettings/presets/retroma-nocturne-parchment.css?raw';
 import discourseHorizonCss from '@renderer/pages/settings/AppearanceSettings/presets/discourse-horizon.css?raw';
 import glitteringInputFieldCss from '@renderer/pages/settings/AppearanceSettings/presets/glittering-input-field.css?raw';
 import jarvisCss from '@renderer/pages/settings/AppearanceSettings/presets/jarvis.css?raw';
@@ -63,6 +65,16 @@ export const BUILTIN_THEMES: Theme[] = [
     retromaObsidianBookCss,
     retromaObsidianBookCover
   ),
+  // Written as a pass over the book above rather than as a palette of its own —
+  // its own header says so — so it is registered as the two of them, in order.
+  decorative(
+    'retroma-obsidian-book-dark',
+    'Retroma Obsidian Book — Dark',
+    'dark',
+    `${retromaObsidianBookCss}\n\n${retromaObsidianBookDarkPatchCss}`,
+    retromaObsidianBookCover
+  ),
+  decorative('retroma-nocturne-parchment', 'Retroma Nocturne Parchment', 'dark', retromaNocturneParchmentCss),
   decorative(JARVIS_THEME_ID, 'JARVIS', 'dark', jarvisCss),
   decorative('discourse-horizon', 'Discourse Horizon', 'light', discourseHorizonCss),
   decorative('glittering-input-field', 'Glittering Input Field', 'light', glitteringInputFieldCss),

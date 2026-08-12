@@ -25,6 +25,7 @@ import {
   type SurfaceStyleChoice,
 } from '@/common/theme/surfaceChoice';
 import { materialStylesheet } from '@/common/theme/materialStylesheet';
+import { restackThemeStyles } from '@renderer/utils/theme/applyThemeOverrides';
 import {
   SURFACE_BACKGROUND_CONFIG_KEY,
   sanitizeSurfaceBackground,
@@ -49,19 +50,22 @@ const prefersDark = (): boolean => document.documentElement.getAttribute('data-t
 const MATERIAL_STYLE_ID = 'fool-material';
 
 /**
- * Puts the generated sheet last in the head.
+ * Puts the generated sheet in the head, in its place.
  *
- * Re-appended on every write rather than edited in place, because a theme
- * preset's stylesheet is re-appended when the theme changes and everything here
- * is `!important` — between two important declarations the later one wins, so
- * "last" is the whole mechanism.
+ * Everything here is `!important`, and so is the theme preset underneath and the
+ * colours the user picked on top, so between them the cascade decides on source
+ * order alone. This used to append itself last and win — including over a colour
+ * somebody had chosen by hand, which is how a saved colour stopped surviving a
+ * restart. The order now belongs to `restackThemeStyles`, which puts the
+ * material above the palette and below the dials.
  */
 const publish = (css: string): void => {
   const existing = document.getElementById(MATERIAL_STYLE_ID) as HTMLStyleElement | null;
   const element = existing ?? document.createElement('style');
   element.id = MATERIAL_STYLE_ID;
   element.textContent = css;
-  document.head.appendChild(element);
+  if (!element.isConnected) document.head.appendChild(element);
+  restackThemeStyles();
 };
 
 /**

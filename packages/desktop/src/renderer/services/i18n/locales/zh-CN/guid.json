@@ -27,6 +27,8 @@
     "start": "开始使用",
     "skip": "跳过",
     "clicks": "{{clicks}} / {{budget}} 次点击",
-    "changeLater": "这些之后都能改——在设置里，或者直接说一声。"
+    "changeLater": "这些之后都能改——在设置里，或者直接说一声。",
+    "noAgentsFound": "这台电脑上还没有找到编码智能体。可以先跳过——助手会帮你安装一个。",
+    "agentNoDescription": "在这台电脑上找到的。"
   }
 }

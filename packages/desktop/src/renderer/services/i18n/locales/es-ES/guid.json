@@ -45,6 +45,8 @@
     "start": "Empezar a usarlo",
     "skip": "Omitir",
     "clicks": "{{clicks}} de {{budget}} clics",
-    "changeLater": "Todo esto se puede cambiar después, en los ajustes o simplemente pidiéndolo."
+    "changeLater": "Todo esto se puede cambiar después, en los ajustes o simplemente pidiéndolo.",
+    "noAgentsFound": "Aún no se ha encontrado ningún agente de programación en este equipo. Puedes saltarlo: el asistente te ayudará a instalar uno.",
+    "agentNoDescription": "Encontrado en este equipo."
   }
 }
