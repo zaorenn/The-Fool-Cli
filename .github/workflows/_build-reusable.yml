@@ -224,44 +224,39 @@ jobs:
           echo "SENTRY_RELEASE=$RELEASE_NAME" >> "$GITHUB_ENV"
           echo "Sentry release: $RELEASE_NAME"
 
+      # Source maps are how a crash report names a line instead of a minified
+      # column, which is worth having and is not worth a release. This used to
+      # be a hard failure on linux-x64 when the Sentry secrets were absent, so a
+      # repository without them could not publish at all — and the error said
+      # "required", which was a statement about the workflow rather than about
+      # the product.
       - name: Configure Sentry source map upload owner
         shell: bash
         run: |
           set -euo pipefail
 
-          if [[ "${{ matrix.platform }}" == "linux-x64" ]]; then
-            echo "SENTRY_UPLOAD_SOURCE_MAPS=true" >> "$GITHUB_ENV"
-            echo "Sentry source maps will be uploaded by linux-x64"
-          else
+          if [[ "${{ matrix.platform }}" != "linux-x64" ]]; then
             echo "SENTRY_UPLOAD_SOURCE_MAPS=false" >> "$GITHUB_ENV"
             echo "Sentry source map upload skipped for ${{ matrix.platform }}"
+            exit 0
           fi
 
-      - name: Validate Sentry source map upload configuration
-        if: matrix.platform == 'linux-x64'
-        shell: bash
-        run: |
-          set -euo pipefail
-          missing=0
-
+          missing=""
           for name in SENTRY_AUTH_TOKEN SENTRY_ORG SENTRY_PROJECT SENTRY_RELEASE; do
             if [ -z "${!name:-}" ]; then
-              echo "::error title=Sentry configuration missing::$name is required for desktop source map uploads"
-              missing=1
+              missing="$missing $name"
             fi
           done
 
-          if [ "$missing" -ne 0 ]; then
-            exit 1
+          if [ -n "$missing" ]; then
+            echo "SENTRY_UPLOAD_SOURCE_MAPS=false" >> "$GITHUB_ENV"
+            echo "::warning title=Sentry source maps not uploaded::missing$missing — the build continues without them"
+            exit 0
           fi
 
+          echo "SENTRY_UPLOAD_SOURCE_MAPS=true" >> "$GITHUB_ENV"
           echo "Sentry source map upload configured for $SENTRY_ORG/$SENTRY_PROJECT ($SENTRY_RELEASE)"
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
 
-      # macOS code signing certificate installation
       - name: Setup macOS code signing (macOS only)
         if: startsWith(matrix.platform, 'macos')
         env:
