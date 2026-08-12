@@ -695,7 +695,12 @@ jobs:
             out/*.msi
             out/*.dmg
             out/*.deb
-            out/The Fool-*-mac-*.zip
+            # Matches the `artifactName` in electron-builder.yml, which is
+            # `TheFool-${version}-${os}-${arch}.${ext}` and carries no space.
+            # The old `The Fool-*` glob matched nothing, so the macOS zips the
+            # updater needs were never uploaded — and the release job then
+            # failed looking for them.
+            out/*-mac-*.zip
             out/*.yml
           if-no-files-found: warn
           retention-days: 7

@@ -263,8 +263,10 @@ jobs:
     # built perfectly, and the project went from 2.3.10 to 2.5.2 without a single
     # published release. The gate is now the artifacts rather than the jobs:
     # Windows must be present, and the step below says plainly which platforms
-    # are missing from the release.
-    if: always() && needs.build-pipeline.result != 'cancelled' && needs.pack-web-cli.result == 'success' && (needs.create-tag.result == 'success' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-dev-')))
+    # are missing from the release. The same reasoning applies to the web-cli
+    # packing, which was still required outright and could withhold a desktop
+    # release on its own.
+    if: always() && needs.build-pipeline.result != 'cancelled' && needs.pack-web-cli.result != 'cancelled' && (needs.create-tag.result == 'success' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-dev-')))
     # dev 分支使用 dev-release 环境，正式 tag 使用 release 环境
     environment: ${{ needs.create-tag.outputs.is_dev == 'true' && 'dev-release' || 'release' }}
 
@@ -309,15 +311,22 @@ jobs:
         run: |
           set -euo pipefail
 
-          if ! find release-assets -name '*.exe' -type f | grep -q .; then
+          # `-print -quit` rather than `| grep -q .`: with pipefail set, grep
+          # exiting on the first match can leave find killed by SIGPIPE and the
+          # pipeline reporting 141 for a file that was present.
+          has() {
+            [ -n "$(find release-assets -type f \( "$@" \) -print -quit)" ]
+          }
+
+          if ! has -name '*.exe'; then
             echo "::error title=No Windows installer::the release is not publishable without one"
             find release-assets -type f | sort
             exit 1
           fi
 
           missing=""
-          find release-assets -name '*.dmg' -type f | grep -q . || missing="$missing macOS"
-          find release-assets \( -name '*.deb' -o -name '*.AppImage' \) -type f | grep -q . || missing="$missing Linux"
+          has -name '*.dmg' || missing="$missing macOS"
+          has -name '*.deb' -o -name '*.AppImage' || missing="$missing Linux"
 
           if [ -n "$missing" ]; then
             echo "::warning title=Partial release::no build for$missing — publishing the platforms that succeeded"

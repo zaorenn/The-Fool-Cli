@@ -440,7 +440,10 @@ jobs:
           Write-Host "SMOKE INSTALL: windows-x64"
           Write-Host "=========================================="
 
-          $installer = Get-ChildItem -Path out -Filter "The Fool-*-win-*.exe" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          # The installer file name has no space in it — see `artifactName` in
+          # packages/desktop/electron-builder.yml. Matching on the arch suffix
+          # alone keeps this from going stale the next time the name changes.
+          $installer = Get-ChildItem -Path out -Filter "*-win-*.exe" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
           if (-not $installer) {
             throw "No Windows installer found in out/"
           }

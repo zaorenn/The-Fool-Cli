@@ -113,9 +113,25 @@ echo "==> Writing architecture-specific updater metadata ..."
 [ -n "$MAC_ARM64_LATEST" ]  && cp -f "$MAC_ARM64_LATEST"  "$OUTPUT_DIR/latest-arm64-mac.yml"
 
 # ---------------------------------------------------------------------------
-# 5) Hard validation for required updater metadata
+# 5) Validation
+#
+# The rule here is consistency, not completeness.
+#
+# A platform that did not build leaves nothing behind, and refusing to publish
+# because of it is how this project reached 2.5.2 without a single release: the
+# Windows installers were sitting in the artifacts every time. A platform that
+# *did* build but is missing the metadata the updater needs is a packaging bug,
+# and that still fails the job.
+#
+# Windows is the exception, and is required outright: `latest.yml` and the .exe
+# are what the update feed serves.
+#
+# File names come from `artifactName` in packages/desktop/electron-builder.yml,
+# which is `TheFool-${version}-${os}-${arch}.${ext}` — no space. This block used
+# to look for `The Fool-...`, matched nothing a real build produces, and would
+# have failed the release job on the first run that ever reached it.
 # ---------------------------------------------------------------------------
-echo "==> Validating required metadata ..."
+echo "==> Validating release assets ..."
 
 VERSION="${MOCK_VERSION:-}"
 if [ -z "$VERSION" ] && [ -f "$OUTPUT_DIR/latest.yml" ]; then
@@ -125,36 +141,69 @@ if [ -z "$VERSION" ]; then
   command -v node >/dev/null 2>&1 || { echo "::error::Unable to resolve release version"; exit 1; }
   VERSION="$(node -p "require('./package.json').version")"
 fi
+
 MISSING=0
-for required in latest.yml latest-mac.yml latest-linux.yml latest-linux-arm64.yml; do
-  if [ ! -f "$OUTPUT_DIR/$required" ]; then
-    echo "::error::Missing required updater metadata: $required"
-    MISSING=1
-  fi
-done
+ABSENT=""
 
-# ---------------------------------------------------------------------------
-# 5b) Hard validation for desktop release assets
-# ---------------------------------------------------------------------------
-echo "==> Validating desktop release assets ..."
+fail() {
+  echo "::error::$1"
+  MISSING=1
+}
 
-for arch in x64 arm64; do
-  for ext in dmg zip; do
-    asset="The Fool-${VERSION}-mac-${arch}.${ext}"
-    if [ ! -f "$OUTPUT_DIR/$asset" ]; then
-      if [ "$ext" = "zip" ]; then
-        echo "::error::Missing macOS zip artifact: $asset"
-      else
-        echo "::error::Missing macOS DMG artifact: $asset"
-      fi
-      MISSING=1
-    fi
-  done
-done
+# Whether a platform built is decided by its artifact *directory* (section 2),
+# which the build matrix names and is therefore stable. What it had to produce
+# is then matched by file *shape* rather than exact name, so that a version
+# bump or a rename of the product cannot silently turn a check into a no-op —
+# which is precisely what `The Fool-*` did here.
+#
+# `-print -quit` rather than `| grep -q .`: under `set -o pipefail`, grep exiting
+# on the first match can leave find killed by SIGPIPE, and the pipeline then
+# reports 141 even though the file was there.
+has() {
+  [ -n "$(find "$OUTPUT_DIR" -maxdepth 1 -type f -name "$1" -print -quit)" ]
+}
 
-# ---------------------------------------------------------------------------
-# 5c) Hard validation for web-cli release assets
-# ---------------------------------------------------------------------------
+# --- Windows: required ------------------------------------------------------
+has '*.exe' || fail "No Windows installer: the update feed cannot be served without one"
+[ -f "$OUTPUT_DIR/latest.yml" ] || fail "Missing required updater metadata: latest.yml"
+
+if [ -n "$WIN_ARM64_LATEST" ]; then
+  has '*win-arm64.exe' || fail "Windows arm64 built but its installer is missing"
+fi
+
+# --- macOS: only what actually built ----------------------------------------
+if [ -n "$MAC_X64_LATEST" ]; then
+  has '*mac-x64.dmg' || fail "macOS x64 built but its DMG is missing"
+  has '*mac-x64.zip' || fail "macOS x64 built but its zip is missing"
+else
+  ABSENT="$ABSENT macOS-x64"
+fi
+
+if [ -n "$MAC_ARM64_LATEST" ]; then
+  has '*mac-arm64.dmg' || fail "macOS arm64 built but its DMG is missing"
+  has '*mac-arm64.zip' || fail "macOS arm64 built but its zip is missing"
+  [ -f "$OUTPUT_DIR/latest-arm64-mac.yml" ] || fail "macOS arm64 built but latest-arm64-mac.yml is missing"
+else
+  ABSENT="$ABSENT macOS-arm64"
+fi
+
+# --- Linux: same rule -------------------------------------------------------
+if [ -n "$LINUX_X64_LATEST" ]; then
+  has '*.deb' || fail "Linux x64 built but no .deb was collected"
+else
+  ABSENT="$ABSENT linux-x64"
+fi
+
+if [ -n "$LINUX_ARM64_LATEST" ]; then
+  has '*arm64.deb' || fail "Linux arm64 built but its .deb is missing"
+else
+  ABSENT="$ABSENT linux-arm64"
+fi
+
+# --- web-cli: all five or none ---------------------------------------------
+# `install-web.sh` picks a tarball by platform at run time, so a partial set is
+# an installer that fails for some users. A complete absence just means the
+# packing workflow did not run.
 echo "==> Validating web-cli assets ..."
 
 WEB_PLATFORMS=(
@@ -165,21 +214,26 @@ WEB_PLATFORMS=(
   "win-x86_64"
 )
 
+WEB_PRESENT=0
 for plat in "${WEB_PLATFORMS[@]}"; do
-  tarball="fool-web-${VERSION}-${plat}.tar.gz"
-  if [ ! -f "$OUTPUT_DIR/$tarball" ]; then
-    echo "::error::Missing web-cli tarball: $tarball"
-    MISSING=1
-  fi
-  if [ ! -f "$OUTPUT_DIR/${tarball}.sha256" ]; then
-    echo "::error::Missing web-cli checksum: ${tarball}.sha256"
-    MISSING=1
+  if [ -f "$OUTPUT_DIR/fool-web-${VERSION}-${plat}.tar.gz" ]; then
+    WEB_PRESENT=1
   fi
 done
 
-if [ ! -f "$OUTPUT_DIR/install-web.sh" ]; then
-  echo "::error::Missing install-web.sh"
-  MISSING=1
+if [ "$WEB_PRESENT" -eq 1 ]; then
+  for plat in "${WEB_PLATFORMS[@]}"; do
+    tarball="fool-web-${VERSION}-${plat}.tar.gz"
+    [ -f "$OUTPUT_DIR/$tarball" ] || fail "Missing web-cli tarball: $tarball"
+    [ -f "$OUTPUT_DIR/${tarball}.sha256" ] || fail "Missing web-cli checksum: ${tarball}.sha256"
+  done
+  [ -f "$OUTPUT_DIR/install-web.sh" ] || fail "Missing install-web.sh"
+else
+  ABSENT="$ABSENT web-cli"
+fi
+
+if [ -n "$ABSENT" ]; then
+  echo "::warning title=Partial release::no build for$ABSENT — publishing the platforms that succeeded"
 fi
 
 if [ "$MISSING" -ne 0 ]; then

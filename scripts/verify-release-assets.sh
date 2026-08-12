@@ -65,7 +65,19 @@ for f in latest-win-arm64.yml latest-arm64-mac.yml; do
   fi
 done
 
-for f in The Fool-1.0.0-win-x64.exe The Fool-1.0.0-win-arm64.exe The Fool-1.0.0-mac-x64.dmg The Fool-1.0.0-mac-arm64.dmg The Fool-1.0.0.deb The Fool-1.0.0-arm64.deb; do
+# Names come from `artifactName` in packages/desktop/electron-builder.yml and
+# carry no space. They were written as `The Fool-...` here, unquoted, so the
+# loop split on the space and looked for a file called `The` — the check had
+# never passed on a real name and never said so.
+DISTRIBUTABLES=(
+  "TheFool-1.0.0-win-x64.exe"
+  "TheFool-1.0.0-win-arm64.exe"
+  "TheFool-1.0.0-mac-x64.dmg"
+  "TheFool-1.0.0-mac-arm64.dmg"
+  "TheFool-1.0.0-linux-x64.deb"
+  "TheFool-1.0.0-linux-arm64.deb"
+)
+for f in "${DISTRIBUTABLES[@]}"; do
   if [ ! -f "$OUTPUT_DIR/$f" ]; then
     echo "FAIL: missing distributable: $f"
     ERRORS=$((ERRORS + 1))

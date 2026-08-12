@@ -108,7 +108,10 @@ resolve_version() {
         info "最新版本: ${BOLD}v$VERSION${NC}"
     fi
 
-    DEB_FILENAME="The Fool-${VERSION}-linux-${DEB_ARCH}.deb"
+    # Matches `artifactName` in packages/desktop/electron-builder.yml, which
+    # carries no space. With one, this built a download URL that 404s — and that
+    # curl could not have requested unencoded in the first place.
+    DEB_FILENAME="TheFool-${VERSION}-linux-${DEB_ARCH}.deb"
     DOWNLOAD_URL="https://github.com/zaorenn/The-Fool-Cli/releases/download/v${VERSION}/${DEB_FILENAME}"
 }
 
