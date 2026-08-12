@@ -102,6 +102,15 @@ export type ConfigKeyMap = {
    */
   'voice.memoryRefusals': string[] | undefined;
   /**
+   * Which orb the pet window draws while a conversation is running.
+   *
+   * Here rather than beside the skins themselves because the main process reads
+   * it to answer the pet window, and the main process must not import from the
+   * renderer. The value is a skin id; one that no longer exists falls back to
+   * the default rather than leaving an empty window — see `orbSkinById`.
+   */
+  'voice.orbSkin': string | undefined;
+  /**
    * What the user has allowed each connected service to be asked for.
    *
    * One answer per capability rather than one per service: "connect Spotify" is
@@ -155,3 +164,16 @@ export type ConfigKeyMap = {
 };
 
 export type ConfigKey = keyof ConfigKeyMap;
+
+/** Where the chosen orb is kept, named once so both processes agree. */
+export const ORB_SKIN_CONFIG_KEY = 'voice.orbSkin' as const;
+
+/**
+ * The orb drawn when nothing has been chosen.
+ *
+ * A plain string rather than an import from the skin registry: the main process
+ * needs this value and cannot reach into the renderer, and a default that lived
+ * only beside the skins would have to be duplicated to get here — which is
+ * exactly how the two come to disagree.
+ */
+export const DEFAULT_ORB_SKIN = 'reactor';

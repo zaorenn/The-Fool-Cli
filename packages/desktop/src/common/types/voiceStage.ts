@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { DEFAULT_ORB_SKIN } from '@/common/config/configKeys';
+
 /**
  * What the voice loop is doing, coarse enough to show.
  *
@@ -41,6 +43,15 @@ export type VoiceStageEvent = {
    * the caption's waveform matches the app exactly.
    */
   accent: string;
+  /**
+   * Which orb the pet window draws while this conversation runs.
+   *
+   * Travels with the accent, and for the same reason: the pet window cannot
+   * read the app's settings any more than it can read its stylesheets, and a
+   * second channel for one string is a second thing to keep in step. An id that
+   * no longer names a skin falls back rather than blanking the window.
+   */
+  orbSkin: string;
   /**
    * Already-translated text for the two extra windows.
    *
@@ -144,6 +155,7 @@ export const VOICE_STAGE_OFF: VoiceStageEvent = {
   transcript: '',
   phrase: '',
   accent: '#c4123f',
+  orbSkin: DEFAULT_ORB_SKIN,
   stageLabel: '',
   hint: '',
   placeholder: '',

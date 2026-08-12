@@ -5,6 +5,7 @@
  */
 
 import { z } from 'zod';
+import { DEFAULT_ORB_SKIN } from '@/common/config/configKeys';
 import { DEFAULT_TRANSCRIPT_RULES, type TranscriptRules } from '@/common/voice/transcriptRules';
 
 export type VoiceProviderId = 'local-sherpa' | 'local-audiocpp' | 'openai-compatible' | 'transcript-wake-word';
@@ -453,6 +454,15 @@ export type FoolVoiceSettings = {
      * what "look at this error" actually needs, and is opted into.
      */
     screenshotSource: 'window' | 'screen';
+    /**
+     * Which orb the desktop pet becomes while a conversation is running.
+     *
+     * A skin id from the orb registry. Empty means the default, and an id that
+     * no longer names a skin falls back to it too — a look removed in a later
+     * version must not leave somebody with a blank square on top of everything
+     * they are doing and no obvious way to work out why.
+     */
+    orbSkin: string;
   };
   /**
    * The spoken conversation mode: who answers, in whose voice, as whom.
@@ -781,6 +791,7 @@ export const DEFAULT_FOOL_VOICE_SETTINGS: FoolVoiceSettings = {
     modelId: '',
     attachScreenshot: true,
     screenshotSource: 'window',
+    orbSkin: DEFAULT_ORB_SKIN,
   },
   realtime: {
     // The local pipeline by default: it is the only one of the four that can
@@ -1007,6 +1018,11 @@ const settingsSchema = z
         modelId: z.string().max(256).default(''),
         attachScreenshot: z.boolean().default(true),
         screenshotSource: z.enum(['window', 'screen']).default('window'),
+        // Free text rather than an enum of the ids that exist today: the
+        // registry is meant to grow, and a schema that had to be edited for
+        // every new look would be a second place to forget. An unknown id is
+        // handled where it is used, by falling back.
+        orbSkin: z.string().max(64).default(DEFAULT_ORB_SKIN),
       })
       .strict()
       .default({}),

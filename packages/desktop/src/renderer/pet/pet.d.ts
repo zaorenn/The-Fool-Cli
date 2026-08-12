@@ -2,8 +2,22 @@ interface PetAPI {
   onStateChange: (cb: (state: string) => void) => void;
   onEyeMove: (cb: (data: { eyeDx: number; eyeDy: number; bodyDx: number; bodyRotate: number }) => void) => void;
   onResize: (cb: (size: number) => void) => void;
-  /** The voice stage, with its label already translated by the main window. */
-  onVoiceStage: (cb: (data: { stage: string; stageLabel: string; notice: string; accent: string }) => void) => void;
+  /**
+   * The voice stage, with its label already translated by the main window.
+   *
+   * `level` and `accent` are what the orb draws from: this window can see
+   * neither the microphone nor the app's stylesheets, so both arrive as values.
+   */
+  onVoiceStage: (
+    cb: (data: {
+      stage: import('@/common/types/voiceStage').VoiceStage;
+      level: number;
+      orbSkin: string;
+      stageLabel: string;
+      notice: string;
+      accent: string;
+    }) => void
+  ) => void;
 }
 
 interface PetHitAPI {

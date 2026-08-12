@@ -19,8 +19,20 @@ contextBridge.exposeInMainWorld('petAPI', {
   /**
    * What the voice loop is doing, so the pet can say it in words as well as in
    * its pose. Text arrives already translated.
+   *
+   * `level` and `accent` are what the orb draws from — this window can see
+   * neither the microphone nor the app's stylesheets, so both come as values.
    */
-  onVoiceStage: (cb: (data: { stage: string; stageLabel: string; notice: string; accent: string }) => void) => {
+  onVoiceStage: (
+    cb: (data: {
+      stage: string;
+      level: number;
+      orbSkin: string;
+      stageLabel: string;
+      notice: string;
+      accent: string;
+    }) => void
+  ) => {
     ipcRenderer.on('pet:voice-stage', (_e, data) => cb(data));
   },
 });

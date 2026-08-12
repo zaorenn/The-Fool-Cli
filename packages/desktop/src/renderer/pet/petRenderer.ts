@@ -1,3 +1,5 @@
+import { mountOrb } from '@renderer/orb/mountOrb';
+
 const LOAD_TIMEOUT = 3000;
 const FADE_MS = 150;
 const PET_STATES_BASE_PATH = '../pet-states';
@@ -116,7 +118,47 @@ window.petAPI.onEyeMove(({ eyeDx, eyeDy, bodyDx, bodyRotate }) => {
 // same event, so they cannot disagree.
 const stageLabel = document.getElementById('stage');
 
-window.petAPI.onVoiceStage(({ stage, stageLabel: text, notice, accent }) => {
+// ── the orb ──────────────────────────────────────────────────────────────────
+// While a conversation is running this window stops being the pet and becomes
+// the orb. Not a badge on the pet and not a second window: the same square of
+// screen, in the same place the user already put it, showing the thing that is
+// actually happening.
+//
+// Mounted once and left running. Tearing it down between conversations would
+// save a few idle frames and cost the first frame of every conversation, which
+// is the one moment anybody is looking at it.
+const petBody = document.getElementById('pet');
+const orbCanvas = document.getElementById('orb') as HTMLCanvasElement | null;
+const orb = orbCanvas ? mountOrb(orbCanvas) : null;
+
+/** Whether the orb is the one on screen right now. */
+let orbShown = false;
+
+const showOrb = (next: boolean): void => {
+  if (next === orbShown) return;
+  orbShown = next;
+  if (orbCanvas) {
+    orbCanvas.hidden = false;
+    orbCanvas.dataset.hidden = String(!next);
+  }
+  if (petBody) petBody.dataset.hidden = String(next);
+};
+showOrb(false);
+
+window.petAPI.onVoiceStage(({ stage, level, orbSkin, stageLabel: text, notice, accent }) => {
+  // The accent is the whole of the orb's theme: this window cannot see the
+  // app's stylesheets, and the main window sends the colour it actually
+  // resolved — including anything the user overrode — for exactly this reason.
+  // The skin arrives the same way, and is set every event rather than once:
+  // this window is created when the pet is switched on and stays up for days,
+  // so a look chosen in Settings has to reach it while it is already running.
+  orb?.setAccent(accent || '#c4123f');
+  orb?.setSkin(orbSkin);
+  orb?.setStage(stage);
+  orb?.setLevel(level ?? 0);
+  // `off` is the microphone being shut, which is when the pet is the pet again.
+  showOrb(stage !== 'off');
+
   if (!stageLabel) return;
   // A notice takes the bubble: it exists precisely because the stage word would
   // not explain the wait. It also shows with the loop off, which is how a

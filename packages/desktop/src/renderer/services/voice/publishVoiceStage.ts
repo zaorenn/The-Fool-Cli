@@ -5,6 +5,8 @@
  */
 
 import { ipcBridge } from '@/common';
+import { DEFAULT_ORB_SKIN } from '@/common/config/configKeys';
+import { peekVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import {
   VOICE_STAGE_OFF,
   type VoiceActivityLine,
@@ -131,6 +133,9 @@ export const publishVoiceStage = (input: StageInput): void => {
     transcript: input.transcript ?? current.transcript,
     phrase,
     accent: readAccent(),
+    // Sent for the same reason as the accent: the pet window draws the orb and
+    // cannot read the setting that chooses it.
+    orbSkin: peekVoiceSettings().session.orbSkin || DEFAULT_ORB_SKIN,
     // Translated here rather than in the other windows: they have no i18n
     // runtime, and this is the window that knows the chosen language.
     stageLabel: key ? i18next.t(key) : '',

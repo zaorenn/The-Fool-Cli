@@ -194,6 +194,12 @@ export function createPetWindow(): void {
       if (petWindow && !petWindow.isDestroyed()) {
         petWindow.webContents.send('pet:voice-stage', {
           stage: event.stage,
+          // The orb replaces the pet for the length of a conversation and this
+          // is what it moves to. Sent as well as the label rather than instead:
+          // the words are for reading and the level is for glancing at, and the
+          // window shows both.
+          level: event.level,
+          orbSkin: event.orbSkin,
           stageLabel: event.stageLabel,
           notice: event.notice,
           accent: event.accent,

@@ -24,6 +24,27 @@
         height: 100%;
       }
 
+      /* ── the orb ──────────────────────────────────────────────────────────
+         The same box as the pet, because it replaces it rather than sitting
+         beside it: a conversation should not make the window feel like it has
+         grown a second occupant. Fades rather than cuts, so the swap reads as
+         the pet becoming the orb. */
+      #orb {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      #pet,
+      #orb {
+        transition: opacity 220ms ease;
+      }
+      #pet[data-hidden='true'],
+      #orb[data-hidden='true'] {
+        opacity: 0;
+        pointer-events: none;
+      }
+
       /* ── the voice stage, said in words ──────────────────────────────────
          The pose already shows what is happening; this names it, so there is no
          guessing whether the pet is listening or thinking. Sits above the hat,
@@ -95,6 +116,12 @@
   </head>
   <body>
     <object id="pet" type="image/svg+xml" data="../pet-states/idle.svg"></object>
+    <!-- The orb takes this window over while a conversation is running. Both
+         are always in the document and one is always hidden: creating the
+         canvas on demand would mean the first frame of every conversation is
+         drawn into a canvas that has not been laid out yet, which is a blank
+         window for exactly as long as anybody would notice. -->
+    <canvas id="orb" hidden></canvas>
     <div id="stage"></div>
     <script type="module" src="./petRenderer.ts"></script>
   </body>
