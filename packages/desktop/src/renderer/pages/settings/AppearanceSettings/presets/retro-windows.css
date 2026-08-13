@@ -94,18 +94,18 @@ body {
 /* 全局背景色 - 经典 Windows 米色 */
 body,
 html {
-  background-color: var(--bg-1, #f0f0f0);
+  background-color: var(--bg-1);
 }
 
 /* 全局主要背景区域 */
 .arco-layout,
 [class*='layout'] {
-  background-color: var(--bg-1, #f0f0f0);
+  background-color: var(--bg-1);
 }
 
 /* 全局内容区域背景 */
 .arco-layout-content {
-  background-color: var(--bg-1, #f0f0f0);
+  background-color: var(--bg-1);
 }
 
 /* ==================== 侧边栏 Sidebar ==================== */
@@ -153,7 +153,7 @@ button:not(.sendbox-model-btn):not([class*='model']):not([class*='Model']) svg,
 /* ==================== 背景图设置 ==================== */
 /* 背景图片设置 - 让背景图穿透显示 */
 .layout-content.bg-1 {
-  background-color: var(--bg-1, #f0f0f0);
+  background-color: var(--bg-1);
   position: relative;
 }
 

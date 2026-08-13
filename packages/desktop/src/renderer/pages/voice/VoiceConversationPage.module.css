@@ -16,7 +16,7 @@
   position: relative;
   min-height: 100%;
   overflow: hidden;
-  background: var(--color-bg-1);
+  background: var(--bg-1);
 }
 
 /*
@@ -27,7 +27,7 @@
  */
 .rule {
   height: 1px;
-  background: var(--color-border-2);
+  background: var(--bg-3);
   opacity: 0.7;
 }
 

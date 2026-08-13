@@ -4,6 +4,16 @@ use crate::Tool;
 
 pub struct ToolRegistry {
     tools: Vec<Box<dyn Tool>>,
+    /// Whether a tool with a large schema may be advertised as a name-only stub.
+    ///
+    /// Deferring keeps the prompt small: the model is shown the name, and calls
+    /// `ToolSearch` to load the parameters before it can use the tool. That is
+    /// a good trade against a frontier model and a bad one against a small
+    /// local one, which fumbles the extra step — observed calling `Spawn` with
+    /// `{}`, being told to load the schema, and getting it wrong twice more.
+    ///
+    /// So it is a choice rather than a constant, made where the model is known.
+    defer_schemas: bool,
 }
 
 impl Default for ToolRegistry {
@@ -13,7 +23,19 @@ impl Default for ToolRegistry {
 }
 impl ToolRegistry {
     pub fn new() -> Self {
-        Self { tools: Vec::new() }
+        Self {
+            tools: Vec::new(),
+            defer_schemas: true,
+        }
+    }
+
+    /// Send every schema in full, however large.
+    ///
+    /// For a model that cannot be relied on to complete the two-step dance a
+    /// deferred tool requires. Costs prompt tokens and buys tools that work on
+    /// the first call.
+    pub fn send_every_schema(&mut self) {
+        self.defer_schemas = false;
     }
 
     pub fn register(&mut self, tool: Box<dyn Tool>) {
@@ -38,7 +60,7 @@ impl ToolRegistry {
                 name: t.name().to_string(),
                 description: t.description().to_string(),
                 input_schema: t.input_schema(),
-                deferred: t.is_deferred(),
+                deferred: self.defer_schemas && t.is_deferred(),
             })
             .collect()
     }
@@ -57,7 +79,7 @@ impl ToolRegistry {
                 name: t.name().to_string(),
                 description: t.description().to_string(),
                 input_schema: t.input_schema(),
-                deferred: t.is_deferred(),
+                deferred: self.defer_schemas && t.is_deferred(),
             })
             .collect()
     }

@@ -529,16 +529,17 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({
   const emojiPickerContent = (
     <div className='w-280px'>
       {/* Category Tabs */}
-      <div className='flex items-center gap-2px px-8px py-6px border-b border-[var(--color-border-2)] overflow-x-auto'>
+      <div className='flex items-center gap-2px px-8px py-6px border-b border-[var(--bg-3)] overflow-x-auto'>
         {categoryKeys.map((key) => (
-          <button
+          <Button
             key={key}
-            className={`flex-shrink-0 w-28px h-28px flex items-center justify-center rounded-md text-16px cursor-pointer border-none bg-transparent hover:bg-fill-2 transition-colors ${activeCategory === key ? 'bg-fill-2' : ''}`}
+            type='text'
+            className={`flex-shrink-0 !w-28px !h-28px flex items-center justify-center rounded-md text-16px cursor-pointer border-none bg-transparent hover:bg-fill-2 transition-colors !p-0 ${activeCategory === key ? 'bg-fill-2' : ''}`}
             onClick={() => setActiveCategory(key)}
             title={EMOJI_CATEGORIES[key].label}
           >
             {EMOJI_CATEGORIES[key].icon}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -547,13 +548,14 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({
         {currentEmojis.length > 0 ? (
           <div className='grid grid-cols-8 gap-2px'>
             {currentEmojis.map((emoji: string, index: number) => (
-              <button
+              <Button
                 key={`${emoji}-${index}`}
-                className='w-32px h-32px flex items-center justify-center text-20px cursor-pointer border-none bg-transparent rounded-md hover:bg-fill-2 transition-colors'
+                type='text'
+                className='!w-32px !h-32px flex items-center justify-center text-20px cursor-pointer border-none bg-transparent rounded-md hover:bg-fill-2 transition-colors !p-0'
                 onClick={() => handleSelectEmoji(emoji)}
               >
                 {emoji}
-              </button>
+              </Button>
             ))}
           </div>
         ) : (

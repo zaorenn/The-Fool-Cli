@@ -107,7 +107,7 @@ const send = (event: VoiceStageEvent): void => {
   // keep working regardless.
   const emitter = ipcBridge.foolVoice?.stage;
   if (typeof emitter?.emit !== 'function') return;
-  emitter.emit(event);
+  (emitter as any).emit(event);
 };
 
 const flush = (): void => {

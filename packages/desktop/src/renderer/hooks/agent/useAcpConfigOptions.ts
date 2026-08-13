@@ -250,7 +250,7 @@ export function useAcpConfigOptions({
 
   useEffect(() => {
     if (!enabled) return;
-    void reload().catch(() => {});
+    void reload().catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
   }, [enabled, reload]);
 
   useEffect(() => {
@@ -264,7 +264,8 @@ export function useAcpConfigOptions({
       }
       if (message.type === 'agent_status') {
         const statusPayload = message.data as { status?: string } | undefined;
-        if (statusPayload?.status === 'session_active') void reload().catch(() => {});
+        if (statusPayload?.status === 'session_active')
+          void reload().catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
       }
     };
     return ipcBridge.acpConversation.responseStream.on(handler);

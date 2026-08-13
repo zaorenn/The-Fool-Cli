@@ -6,6 +6,8 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Left, Right, Refresh, Loading } from '@icon-park/react';
+import { Button, Input } from '@arco-design/web-react';
+import { useTranslation } from 'react-i18next';
 
 export interface WebviewHostProps {
   /** URL to display */
@@ -24,6 +26,14 @@ export interface WebviewHostProps {
   onDidFinishLoad?: () => void;
   /** Called when the page fails to load */
   onDidFailLoad?: (errorCode: number, errorDescription: string) => void;
+  /** Resolves URL input from the address bar */
+  resolveUrlInput?: (raw: string) => string | null;
+  /** Called when the URL changes (e.g. navigation) */
+  onUrlChange?: (url: string) => void;
+  /** Called when the page title changes */
+  onTitleChange?: (title: string) => void;
+  /** Called when the page favicon changes */
+  onFaviconChange?: (favicon: string) => void;
   /**
    * Hands the underlying `<webview>` to the owner, and `null` on unmount.
    *
@@ -55,8 +65,13 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
   style,
   onDidFinishLoad,
   onDidFailLoad,
+  resolveUrlInput,
+  onUrlChange,
+  onTitleChange,
+  onFaviconChange,
   onWebviewRef,
 }) => {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const webviewRef = useRef<Electron.WebviewTag | null>(null);
@@ -189,7 +204,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
         true;
       `
         )
-        .catch(() => {});
+        .catch((e: unknown) => console.warn('WebviewHost operation failed:', e));
     };
 
     const handleConsoleMessage = (event: Electron.ConsoleMessageEvent) => {
@@ -228,7 +243,18 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
       if (newUrl && newUrl !== currentUrl) {
         setCurrentUrl(newUrl);
         setInputUrl(newUrl);
+        onUrlChange?.(newUrl);
       }
+    };
+
+    const handlePageTitleUpdated = (event: Event & { title?: string }) => {
+      const newTitle = (event as any).title;
+      if (newTitle) onTitleChange?.(newTitle);
+    };
+
+    const handlePageFaviconUpdated = (event: Event & { favicons?: string[] }) => {
+      const favicons = (event as any).favicons;
+      if (favicons && favicons.length > 0) onFaviconChange?.(favicons[0]);
     };
 
     const handleDomReady = () => {
@@ -251,7 +277,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
         true;
       `
         )
-        .catch(() => {});
+        .catch((e: unknown) => console.warn('WebviewHost operation failed:', e));
 
       // Set up message listener inside webview
       webviewEl
@@ -265,7 +291,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
         true;
       `
         )
-        .catch(() => {});
+        .catch((e: unknown) => console.warn('WebviewHost operation failed:', e));
 
       if (isStarOfficeUrl(currentUrl)) {
         webviewEl
@@ -291,7 +317,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
           true;
         `
           )
-          .catch(() => {});
+          .catch((e: unknown) => console.warn('WebviewHost operation failed:', e));
       }
 
       if (isStarOfficeUrl(currentUrl) && autoFitPendingRef.current) {
@@ -322,7 +348,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
               setZoomFactor(Math.max(MIN_ZOOM_FACTOR, Math.min(MAX_ZOOM_FACTOR, next)));
               autoFitPendingRef.current = false;
             })
-            .catch(() => {});
+            .catch((e: unknown) => console.warn('WebviewHost operation failed:', e));
         }, 120);
       }
     };
@@ -342,6 +368,8 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
     webviewEl.addEventListener('dom-ready', handleDomReady);
     webviewEl.addEventListener('did-navigate', handleDidNavigate as EventListener);
     webviewEl.addEventListener('did-navigate-in-page', handleDidNavigate as EventListener);
+    webviewEl.addEventListener('page-title-updated', handlePageTitleUpdated as EventListener);
+    webviewEl.addEventListener('page-favicon-updated', handlePageFaviconUpdated as EventListener);
     webviewEl.addEventListener('console-message', handleConsoleMessage as EventListener);
     webviewEl.addEventListener('did-finish-load', handleDidFinishLoad);
     webviewEl.addEventListener('did-fail-load', handleDidFailLoad as EventListener);
@@ -352,11 +380,22 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
       webviewEl.removeEventListener('dom-ready', handleDomReady);
       webviewEl.removeEventListener('did-navigate', handleDidNavigate as EventListener);
       webviewEl.removeEventListener('did-navigate-in-page', handleDidNavigate as EventListener);
+      webviewEl.removeEventListener('page-title-updated', handlePageTitleUpdated as EventListener);
+      webviewEl.removeEventListener('page-favicon-updated', handlePageFaviconUpdated as EventListener);
       webviewEl.removeEventListener('console-message', handleConsoleMessage as EventListener);
       webviewEl.removeEventListener('did-finish-load', handleDidFinishLoad);
       webviewEl.removeEventListener('did-fail-load', handleDidFailLoad as EventListener);
     };
-  }, [navigateToWithHistory, currentUrl, onDidFinishLoad, onDidFailLoad, isStarOfficeUrl]);
+  }, [
+    navigateToWithHistory,
+    currentUrl,
+    onDidFinishLoad,
+    onDidFailLoad,
+    isStarOfficeUrl,
+    onUrlChange,
+    onTitleChange,
+    onFaviconChange,
+  ]);
 
   // Resize observer for content area
   useEffect(() => {
@@ -410,7 +449,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
         const next = Number((currentContent.clientWidth / stageWidth).toFixed(2));
         setZoomFactor(Math.max(MIN_ZOOM_FACTOR, Math.min(MAX_ZOOM_FACTOR, next)));
       })
-      .catch(() => {});
+      .catch((e: unknown) => console.warn('WebviewHost operation failed:', e));
   }, [isStarOffice]);
 
   const handleOuterWheelZoom = useCallback(
@@ -462,12 +501,15 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
       e.preventDefault();
       let targetUrl = inputUrl.trim();
       if (!targetUrl) return;
-      if (!/^https?:\/\//i.test(targetUrl)) {
+      if (resolveUrlInput) {
+        const resolved = resolveUrlInput(targetUrl);
+        if (resolved) targetUrl = resolved;
+      } else if (!/^https?:\/\//i.test(targetUrl)) {
         targetUrl = 'https://' + targetUrl;
       }
       navigateToWithHistory(targetUrl);
     },
-    [inputUrl, navigateToWithHistory]
+    [inputUrl, navigateToWithHistory, resolveUrlInput]
   );
 
   const handleUrlKeyDown = useCallback(
@@ -499,9 +541,9 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
         <style>
           {`
             .fool-url-viewer-toolbar {
-              --viewer-border: var(--color-border-2);
-              --viewer-border-hover: var(--color-border-3);
-              --viewer-bg: var(--color-bg-3);
+              --viewer-border: var(--bg-3);
+              --viewer-border-hover: var(--bg-4);
+              --viewer-bg: var(--bg-3);
               --viewer-bg-hover: var(--color-fill-2);
               --viewer-text: var(--color-text-2);
               --viewer-text-muted: var(--color-text-3);
@@ -545,7 +587,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
               opacity: 0.55;
               cursor: not-allowed;
               color: var(--viewer-text-muted);
-              background: var(--color-bg-2);
+              background: var(--bg-2);
             }
             .fool-url-viewer-toolbar .toolbar-chip {
               display: inline-flex;
@@ -556,7 +598,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
               padding: 0 10px;
               border-radius: 10px;
               border: 1px solid var(--viewer-border);
-              background: var(--color-bg-2);
+              background: var(--bg-2);
               color: var(--viewer-text-muted);
               font-size: 11px;
               line-height: 1;
@@ -589,39 +631,65 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
       {/* Navigation bar (optional) */}
       {showNavBar && (
         <div className='fool-url-viewer-toolbar flex items-center gap-6px h-40px px-10px bg-bg-2 border-b border-border-1 flex-shrink-0'>
-          <button onClick={handleGoBack} disabled={!canGoBack} className='toolbar-btn icon-btn' title='Back'>
+          <Button
+            htmlType='button'
+            onClick={handleGoBack}
+            disabled={!canGoBack}
+            className='toolbar-btn icon-btn'
+            title={t('common.historyBack', { defaultValue: 'Back' })}
+          >
             <Left theme='outline' size={16} />
-          </button>
-          <button onClick={handleGoForward} disabled={!canGoForward} className='toolbar-btn icon-btn' title='Forward'>
+          </Button>
+          <Button
+            htmlType='button'
+            onClick={handleGoForward}
+            disabled={!canGoForward}
+            className='toolbar-btn icon-btn'
+            title={t('common.forward', { defaultValue: 'Forward' })}
+          >
             <Right theme='outline' size={16} />
-          </button>
-          <button onClick={handleRefresh} className='toolbar-btn icon-btn' title='Refresh'>
+          </Button>
+          <Button
+            htmlType='button'
+            onClick={handleRefresh}
+            className='toolbar-btn icon-btn'
+            title={t('common.refresh', { defaultValue: 'Refresh' })}
+          >
             {isLoading ? (
               <Loading theme='outline' size={16} className='animate-spin' />
             ) : (
               <Refresh theme='outline' size={16} />
             )}
-          </button>
+          </Button>
           {isStarOffice && (
             <div className='flex items-center gap-6px ml-2px'>
-              <button onClick={handleZoomReset} className='toolbar-btn' title='Reset zoom'>
+              <Button
+                htmlType='button'
+                onClick={handleZoomReset}
+                className='toolbar-btn'
+                title={t('common.zoomReset', { defaultValue: 'Reset zoom' })}
+              >
                 100%
-              </button>
-              <button onClick={handleZoomFit} className='toolbar-btn' title='Fit'>
+              </Button>
+              <Button
+                htmlType='button'
+                onClick={handleZoomFit}
+                className='toolbar-btn'
+                title={t('common.zoomFit', { defaultValue: 'Fit' })}
+              >
                 Fit
-              </button>
+              </Button>
               <span className='toolbar-chip'>{Math.round(zoomFactor * 100)}%</span>
             </div>
           )}
           <form onSubmit={handleUrlSubmit} className='flex-1 ml-2px'>
-            <input
-              type='text'
+            <Input
               value={inputUrl}
-              onChange={(e) => setInputUrl(e.target.value)}
-              onKeyDown={handleUrlKeyDown}
+              onChange={(value) => setInputUrl(value)}
+              onKeyDown={handleUrlKeyDown as any}
               onFocus={(e) => e.target.select()}
               className='toolbar-input'
-              placeholder='Enter URL...'
+              placeholder={t('common.enterUrl', { defaultValue: 'Enter URL...' })}
             />
           </form>
         </div>

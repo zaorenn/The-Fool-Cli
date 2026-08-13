@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * Copyright 2025 AionUi (aionui.com)
  * SPDX-License-Identifier: Apache-2.0
@@ -42,7 +42,7 @@ export type BrowserNotificationDeps = {
    * Whether a notification may be shown right now. The WebUI path derives this
    * from the browser gate (`shouldShowNotification`); the desktop path uses its
    * own condition (window focus is checked in the main process). Injecting the
-   * predicate keeps this controller — and its turn-finish detection / dedup —
+   * predicate keeps this controller ÔÇö and its turn-finish detection / dedup ÔÇö
    * shared across both paths.
    */
   shouldShow: () => boolean;
@@ -53,7 +53,7 @@ export type BrowserNotificationDeps = {
 /**
  * Shape of a conversation response-stream message (`message.stream`). Both the
  * turn-finish and permission-request signals ride this single channel, keyed
- * by `type` — there is no separate `confirmation.add` / `turn.completed`
+ * by `type` ÔÇö there is no separate `confirmation.add` / `turn.completed`
  * channel in a real conversation.
  */
 export type StreamMessage = {
@@ -63,7 +63,7 @@ export type StreamMessage = {
 };
 
 // Stream `type` values that represent an agent asking the user to confirm a
-// permission. ACP emits `acp_permission`; foolrs emits both `acp_permission`
+// permission. ACP emits `acp_permission`; aionrs emits both `acp_permission`
 // and `permission`.
 const PERMISSION_TYPES = new Set(['acp_permission', 'permission']);
 

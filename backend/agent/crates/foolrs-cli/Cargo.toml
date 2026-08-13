@@ -23,6 +23,7 @@ foolrs-mcp.workspace = true
 foolrs-protocol.workspace = true
 foolrs-skills.workspace = true
 foolrs-types.workspace = true
+rmcp = { version = "1.5", features = ["server", "transport-io", "schemars"] }
 
 tokio.workspace = true
 anyhow.workspace = true

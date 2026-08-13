@@ -38,6 +38,8 @@ pub struct AppToolHost {
     pending: Arc<PendingCalls>,
     broadcaster: Arc<dyn EventBroadcaster>,
     conversation_id: String,
+    /// Whose renderer answers this call. See `AppToolRequest::user_id`.
+    user_id: Option<String>,
 }
 
 impl AppToolHost {
@@ -47,7 +49,7 @@ impl AppToolHost {
         broadcaster: Arc<dyn EventBroadcaster>,
         conversation_id: String,
     ) -> Self {
-        Self::for_part(catalogue, pending, broadcaster, conversation_id, CataloguePart::Core)
+        Self::for_part(catalogue, pending, broadcaster, conversation_id, None, CataloguePart::Core)
     }
 
     pub fn for_part(
@@ -55,6 +57,7 @@ impl AppToolHost {
         pending: Arc<PendingCalls>,
         broadcaster: Arc<dyn EventBroadcaster>,
         conversation_id: String,
+        user_id: Option<String>,
         part: CataloguePart,
     ) -> Self {
         Self {
@@ -62,6 +65,7 @@ impl AppToolHost {
             pending,
             broadcaster,
             conversation_id,
+            user_id,
             part,
         }
     }
@@ -84,6 +88,7 @@ impl McpToolHost for AppToolHost {
             call_id: call_id.clone(),
             name: name.to_string(),
             arguments,
+            user_id: self.user_id.clone(),
         };
         let payload = serde_json::to_value(&request).map_err(|error| error.to_string())?;
 
@@ -124,6 +129,20 @@ impl AppToolHosts {
 
 impl HostResolver for AppToolHosts {
     fn resolve(&self, path: &str) -> Option<Arc<dyn McpToolHost>> {
+        // `?user=` says whose renderer should answer, and the websocket bridge
+        // drops a request that cannot say. Split before anything else, so the
+        // conversation id is never read with the query still attached to it.
+        let (path, user_id) = match path.split_once('?') {
+            Some((head, query)) => (
+                head,
+                query
+                    .split('&')
+                    .find_map(|pair| pair.strip_prefix("user="))
+                    .map(str::to_owned)
+                    .filter(|id| !id.is_empty()),
+            ),
+            None => (path, None),
+        };
         let rest = path.strip_prefix("/mcp/")?.trim_end_matches('/');
         // `/mcp/rest/<conversation>` is the deferred half; anything else is the
         // core one, so an older client that knows only `/mcp/<conversation>`
@@ -140,6 +159,7 @@ impl HostResolver for AppToolHosts {
             self.pending.clone(),
             self.broadcaster.clone(),
             conversation_id.to_owned(),
+            user_id,
             part,
         )))
     }

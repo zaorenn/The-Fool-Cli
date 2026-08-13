@@ -621,13 +621,14 @@
     "contextMenu": {
       "rename": "Rename",
       "addToChat": "Add to chat",
-      "revealInFolder": "Reveal in folder",
-      "copyPath": "Copy path",
-      "copyRelativePath": "Copy relative path"
+      "copyRelativePath": "Copy relative path",
+      "copyAbsolutePath": "Copy absolute path"
     },
     "namePlaceholder": "Name",
     "deleteConfirm": "Delete “{{name}}”? This can’t be undone.",
     "renameFailed": "Couldn't rename",
+    "pathCopied": "Path copied to clipboard",
+    "copyFailed": "Failed to copy path",
     "tabs": {
       "files": "Files",
       "changes": "Changes"
@@ -636,6 +637,37 @@
     "addedToChat": "Added {{name}} to chat",
     "imported": "Imported {{count}} file(s)",
     "importPartialFailed": "{{copied}} copied, {{failed}} failed (name conflicts or unsupported)",
-    "importFailed": "Failed to import files"
+    "importFailed": "Failed to import files",
+    "scm": {
+      "loading": "Loading...",
+      "loadFailed": "Failed to load source control data.",
+      "notARepository": "No active repository found.",
+      "refresh": "Refresh",
+      "diff": {
+        "binary": "Binary file diff is not supported.",
+        "empty": "No changes found."
+      },
+      "worktree": "Worktree",
+      "expandWorktrees": "Expand all worktrees",
+      "collapseWorktrees": "Collapse all worktrees",
+      "conflictedHint": "Conflicted",
+      "opaqueHint": "Opaque",
+      "sections": {
+        "repositories": "Repositories",
+        "changes": "Changes"
+      },
+      "actions": {
+        "discard": "Discard Changes",
+        "stageAll": "Stage All Changes",
+        "retry": "Retry",
+        "notSent": "Failed to send action to backend.",
+        "outcomeUnknown": "Outcome unknown.",
+        "rejectedBlocked": "Action blocked.",
+        "rejectedUnsupported": "Action not supported.",
+        "rejectedFailed": "Action failed.",
+        "confirmDiscardTitle": "Discard Changes?",
+        "discardConfirmButton": "Discard"
+      }
+    }
   }
 }

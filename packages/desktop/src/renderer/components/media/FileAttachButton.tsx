@@ -40,7 +40,7 @@ const MenuItem: React.FC<{
     onClick={onClick}
     title={title}
   >
-    <span className='flex-shrink-0 inline-flex items-center justify-center color-#86909c w-18px leading-none'>
+    <span className='flex-shrink-0 inline-flex items-center justify-center text-t-tertiary w-18px leading-none'>
       {icon}
     </span>
     <span className='min-w-0 flex-1'>
@@ -145,10 +145,10 @@ const FileAttachButton: React.FC<FileAttachButtonProps> = ({
   }
 
   const cardStyle: React.CSSProperties = {
-    backgroundColor: 'var(--color-bg-2, #fff)',
+    backgroundColor: 'var(--bg-2)',
     borderRadius: 12,
     boxShadow: '0 4px 24px rgba(0,0,0,0.13)',
-    border: '1px solid var(--color-border-1, #e5e6eb)',
+    border: '1px solid var(--bg-3)',
     padding: '6px 0',
     minWidth: 220,
     zIndex: 1050,
@@ -194,7 +194,7 @@ const FileAttachButton: React.FC<FileAttachButtonProps> = ({
           title={item.reason}
         />
       ))}
-      <div style={{ margin: '4px 12px', height: 1, backgroundColor: 'var(--color-border-1, #e5e6eb)' }} />
+      <div style={{ margin: '4px 12px', height: 1, backgroundColor: 'var(--bg-3)' }} />
       <div className='px-12px py-8px'>
         <div className='text-12px leading-16px text-t-secondary whitespace-normal break-words'>
           {t('conversation.mcp.managementHint', {
@@ -241,7 +241,7 @@ const FileAttachButton: React.FC<FileAttachButtonProps> = ({
                   <MenuItem
                     icon={<Shield theme='outline' size={15} strokeWidth={2.5} />}
                     label={`${t('conversation.mcp.selected', { defaultValue: 'Selected MCP' })} · ${mcpStatuses.length}`}
-                    suffix={<Right theme='outline' size={12} strokeWidth={3} style={{ color: '#c9cdd4' }} />}
+                    suffix={<Right theme='outline' size={12} strokeWidth={3} style={{ color: 'var(--bg-4)' }} />}
                   />
                 </div>
               </Trigger>
@@ -262,13 +262,13 @@ const FileAttachButton: React.FC<FileAttachButtonProps> = ({
                   <MenuItem
                     icon={<Lightning theme='outline' size={15} strokeWidth={2.5} />}
                     label={`${t('common.selectedSkills', { defaultValue: 'Selected skills' })} · ${skillNames.length}`}
-                    suffix={<Right theme='outline' size={12} strokeWidth={3} style={{ color: '#c9cdd4' }} />}
+                    suffix={<Right theme='outline' size={12} strokeWidth={3} style={{ color: 'var(--bg-4)' }} />}
                   />
                 </div>
               </Trigger>
             </div>
           )}
-          <div style={{ margin: '4px 12px', height: 1, backgroundColor: 'var(--color-border-1, #e5e6eb)' }} />
+          <div style={{ margin: '4px 12px', height: 1, backgroundColor: 'var(--bg-3)' }} />
         </>
       )}
 
@@ -316,14 +316,15 @@ const FileAttachButton: React.FC<FileAttachButtonProps> = ({
           data-testid='foolrs-attach-folder-btn'
         />
       </Trigger>
-      <input
-        ref={fileInputRef}
-        type='file'
-        multiple
-        style={{ display: 'none' }}
-        onChange={handleLocalFileChange}
-        data-testid='foolrs-file-upload-input'
-      />
+      <div className='hidden'>
+        <input
+          ref={fileInputRef}
+          type='file'
+          multiple
+          onChange={handleLocalFileChange}
+          data-testid='foolrs-file-upload-input'
+        />
+      </div>
     </>
   );
 };

@@ -26,8 +26,8 @@ const AtFileMenu: React.FC<AtFileMenuProps> = ({
     <div
       className='rounded-14px border border-solid overflow-hidden p-6px flex flex-col gap-2px'
       style={{
-        borderColor: 'var(--color-border-2)',
-        background: 'color-mix(in srgb, var(--color-bg-1) 94%, transparent)',
+        borderColor: 'var(--bg-3)',
+        background: 'color-mix(in srgb, var(--bg-1) 94%, transparent)',
         backdropFilter: 'blur(14px) saturate(1.05)',
         WebkitBackdropFilter: 'blur(14px) saturate(1.05)',
       }}

@@ -19,7 +19,7 @@ import {
 } from '@/common/config/imageGenerationMcpEnv';
 import { BUILTIN_IMAGE_GEN_NAME, type IMcpServer, type IProvider } from '@/common/config/storage';
 import { getBuiltinMcpScriptPath, type ProcessConfig as ProcessConfigType } from './initStorage';
-import { BUILTIN_BROWSER_NAME } from '../resources/builtinMcp/constants';
+import { BUILTIN_BROWSER_NAME, BUILTIN_APP_SETTINGS_NAME } from '../resources/builtinMcp/constants';
 import { browserControlHandshakePath } from '../voice/browserControlServer';
 import { migrateAssistantsToBackend } from './migrateAssistants';
 
@@ -228,6 +228,29 @@ function buildDefaultMcpServers(): McpImportServer[] {
       ]
     : [];
 
+  const settingsHandshake = browserControlHandshakePath().replace('browser-control.json', 'settings-control.json');
+  const settingsScript = getBuiltinMcpScriptPath('builtin-mcp-app-settings');
+  const settingsEnv = { FOOL_SETTINGS_HANDSHAKE: settingsHandshake };
+  const settingsConfig = { command: 'node', args: [settingsScript], env: settingsEnv };
+
+  const settingsServers: McpImportServer[] = settingsHandshake
+    ? [
+        {
+          name: BUILTIN_APP_SETTINGS_NAME,
+          description: "Change The Fool's application settings in real time.",
+          enabled: true,
+          builtin: true,
+          transport: { type: 'stdio', command: 'node', args: [settingsScript], env: settingsEnv },
+          original_json: JSON.stringify({ mcpServers: { [BUILTIN_APP_SETTINGS_NAME]: settingsConfig } }, null, 2),
+        },
+      ]
+    : [];
+
+  const uaccConfig = {
+    command: 'c:\\Fool-AionUI\\uacc-sidecar\\.venv\\Scripts\\python.exe',
+    args: ['c:\\Fool-AionUI\\uacc-sidecar\\main.py'],
+  };
+
   const computerUseConfig = {
     command: 'npx',
     args: ['-y', '@betrayzl/windows-computer-use-mcp@latest'],
@@ -235,6 +258,19 @@ function buildDefaultMcpServers(): McpImportServer[] {
 
   return [
     ...browserServers,
+    ...settingsServers,
+    {
+      name: 'uacc-computer-control',
+      description: 'Universal AI Computer Control (UACC) - Native screen capture and OS interactions.',
+      enabled: true,
+      builtin: true,
+      transport: {
+        type: 'stdio',
+        command: uaccConfig.command,
+        args: uaccConfig.args,
+      },
+      original_json: JSON.stringify({ mcpServers: { 'uacc-computer-control': uaccConfig } }, null, 2),
+    },
     {
       name: BUILTIN_CHROME_DEVTOOLS_NAME,
       description: 'Default MCP server: chrome-devtools',

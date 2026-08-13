@@ -133,13 +133,53 @@ const capture = async (source: 'window' | 'screen', windowMatch: string): Promis
 };
 
 /**
+ * Preemptive capture state for zero-latency screen reads.
+ *
+ * Keyed by the window as well as the source. A preload is started when the user
+ * begins speaking, before anyone knows which window the question is about, so it
+ * is nearly always the wide picture. Handing that to a request that named a
+ * window would answer confidently about the wrong thing — the one failure this
+ * cache can produce that the user cannot see. So the name is part of the key,
+ * and a mismatch simply costs the head start.
+ */
+let preloadedCapture: { url: Promise<string>; source: 'window' | 'screen'; windowMatch: string } | null = null;
+
+/**
+ * Starts a screen capture in the background before it is asked for.
+ * Called when the user starts speaking, so if they ask about the screen,
+ * the photograph is already taken by the time they finish the sentence.
+ */
+export const preloadScreenCapture = (source: 'window' | 'screen' = 'screen', windowMatch = ''): void => {
+  // Overwrite any stale capture with a fresh one
+  preloadedCapture = { url: capture(source, windowMatch), source, windowMatch: windowMatch.trim() };
+  // Sink rejections so they don't crash unhandled in the background
+  preloadedCapture.url.catch((): void => undefined);
+};
+
+/** Discards a preloaded capture, usually because the user stopped speaking and didn't ask about the screen. */
+export const dropPreloadedCapture = (): void => {
+  preloadedCapture = null;
+};
+
+/**
  * Looks at the screen and answers the question about it.
  *
  * @throws {ScreenSightError} for every way this can fail, each with a reason the
  *   caller can turn into something the user can act on.
  */
 export const describeScreen = async (request: ScreenSightRequest): Promise<string> => {
-  const imageUrl = await capture(request.source, request.windowMatch ?? '');
+  const windowMatch = (request.windowMatch ?? '').trim();
+
+  // Taken or discarded either way: a preload belongs to the utterance being
+  // spoken now, so one that does not fit this question is stale rather than
+  // waiting for a later question it happens to match.
+  const preloaded = preloadedCapture;
+  preloadedCapture = null;
+
+  const imageUrl =
+    preloaded !== null && preloaded.source === request.source && preloaded.windowMatch === windowMatch
+      ? await preloaded.url
+      : await capture(request.source, windowMatch);
 
   const timeout = AbortSignal.timeout(DESCRIBE_TIMEOUT_MS);
   const signal = request.signal ? AbortSignal.any([request.signal, timeout]) : timeout;

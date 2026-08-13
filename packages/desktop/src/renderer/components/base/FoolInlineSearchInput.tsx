@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { Input } from '@arco-design/web-react';
 import { Search } from '@icon-park/react';
 import classNames from 'classnames';
 import type { CSSProperties, InputHTMLAttributes, Ref } from 'react';
@@ -48,16 +49,16 @@ const FoolInlineSearchInput = forwardRef<HTMLInputElement, FoolInlineSearchInput
   return (
     <div className={classNames(styles.searchbar, className)} style={style} data-testid={wrapTestId}>
       <Search theme='outline' size='13' className={styles.icon} fill='currentColor' />
-      <input
-        {...inputProps}
-        ref={ref as Ref<HTMLInputElement>}
+      <Input
+        {...(inputProps as any)}
+        ref={ref as any}
         className={styles.input}
         value={value}
         placeholder={placeholder}
         disabled={disabled}
         autoFocus={autoFocus}
         data-testid={props['data-testid']}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(val) => onChange(val)}
       />
     </div>
   );

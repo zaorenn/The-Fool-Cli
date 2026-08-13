@@ -40,6 +40,7 @@ import { usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import { useTeamPermission } from '@/renderer/pages/team/hooks/TeamPermissionContext';
 import type { TeamSendBoxRuntime } from '@/renderer/pages/team/components/teamSendRuntime';
 import { allSupportedExts } from '@/renderer/services/FileService';
+import { stopSpeech } from '@/renderer/services/voice/speechPlayer';
 import { iconColors } from '@/renderer/styles/colors';
 import { emitter, useAddEventListener } from '@/renderer/utils/emitter';
 import { type ChatFileRef, isChatFileRef, uploadFileRef } from '@/common/types/chatFile';
@@ -256,6 +257,7 @@ const FoolrsSendBox: React.FC<{
         Message.warning(t('conversation.chat.noModelSelected'));
         throw new Error('No model selected');
       }
+      stopSpeech();
 
       // The message body is plain user text; the backend resolves each
       // ChatFileRef to an absolute path and injects the [[FOOL_FILES]] marker at

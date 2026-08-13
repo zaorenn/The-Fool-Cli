@@ -109,7 +109,7 @@ async fn serve_connection(mut stream: TcpStream, token: String, resolver: Arc<dy
         buffer.extend_from_slice(&chunk[..read]);
         if buffer.len() > MAX_REQUEST_BYTES {
             let _ = stream
-                .write_all(b"HTTP/1.1 413 Payload Too Large\r\ncontent-length: 0\r\n\r\n")
+                .write_all(b"HTTP/1.1 413 Payload Too Large\r\ncontent-length: 0\r\nconnection: close\r\n\r\n")
                 .await;
             return;
         }
@@ -122,14 +122,14 @@ async fn serve_connection(mut stream: TcpStream, token: String, resolver: Arc<dy
 
         if !authorized(&raw, &token) {
             let _ = stream
-                .write_all(b"HTTP/1.1 401 Unauthorized\r\ncontent-length: 0\r\n\r\n")
+                .write_all(b"HTTP/1.1 401 Unauthorized\r\ncontent-length: 0\r\nconnection: close\r\n\r\n")
                 .await;
             return;
         }
 
         let Some(host) = resolver.resolve(request_path(&raw)) else {
             let _ = stream
-                .write_all(b"HTTP/1.1 404 Not Found\r\ncontent-length: 0\r\n\r\n")
+                .write_all(b"HTTP/1.1 404 Not Found\r\ncontent-length: 0\r\nconnection: close\r\n\r\n")
                 .await;
             return;
         };
@@ -145,8 +145,18 @@ async fn serve_connection(mut stream: TcpStream, token: String, resolver: Arc<dy
             Err(error) => JsonRpcResponse::error(None, PARSE_ERROR, error.to_string()),
         };
         let payload = serde_json::to_vec(&response).unwrap_or_default();
+        // `connection: close`, because that is what this function then does.
+        //
+        // One request is served and the socket is dropped on the way out. Said
+        // over HTTP/1.1 without this header, that is a lie: persistence is the
+        // default there, so a client is entitled to keep the socket and send
+        // its next call down it — `tools/list` after `initialize` — then wait
+        // for an answer from a peer that has gone. From outside that was an MCP
+        // server which connected sometimes and hung until its startup timeout
+        // the rest of the time, depending on whether the client's pool reused
+        // the socket or opened a new one.
         let head = format!(
-            "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\n\r\n",
+            "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n",
             payload.len()
         );
         let _ = stream.write_all(head.as_bytes()).await;

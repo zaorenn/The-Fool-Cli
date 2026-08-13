@@ -6,6 +6,7 @@
 
 import classNames from 'classnames';
 import React, { useEffect, useRef } from 'react';
+import { Button } from '@arco-design/web-react';
 
 export interface SlashCommandMenuItem {
   key: string;
@@ -88,8 +89,8 @@ const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
     <div
       className='rounded-14px border border-solid shadow-[0_8px_24px_rgba(0,0,0,0.12)] overflow-hidden'
       style={{
-        borderColor: 'var(--color-border-2)',
-        background: 'color-mix(in srgb, var(--color-bg-1) 78%, transparent)',
+        borderColor: 'var(--bg-3)',
+        background: 'color-mix(in srgb, var(--bg-1) 78%, transparent)',
         backdropFilter: 'blur(14px) saturate(1.1)',
         WebkitBackdropFilter: 'blur(14px) saturate(1.1)',
       }}
@@ -97,8 +98,8 @@ const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
       <div
         className='px-12px py-8px border-b border-solid flex items-center justify-between gap-8px'
         style={{
-          borderColor: 'color-mix(in srgb, var(--color-border-2) 56%, transparent)',
-          background: 'color-mix(in srgb, var(--color-bg-1) 84%, transparent)',
+          borderColor: 'color-mix(in srgb, var(--bg-3) 56%, transparent)',
+          background: 'color-mix(in srgb, var(--bg-1) 84%, transparent)',
         }}
       >
         <div className='text-13px font-semibold text-t-primary'>{title}</div>
@@ -116,18 +117,18 @@ const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
         )}
         {!loading &&
           items.map((item, index) => (
-            <button
+            <Button
               key={item.key}
-              type='button'
+              type='text'
               role='option'
               aria-selected={index === activeIndex}
               ref={(node) => {
-                itemRefs.current[index] = node;
+                itemRefs.current[index] = node as any;
               }}
               className={classNames(
-                'w-full text-left px-10px py-6px rounded-8px transition-all border border-solid outline-none cursor-pointer mb-2px last:mb-0',
+                '!w-full !text-left !px-10px !py-6px !rounded-8px transition-all border border-solid outline-none cursor-pointer mb-2px last:mb-0 !h-auto flex-col items-stretch',
                 {
-                  'border-[var(--color-border-2)]': index === activeIndex,
+                  'border-[var(--bg-3)]': index === activeIndex,
                   'border-transparent hover:bg-[var(--color-fill-1)]': index !== activeIndex,
                 }
               )}
@@ -155,16 +156,14 @@ const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
                   <span
                     className={classNames(
                       'text-10px rounded-999px px-6px py-1px shrink-0',
-                      index === activeIndex
-                        ? 'text-t-primary bg-[var(--color-bg-1)]'
-                        : 'text-t-secondary bg-[var(--color-bg-1)]'
+                      index === activeIndex ? 'text-t-primary bg-[var(--bg-1)]' : 'text-t-secondary bg-[var(--bg-1)]'
                     )}
                   >
                     {item.badge}
                   </span>
                 )}
               </div>
-            </button>
+            </Button>
           ))}
       </div>
     </div>

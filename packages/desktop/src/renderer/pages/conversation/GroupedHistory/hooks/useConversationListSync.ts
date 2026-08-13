@@ -232,7 +232,7 @@ const logLateStreamIgnored = (conversation_id: string, type: string) => {
         stream_type: type,
       },
     })
-    .catch(() => {});
+    .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
 };
 
 const setActiveConversationState = (conversation_id: string | null) => {

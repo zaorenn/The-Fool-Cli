@@ -65,3 +65,6 @@ export const TEAM_MODE_ENABLED = true;
 // Stable ID for the Google Auth virtual provider.
 // Shared between frontend (useModelProviderList) and backend (SystemActions).
 export const GOOGLE_AUTH_PROVIDER_ID = 'google-auth-gemini';
+
+export const BUILTIN_BROWSER_MCP_NAME = 'chrome-devtools';
+export const BROWSER_SESSION_PARTITION = 'persist:browser-session';

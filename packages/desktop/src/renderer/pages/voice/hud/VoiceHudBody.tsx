@@ -11,6 +11,7 @@ import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import type { LayoutOptions } from '@/common/config/surfaceLayouts';
 import type { FoolVoiceSettings } from '@/common/types/foolVoice';
+import ShimmerText from '@renderer/components/ShimmerText';
 import type { ConversationHandle } from '../runtime/useConversation';
 import ConversationSettings from '../ConversationSettings';
 import SettingsDrawer from './SettingsDrawer';
@@ -112,8 +113,15 @@ const VoiceHudBody: React.FC<VoiceHudBodyProps> = ({ conversation, settings, onS
             </p>
           ) : null}
           <p className={classNames(styles.reply, !conversation.assistantTranscript && styles.replyWaiting)}>
-            {conversation.assistantTranscript ||
-              (conversation.userTranscript ? '' : t('settings.voice.conversationReadyHint'))}
+            {conversation.assistantTranscript ? (
+              conversation.assistantTranscript
+            ) : phase === 'thinking' ? (
+              <ShimmerText>{t('voice.thinking', { defaultValue: 'Thinking...' })}</ShimmerText>
+            ) : conversation.userTranscript ? (
+              ''
+            ) : (
+              t('settings.voice.conversationReadyHint')
+            )}
           </p>
         </div>
 

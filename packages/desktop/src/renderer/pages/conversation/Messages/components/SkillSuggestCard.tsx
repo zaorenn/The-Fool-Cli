@@ -43,7 +43,7 @@ const SkillSuggestCard: React.FC<SkillSuggestCardProps> = ({
       .then((exists) => {
         if (exists) setSaved(true);
       })
-      .catch(() => {});
+      .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
   }, [cron_job_id]);
 
   if (dismissed || saved) return null;
@@ -67,7 +67,7 @@ const SkillSuggestCard: React.FC<SkillSuggestCardProps> = ({
     <div
       data-testid='skill-suggest-card'
       className='mt-8px p-12px rd-8px bg-fill-0 b-1 b-solid'
-      style={{ borderColor: 'color-mix(in srgb, var(--color-border-2) 70%, transparent)' }}
+      style={{ borderColor: 'color-mix(in srgb, var(--bg-3) 70%, transparent)' }}
     >
       <div className='flex items-center gap-6px mb-8px'>
         <Lightning theme='filled' size={16} fill={iconColors.warning} />

@@ -16,7 +16,7 @@ import { DEFAULT_ACCENT, MATERIAL_SPECS, SURFACE_STYLES } from '@/common/theme/s
 describe('what gets stored', () => {
   it('is three things, and nothing derived', () => {
     const choice = defaultSurfaceChoice();
-    expect(Object.keys(choice).sort()).toEqual(['accent', 'style']);
+    expect(Object.keys(choice).toSorted()).toEqual(['accent', 'style']);
     expect(choice.accent).toBe(DEFAULT_ACCENT);
   });
 

@@ -185,7 +185,9 @@ configService.subscribe('language', (value) => {
         localStorage.setItem('i18nextLng', normalized);
       }
       // The tray menu and other main-process text read their own copy.
-      ipcBridge.systemSettings.changeLanguage.invoke({ language: normalized }).catch(() => {});
+      ipcBridge.systemSettings.changeLanguage
+        .invoke({ language: normalized })
+        .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
     })
     .catch((error: unknown) => console.error('Failed to follow a remote language change:', error));
 });
@@ -215,7 +217,9 @@ export async function changeLanguage(lang: string): Promise<void> {
     localStorage.setItem('i18nextLng', normalized);
   }
   // Notify main process to sync i18n (for tray menu, etc.)
-  ipcBridge.systemSettings.changeLanguage.invoke({ language: normalized }).catch(() => {});
+  ipcBridge.systemSettings.changeLanguage
+    .invoke({ language: normalized })
+    .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
 }
 
 // Clear translation cache (useful for development/testing)

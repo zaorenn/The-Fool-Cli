@@ -15,6 +15,8 @@ use foolrs_config::compat::OpenAiApiMode;
 use foolrs_config::config::{McpServerConfig, TransportType};
 use foolrs_types::message::ImageInputCapability;
 use serde_json::{Map, Value};
+
+use super::local_context_window;
 use tracing::{debug, info, warn};
 
 use crate::agent_task::AgentInstance;
@@ -206,11 +208,32 @@ pub(super) async fn build(
         }
     };
 
+    // How much this model can actually read.
+    //
+    // A stored value is somebody's decision and is taken as given; zero and
+    // below are treated as unset, because the column is nullable and
+    // hand-editable and a window of zero would compact on every message. With
+    // nothing stored — which is every installation, since the interface never
+    // asks — a local server is asked directly, and only then does the guess
+    // from the model's name stand.
+    let stored_context_limit = row
+        .context_limit
+        .and_then(|value| usize::try_from(value).ok())
+        .filter(|value| *value > 0);
+    let resolved_context_limit = match (stored_context_limit, base_url.as_deref()) {
+        (Some(stored), _) => Some(stored),
+        (None, Some(url)) if foolrs_config::context_window::is_local_endpoint(url) => {
+            local_context_window::probe_context_window(url, &model_id).await
+        }
+        _ => None,
+    };
+
     let config = FoolrsResolvedConfig {
         provider,
         api_key,
         model: model_id,
         base_url,
+        context_limit: resolved_context_limit,
         system_prompt: overrides.system_prompt,
         max_tokens: None,
         max_turns: overrides.max_turns,
@@ -774,7 +797,7 @@ fn resolve_mcp_servers(
         servers.extend(team_mcp_to_config(cfg));
     }
     if let Some(cfg) = app_tools {
-        servers.extend(app_tools_to_config(cfg, conversation_id));
+        servers.extend(app_tools_to_config(cfg, conversation_id, overrides.user_id.as_deref()));
     }
     servers
 }
@@ -787,7 +810,28 @@ fn resolve_mcp_servers(
 ///
 /// The conversation is named in the path, which is how one listener serves
 /// every conversation and a call still knows which one it belongs to.
-fn app_tools_to_config(cfg: &AppToolsMcpConfig, conversation_id: &str) -> HashMap<String, McpServerConfig> {
+fn app_tools_to_config(
+    cfg: &AppToolsMcpConfig,
+    conversation_id: &str,
+    user_id: Option<&str>,
+) -> HashMap<String, McpServerConfig> {
+    /// How long to wait for a listener inside this same process.
+    ///
+    /// The default is thirty seconds, which is written for a server that has to
+    /// be spawned, find an interpreter and load a runtime. This one is a
+    /// `tokio::spawn` on a loopback port in the process doing the waiting: it
+    /// has either answered or it is not going to.
+    ///
+    /// Thirty seconds was not a theoretical cost. `ensure_runtime` runs before a
+    /// turn may proceed, and when these two failed to connect it waited the full
+    /// timeout for each — so every message sat for thirty to forty seconds
+    /// before it was sent to the model at all. Reported as the model being slow,
+    /// which it was not: it had not been asked yet.
+    ///
+    /// This shortens the wait. It does not stop the connection failing, and a
+    /// failure still costs the conversation its app tools.
+    const LOOPBACK_STARTUP_TIMEOUT_MS: u64 = 3_000;
+
     let mut headers = HashMap::new();
     headers.insert("Authorization".to_owned(), format!("Bearer {}", cfg.token));
 
@@ -799,14 +843,14 @@ fn app_tools_to_config(cfg: &AppToolsMcpConfig, conversation_id: &str) -> HashMa
         url: Some(format!(
             "http://127.0.0.1:{}{}",
             cfg.port,
-            AppToolsMcpConfig::core_path(conversation_id)
+            AppToolsMcpConfig::with_user(&AppToolsMcpConfig::core_path(conversation_id), user_id)
         )),
         headers: Some(headers),
         // Never deferred: these are the tools a spoken conversation reaches for
         // first, and a deferred server would make the model search before it
         // could look at the screen.
         deferred: Some(false),
-        startup_timeout_ms: None,
+        startup_timeout_ms: Some(LOOPBACK_STARTUP_TIMEOUT_MS),
     };
 
     // The rest of the application's tools, advertised as names and stubs until
@@ -824,11 +868,11 @@ fn app_tools_to_config(cfg: &AppToolsMcpConfig, conversation_id: &str) -> HashMa
         url: Some(format!(
             "http://127.0.0.1:{}{}",
             cfg.port,
-            AppToolsMcpConfig::rest_path(conversation_id)
+            AppToolsMcpConfig::with_user(&AppToolsMcpConfig::rest_path(conversation_id), user_id)
         )),
         headers: Some(deferred_headers),
         deferred: Some(true),
-        startup_timeout_ms: None,
+        startup_timeout_ms: Some(LOOPBACK_STARTUP_TIMEOUT_MS),
     };
 
     HashMap::from([

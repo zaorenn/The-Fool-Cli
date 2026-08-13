@@ -66,6 +66,12 @@ const ramp = (palette: Palette): Entry[] => {
   return [
     ['--color-bg-base', ground],
     ['--bg-base', ground],
+    // The sheet that used to be literal white: `colors.ts` rewrites `#FFFFFF`
+    // to this, so it is every panel the upstream light design painted white.
+    // The card is what those panels are now — a step further from the ink would
+    // land the wrong way round in one appearance or the other, and `--fill-0`
+    // below already answers the same question with the same colour.
+    ['--bg-0', card],
     ['--color-bg-1', card],
     ['--bg-1', card],
     ['--color-bg-2', step(0.04)],

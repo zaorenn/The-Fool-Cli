@@ -166,17 +166,17 @@ const QueueItemCard: React.FC<QueueItemCardProps> = ({
       aria-label={preview}
       style={{
         background: isDragging
-          ? 'color-mix(in srgb, var(--color-fill-2) 88%, var(--color-bg-1))'
+          ? 'color-mix(in srgb, var(--color-fill-2) 88%, var(--bg-1))'
           : 'color-mix(in srgb, var(--color-fill-1) 76%, transparent)',
         touchAction: dragViaCard && !dragDisabled ? 'none' : undefined,
       }}
     >
       <div className='flex items-center gap-6px min-w-0 flex-1 relative pl-8px'>
         <div className='flex items-center gap-5px w-18px shrink-0 relative'>
-          <button
-            {...restDragHandleButtonProps}
-            ref={dragHandleRef}
-            type='button'
+          <Button
+            {...(restDragHandleButtonProps as any)}
+            ref={dragHandleRef as any}
+            type='text'
             aria-label={dragHandleLabel}
             disabled={dragDisabled}
             data-drag-handle={dragDisabled ? 'disabled' : 'enabled'}
@@ -196,12 +196,11 @@ const QueueItemCard: React.FC<QueueItemCardProps> = ({
               touchAction: dragDisabled ? undefined : 'none',
             }}
             onPointerDown={(event) => {
-              onDragHandlePointerDown(event);
+              onDragHandlePointerDown(event as any);
               onSortableDragHandlePointerDown?.(event);
             }}
-          >
-            <Drag theme='outline' size='12' strokeWidth={2.5} />
-          </button>
+            icon={<Drag theme='outline' size='12' strokeWidth={2.5} />}
+          />
           <span
             aria-hidden='true'
             data-queue-arrow='true'
@@ -453,8 +452,8 @@ const CommandQueuePanel: React.FC<CommandQueuePanelProps> = ({
         aria-label={title}
         className='overflow-hidden rd-t-18px border b-solid'
         style={{
-          borderColor: 'color-mix(in srgb, var(--color-border-2) 56%, transparent)',
-          background: 'color-mix(in srgb, var(--color-fill-1) 84%, var(--color-bg-1))',
+          borderColor: 'color-mix(in srgb, var(--bg-3) 56%, transparent)',
+          background: 'color-mix(in srgb, var(--color-fill-1) 84%, var(--bg-1))',
         }}
       >
         <div className='flex items-center justify-between gap-8px px-12px pt-8px pb-4px'>

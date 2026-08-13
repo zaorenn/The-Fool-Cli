@@ -29,7 +29,7 @@ if ((window as { electronAPI?: unknown }).electronAPI) {
         },
       })
     )
-    .catch(() => {});
+    .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
 }
 
 // Runtime patches must be imported early
@@ -169,7 +169,7 @@ function captureRuntimeInstallationIntegrityFailure(event: IRuntimeStatusEvent):
         Sentry.captureMessage('runtime-installation-integrity-failure', 'error');
       });
     })
-    .catch(() => {});
+    .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
 }
 
 function buildRuntimeInstallationDiagnostics(

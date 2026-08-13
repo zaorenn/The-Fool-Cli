@@ -686,19 +686,21 @@ const WebuiModalContent: React.FC = () => {
           {webuiEnabled && (
             <PreferenceRow label={t('settings.webui.accessUrl')}>
               <div className='flex items-center gap-8px min-w-0'>
-                <button
+                <Button
+                  htmlType='button'
                   className='text-14px text-primary font-mono hover:underline cursor-pointer bg-transparent border-none p-0 truncate'
                   onClick={() => shell.openExternal.invoke(getDisplayUrl()).catch(console.error)}
                 >
                   {getDisplayUrl()}
-                </button>
+                </Button>
                 <Tooltip content={t('common.copy')}>
-                  <button
+                  <Button
+                    htmlType='button'
                     className='p-4px text-t-tertiary hover:text-t-primary cursor-pointer bg-transparent border-none'
                     onClick={() => handleCopy(getDisplayUrl())}
                   >
                     <Copy size={16} />
-                  </button>
+                  </Button>
                 </Tooltip>
               </div>
             </PreferenceRow>
@@ -711,7 +713,8 @@ const WebuiModalContent: React.FC = () => {
               <span className='text-t-secondary'>
                 {t('settings.webui.allowRemoteDesc')}
                 {'  '}
-                <button
+                <Button
+                  htmlType='button'
                   className='text-primary hover:underline cursor-pointer bg-transparent border-none p-0 text-12px'
                   onClick={() =>
                     void talkToJester({
@@ -723,7 +726,7 @@ const WebuiModalContent: React.FC = () => {
                   }
                 >
                   {t('settings.webui.letJesterSetup', { defaultValue: 'Let the jester set it up' })}
-                </button>
+                </Button>
               </span>
             }
           >

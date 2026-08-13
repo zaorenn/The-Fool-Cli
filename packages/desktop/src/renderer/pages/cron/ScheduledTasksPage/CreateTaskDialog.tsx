@@ -716,7 +716,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                 );
               })}
             </Radio.Group>
-            <div className='mt-10px rounded-12px border border-solid border-[var(--color-border-2)] bg-fill-2 px-14px py-12px'>
+            <div className='mt-10px rounded-12px border border-solid border-[var(--bg-3)] bg-fill-2 px-14px py-12px'>
               <p className='m-0 text-12px leading-18px text-t-primary'>{selectedExecutionModeOption.description}</p>
             </div>
             {isTeamOwnedTask && (
@@ -734,7 +734,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
             <TextArea placeholder={t('cron.page.form.promptPlaceholder')} autoSize={{ minRows: 3, maxRows: 8 }} />
           </FormItem>
 
-          <div className='mb-20px flex items-start justify-between gap-16px rounded-12px border border-solid border-[var(--color-border-2)] px-14px py-12px'>
+          <div className='mb-20px flex items-start justify-between gap-16px rounded-12px border border-solid border-[var(--bg-3)] px-14px py-12px'>
             <div className='min-w-0'>
               <p className='m-0 text-14px font-medium text-t-primary'>{t('cron.page.form.queue')}</p>
               <p className='mb-0 mt-4px text-12px leading-18px text-t-secondary'>{t('cron.page.form.queueHint')}</p>
@@ -755,7 +755,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
           </FormItem>
 
           {frequency === 'custom' && (
-            <div className='mb-16px rounded-12px border border-solid border-[var(--color-border-2)] p-14px'>
+            <div className='mb-16px rounded-12px border border-solid border-[var(--bg-3)] p-14px'>
               <FormItem label={t('cron.page.custom.modeLabel')}>
                 <Select
                   data-testid='custom-frequency-mode'

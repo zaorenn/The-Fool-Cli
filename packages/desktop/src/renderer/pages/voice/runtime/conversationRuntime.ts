@@ -1097,7 +1097,7 @@ class ConversationRuntime {
     // usually not there. Failures are the store's to swallow — nothing about
     // saving history is worth interrupting the conversation for.
     this.saved = appendTurn(this.saved ?? startConversation(crypto.randomUUID(), Date.now()), { role, text: line });
-    void saveConversation(this.saved).catch(() => {});
+    void saveConversation(this.saved).catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
   }
 
   /**
@@ -1141,7 +1141,9 @@ class ConversationRuntime {
     // All that is left is to mark when it ended, and to make sure the next
     // conversation starts as a new one rather than appending to this.
     if (this.saved && this.saved.turns.length > 0) {
-      void saveConversation({ ...this.saved, endedAtMs: Date.now() }).catch(() => {});
+      void saveConversation({ ...this.saved, endedAtMs: Date.now() }).catch((e: unknown) =>
+        console.warn('Unhandled promise rejection:', e)
+      );
     }
     this.saved = null;
     this.carried = [];

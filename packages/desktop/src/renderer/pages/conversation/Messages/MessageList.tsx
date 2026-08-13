@@ -254,7 +254,7 @@ const MessageListSkeleton: React.FC<{ rowWidthClass: string }> = ({ rowWidthClas
                 width: row.bubbleWidth,
                 maxWidth: '100%',
                 background: 'var(--color-fill-1)',
-                border: '1px solid var(--color-border-2)',
+                border: '1px solid var(--bg-3)',
               }}
             >
               <div className='flex flex-col gap-10px'>

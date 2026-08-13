@@ -32,6 +32,7 @@ export interface PreviewMetadata {
   targetLine?: number; // 打开文件后定位到的目标行 / Target line to reveal after opening
   targetColumn?: number; // 打开文件后定位到的目标列 / Target column to reveal after opening
   missingFile?: boolean; // 文件不存在或无法读取 / Whether the referenced file is missing or unreadable
+  favicon?: string;
 }
 
 export interface PreviewTab {
@@ -43,6 +44,8 @@ export interface PreviewTab {
   isDirty?: boolean; // 是否有未保存的修改 / Whether there are unsaved changes
   originalContent?: string; // 原始内容，用于对比 / Original content for comparison
 }
+
+export type PreviewTabPatch = Partial<Omit<PreviewTab, 'id' | 'content_type'>>;
 
 export interface OpenPreviewOptions {
   /**

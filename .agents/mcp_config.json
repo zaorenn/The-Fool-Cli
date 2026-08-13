@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "fool-dev-tools": {
+      "command": "bun",
+      "args": ["run", "scripts/mcp-dev-server.ts"],
+      "description": "Fool-AionUI development tools: build, test, lint, type-check, database inspection"
+    },
+    "uacc": {
+      "command": "c:\\Fool-AionUI\\uacc-sidecar\\.venv\\Scripts\\python.exe",
+      "args": ["c:\\Fool-AionUI\\uacc-sidecar\\main.py"],
+      "env": {
+        "MCP_TRANSPORT": "stdio"
+      },
+      "description": "Universal AI Computer Control - screen capture, OCR, mouse/keyboard control for AI agents"
+    }
+  }
+}

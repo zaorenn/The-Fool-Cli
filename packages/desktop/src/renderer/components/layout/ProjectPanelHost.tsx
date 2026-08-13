@@ -26,7 +26,7 @@
  */
 
 import React, { useRef, useState } from 'react';
-
+import { Button } from '@arco-design/web-react';
 import { ExpandRight } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 
@@ -85,35 +85,34 @@ export const ProjectPanelHost: React.FC<ProjectPanelHostProps> = ({
     >
       {!collapsed && dragHandle}
       {!collapsed && showChevron && (
-        <button
-          type='button'
-          className='workspace-header__toggle absolute top-8px right-8px z-30'
+        <Button
+          type='text'
+          className='workspace-header__toggle absolute top-8px right-8px z-30 !p-0'
           aria-label='Collapse explorer'
           onClick={onToggle}
-        >
-          <ExpandRight size={16} />
-        </button>
+          icon={<ExpandRight size={16} />}
+        />
       )}
       {!collapsed && (
         <div className='flex items-center gap-4px px-8px pt-8px shrink-0' data-project-panel-tabs>
-          <button
-            type='button'
+          <Button
+            type='text'
             data-project-panel-tab='files'
             aria-pressed={tab === 'files'}
-            className={`text-12px px-8px py-4px rd-6px ${tab === 'files' ? 'bg-fill-3 text-t-primary' : 'text-t-tertiary'}`}
+            className={`!text-12px !px-8px !py-4px !h-auto !min-h-0 rd-6px ${tab === 'files' ? '!bg-fill-3 !text-t-primary' : '!text-t-tertiary'}`}
             onClick={() => setTab('files')}
           >
             {t('kanban.filesTitle')}
-          </button>
-          <button
-            type='button'
+          </Button>
+          <Button
+            type='text'
             data-project-panel-tab='board'
             aria-pressed={tab === 'board'}
-            className={`text-12px px-8px py-4px rd-6px ${tab === 'board' ? 'bg-fill-3 text-t-primary' : 'text-t-tertiary'}`}
+            className={`!text-12px !px-8px !py-4px !h-auto !min-h-0 rd-6px ${tab === 'board' ? '!bg-fill-3 !text-t-primary' : '!text-t-tertiary'}`}
             onClick={() => setTab('board')}
           >
             {t('kanban.boardTitle')}
-          </button>
+          </Button>
         </div>
       )}
       {/* Both stay mounted; the inactive one is only hidden, matching the

@@ -9,7 +9,7 @@
  * This file provides TypeScript types and helper functions for the color system
  *
  * Usage:
- * - CSS: use CSS variables directly: var(--color-bg-0)
+ * - CSS: use CSS variables directly: var(--bg-0)
  * - UnoCSS: use atomic classes: bg-bg-0, text-text, border-border
  * - TypeScript: use this file for type safety and constants
  */
@@ -43,16 +43,16 @@ export const cssVars = {
   },
   // Background colors
   bg: {
-    0: '--color-bg-0',
-    1: '--color-bg-1',
-    2: '--color-bg-2',
-    3: '--color-bg-3',
-    4: '--color-bg-4',
-    5: '--color-bg-5',
-    6: '--color-bg-6',
-    8: '--color-bg-8',
-    9: '--color-bg-9',
-    10: '--color-bg-10',
+    0: '--bg-0',
+    1: '--bg-1',
+    2: '--bg-2',
+    3: '--bg-3',
+    4: '--bg-4',
+    5: '--bg-5',
+    6: '--bg-6',
+    8: '--bg-8',
+    9: '--bg-9',
+    10: '--bg-10',
   },
   // Semantic colors
   text: '--color-text',
@@ -149,18 +149,18 @@ export const colorMapping: Record<string, string> = {
   '#7583b2': 'var(--color-aou-6-brand)',
 
   // Background colors
-  '#FFFFFF': 'var(--color-bg-0)',
-  '#ffffff': 'var(--color-bg-0)',
-  '#F9FAFB': 'var(--color-bg-1)',
-  '#f9fafb': 'var(--color-bg-1)',
-  '#F2F3F5': 'var(--color-bg-2)',
-  '#f2f3f5': 'var(--color-bg-2)',
-  '#E5E6EB': 'var(--color-bg-3)',
-  '#e5e6eb': 'var(--color-bg-3)',
-  '#86909C': 'var(--color-bg-6)',
-  '#86909c': 'var(--color-bg-6)',
-  '#1D2129': 'var(--color-bg-9)',
-  '#1d2129': 'var(--color-bg-9)',
+  '#FFFFFF': 'var(--bg-0)',
+  '#ffffff': 'var(--bg-0)',
+  '#F9FAFB': 'var(--bg-1)',
+  '#f9fafb': 'var(--bg-1)',
+  '#F2F3F5': 'var(--bg-2)',
+  '#f2f3f5': 'var(--bg-2)',
+  '#E5E6EB': 'var(--bg-3)',
+  '#e5e6eb': 'var(--bg-3)',
+  '#86909C': 'var(--bg-6)',
+  '#86909c': 'var(--bg-6)',
+  '#1D2129': 'var(--bg-9)',
+  '#1d2129': 'var(--bg-9)',
 
   // Semantic colors
   '#165DFF': 'var(--color-primary)',

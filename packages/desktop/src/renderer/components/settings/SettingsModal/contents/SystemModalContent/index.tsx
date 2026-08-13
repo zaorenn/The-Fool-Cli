@@ -67,7 +67,7 @@ const SystemModalContent: React.FC = () => {
           setStartOnBoot(result.data);
         }
       })
-      .catch(() => {});
+      .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
 
     ipcBridge.application.getGpuStatus
       .invoke()
@@ -76,7 +76,7 @@ const SystemModalContent: React.FC = () => {
           setGpuStatus(result.data);
         }
       })
-      .catch(() => {});
+      .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
   }, [isDesktop]);
 
   useEffect(() => {
@@ -88,7 +88,7 @@ const SystemModalContent: React.FC = () => {
           setCloseToTray(enabled);
           configService.setLocal('system.closeToTray', enabled);
         })
-        .catch(() => {});
+        .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
     }
     setNotificationEnabled(configService.get('system.notificationEnabled') ?? true);
     setCronNotificationEnabled(configService.get('system.cronNotificationEnabled') ?? false);
@@ -169,7 +169,7 @@ const SystemModalContent: React.FC = () => {
               ipcBridge.application.restart
                 .invoke()
                 .then((restartResult) => notifyManualRestartRequired(restartResult, t))
-                .catch(() => {});
+                .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
             } else {
               setGpuStatus(previous);
               Message.error(t('settings.hardwareAccelerationUpdateFailed'));
@@ -238,7 +238,9 @@ const SystemModalContent: React.FC = () => {
   const handlePromptTimeoutBlur = useCallback(() => {
     const clamped = Math.max(30, Math.min(3600, promptTimeout || 300));
     setPromptTimeout(clamped);
-    void setClientBusinessSetting('acp.promptTimeout', clamped).catch(() => {});
+    void setClientBusinessSetting('acp.promptTimeout', clamped).catch((e: unknown) =>
+      console.warn('Unhandled promise rejection:', e)
+    );
   }, [promptTimeout]);
 
   const handleAgentIdleTimeoutChange = useCallback((val: number | undefined) => {
@@ -248,7 +250,9 @@ const SystemModalContent: React.FC = () => {
   const handleAgentIdleTimeoutBlur = useCallback(() => {
     const clamped = Math.max(1, Math.min(60, agentIdleTimeout || 5));
     setAgentIdleTimeout(clamped);
-    void setClientBusinessSetting('acp.agentIdleTimeout', clamped).catch(() => {});
+    void setClientBusinessSetting('acp.agentIdleTimeout', clamped).catch((e: unknown) =>
+      console.warn('Unhandled promise rejection:', e)
+    );
   }, [agentIdleTimeout]);
 
   const handleSaveUploadToWorkspaceChange = useCallback((checked: boolean) => {

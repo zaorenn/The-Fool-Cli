@@ -336,7 +336,7 @@ const ShadowView = ({ children }: { children: React.ReactNode }) => {
     ipcBridge.theme.requestCurrent
       .invoke()
       .then(applyCss)
-      .catch(() => {});
+      .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
     const off = ipcBridge.theme.changed.on((t) => applyCss(t));
     return () => {
       mounted = false;

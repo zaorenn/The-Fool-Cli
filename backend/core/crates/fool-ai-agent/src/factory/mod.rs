@@ -4,6 +4,7 @@ mod acp;
 mod acp_launch_policy;
 mod context;
 pub(crate) mod foolrs;
+mod local_context_window;
 
 use std::path::PathBuf;
 use std::sync::Arc;

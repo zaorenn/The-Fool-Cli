@@ -5,6 +5,7 @@
  */
 
 import { useFeedback } from '@/renderer/hooks/context/FeedbackContext';
+import { Button } from '@arco-design/web-react';
 import { Comment } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useCallback } from 'react';
@@ -42,10 +43,10 @@ const FeedbackButton: React.FC<FeedbackButtonProps> = ({ module, feedbackTags, f
   );
 
   return (
-    <button
-      type='button'
+    <Button
+      htmlType='button'
       role='button'
-      onClick={handleClick}
+      onClick={(e) => handleClick(e as any)}
       className={classNames(
         'inline-flex items-center gap-3px cursor-pointer select-none b-none',
         'px-8px py-4px rd-16px',
@@ -56,7 +57,7 @@ const FeedbackButton: React.FC<FeedbackButtonProps> = ({ module, feedbackTags, f
     >
       <Comment theme='outline' size='14' fill='currentColor' className='flex-shrink-0 pt-4px' />
       <span>{t('settings.oneClickFeedback')}</span>
-    </button>
+    </Button>
   );
 };
 

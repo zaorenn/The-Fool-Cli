@@ -317,8 +317,8 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
             <div
               className='flex items-center justify-between px-12px py-10px rounded-8px transition-colors'
               style={{
-                backgroundColor: 'var(--color-bg-1)',
-                border: '1px solid var(--color-border-2)',
+                backgroundColor: 'var(--bg-1)',
+                border: '1px solid var(--bg-3)',
                 cursor: exportModalLoading ? 'not-allowed' : 'pointer',
                 opacity: exportModalLoading ? 0.55 : 1,
               }}
@@ -345,7 +345,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
             <button
               className='px-24px py-8px rounded-20px text-14px font-medium transition-all'
               style={{
-                border: '1px solid var(--color-border-2)',
+                border: '1px solid var(--bg-3)',
                 backgroundColor: 'var(--color-fill-2)',
                 color: 'var(--color-text-1)',
               }}
@@ -364,7 +364,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
               style={{
                 border: 'none',
                 backgroundColor: exportModalLoading ? 'var(--color-fill-3)' : 'var(--color-text-1)',
-                color: 'var(--color-bg-1)',
+                color: 'var(--bg-1)',
                 cursor: exportModalLoading ? 'not-allowed' : 'pointer',
               }}
               onMouseEnter={(event) => {
@@ -394,37 +394,6 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         onCancel={() => setShowExportDirectorySelector(false)}
       />
 
-      {batchMode && !collapsed && (
-        <div className='px-12px pb-8px pt-2px sticky top-0 z-20 bg-[var(--bg-2)]'>
-          <div className='rd-8px bg-fill-1 p-10px flex flex-col gap-8px border border-solid border-[rgba(var(--primary-6),0.08)]'>
-            <div className='text-12px leading-18px text-t-secondary'>
-              {t('conversation.history.selectedCount', { count: selectedCount })}
-            </div>
-            {/* Batch export UI entry intentionally disabled (kanban #14): the
-                button is removed so select-all + delete share the two columns.
-                handleBatchExport from useExport is kept for a future re-enable. */}
-            <div className='grid grid-cols-2 gap-6px'>
-              <Button
-                className='!w-full !justify-center !min-w-0 !h-30px !px-8px !text-12px whitespace-nowrap'
-                size='mini'
-                type='secondary'
-                onClick={handleToggleSelectAll}
-              >
-                {allSelected ? t('common.cancel') : t('conversation.history.selectAll')}
-              </Button>
-              <Button
-                className='!w-full !justify-center !min-w-0 !h-30px !px-8px !text-12px whitespace-nowrap'
-                size='mini'
-                status='warning'
-                onClick={handleBatchDelete}
-              >
-                {t('conversation.history.batchDelete')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* 移除项目确认弹窗 — 使用项目自家 FoolModal + 圆角线框按钮（红色危险态） */}
       <FoolModal
         visible={removeProjectTarget !== null}
@@ -441,7 +410,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
               type='button'
               className='px-24px py-8px rounded-20px text-14px font-medium transition-all'
               style={{
-                border: '1px solid var(--color-border-2)',
+                border: '1px solid var(--bg-3)',
                 backgroundColor: 'var(--color-fill-2)',
                 color: 'var(--color-text-1)',
                 cursor: removeProjectLoading ? 'not-allowed' : 'pointer',
@@ -553,7 +522,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
                       onToggle={() => handleToggleWorkspace(group.workspace)}
                       siderCollapsed={collapsed}
                       stickyHeader
-                      stickyTop={28}
+                      stickyTop={0}
                       header={
                         <span className='text-14px font-[500] truncate flex-1 text-t-primary min-w-0'>
                           {group.displayName}
@@ -635,6 +604,37 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
                   )}
                 </div>
               ))}
+          </div>
+        )}
+
+        {batchMode && !collapsed && (
+          <div className='px-12px pt-8px pb-12px sticky bottom-0 z-20 bg-[var(--bg-2)]'>
+            <div className='rd-8px bg-fill-1 p-10px flex flex-col gap-8px border border-solid border-[rgba(var(--primary-6),0.08)] shadow-[0_-4px_16px_rgba(0,0,0,0.05)]'>
+              <div className='text-12px leading-18px text-t-secondary'>
+                {t('conversation.history.selectedCount', { count: selectedCount })}
+              </div>
+              {/* Batch export UI entry intentionally disabled (kanban #14): the
+                  button is removed so select-all + delete share the two columns.
+                  handleBatchExport from useExport is kept for a future re-enable. */}
+              <div className='grid grid-cols-2 gap-6px'>
+                <Button
+                  className='!w-full !justify-center !min-w-0 !h-30px !px-8px !text-12px whitespace-nowrap'
+                  size='mini'
+                  status='warning'
+                  onClick={handleBatchDelete}
+                >
+                  {t('conversation.history.batchDelete')}
+                </Button>
+                <Button
+                  className='!w-full !justify-center !min-w-0 !h-30px !px-8px !text-12px whitespace-nowrap'
+                  size='mini'
+                  type='secondary'
+                  onClick={handleToggleSelectAll}
+                >
+                  {allSelected ? t('common.unselectAll') : t('common.selectAll')}
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </div>

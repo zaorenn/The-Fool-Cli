@@ -64,7 +64,7 @@ const DirInputItem: React.FC<{
               <Button
                 type='text'
                 aria-label={actionTooltip}
-                style={{ borderLeft: '1px solid var(--color-border-2)', borderRadius: '0 8px 8px 0' }}
+                style={{ borderLeft: '1px solid var(--bg-3)', borderRadius: '0 8px 8px 0' }}
                 icon={<FolderOpen theme='outline' size='18' fill={iconColors.primary} />}
                 onClick={(e) => {
                   e.stopPropagation();

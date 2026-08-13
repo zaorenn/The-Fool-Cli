@@ -1,10 +1,10 @@
-# CDP (Chrome DevTools Protocol) for MCP Development
+﻿# CDP (Chrome DevTools Protocol) for MCP Development
 
-The Fool supports CDP for external debugging tools integration. In development mode (`just dev`), CDP is enabled by default on port 9230.
+AionUi supports CDP for external debugging tools integration. In development mode (`just dev`), CDP is enabled by default on port 9230.
 
 ## Enable CDP in Production
 
-1. Open The Fool Settings → System → Developer Debug
+1. Open AionUi Settings ÔåÆ System ÔåÆ Developer Debug
 2. Enable "Enable Remote Debugging (CDP)"
 3. Restart the app
 
@@ -32,7 +32,7 @@ Add this to your IDE's MCP configuration. The configuration file location depend
 
 ## Other AI-Friendly Development Tools
 
-The Fool can integrate with other MCP tools for enhanced development experience:
+AionUi can integrate with other MCP tools for enhanced development experience:
 
 | Tool               | Purpose                                             | Config                                    |
 | ------------------ | --------------------------------------------------- | ----------------------------------------- |
@@ -45,41 +45,41 @@ See [MCP Servers](https://github.com/modelcontextprotocol/servers) for more tool
 
 ## Usage with MCP
 
-Once configured, you can use MCP tools to interact with The Fool:
+Once configured, you can use MCP tools to interact with AionUi:
 
-- `list_pages` — List all open pages in The Fool
-- `take_snapshot` — Get accessibility tree snapshot of current page
-- `click`, `fill`, `hover` — Interact with UI elements
-- `navigate_page` — Navigate to URLs
+- `list_pages` ÔÇö List all open pages in AionUi
+- `take_snapshot` ÔÇö Get accessibility tree snapshot of current page
+- `click`, `fill`, `hover` ÔÇö Interact with UI elements
+- `navigate_page` ÔÇö Navigate to URLs
 
 ## Inspect with Chrome DevTools
 
 1. Open `http://127.0.0.1:9230/json` in Chrome
 2. Click on a page to inspect it with DevTools
-3. Or use Chrome's `chrome://inspect` → Configure → add `127.0.0.1:9230`
+3. Or use Chrome's `chrome://inspect` ÔåÆ Configure ÔåÆ add `127.0.0.1:9230`
 
 ---
 
-# CDP (Chrome DevTools Protocol) MCP 开发
+# CDP (Chrome DevTools Protocol) MCP Õ╝ÇÕÅæ
 
-The Fool 支持 CDP 用于外部调试工具集成。在开发模式 (`just dev`) 下，CDP 默认在端口 9230 启用。
+AionUi µö»µîü CDP ö¿õ║ÄÕñûÚâ¿×░â×»òÕÀÑÕàÀÚøåµêÉÒÇéÕ£¿Õ╝ÇÕÅæµ¿íÕ╝Å (`just dev`) õ©ï´╝îCDP Ú╗İ×«ñÕ£¿½»ÕÅú 9230 ÕÉ»ö¿ÒÇé
 
-## 在生产环境启用 CDP
+## Õ£¿öşõ║ğÄ»ÕóâÕÉ»ö¿ CDP
 
-1. 打开 The Fool 设置 → 系统 → 开发者调试
-2. 启用"启用远程调试 (CDP)"
-3. 重启应用
+1. µëôÕ╝Ç AionUi ×«¥¢« ÔåÆ │╗╗ş ÔåÆ Õ╝ÇÕÅæ×Çà×░â×»ò
+2. ÕÉ»ö¿"ÕÉ»ö¿×┐£¿ï×░â×»ò (CDP)"
+3. ÚçıÕÉ»Õ║öö¿
 
-## 配置 MCP chrome-devtools
+## Úàı¢« MCP chrome-devtools
 
-将以下配置添加到你的 IDE 的 MCP 配置文件中。配置文件位置取决于你使用的 IDE：
+Õ░åõ╗Ñõ©ïÚàı¢«µÀ╗ÕèáÕê░õ¢áÜä IDE Üä MCP Úàı¢«µûçõ╗Âõ©¡ÒÇéÚàı¢«µûçõ╗Âõ¢ı¢«ÕÅûÕå│õ║Äõ¢áõ¢┐ö¿Üä IDE´╝Ü
 
-| IDE                | 配置路径                                                                                                                             |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **Cursor**         | `~/.cursor/mcp.json`                                                                                                                 |
-| **VS Code**        | `~/.vscode/mcp.json`                                                                                                                 |
-| **Claude Desktop** | `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) 或 `%APPDATA%\Claude\claude_desktop_config.json` (Windows) |
-| **Codebuddy**      | `~/.codebuddy/mcp.json`                                                                                                              |
+| IDE                | Úàı¢«×À»Õ¥ä                                                                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Cursor**         | `~/.cursor/mcp.json`                                                                                                                  |
+| **VS Code**        | `~/.vscode/mcp.json`                                                                                                                  |
+| **Claude Desktop** | `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) µêû `%APPDATA%\Claude\claude_desktop_config.json` (Windows) |
+| **Codebuddy**      | `~/.codebuddy/mcp.json`                                                                                                               |
 
 ```json
 {
@@ -92,30 +92,30 @@ The Fool 支持 CDP 用于外部调试工具集成。在开发模式 (`just dev`
 }
 ```
 
-## 其他 AI 友好的开发工具
+## ÕàÂõ╗û AI ÕÅïÕÑ¢ÜäÕ╝ÇÕÅæÕÀÑÕàÀ
 
-The Fool 可以集成其他 MCP 工具来增强开发体验：
+AionUi ÕÅ»õ╗ÑÚøåµêÉÕàÂõ╗û MCP ÕÀÑÕàÀµØÑÕóŞÕ╝║Õ╝ÇÕÅæõ¢ôÚ¬î´╝Ü
 
-| 工具               | 用途                                     | 配置                                      |
-| ------------------ | ---------------------------------------- | ----------------------------------------- |
-| **Playwright MCP** | 浏览器自动化（chrome-devtools 替代方案） | `"@playwright/mcp@latest"`                |
-| **Puppeteer MCP**  | 浏览器自动化                             | `"@puppeteer/mcp@latest"`                 |
-| **Filesystem MCP** | 文件操作                                 | `@modelcontextprotocol/server-filesystem` |
-| **Git MCP**        | Git 仓库操作                             | `@modelcontextprotocol/server-git`        |
+| ÕÀÑÕàÀ             | ö¿ÚÇö                                               | Úàı¢«                                    |
+| ------------------ | ---------------------------------------------------- | ----------------------------------------- |
+| **Playwright MCP** | µÁÅ×ğêÕÖ¿×ç¬Õè¿Õîû´╝êchrome-devtools µø┐õ╗úµû╣µíê´╝ë | `"@playwright/mcp@latest"`                |
+| **Puppeteer MCP**  | µÁÅ×ğêÕÖ¿×ç¬Õè¿Õîû                                   | `"@puppeteer/mcp@latest"`                 |
+| **Filesystem MCP** | µûçõ╗Âµôıõ¢£                                         | `@modelcontextprotocol/server-filesystem` |
+| **Git MCP**        | Git õ╗ôÕ║ôµôıõ¢£                                     | `@modelcontextprotocol/server-git`        |
 
-更多工具请查看 [MCP Servers](https://github.com/modelcontextprotocol/servers)。
+µø┤ÕñÜÕÀÑÕàÀ×»ÀµşÑ£ï [MCP Servers](https://github.com/modelcontextprotocol/servers)ÒÇé
 
-## MCP 使用方式
+## MCP õ¢┐ö¿µû╣Õ╝Å
 
-配置完成后，可以使用 MCP 工具与 The Fool 交互：
+Úàı¢«Õ«îµêÉÕÉÄ´╝îÕÅ»õ╗Ñõ¢┐ö¿ MCP ÕÀÑÕàÀõ©Ä AionUi õ║ñõ║Æ´╝Ü
 
-- `list_pages` — 列出 The Fool 中所有打开的页面
-- `take_snapshot` — 获取当前页面的可访问性树快照
-- `click`, `fill`, `hover` — 与 UI 元素交互
-- `navigate_page` — 导航到 URL
+- `list_pages` ÔÇö ÕêùÕç║ AionUi õ©¡µëÇµ£ëµëôÕ╝ÇÜäÚíÁÚØó
+- `take_snapshot` ÔÇö ×ÄÀÕÅûÕ¢ôÕëıÚíÁÚØóÜäÕÅ»×«┐Úù«µÇğµáæÕ┐½àğ
+- `click`, `fill`, `hover` ÔÇö õ©Ä UI Õàâ┤áõ║ñõ║Æ
+- `navigate_page` ÔÇö Õ»╝×ê¬Õê░ URL
 
-## 使用 Chrome DevTools 检查
+## õ¢┐ö¿ Chrome DevTools µúÇµşÑ
 
-1. 在 Chrome 中打开 `http://127.0.0.1:9230/json`
-2. 点击页面链接使用 DevTools 检查
-3. 或使用 Chrome 的 `chrome://inspect` → 配置 → 添加 `127.0.0.1:9230`
+1. Õ£¿ Chrome õ©¡µëôÕ╝Ç `http://127.0.0.1:9230/json`
+2. é╣Õç╗ÚíÁÚØóÚô¥µÄÑõ¢┐ö¿ DevTools µúÇµşÑ
+3. µêûõ¢┐ö¿ Chrome Üä `chrome://inspect` ÔåÆ Úàı¢« ÔåÆ µÀ╗Õèá `127.0.0.1:9230`

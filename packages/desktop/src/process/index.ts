@@ -19,6 +19,8 @@ if (app.isPackaged) {
 import initStorage from './utils/initStorage';
 import './utils/initBridge';
 import './services/i18n'; // Initialize i18n for main process
+import { startCdpBridge } from './resources/builtinMcp/cdpBridge';
+import { setCdpBridgeHandle } from './utils/cdpBridgeRegistry';
 
 export const initializeProcess = async () => {
   const t0 = performance.now();
@@ -26,4 +28,12 @@ export const initializeProcess = async () => {
 
   await initStorage();
   mark('initStorage');
+
+  try {
+    const bridge = await startCdpBridge();
+    setCdpBridgeHandle(bridge);
+    mark('startCdpBridge');
+  } catch (error) {
+    console.error('[The Fool:process] Failed to start CDP bridge', error);
+  }
 };

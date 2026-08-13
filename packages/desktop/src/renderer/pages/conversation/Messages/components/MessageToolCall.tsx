@@ -63,7 +63,9 @@ const ComputerUsePreview: React.FC<{ imagePath: string; inputStr?: string }> = (
       if (parsed.coordinate && Array.isArray(parsed.coordinate)) {
         coordinate = [parsed.coordinate[0], parsed.coordinate[1]];
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Failed to parse tool call input:', e);
+    }
   }
 
   return (

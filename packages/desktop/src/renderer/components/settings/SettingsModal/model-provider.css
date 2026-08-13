@@ -15,12 +15,12 @@
 [data-theme='light'] .model-provider-action-btn.arco-btn:focus-visible,
 [data-theme='light'] .model-provider-action-btn.arco-btn:active {
   background-color: var(--fill-0) !important;
-  border-color: var(--color-border-2) !important;
+  border-color: var(--bg-3) !important;
 }
 
 /* Dark mode: keep normal merged with row; highlight only on interaction */
 [data-theme='dark'] .model-provider-action-btn.arco-btn:hover,
 [data-theme='dark'] .model-provider-action-btn.arco-btn:focus-visible,
 [data-theme='dark'] .model-provider-action-btn.arco-btn:active {
-  background-color: var(--color-bg-1) !important;
+  background-color: var(--bg-1) !important;
 }

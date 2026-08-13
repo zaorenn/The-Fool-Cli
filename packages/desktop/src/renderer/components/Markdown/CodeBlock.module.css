@@ -1,0 +1,28 @@
+.codeBlockContainer {
+  position: relative;
+}
+
+.gradientFade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent, var(--bg-2));
+  pointer-events: none;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+:global([data-theme='dark']) .gradientFade {
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.04));
+}
+
+.collapseButtonContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-fill-2);
+}

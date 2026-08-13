@@ -34,7 +34,9 @@ async function initActiveTheme(): Promise<Theme> {
       /* noop */
     }
     // Seed the main-process relay so other surfaces (markdown shadow DOM, pet windows) can pull it.
-    void ipcBridge.theme.setActive.invoke(resolved).catch(() => {});
+    void ipcBridge.theme.setActive
+      .invoke(resolved)
+      .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
     return resolved;
   } catch (e) {
     console.error('init theme failed', e);
@@ -97,7 +99,9 @@ const useTheme = (): [Theme | null, (activeId: string) => Promise<void>, string 
       }
       // Carries the change to the surfaces that do not read config themselves:
       // the pet windows and the markdown shadow roots.
-      void ipcBridge.theme.setActive.invoke(resolved).catch(() => {});
+      void ipcBridge.theme.setActive
+        .invoke(resolved)
+        .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
     };
     const offActiveId = configService.subscribe('theme.activeId', reapplyFromConfig);
     const offUserThemes = configService.subscribe('theme.userThemes', reapplyFromConfig);

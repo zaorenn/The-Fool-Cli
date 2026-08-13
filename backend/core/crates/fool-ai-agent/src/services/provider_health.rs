@@ -92,6 +92,9 @@ impl ProviderHealthCheckService {
             api_key,
             model: model_id.to_owned(),
             base_url,
+            // A one-turn probe never reaches a compaction threshold, so the
+            // window it would be measured against does not matter.
+            context_limit: None,
             system_prompt: Some("You are a provider health probe. Reply with exactly OK and do not use tools.".into()),
             max_tokens: Some(HEALTH_CHECK_MAX_TOKENS),
             max_turns: Some(1),

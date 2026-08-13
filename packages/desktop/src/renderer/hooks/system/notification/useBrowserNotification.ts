@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * Copyright 2025 AionUi (aionui.com)
  * SPDX-License-Identifier: Apache-2.0
@@ -36,7 +36,7 @@ export const useBrowserNotification = (): void => {
     if (!streamEmitter) return;
 
     // The controller's turn_id dedup is best-effort per effect lifetime: it
-    // resets if this effect re-runs (e.g. on a language change). Acceptable —
+    // resets if this effect re-runs (e.g. on a language change). Acceptable ÔÇö
     // worst case is one duplicate notification across a locale switch.
     const controller = createBrowserNotificationController({
       shouldShow: () =>
@@ -54,7 +54,7 @@ export const useBrowserNotification = (): void => {
           : t('settings.browserNotification.bodyTurnCompleted'),
       show: ({ body, conversationId }) => {
         try {
-          const notification = new Notification('The Fool', { body });
+          const notification = new Notification('AionUi', { body });
           notification.onclick = () => {
             window.focus();
             if (conversationId) void navigate(`/conversation/${conversationId}`);

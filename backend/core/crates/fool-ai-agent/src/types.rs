@@ -130,6 +130,14 @@ pub struct FoolrsResolvedConfig {
     pub model: String,
     /// Provider base URL.
     pub base_url: Option<String>,
+    /// The context window the user configured on the provider, in tokens.
+    ///
+    /// The compaction threshold is otherwise guessed from the model's name, and
+    /// a name is a poor witness for a local model: the window is whatever was
+    /// chosen when it was loaded. Somebody who set 64k in LM Studio has told us
+    /// the answer, and this carries it to the place that decides when to
+    /// summarise. `None` leaves the name-based guess in charge.
+    pub context_limit: Option<usize>,
     /// System prompt override.
     pub system_prompt: Option<String>,
     /// Internal response cap for specialized flows such as provider health probes.

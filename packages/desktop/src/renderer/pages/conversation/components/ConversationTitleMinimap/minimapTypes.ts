@@ -37,9 +37,9 @@ export const ITEM_ROW_ESTIMATED_HEIGHT = 80;
 export const PANEL_VISIBLE_ITEM_CAP = 5;
 
 export const defaultVisualStyle: MinimapVisualStyle = {
-  background: 'var(--color-bg-5)',
-  border: '1px solid var(--color-border-2)',
-  borderColor: 'var(--color-border-2)',
+  background: 'var(--bg-5)',
+  border: '1px solid var(--bg-3)',
+  borderColor: 'var(--bg-3)',
   borderRadius: '12px',
   boxShadow: '0 8px 24px rgba(0, 0, 0, 0.16)',
 };

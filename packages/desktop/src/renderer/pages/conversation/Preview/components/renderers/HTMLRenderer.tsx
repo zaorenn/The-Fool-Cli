@@ -594,7 +594,9 @@ const HTMLRenderer: React.FC<HTMLRendererProps> = ({
     if (!webview || !onScroll) return;
 
     const injectScrollSync = () => {
-      void webview.executeJavaScript(scrollSyncScript).catch(() => {});
+      void webview
+        .executeJavaScript(scrollSyncScript)
+        .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
     };
 
     if (webviewLoadedRef.current) {
@@ -624,7 +626,7 @@ const HTMLRenderer: React.FC<HTMLRendererProps> = ({
           })();
         `
       )
-      .catch(() => {});
+      .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
   }, []);
   // 使用外部 containerRef 或内部 divRef / Use external containerRef or internal divRef
   const effectiveContainerRef = containerRef || divRef;
@@ -655,7 +657,7 @@ const HTMLRenderer: React.FC<HTMLRendererProps> = ({
           })();
         `
         )
-        .catch(() => {})
+        .catch((e: unknown) => console.warn('Unhandled promise rejection:', e))
         .finally(() => {
           setTimeout(() => {
             isSyncingScrollRef.current = false;

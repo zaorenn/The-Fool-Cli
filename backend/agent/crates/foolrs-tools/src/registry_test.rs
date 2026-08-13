@@ -251,4 +251,36 @@ mod tests {
         let defs = registry.to_tool_defs();
         assert!(defs[0].deferred, "deferred tool should have deferred=true");
     }
+
+    /// For a model that cannot be trusted with the two-step dance.
+    ///
+    /// A deferred tool is advertised as a name with no parameters, and the
+    /// model must call `ToolSearch` before it can use it. A local 9B was
+    /// observed calling `Spawn` with `{}`, being told to load the schema, and
+    /// getting it wrong twice more. Sending the schema costs prompt tokens and
+    /// buys a tool that works on the first call.
+    #[test]
+    fn send_every_schema_stops_a_deferred_tool_being_advertised_as_a_stub() {
+        let mut registry = ToolRegistry::new();
+        registry.register(Box::new(DeferredMockTool {
+            tool_name: "lazy_tool".to_string(),
+        }));
+
+        registry.send_every_schema();
+
+        assert!(!registry.to_tool_defs()[0].deferred);
+    }
+
+    #[test]
+    fn send_every_schema_also_applies_to_a_filtered_set() {
+        let mut registry = ToolRegistry::new();
+        registry.register(Box::new(DeferredMockTool {
+            tool_name: "lazy_tool".to_string(),
+        }));
+
+        registry.send_every_schema();
+
+        let defs = registry.to_tool_defs_filtered(|_| true);
+        assert!(!defs[0].deferred);
+    }
 }

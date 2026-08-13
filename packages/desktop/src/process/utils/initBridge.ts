@@ -221,6 +221,13 @@ void import('../voice/browserControlServer').then(async ({ startBrowserControlSe
   app.on('will-quit', stopBrowserControlServer);
 });
 
+void import('../voice/settingsControlServer').then(
+  async ({ startSettingsControlServer, stopSettingsControlServer }) => {
+    await startSettingsControlServer();
+    app.on('will-quit', stopSettingsControlServer);
+  }
+);
+
 /**
  * Stops the audio.cpp child process.
  *

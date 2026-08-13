@@ -176,8 +176,8 @@ const FoolCollapseComponent: React.FC<FoolCollapseProps> & { Item: typeof FoolCo
         } = child.props;
         const isActive = currentKeys.includes(name);
         const iconNode = expandIcon ? expandIcon(isActive) : <DefaultIcon active={isActive} />;
-        const itemBorderClass = bordered ? 'border border-solid border-[color:var(--color-border-2)]' : '';
-        const contentDividerClass = bordered ? 'border-t border-[color:var(--color-border-2)]' : '';
+        const itemBorderClass = bordered ? 'border border-solid border-[color:var(--bg-3)]' : '';
+        const contentDividerClass = bordered ? 'border-t border-[color:var(--bg-3)]' : '';
 
         return (
           <div

@@ -2,9 +2,9 @@
   width: 100%;
   margin-bottom: 12px;
   overflow: hidden;
-  border: 1px solid var(--color-border-2);
+  border: 1px solid var(--bg-3);
   border-radius: 10px;
-  background: var(--color-bg-2);
+  background: var(--bg-2);
   container-type: inline-size;
 }
 
@@ -45,7 +45,7 @@
   flex: 0 0 auto;
   align-items: center;
   padding: 1px 6px;
-  border: 1px solid var(--color-border-2);
+  border: 1px solid var(--bg-3);
   border-radius: 999px;
   color: var(--color-text-2);
   background: var(--color-fill-1);
@@ -69,7 +69,7 @@
   align-items: baseline;
   gap: 8px;
   padding: 7px 9px;
-  border: 1px solid var(--color-border-2);
+  border: 1px solid var(--bg-3);
   border-radius: 7px;
   background: var(--color-fill-1);
 }
@@ -120,7 +120,7 @@
   width: 100%;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--color-border-2);
+  border: 1px solid var(--bg-3);
   border-radius: 8px;
 }
 
@@ -142,7 +142,7 @@
 }
 
 .optionButton:global(.arco-btn) + .optionButton:global(.arco-btn) {
-  border-top: 1px solid var(--color-border-2);
+  border-top: 1px solid var(--bg-3);
 }
 
 .optionButton:global(.arco-btn):not(:disabled):hover {
@@ -167,7 +167,7 @@
   width: 18px;
   height: 18px;
   margin-right: 8px;
-  border: 1px solid var(--color-border-2);
+  border: 1px solid var(--bg-3);
   border-radius: 4px;
   color: var(--color-text-3);
   font-size: 11px;
@@ -199,7 +199,7 @@
 .emptyState {
   display: block;
   padding: 10px 12px;
-  border: 1px dashed var(--color-border-2);
+  border: 1px dashed var(--bg-3);
   border-radius: 9px;
   color: var(--color-text-3);
   background: var(--color-fill-1);
@@ -211,7 +211,7 @@
   align-items: flex-start;
   gap: 8px;
   padding: 8px 10px;
-  border: 1px solid var(--color-border-2);
+  border: 1px solid var(--bg-3);
   border-radius: 9px;
   font-size: 12px;
   line-height: 1.5;
@@ -268,7 +268,7 @@
 
 .customInput:focus {
   outline: none;
-  border-color: var(--primary-6, #c8102e);
+  border-color: var(--primary-6);
 }
 
 .customActions {

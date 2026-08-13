@@ -11,6 +11,7 @@ export const BUILTIN_BROWSER_NAME = 'fool-browser';
 
 export const BUILTIN_IMAGE_GEN_ID = 'builtin-image-gen';
 export const BUILTIN_IMAGE_GEN_NAME = 'fool-image-generation';
+export const BUILTIN_APP_SETTINGS_NAME = 'fool-app-settings';
 export const BUILTIN_IMAGE_GEN_LEGACY_NAMES = [
   'fool-image-generation',
   'The Fool Image Generation',

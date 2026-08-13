@@ -197,6 +197,18 @@ impl AgentBootstrap {
         let environment = self.resolve_environment(workspace)?;
         let mut registry = self.build_builtin_registry(&environment.workspace);
 
+        // A model served from this machine is sent every schema in full.
+        //
+        // Deferring is a trade: a smaller prompt, paid for with a round trip
+        // through `ToolSearch` before a tool with a large schema can be called.
+        // A frontier model makes that trade well. A local 9B does not — seen
+        // calling `Spawn` with `{}`, being told to load the schema, and getting
+        // it wrong twice more after that. A tool it cannot call is worth more
+        // than the tokens the stub saved.
+        if foolrs_config::context_window::is_local_endpoint(&self.config.base_url) {
+            registry.send_every_schema();
+        }
+
         let builtin_names = registry.tool_names();
         let mcp = self.connect_mcp(&mut registry, &builtin_names).await;
 

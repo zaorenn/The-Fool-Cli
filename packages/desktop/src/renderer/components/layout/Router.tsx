@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import AppLoader from '@renderer/components/layout/AppLoader';
 import { useAuth } from '@renderer/hooks/context/AuthContext';
+import { ErrorBoundary } from '@renderer/components/base/ErrorBoundary';
 import { TEAM_MODE_ENABLED } from '@/common/config/constants';
 const Conversation = React.lazy(() => import('@renderer/pages/conversation'));
 const Guid = React.lazy(() => import('@renderer/pages/guid'));
@@ -65,59 +66,61 @@ const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
 
   return (
     <HashRouter>
-      <Routes>
-        <Route
-          path='/login'
-          element={status === 'authenticated' ? <Navigate to='/guid' replace /> : withRouteFallback(LoginPage)}
-        />
-        <Route element={<ProtectedLayout layout={layout} />}>
-          <Route index element={<Navigate to='/guid' replace />} />
-          <Route path='/guid' element={withRouteFallback(Guid)} />
-          <Route path='/welcome' element={withRouteFallback(Welcome)} />
-          <Route path='/voice' element={withRouteFallback(VoiceConversation)} />
-          <Route path='/conversation/:id' element={withRouteFallback(Conversation)} />
+      <ErrorBoundary>
+        <Routes>
           <Route
-            path='/team/:id'
-            element={TEAM_MODE_ENABLED ? withRouteFallback(TeamIndex) : <Navigate to='/guid' replace />}
+            path='/login'
+            element={status === 'authenticated' ? <Navigate to='/guid' replace /> : withRouteFallback(LoginPage)}
           />
-          <Route path='/settings/overview' element={withRouteFallback(OverviewSettings)} />
-          <Route path='/settings/model' element={withRouteFallback(ModeSettings)} />
-          <Route path='/assistants' element={withRouteFallback(AssistantSettings)} />
-          {/* Assistants moved out of Settings to a top-level entry; keep a redirect
-              so old deep links / back-nav still land on the new page. */}
-          <Route path='/settings/assistants' element={<Navigate to='/assistants' replace />} />
-          <Route path='/settings/agent' element={withRouteFallback(AgentSettings)} />
-          <Route path='/settings/agent/:id/repair' element={withRouteFallback(AgentRepairPage)} />
-          {/* Skills and Tools are top-level settings entries. */}
-          <Route path='/settings/skills' element={withRouteFallback(SkillsSettings)} />
-          <Route path='/settings/skills/import-history' element={withRouteFallback(SkillsSettings)} />
-          <Route path='/settings/skills/detail/:skillName' element={withRouteFallback(SkillDetailPage)} />
-          <Route path='/settings/tools' element={withRouteFallback(ToolsSettings)} />
-          {/* Legacy routes — the previous combined "Capabilities" page is now two pages. */}
-          <Route path='/settings/capabilities' element={<CapabilitiesRedirect />} />
-          <Route
-            path='/settings/capabilities/skills/import-history'
-            element={<Navigate to='/settings/skills/import-history' replace />}
-          />
-          <Route path='/settings/skills-hub' element={<Navigate to='/settings/skills' replace />} />
-          <Route path='/settings/connections' element={withRouteFallback(ConnectionsSettings)} />
-          <Route path='/settings/voice' element={withRouteFallback(VoiceSettings)} />
-          <Route path='/settings/memory' element={withRouteFallback(MemorySettings)} />
-          <Route path='/settings/appearance' element={withRouteFallback(AppearanceSettings)} />
-          <Route path='/settings/display' element={<Navigate to='/settings/appearance' replace />} />
-          <Route path='/settings/webui' element={withRouteFallback(WebuiSettings)} />
-          <Route path='/settings/pet' element={withRouteFallback(PetSettings)} />
-          <Route path='/settings/system' element={withRouteFallback(SystemSettings)} />
-          <Route path='/settings/about' element={withRouteFallback(SystemSettings)} />
-          <Route path='/settings/ext/:tabId' element={withRouteFallback(ExtensionSettingsPage)} />
-          <Route path='/settings' element={<Navigate to='/settings/agent' replace />} />
-          <Route path='/test/components' element={withRouteFallback(ComponentsShowcase)} />
-          <Route path='/hub' element={withRouteFallback(FoolsHubPage)} />
-          <Route path='/scheduled' element={withRouteFallback(ScheduledTasksPage)} />
-          <Route path='/scheduled/:job_id' element={withRouteFallback(TaskDetailPage)} />
-        </Route>
-        <Route path='*' element={<Navigate to={status === 'authenticated' ? '/guid' : '/login'} replace />} />
-      </Routes>
+          <Route element={<ProtectedLayout layout={layout} />}>
+            <Route index element={<Navigate to='/guid' replace />} />
+            <Route path='/guid' element={withRouteFallback(Guid)} />
+            <Route path='/welcome' element={withRouteFallback(Welcome)} />
+            <Route path='/voice' element={withRouteFallback(VoiceConversation)} />
+            <Route path='/conversation/:id' element={withRouteFallback(Conversation)} />
+            <Route
+              path='/team/:id'
+              element={TEAM_MODE_ENABLED ? withRouteFallback(TeamIndex) : <Navigate to='/guid' replace />}
+            />
+            <Route path='/settings/overview' element={withRouteFallback(OverviewSettings)} />
+            <Route path='/settings/model' element={withRouteFallback(ModeSettings)} />
+            <Route path='/assistants' element={withRouteFallback(AssistantSettings)} />
+            {/* Assistants moved out of Settings to a top-level entry; keep a redirect
+                so old deep links / back-nav still land on the new page. */}
+            <Route path='/settings/assistants' element={<Navigate to='/assistants' replace />} />
+            <Route path='/settings/agent' element={withRouteFallback(AgentSettings)} />
+            <Route path='/settings/agent/:id/repair' element={withRouteFallback(AgentRepairPage)} />
+            {/* Skills and Tools are top-level settings entries. */}
+            <Route path='/settings/skills' element={withRouteFallback(SkillsSettings)} />
+            <Route path='/settings/skills/import-history' element={withRouteFallback(SkillsSettings)} />
+            <Route path='/settings/skills/detail/:skillName' element={withRouteFallback(SkillDetailPage)} />
+            <Route path='/settings/tools' element={withRouteFallback(ToolsSettings)} />
+            {/* Legacy routes — the previous combined "Capabilities" page is now two pages. */}
+            <Route path='/settings/capabilities' element={<CapabilitiesRedirect />} />
+            <Route
+              path='/settings/capabilities/skills/import-history'
+              element={<Navigate to='/settings/skills/import-history' replace />}
+            />
+            <Route path='/settings/skills-hub' element={<Navigate to='/settings/skills' replace />} />
+            <Route path='/settings/connections' element={withRouteFallback(ConnectionsSettings)} />
+            <Route path='/settings/voice' element={withRouteFallback(VoiceSettings)} />
+            <Route path='/settings/memory' element={withRouteFallback(MemorySettings)} />
+            <Route path='/settings/appearance' element={withRouteFallback(AppearanceSettings)} />
+            <Route path='/settings/display' element={<Navigate to='/settings/appearance' replace />} />
+            <Route path='/settings/webui' element={withRouteFallback(WebuiSettings)} />
+            <Route path='/settings/pet' element={withRouteFallback(PetSettings)} />
+            <Route path='/settings/system' element={withRouteFallback(SystemSettings)} />
+            <Route path='/settings/about' element={withRouteFallback(SystemSettings)} />
+            <Route path='/settings/ext/:tabId' element={withRouteFallback(ExtensionSettingsPage)} />
+            <Route path='/settings' element={<Navigate to='/settings/agent' replace />} />
+            <Route path='/test/components' element={withRouteFallback(ComponentsShowcase)} />
+            <Route path='/hub' element={withRouteFallback(FoolsHubPage)} />
+            <Route path='/scheduled' element={withRouteFallback(ScheduledTasksPage)} />
+            <Route path='/scheduled/:job_id' element={withRouteFallback(TaskDetailPage)} />
+          </Route>
+          <Route path='*' element={<Navigate to={status === 'authenticated' ? '/guid' : '/login'} replace />} />
+        </Routes>
+      </ErrorBoundary>
     </HashRouter>
   );
 };

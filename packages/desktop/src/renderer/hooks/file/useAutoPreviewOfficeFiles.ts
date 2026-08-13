@@ -120,7 +120,9 @@ export const useAutoPreviewOfficeFiles = (
       unsubscribeFileAdded();
       clearPendingOpenTimers();
       knownOfficeFilesRef.current.clear();
-      void ipcBridge.workspaceOfficeWatch.stop.invoke({ workspace }).catch(() => {});
+      void ipcBridge.workspaceOfficeWatch.stop
+        .invoke({ workspace })
+        .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
     };
   }, [clearPendingOpenTimers, enabled, normalizedWorkspace, openOfficePreview, workspace]);
 };

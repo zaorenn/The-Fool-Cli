@@ -39,7 +39,7 @@ const BASE_CLASS = classNames(
   '[&_.arco-select-view]:transition-colors',
   '[&_.arco-select-view:hover]:border-[var(--color-primary)]',
   '[&_.arco-select-view:focus-within]:border-[var(--color-primary)]',
-  '[&_.arco-select-view-disabled]:bg-[var(--color-bg-2)]',
+  '[&_.arco-select-view-disabled]:bg-[var(--bg-2)]',
   '[&_.arco-select-view-disabled]:opacity-80'
 );
 

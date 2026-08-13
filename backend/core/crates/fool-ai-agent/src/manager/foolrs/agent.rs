@@ -221,11 +221,25 @@ impl FoolrsAgentManager {
         // inert, and the conversation grew until the model overran its window.
         // An unknown local model is assumed small, because guessing high kills
         // the conversation and guessing low only costs some context.
+        //
+        // The provider's own setting outranks both the config file and the name
+        // table: for a locally served model the window is whatever was chosen
+        // when it was loaded, and a model name cannot know that. Somebody who
+        // set 64k in LM Studio has already answered this question.
         let local = foolrs_config::context_window::is_local_endpoint(&config.base_url);
-        let configured = (config.compact.context_window != foolrs_config::compact::DEFAULT_CONTEXT_WINDOW)
-            .then_some(config.compact.context_window);
+        let configured = config_extra.context_limit.or_else(|| {
+            (config.compact.context_window != foolrs_config::compact::DEFAULT_CONTEXT_WINDOW)
+                .then_some(config.compact.context_window)
+        });
         config.compact.context_window =
             foolrs_config::context_window::context_window_for(&config.model, local, configured);
+        info!(
+            model = %config.model,
+            local,
+            from_provider = ?config_extra.context_limit,
+            context_window = config.compact.context_window,
+            "Resolved compaction context window"
+        );
 
         if let Some(mode) = config_extra.compat_overrides.openai_api_mode {
             config.compat.transport.openai_api_mode = Some(mode);
@@ -288,6 +302,7 @@ impl FoolrsAgentManager {
             .map_err(|e| AgentError::internal(format!("Agent bootstrap failed: {e}")))?;
 
         let mut engine = result.engine;
+        engine.set_initial_reasoning_effort(Some("none".to_string()));
         if !is_resume && let Err(e) = engine.init_session(&provider_label, &workspace, Some(&conversation_id)) {
             error!(
                 conversation_id = %conversation_id,

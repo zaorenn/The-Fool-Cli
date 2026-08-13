@@ -12,6 +12,7 @@ import {
 } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Button } from '@arco-design/web-react';
 
 import { ipcBridge } from '@/common';
 import { PRODUCT_NAME } from '@/common/brand';
@@ -324,30 +325,30 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable, browserOpen, on
     >
       <div ref={menuRef} className='app-titlebar__menu' style={menuStyle}>
         {showBackToChatButton && (
-          <button
-            type='button'
+          <Button
+            htmlType='button'
             className={classNames('app-titlebar__button', layout?.isMobile && 'app-titlebar__button--mobile')}
             onClick={handleBackToChat}
             aria-label={backToChatTooltip}
           >
             <ArrowCircleLeft theme='outline' size={iconSize} fill='currentColor' />
-          </button>
+          </Button>
         )}
         {showSiderToggle && (
-          <button
-            type='button'
+          <Button
+            htmlType='button'
             className={classNames('app-titlebar__button', layout?.isMobile && 'app-titlebar__button--mobile')}
             onClick={handleSiderToggle}
             aria-label={siderTooltip}
           >
             <SidebarIcon size={iconSize} strokeWidth={desktopIconStroke} />
-          </button>
+          </Button>
         )}
         {showSearchButton && (
           <ConversationSearchPopover
             renderTrigger={({ onClick }) => (
-              <button
-                type='button'
+              <Button
+                htmlType='button'
                 className='app-titlebar__button'
                 onClick={onClick}
                 aria-label={searchTooltip}
@@ -361,14 +362,14 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable, browserOpen, on
                   className='block leading-none'
                   style={{ lineHeight: 0 }}
                 />
-              </button>
+              </Button>
             )}
           />
         )}
         {showHistoryNav && (
           <>
-            <button
-              type='button'
+            <Button
+              htmlType='button'
               className='app-titlebar__button app-titlebar__button--nav'
               onClick={() => navigationHistory?.back()}
               disabled={!navigationHistory?.canBack}
@@ -376,9 +377,9 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable, browserOpen, on
               title={historyBackTooltip}
             >
               <ArrowLeft theme='outline' size={iconSize} fill='currentColor' strokeWidth={desktopIconStroke} />
-            </button>
-            <button
-              type='button'
+            </Button>
+            <Button
+              htmlType='button'
               className='app-titlebar__button app-titlebar__button--nav'
               onClick={() => navigationHistory?.forward()}
               disabled={!navigationHistory?.canForward}
@@ -386,7 +387,7 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable, browserOpen, on
               title={historyForwardTooltip}
             >
               <ArrowRight theme='outline' size={iconSize} fill='currentColor' strokeWidth={desktopIconStroke} />
-            </button>
+            </Button>
           </>
         )}
       </div>
@@ -420,8 +421,8 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable, browserOpen, on
       <div ref={toolbarRef} className='app-titlebar__toolbar'>
         {layout?.isMobile && <div id='app-titlebar-actions-slot' className='app-titlebar__actions-slot' />}
         {onToggleBrowser && (
-          <button
-            type='button'
+          <Button
+            htmlType='button'
             className={classNames('app-titlebar__button', layout?.isMobile && 'app-titlebar__button--mobile', {
               'app-titlebar__button--active': browserOpen,
             })}
@@ -431,20 +432,20 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable, browserOpen, on
             title={t('common.browser.toggle')}
           >
             <Browser theme='outline' size={iconSize} fill='currentColor' strokeWidth={desktopIconStroke} />
-          </button>
+          </Button>
         )}
-        <button
-          type='button'
+        <Button
+          htmlType='button'
           className={classNames('app-titlebar__button', layout?.isMobile && 'app-titlebar__button--mobile')}
           onClick={() => void openFeedback({ autoScreenshot: true, module: resolveFeedbackModule(location.pathname) })}
           aria-label={feedbackTooltip}
           title={feedbackTooltip}
         >
           <FeedbackIcon size={iconSize} strokeWidth={desktopIconStroke} />
-        </button>
+        </Button>
         {showWorkspaceButton && (
-          <button
-            type='button'
+          <Button
+            htmlType='button'
             className={classNames('app-titlebar__button', layout?.isMobile && 'app-titlebar__button--mobile')}
             onClick={handleWorkspaceToggle}
             aria-label={workspaceTooltip}
@@ -454,7 +455,7 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable, browserOpen, on
             ) : (
               <ExpandLeft theme='outline' size={iconSize} fill='currentColor' />
             )}
-          </button>
+          </Button>
         )}
         {showWindowControls && <WindowControls />}
       </div>

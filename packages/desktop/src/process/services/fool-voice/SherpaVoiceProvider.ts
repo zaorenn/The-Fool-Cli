@@ -524,7 +524,9 @@ export class SherpaVoiceProvider {
     // model with no profile chosen, so nothing supplies a reference.
     const engine = getEngineSpec(modelId);
     if (engine?.role === 'text-to-speech' && isCloningTts(engine.engine.kind) && !generationConfig) {
-      throw new Error(`${modelId} speaks by cloning and needs a reference recording; profile "${profileId}" has none`);
+      const errorMessage = `${modelId} speaks by cloning and needs a reference recording; profile "${profileId}" has none`;
+      console.warn(`[SherpaVoiceProvider] ${errorMessage}`);
+      throw new Error(errorMessage);
     }
 
     const synthesizer = await this.getSynthesizer(modelId);
@@ -560,9 +562,15 @@ export class SherpaVoiceProvider {
     };
     // Synthesis runs off this thread where the binding allows it: done here, a
     // long passage blocks the main process and freezes every window with it.
-    const audioData = synthesizer.generateAsync
-      ? await synthesizer.generateAsync(request)
-      : synthesizer.generate(request);
+    let audioData;
+    try {
+      audioData = synthesizer.generateAsync ? await synthesizer.generateAsync(request) : synthesizer.generate(request);
+    } catch (err) {
+      console.error('[SherpaVoiceProvider] Native addon crashed during synthesis:', err);
+      throw new Error(`Sherpa native synthesis failed: ${err instanceof Error ? err.message : String(err)}`, {
+        cause: err,
+      });
+    }
     if (!audioData?.samples?.length) throw new Error('Synthesis produced no audio');
     if (signal?.aborted) throw new Error('cancelled');
 

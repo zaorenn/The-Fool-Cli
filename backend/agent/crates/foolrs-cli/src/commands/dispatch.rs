@@ -1,6 +1,6 @@
 //! Top-level subcommand dispatch for the `fool` CLI binary.
 
-use super::{cmd_auth, cmd_config, cmd_session, cmd_skills};
+use super::{cmd_auth, cmd_config, cmd_mcp, cmd_session, cmd_skills};
 use crate::cli::Commands;
 
 pub(crate) async fn dispatch(cmd: Commands) -> anyhow::Result<()> {
@@ -9,5 +9,6 @@ pub(crate) async fn dispatch(cmd: Commands) -> anyhow::Result<()> {
         Commands::Auth { action } => cmd_auth::run(action).await,
         Commands::Session { action } => cmd_session::run(action),
         Commands::Skills { action } => cmd_skills::run(action),
+        Commands::Mcp => cmd_mcp::run().await,
     }
 }

@@ -9,6 +9,7 @@ import { Down, Up } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@arco-design/web-react';
 
 // 渐变遮罩常量 Gradient mask constants
 // mask-image 模式：让内容本身淡出，适用于有背景色的场景（如 Alert）
@@ -210,10 +211,10 @@ export const CollapsibleContent: React.FC<CollapsibleContentProps> = ({
       {/* 展开/折叠按钮 Expand/Collapse button */}
       {needsCollapse && (
         <div className='flex justify-center relative z-10'>
-          <button
+          <Button
             onClick={toggleCollapse}
             className='flex items-center gap-1 px-3 py-1.5 text-sm text-t-primary hover:text-primary transition-colors cursor-pointer border-none bg-transparent font-medium [&_svg]:transition-colors [&_svg]:inline-block [&_svg]:align-middle'
-            type='button'
+            type='text'
           >
             {isCollapsed ? (
               <>
@@ -228,7 +229,7 @@ export const CollapsibleContent: React.FC<CollapsibleContentProps> = ({
                 <Up theme='outline' size='14' fill='currentColor' className='inline-block' />
               </>
             )}
-          </button>
+          </Button>
         </div>
       )}
     </div>
