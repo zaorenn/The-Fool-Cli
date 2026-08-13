@@ -2138,5 +2138,16 @@
     },
     "redirectTitle": "URI de redirection",
     "redirectHelp": "Ajoute les trois à ton application dans le tableau de bord Spotify, sous Redirect URIs. Spotify les compare à l’identique, et la connexion utilise le port qui est libre."
+  },
+  "palette": {
+    "ember": "Braise",
+    "amber": "Ambre",
+    "wheat": "Blé",
+    "moss": "Mousse",
+    "lagoon": "Lagune",
+    "indigo": "Indigo",
+    "orchid": "Orchidée",
+    "rose": "Rose",
+    "slate": "Ardoise"
   }
 }

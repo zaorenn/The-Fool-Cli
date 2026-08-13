@@ -2138,5 +2138,16 @@
     },
     "redirectTitle": "Yönlendirme adresleri",
     "redirectHelp": "Üçünü de Spotify panelindeki uygulamanın “Redirect URIs” bölümüne ekle. Spotify bunları birebir eşleştirir ve oturum açma hangi bağlantı noktası boşsa onu kullanır."
+  },
+  "palette": {
+    "ember": "Köz",
+    "amber": "Kehribar",
+    "wheat": "Buğday",
+    "moss": "Yosun",
+    "lagoon": "Lagün",
+    "indigo": "Çivit",
+    "orchid": "Orkide",
+    "rose": "Gül",
+    "slate": "Arduvaz"
   }
 }

@@ -2139,5 +2139,16 @@
     },
     "redirectTitle": "重定向地址",
     "redirectHelp": "把这三个地址都添加到 Spotify 控制台中应用的“Redirect URIs”里。Spotify 会完全精确匹配，登录时会使用其中空闲的那个端口。"
+  },
+  "palette": {
+    "ember": "余烬",
+    "amber": "琥珀",
+    "wheat": "麦色",
+    "moss": "苔藓",
+    "lagoon": "泻湖",
+    "indigo": "靛蓝",
+    "orchid": "兰花",
+    "rose": "玫瑰",
+    "slate": "石板"
   }
 }

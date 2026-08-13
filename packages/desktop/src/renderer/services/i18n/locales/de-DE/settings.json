@@ -2138,5 +2138,16 @@
     },
     "redirectTitle": "Weiterleitungs-URIs",
     "redirectHelp": "Trage alle drei bei deiner App im Spotify-Dashboard unter „Redirect URIs“ ein. Spotify vergleicht sie exakt, und die Anmeldung nutzt den Port, der frei ist."
+  },
+  "palette": {
+    "ember": "Glut",
+    "amber": "Bernstein",
+    "wheat": "Weizen",
+    "moss": "Moos",
+    "lagoon": "Lagune",
+    "indigo": "Indigo",
+    "orchid": "Orchidee",
+    "rose": "Rose",
+    "slate": "Schiefer"
   }
 }

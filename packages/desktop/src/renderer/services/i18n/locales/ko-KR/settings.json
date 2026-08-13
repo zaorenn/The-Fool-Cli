@@ -2140,5 +2140,16 @@
     },
     "redirectTitle": "리디렉션 URI",
     "redirectHelp": "Spotify 대시보드의 앱 \"Redirect URIs\"에 세 개를 모두 추가하세요. Spotify는 정확히 일치하는지 확인하며, 로그인에는 비어 있는 포트가 사용됩니다."
+  },
+  "palette": {
+    "ember": "잉걸불",
+    "amber": "호박",
+    "wheat": "밀",
+    "moss": "이끼",
+    "lagoon": "라군",
+    "indigo": "인디고",
+    "orchid": "난초",
+    "rose": "장미",
+    "slate": "슬레이트"
   }
 }

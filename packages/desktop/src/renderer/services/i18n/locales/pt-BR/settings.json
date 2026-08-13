@@ -2141,5 +2141,16 @@
     },
     "redirectTitle": "URIs de redirecionamento",
     "redirectHelp": "Adicione os três ao seu app no painel do Spotify, em Redirect URIs. O Spotify compara exatamente, e o login usa a porta que estiver livre."
+  },
+  "palette": {
+    "ember": "Brasa",
+    "amber": "Âmbar",
+    "wheat": "Trigo",
+    "moss": "Musgo",
+    "lagoon": "Lagoa",
+    "indigo": "Índigo",
+    "orchid": "Orquídea",
+    "rose": "Rosa",
+    "slate": "Ardósia"
   }
 }

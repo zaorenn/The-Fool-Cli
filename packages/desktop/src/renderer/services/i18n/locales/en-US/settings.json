@@ -2138,5 +2138,16 @@
     },
     "redirectTitle": "Redirect URIs",
     "redirectHelp": "Add all three to your app in the Spotify dashboard, under Redirect URIs. Spotify matches them exactly, and the sign-in uses whichever port is free."
+  },
+  "palette": {
+    "ember": "Ember",
+    "amber": "Amber",
+    "wheat": "Wheat",
+    "moss": "Moss",
+    "lagoon": "Lagoon",
+    "indigo": "Indigo",
+    "orchid": "Orchid",
+    "rose": "Rose",
+    "slate": "Slate"
   }
 }

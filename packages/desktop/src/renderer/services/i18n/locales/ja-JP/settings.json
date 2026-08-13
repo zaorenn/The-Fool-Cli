@@ -2140,5 +2140,16 @@
     },
     "redirectTitle": "リダイレクト URI",
     "redirectHelp": "Spotify ダッシュボードのアプリの「Redirect URIs」に 3 つすべてを追加してください。Spotify は完全一致で照合し、サインインには空いているポートが使われます。"
+  },
+  "palette": {
+    "ember": "残り火",
+    "amber": "琥珀",
+    "wheat": "小麦",
+    "moss": "苔",
+    "lagoon": "ラグーン",
+    "indigo": "藍",
+    "orchid": "蘭",
+    "rose": "薔薇",
+    "slate": "石板"
   }
 }

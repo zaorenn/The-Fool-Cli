@@ -2140,5 +2140,16 @@
     },
     "redirectTitle": "重新導向位址",
     "redirectHelp": "把這三個位址都加入 Spotify 主控台中應用程式的「Redirect URIs」。Spotify 會完全精確比對，登入時會使用其中空閒的那個連接埠。"
+  },
+  "palette": {
+    "ember": "餘燼",
+    "amber": "琥珀",
+    "wheat": "麥色",
+    "moss": "苔蘚",
+    "lagoon": "潟湖",
+    "indigo": "靛藍",
+    "orchid": "蘭花",
+    "rose": "玫瑰",
+    "slate": "石板"
   }
 }

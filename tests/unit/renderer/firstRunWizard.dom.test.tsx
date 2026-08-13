@@ -103,7 +103,9 @@ describe('the first-run wizard', () => {
     fireEvent.click(screen.getByTestId('setup-next'));
 
     await waitFor(() => expect(screen.getByTestId('accent-ramp')).toBeTruthy());
-    fireEvent.click(screen.getByTestId('accent-31a074'));
+    // Named rather than a hex: colour is chosen from a closed list now, and
+    // `moss` is the palette seeded with `#31a074`.
+    fireEvent.click(screen.getByTestId('palette-moss'));
     fireEvent.click(screen.getByTestId('setup-next'));
 
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/conversation/conversation-1'));
