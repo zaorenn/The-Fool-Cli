@@ -5,7 +5,32 @@ import os from 'node:os';
 import path from 'node:path';
 import net from 'node:net';
 import type { AddressInfo } from 'node:net';
-import { isHostOnlyPath, startStaticServer, type StaticServerHandle } from './static-server.js';
+import { isBackendPath, isHostOnlyPath, startStaticServer, type StaticServerHandle } from './static-server.js';
+
+describe('isBackendPath', () => {
+  /**
+   * The address every QR code carries. It was not listed, so it fell through to
+   * the SPA fallback and the phone was handed the whole web app instead of the
+   * login page — which looks like a site that never finishes loading.
+   */
+  it('sends the QR login page to the backend that serves it', () => {
+    expect(isBackendPath('/qr-login')).toBe(true);
+    expect(isBackendPath('/qr-login?token=abc')).toBe(true);
+  });
+
+  it('still routes the auth endpoints it already knew about', () => {
+    expect(isBackendPath('/login')).toBe(true);
+    expect(isBackendPath('/logout')).toBe(true);
+    expect(isBackendPath('/api/conversations')).toBe(true);
+    expect(isBackendPath('/api?x=1')).toBe(true);
+  });
+
+  it('leaves the SPA routes to the SPA', () => {
+    expect(isBackendPath('/')).toBe(false);
+    expect(isBackendPath('/settings')).toBe(false);
+    expect(isBackendPath('/qr-login-something')).toBe(false);
+  });
+});
 
 describe('isHostOnlyPath', () => {
   /**

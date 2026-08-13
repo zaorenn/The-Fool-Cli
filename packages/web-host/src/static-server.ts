@@ -58,6 +58,28 @@ export function isHostOnlyPath(url: string): boolean {
   return path === '/api/webui' || path.startsWith('/api/webui/');
 }
 
+/**
+ * Whether a path is the backend's rather than the single-page app's.
+ *
+ * Anything not listed here falls through to the SPA fallback, which answers
+ * every unmatched path with `index.html` — so a missing entry does not 404, it
+ * silently serves the whole web app instead. `/qr-login` was missing exactly
+ * that way: the address inside every QR code returned the app shell to the
+ * phone, which then booted with no session and sat there loading. The page the
+ * backend serves at that path never reached anybody.
+ */
+export function isBackendPath(url: string): boolean {
+  const path = url.split('?')[0];
+  return (
+    url.startsWith('/api/') ||
+    url.startsWith('/api?') ||
+    path === '/api' ||
+    path === '/login' ||
+    path === '/logout' ||
+    path === '/qr-login'
+  );
+}
+
 function forwardToBackend(req: IncomingMessage, res: ServerResponse, backendPort: number): void {
   const options: http.RequestOptions = {
     hostname: '127.0.0.1',
@@ -193,7 +215,7 @@ export async function startStaticServer(opts: StaticServerOptions): Promise<Stat
       // /api/* — reverse proxy to backend (includes /api/auth/*).
       // /login and /logout are fool-auth's top-level auth endpoints: proxy them too
       // so WebUI browser clients reach the backend without a path-rewrite.
-      if (req.url.startsWith('/api/') || req.url.startsWith('/api?') || req.url === '/login' || req.url === '/logout') {
+      if (isBackendPath(req.url)) {
         forwardToBackend(req, res, opts.backendPort);
         return;
       }
