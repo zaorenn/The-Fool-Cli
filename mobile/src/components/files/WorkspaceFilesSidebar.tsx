@@ -8,6 +8,7 @@ import { useConversations } from '../../context/ConversationContext';
 import { useFilesTab } from '../../context/FilesTabContext';
 import { useThemeColor } from '../../hooks/useThemeColor';
 import { bridge } from '../../services/bridge';
+import { readWorkspace } from '../../services/conversations';
 
 type IDirOrFile = {
   name: string;
@@ -50,12 +51,10 @@ export function WorkspaceFilesSidebar({ navigation }: WorkspaceFilesSidebarProps
     if (!activeConversationId || !currentWorkspace) return;
     setLoading(true);
     try {
-      const res = await bridge.request<IDirOrFile[]>('conversation.get-workspace', {
-        conversation_id: activeConversationId,
-        workspace: currentWorkspace,
-        path: currentWorkspace,
-        search: '',
-      });
+      // Was `conversation.get-workspace` on the bridge, which the desktop no
+      // longer answers. The REST route takes a path relative to the workspace
+      // root, so the root is the empty string rather than the workspace path.
+      const res = await readWorkspace<IDirOrFile[]>(activeConversationId, '');
       if (Array.isArray(res)) {
         setTree(res);
       }

@@ -1,8 +1,11 @@
 import { api } from '../../src/services/api';
 import {
   createConversation,
+  listAgents,
+  listConfirmations,
   listConversations,
   listMessages,
+  readWorkspace,
   removeConversation,
   updateConversation,
 } from '../../src/services/conversations';
@@ -77,6 +80,38 @@ describe('updateConversation', () => {
     mockApi.patch.mockResolvedValue({ data: { success: true, data: true } });
     await updateConversation('c1', { name: 'x' }, true);
     expect(mockApi.patch).toHaveBeenCalledWith('/api/conversations/c1', { name: 'x', merge_extra: true });
+  });
+});
+
+describe('listConfirmations', () => {
+  it('asks the conversation for what is pending', async () => {
+    mockApi.get.mockResolvedValue({ data: { success: true, data: [{ call_id: 'x' }] } });
+    await expect(listConfirmations('c1')).resolves.toEqual([{ call_id: 'x' }]);
+    expect(mockApi.get).toHaveBeenCalledWith('/api/conversations/c1/confirmations');
+  });
+});
+
+describe('readWorkspace', () => {
+  it('sends the root as an empty path rather than omitting it', async () => {
+    mockApi.get.mockResolvedValue({ data: { success: true, data: { files: [] } } });
+    await readWorkspace('c1');
+    expect(mockApi.get).toHaveBeenCalledWith('/api/conversations/c1/workspace?path=');
+  });
+
+  it('escapes the path and carries a search term', async () => {
+    mockApi.get.mockResolvedValue({ data: { success: true, data: {} } });
+    await readWorkspace('c1', 'src/a b', 'todo');
+    expect(mockApi.get).toHaveBeenCalledWith(
+      '/api/conversations/c1/workspace?path=src%2Fa+b&search=todo'
+    );
+  });
+});
+
+describe('listAgents', () => {
+  it('reads the same route the desktop settings screen reads', async () => {
+    mockApi.get.mockResolvedValue({ data: { success: true, data: [] } });
+    await listAgents();
+    expect(mockApi.get).toHaveBeenCalledWith('/api/agents/management');
   });
 });
 

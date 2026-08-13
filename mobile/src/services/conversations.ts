@@ -87,6 +87,50 @@ export async function updateConversation(
   unwrap(response.data, 'updateConversation');
 }
 
+/**
+ * Tool calls waiting on the user's answer.
+ *
+ * Was `confirmation.list`. Empty is a real answer here, so an empty array
+ * genuinely means nothing is pending — unlike the dead channel, which returned
+ * the same shape by never returning at all.
+ */
+export async function listConfirmations<T = unknown>(conversationId: string): Promise<T[]> {
+  const response = await api.get<ApiEnvelope<T[]>>(
+    `/api/conversations/${encodeURIComponent(conversationId)}/confirmations`
+  );
+  return unwrap(response.data, 'listConfirmations') ?? [];
+}
+
+/**
+ * One directory of the conversation's workspace.
+ *
+ * `path` is relative to the workspace root; the empty string is the root
+ * itself, which is why it is sent rather than omitted when blank.
+ */
+export async function readWorkspace<T = unknown>(
+  conversationId: string,
+  path = '',
+  search?: string
+): Promise<T> {
+  const query = new URLSearchParams({ path });
+  if (search) query.set('search', search);
+  const response = await api.get<ApiEnvelope<T>>(
+    `/api/conversations/${encodeURIComponent(conversationId)}/workspace?${query.toString()}`
+  );
+  return unwrap(response.data, 'readWorkspace');
+}
+
+/**
+ * The agents this installation can start a conversation with.
+ *
+ * Was `acp.get-available-agents`. The desktop reads the same route for its
+ * Agent settings screen.
+ */
+export async function listAgents<T = unknown>(): Promise<T[]> {
+  const response = await api.get<ApiEnvelope<T[]>>('/api/agents/management');
+  return unwrap(response.data, 'listAgents') ?? [];
+}
+
 /** Delete a conversation. */
 export async function removeConversation(conversationId: string): Promise<void> {
   const response = await api.delete<ApiEnvelope<boolean>>(

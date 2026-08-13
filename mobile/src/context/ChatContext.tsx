@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { bridge } from '../services/bridge';
-import { listMessages } from '../services/conversations';
+import { listConfirmations, listMessages } from '../services/conversations';
 import { consumePendingInitialMessage } from '../services/pendingInitialMessages';
 import { transformMessage, composeMessage, type TMessage, type IResponseMessage } from '../utils/messageAdapter';
 import { uuid } from '../utils/uuid';
@@ -153,13 +153,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     prevConnectionStateRef.current = connectionState;
 
     if (wasDisconnected && connectionState === 'connected' && conversationId) {
-      bridge
-        .request<any[]>('confirmation.list', { conversation_id: conversationId })
-        .then((list) => {
-          if (Array.isArray(list)) {
-            setConfirmations(list);
-          }
-        })
+      // Was `confirmation.list` on the bridge, which the desktop deleted.
+      listConfirmations<any>(conversationId)
+        .then(setConfirmations)
         .catch((e) => console.warn('[Chat] Failed to restore confirmations:', e));
     }
   }, [connectionState, conversationId]);

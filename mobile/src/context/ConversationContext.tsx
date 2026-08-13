@@ -4,6 +4,7 @@ import { bridge } from '../services/bridge';
 import {
   // Aliased: this file exports its own `createConversation` hook that wraps it.
   createConversation as postConversation,
+  listAgents,
   listConversations,
   removeConversation as deleteConversationRequest,
   updateConversation,
@@ -187,12 +188,8 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
   const fetchAgents = useCallback(async () => {
     if (connectionState !== 'connected') return;
     try {
-      const response = await bridge.request<{ success: boolean; data?: AgentInfo[] }>(
-        'acp.get-available-agents',
-      );
-      if (response?.success && Array.isArray(response.data)) {
-        setAvailableAgents(response.data);
-      }
+      // Was `acp.get-available-agents`, which the desktop no longer answers.
+      setAvailableAgents(await listAgents<AgentInfo>());
     } catch (e) {
       console.warn('[Conversations] Failed to fetch agents:', e);
     }
