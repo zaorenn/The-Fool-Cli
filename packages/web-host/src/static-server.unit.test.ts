@@ -5,7 +5,54 @@ import os from 'node:os';
 import path from 'node:path';
 import net from 'node:net';
 import type { AddressInfo } from 'node:net';
-import { isBackendPath, isHostOnlyPath, startStaticServer, type StaticServerHandle } from './static-server.js';
+import { isBackendPath, isHostOnlyPath, pickLanIP, startStaticServer, type StaticServerHandle } from './static-server.js';
+
+describe('pickLanIP', () => {
+  const iface = (address: string) => ({ address, family: 'IPv4', internal: false });
+
+  /**
+   * The reported failure, exactly: a machine with Tailscale installed but not
+   * connected listed that adapter first, holding a self-assigned 169.254
+   * address. Every QR code carried it, and the phone sat on a blank loading
+   * screen with nothing to say why.
+   */
+  it('never offers a link-local address, even when it is listed first', () => {
+    expect(
+      pickLanIP({ Tailscale: [iface('169.254.83.107')], 'Wi-Fi': [iface('192.168.0.10')] })
+    ).toBe('192.168.0.10');
+  });
+
+  it('prefers the real network over a Hyper-V or WSL switch', () => {
+    expect(
+      pickLanIP({
+        'vEthernet (Default Switch)': [iface('172.22.224.1')],
+        'Wi-Fi': [iface('192.168.0.10')],
+        'vEthernet (WSL)': [iface('172.25.128.1')],
+      })
+    ).toBe('192.168.0.10');
+  });
+
+  it('takes a 10.x network when that is what the machine is on', () => {
+    expect(pickLanIP({ 'Wi-Fi': [iface('10.1.2.3')] })).toBe('10.1.2.3');
+  });
+
+  it('falls back to a virtual switch rather than offering nothing', () => {
+    expect(pickLanIP({ 'vEthernet (WSL)': [iface('172.25.128.1')] })).toBe('172.25.128.1');
+  });
+
+  it('says there is no address rather than naming an unreachable one', () => {
+    expect(pickLanIP({ Tailscale: [iface('169.254.83.107')] })).toBeNull();
+  });
+
+  it('ignores loopback and IPv6', () => {
+    expect(
+      pickLanIP({
+        Loopback: [{ address: '127.0.0.1', family: 'IPv4', internal: true }],
+        'Wi-Fi': [{ address: 'fe80::1', family: 'IPv6', internal: false }],
+      })
+    ).toBeNull();
+  });
+});
 
 describe('isBackendPath', () => {
   /**

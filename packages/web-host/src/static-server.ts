@@ -33,14 +33,60 @@ export type StaticServerHandle = {
 
 const DEFAULT_PORT = 25808;
 
-function getLanIP(): string | null {
-  const nets = networkInterfaces();
-  for (const name of Object.keys(nets)) {
-    for (const iface of nets[name] || []) {
-      if (iface.family === 'IPv4' && !iface.internal) return iface.address;
+/** One candidate address, as `os.networkInterfaces()` describes it. */
+type Candidate = { address: string; family: string; internal: boolean };
+
+/**
+ * How reachable an address is from another device on the same network.
+ *
+ * Higher wins. The order is not cosmetic — it is the whole difference between
+ * a QR code a phone can use and one it cannot:
+ *
+ *  - `169.254.*` is link-local, which an interface assigns itself when it has
+ *    no network. A VPN adapter that is installed but not connected sits there,
+ *    and nothing can route to it.
+ *  - `172.16–31.*` on Windows is usually a Hyper-V or WSL virtual switch. It is
+ *    a real address on a real network with exactly one other host on it.
+ *  - `192.168.*` and `10.*` are what home and office networks actually use.
+ *
+ * Anything link-local scores below zero and is refused outright rather than
+ * ranked last, because handing back an unreachable address is worse than
+ * admitting there is none: the QR panel can say so, and does.
+ */
+export function addressReachability(address: string): number {
+  if (address.startsWith('169.254.')) return -1;
+  if (address.startsWith('192.168.')) return 3;
+  if (address.startsWith('10.')) return 2;
+  const [a, b] = address.split('.').map(Number);
+  if (a === 172 && b >= 16 && b <= 31) return 1;
+  return 0;
+}
+
+/**
+ * The address to reach this machine on from elsewhere, or null when there is
+ * none worth offering.
+ *
+ * Took the first non-internal IPv4 it found, in whatever order the OS listed
+ * interfaces. On a machine with a VPN client installed that was the VPN's
+ * disconnected `169.254.*` address, so every QR code carried a host no phone
+ * could reach and the login page simply never loaded — with nothing to say why,
+ * because the address was perfectly well-formed.
+ */
+export function pickLanIP(interfaces: Record<string, Candidate[] | undefined>): string | null {
+  let best: { address: string; score: number } | null = null;
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name] ?? []) {
+      if (iface.family !== 'IPv4' || iface.internal) continue;
+      const score = addressReachability(iface.address);
+      if (score < 0) continue;
+      if (!best || score > best.score) best = { address: iface.address, score };
     }
   }
-  return null;
+  return best?.address ?? null;
+}
+
+function getLanIP(): string | null {
+  return pickLanIP(networkInterfaces() as Record<string, Candidate[] | undefined>);
 }
 
 /**
