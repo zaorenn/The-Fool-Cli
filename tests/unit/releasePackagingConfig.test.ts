@@ -133,6 +133,26 @@ describe('release packaging configuration', () => {
     }
   });
 
+  /**
+   * A build that failed on one platform still leaves the others to publish. A
+   * build that was *skipped* leaves nothing — and the first attempt at this gate
+   * said "not cancelled", which let a skipped pipeline through: the quality job
+   * failed on a transient network error, every build was skipped, and the
+   * release job ran against an empty directory.
+   */
+  it('releases from a partial build but not from an absent one', () => {
+    const workflow = readProjectFile('.github/workflows/build-and-release.yml');
+    const releaseIf = workflow.match(/^ {4}if: always\(\) && contains.*$/m)?.[0];
+
+    expect(releaseIf, 'the release job gate should be an allow-list of results').toBeDefined();
+
+    for (const job of ['build-pipeline', 'pack-web-cli']) {
+      expect(releaseIf).toContain(`needs.${job}.result`);
+    }
+    expect(releaseIf).toContain(`fromJSON('["success", "failure"]')`);
+    expect(releaseIf, 'a skipped build must not be treated as releasable').not.toContain("!= 'cancelled'");
+  });
+
   it('retries mac prepackaged builds with both dmg and zip targets', () => {
     const script = readProjectFile('scripts/build-with-builder.js');
 

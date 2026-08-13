@@ -266,7 +266,13 @@ jobs:
     # are missing from the release. The same reasoning applies to the web-cli
     # packing, which was still required outright and could withhold a desktop
     # release on its own.
-    if: always() && needs.build-pipeline.result != 'cancelled' && needs.pack-web-cli.result != 'cancelled' && (needs.create-tag.result == 'success' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-dev-')))
+    #
+    # `success` or `failure`, and not merely "not cancelled": a build that was
+    # *skipped* produced no artifacts at all, so there is nothing to publish. In
+    # the v2.5.4 run the quality gate failed on a transient network error, the
+    # build pipeline was skipped, and this job ran anyway and failed with an
+    # empty directory. A partial build is releasable; an absent one is not.
+    if: always() && contains(fromJSON('["success", "failure"]'), needs.build-pipeline.result) && contains(fromJSON('["success", "failure"]'), needs.pack-web-cli.result) && (needs.create-tag.result == 'success' || (startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-dev-')))
     # dev 分支使用 dev-release 环境，正式 tag 使用 release 环境
     environment: ${{ needs.create-tag.outputs.is_dev == 'true' && 'dev-release' || 'release' }}
 
