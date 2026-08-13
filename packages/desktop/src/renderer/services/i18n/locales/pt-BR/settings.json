@@ -1716,7 +1716,19 @@
     },
     "conversationUnprompted": "Falar sem ser perguntado",
     "conversationUnpromptedOnHint": "Pode avisar sobre uma tarefa concluída ou fazer uma pergunta, no máximo uma vez por hora e nunca no meio de algo.",
-    "conversationUnpromptedOffHint": "Só responde. Nada é dito antes de você falar."
+    "conversationUnpromptedOffHint": "Só responde. Nada é dito antes de você falar.",
+    "conversationPlaying": "Tocando {{track}} em {{device}}",
+    "conversationOpenedToPlay": "Aberto no seu navegador",
+    "conversationConnectAsk": "Pergunte primeiro se querem conectar o Spotify.",
+    "conversationConnectNeedsClientId": "O Spotify precisa primeiro de um ID de cliente em Configurações › Conexões.",
+    "conversationConnectWaiting": "Aguardando o login no seu navegador…",
+    "conversationConnected": "Spotify conectado",
+    "conversationConnectFailed": "Não foi possível conectar o Spotify",
+    "conversationAppBadName": "Esse não é um nome de aplicativo que possa ser aberto",
+    "conversationAppNotRunning": "{{name}} não estava em execução",
+    "conversationAppCouldNotOpen": "Não foi possível abrir {{name}}",
+    "conversationAppClosed": "{{name}} fechado",
+    "conversationAppOpened": "{{name}} aberto"
   },
   "themeCustomizer": {
     "title": "Personalizar tema",
@@ -2101,5 +2113,33 @@
       "press": "O quanto ela afunda ao ser clicada.",
       "ambient": "Um fundo que respira, um pulso, uma deriva."
     }
+  },
+  "connections": {
+    "title": "Conexões",
+    "description": "Conecte suas próprias contas e escolha o que pode ser feito nelas.",
+    "spotifyTitle": "Spotify",
+    "spotifyDescription": "Com o Spotify conectado, \"toque minha música favorita\" toca em segundo plano no aparelho de onde sua música já vem, em vez de abrir uma página no navegador.",
+    "connected": "Conectado",
+    "connectedAs": "Conectado como {{name}}",
+    "notConnected": "Não conectado",
+    "clientIdLabel": "ID do cliente",
+    "clientIdPlaceholder": "32 caracteres do seu painel do Spotify",
+    "clientIdHelp": "Crie um app no painel de desenvolvedor do Spotify e cole aqui o ID do cliente. Não é um segredo, e nenhum client secret é necessário.",
+    "clientIdInvalid": "Isso não parece um ID de cliente do Spotify.",
+    "clientIdSaved": "ID do cliente salvo",
+    "connect": "Conectar",
+    "reconnect": "Reconectar",
+    "disconnect": "Desconectar",
+    "connectFailed": "Não foi possível conectar o Spotify: {{reason}}",
+    "signInNotice": "Conectar abre a própria página de login do Spotify no seu navegador. Você faz login lá. Este app nunca vê sua senha e nunca vai pedi-la.",
+    "permissionsTitle": "O que pode fazer",
+    "capability": {
+      "playback_read": "Ver o que está tocando",
+      "playback_control": "Tocar, pausar e pular",
+      "library_read": "Pesquisar na sua biblioteca",
+      "library_write": "Adicionar às suas playlists"
+    },
+    "redirectTitle": "URIs de redirecionamento",
+    "redirectHelp": "Adicione os três ao seu app no painel do Spotify, em Redirect URIs. O Spotify compara exatamente, e o login usa a porta que estiver livre."
   }
 }

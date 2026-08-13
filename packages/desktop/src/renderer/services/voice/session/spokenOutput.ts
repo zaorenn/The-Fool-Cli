@@ -9,8 +9,10 @@ import {
   isEmptyRecall,
   isUnbackedClaim,
   isUnseenScreenClaim,
+  isUnverifiedPlaybackClaim,
   unbackedClaimCorrection,
   unseenScreenCorrection,
+  unverifiedPlaybackCorrection,
 } from '@/common/voice/actionClaims';
 
 /**
@@ -54,6 +56,19 @@ export type SpokenTurnEvidence = {
    * failed is not a look. See `showedTheScreen`.
    */
   lookedAtScreen: boolean;
+  /**
+   * Whether anything has actually reported that sound is coming out.
+   *
+   * Required for the same reason `lookedAtScreen` is: a fifth surface that
+   * forgets to answer must not silently get the permissive answer. `toolsRan`
+   * cannot stand in for it — the turn this exists because of ran four tools,
+   * none of which could make the sentence true, and the gate waved it through.
+   *
+   * Per conversation rather than per turn, matching `lookedAtScreen`: a song
+   * started two turns ago is still playing now, and "yes, that is the one that
+   * is on" is a correct answer rather than a claim. See `startedPlayback`.
+   */
+  startedPlayback: boolean;
 };
 
 export type SpokenSentenceVerdict =
@@ -84,11 +99,18 @@ export const guardSpokenSentence = (sentence: string, evidence: SpokenTurnEviden
     return { speak: false, correction: emptyRecallCorrection(said) };
   }
 
-  // Last of the three, and the one a tool count cannot stand in for. The other
-  // two ask whether anything ran; this asks whether the one thing that could
-  // have made the sentence true ran *and came back with something*.
+  // The last two ask a different question from the first two. Those ask whether
+  // anything ran; these ask whether the one thing that could have made *this*
+  // sentence true ran, and came back with something in it.
   if (isUnseenScreenClaim(said, evidence.lookedAtScreen)) {
     return { speak: false, correction: unseenScreenCorrection(said) };
+  }
+
+  // Newest, and the one that had to exist as its own question. "It should now
+  // be playing" was said after four tools, so every count-based check was
+  // satisfied — and not one of the four was a player.
+  if (isUnverifiedPlaybackClaim(said, evidence.startedPlayback)) {
+    return { speak: false, correction: unverifiedPlaybackCorrection(said) };
   }
 
   return SPEAK;

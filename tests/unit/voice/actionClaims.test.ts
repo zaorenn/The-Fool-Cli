@@ -10,13 +10,17 @@ import {
   backsCompletedAction,
   claimsAboutScreen,
   claimsCompletedAction,
+  claimsPlayback,
   claimsRecall,
   emptyRecallCorrection,
   isEmptyRecall,
   isUnbackedClaim,
   isUnseenScreenClaim,
+  isUnverifiedPlaybackClaim,
+  startedPlayback,
   unbackedClaimCorrection,
   unseenScreenCorrection,
+  unverifiedPlaybackCorrection,
 } from '@/common/voice/actionClaims';
 
 describe('claimsCompletedAction', () => {
@@ -400,5 +404,133 @@ describe('isUnseenScreenClaim', () => {
     const correction = unseenScreenCorrection('Ekranda bir hata var.');
     expect(correction).toContain('Ekranda bir hata var.');
     expect(correction).toContain('app_look_at_screen');
+  });
+});
+
+/**
+ * The fourth lie, and the one the first three were shaped to miss.
+ *
+ * Observed in the app. Asked for a favourite song, the assistant ran four tools
+ * — a search, a click, and two screenshots — and finished with three sentences
+ * that cannot all be true: it should now be playing, the video is loaded and
+ * ready to play, and shall I press play for you. `claimsCompletedAction` never
+ * fired, because "should now be playing" is a hedge rather than a past tense;
+ * `isUnbackedClaim` would have allowed it anyway, because four tools had run.
+ */
+describe('claimsPlayback', () => {
+  it('catches the sentence the user was actually told', () => {
+    for (const reply of [
+      "Your favourite song 'Bunny Girl' should now be playing in the browser!",
+      'The video is loaded and ready to play.',
+      'It is now playing.',
+      'Now playing: Bunny Girl.',
+      'It must be playing in your browser.',
+      'It started playing.',
+    ]) {
+      expect(claimsPlayback(reply), reply).toBe(true);
+    }
+  });
+
+  it('catches the same claim in Turkish', () => {
+    for (const reply of ['Şimdi çalıyor.', 'Çalıyor olmalı.', 'Şarkı çalmaya başladı.', 'Video oynatılıyor.']) {
+      expect(claimsPlayback(reply), reply).toBe(true);
+    }
+  });
+
+  /**
+   * The sentence this gate wants more of. Built from the same words as the lie,
+   * so it has to win outright rather than by not matching.
+   */
+  it('leaves the honest admission alone', () => {
+    for (const reply of [
+      "I can't play it.",
+      'It is not playing.',
+      "I don't know whether it started.",
+      'Çalmıyor.',
+      'Çaldığından emin değilim.',
+    ]) {
+      expect(claimsPlayback(reply), reply).toBe(false);
+    }
+  });
+
+  /**
+   * Announcing work about to happen is what the prompt asks for. Refusing it
+   * would leave nothing sayable between the request and the tool.
+   */
+  it('leaves an announcement of work about to happen alone', () => {
+    for (const reply of ['I am putting it on now.', 'Let me play that.', 'Hemen açıyorum.', 'Şarkıyı arıyorum.']) {
+      expect(claimsPlayback(reply), reply).toBe(false);
+    }
+  });
+
+  it('says nothing about a sentence that claims nothing', () => {
+    expect(claimsPlayback('Bugün hava yağmurlu.')).toBe(false);
+    expect(claimsPlayback('')).toBe(false);
+  });
+});
+
+/**
+ * The evidence is the result, never the invocation.
+ *
+ * `app_play` is deliberately just as successful having opened a page instead of
+ * having started a song — that is its fallback when nothing is connected. So
+ * the tool having run says nothing at all, and only `playing: true` beside a
+ * device is evidence that sound is coming out.
+ */
+describe('startedPlayback', () => {
+  it('accepts a player that named the track and the device', () => {
+    expect(startedPlayback('app_play', { ok: true, playing: true, track: 'Bunny Girl', device: 'Kitchen' })).toBe(true);
+  });
+
+  /// The exact shape of the observed failure: the call succeeded, and all it
+  /// did was hand an address to a browser.
+  it('refuses a page that merely opened', () => {
+    expect(startedPlayback('app_play', { ok: true, playing: false, opened: true, url: 'https://example.com' })).toBe(
+      false
+    );
+  });
+
+  it('refuses a player that failed', () => {
+    expect(startedPlayback('app_play', { ok: false, error: 'no-device' })).toBe(false);
+  });
+
+  /**
+   * The tools that end with an address in a browser are deliberately not
+   * players, however successfully they ran. That substitution is the whole
+   * thing this gate exists to refuse.
+   */
+  it('refuses every tool that is not a player, whatever it answered', () => {
+    for (const name of ['app_open_url', 'app_search', 'app_skill_do', 'app_look_at_screen', 'app_ask_jester']) {
+      expect(startedPlayback(name, { ok: true, playing: true }), name).toBe(false);
+    }
+  });
+
+  it('refuses a result that is not an object at all', () => {
+    expect(startedPlayback('app_play', null)).toBe(false);
+    expect(startedPlayback('app_play', 'playing')).toBe(false);
+    expect(startedPlayback('app_play', undefined)).toBe(false);
+  });
+});
+
+describe('isUnverifiedPlaybackClaim', () => {
+  it('refuses the claim when nothing reported playback', () => {
+    expect(isUnverifiedPlaybackClaim('It should now be playing.', false)).toBe(true);
+  });
+
+  it('allows it once a player has said so', () => {
+    expect(isUnverifiedPlaybackClaim('It is now playing.', true)).toBe(false);
+  });
+
+  /**
+   * Named rather than only corrected. Told merely that it did not verify
+   * something, a model says the same thing in a softer hedge — which is how
+   * "it is playing" became "it should be playing" in the first place.
+   */
+  it('names the honest sentence in the correction', () => {
+    const correction = unverifiedPlaybackCorrection('It should now be playing.');
+
+    expect(correction).toContain('It should now be playing.');
+    expect(correction).toContain('opened');
+    expect(correction).toContain('app_play');
   });
 });

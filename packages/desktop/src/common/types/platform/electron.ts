@@ -29,6 +29,14 @@ export interface ElectronBridgeAPI {
    * around. Null when they cancel, or when the capture fails.
    */
   captureScreenRegion?: () => Promise<{ filename: string; data: number[] } | null>;
+  /**
+   * One named application's window, rather than the whole display.
+   *
+   * The picture nearly every spoken question actually wants, and less of the
+   * user's screen than the whole of it. A name that matches nothing falls back
+   * to the display, so this can only ever narrow what is captured.
+   */
+  captureWindow?: (match: string) => Promise<{ filename: string; data: number[] } | null>;
   // Forward feedback diagnostics logs to the main process console / 转发反馈诊断日志到主进程控制台
   logFeedbackEvent?: (payload: { details?: unknown; level: 'info' | 'warn' | 'error'; message: string }) => void;
   recoverCorruptedDatabase?: () => Promise<void>;

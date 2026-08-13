@@ -1715,7 +1715,19 @@
     },
     "conversationUnprompted": "主動開口",
     "conversationUnpromptedOnHint": "它可以主動告知已完成的任務或向你提問，每小時最多一次，且絕不打斷。",
-    "conversationUnpromptedOffHint": "只回答。你不開口，它就不說話。"
+    "conversationUnpromptedOffHint": "只回答。你不開口，它就不說話。",
+    "conversationPlaying": "正在 {{device}} 上播放 {{track}}",
+    "conversationOpenedToPlay": "已在你的瀏覽器中開啟",
+    "conversationConnectAsk": "先詢問對方是否願意連接 Spotify。",
+    "conversationConnectNeedsClientId": "Spotify 需要先在「設定 › 連接」中填寫用戶端 ID。",
+    "conversationConnectWaiting": "正在等待你在瀏覽器中登入…",
+    "conversationConnected": "Spotify 已連接",
+    "conversationConnectFailed": "無法連接 Spotify",
+    "conversationAppBadName": "這不是一個可以開啟的應用程式名稱",
+    "conversationAppNotRunning": "{{name}} 並未在執行",
+    "conversationAppCouldNotOpen": "無法開啟 {{name}}",
+    "conversationAppClosed": "已關閉 {{name}}",
+    "conversationAppOpened": "已開啟 {{name}}"
   },
   "themeCustomizer": {
     "title": "自訂主題",
@@ -2100,5 +2112,33 @@
       "press": "點擊時下沉多少。",
       "ambient": "會呼吸的底色、脈動與流動。"
     }
+  },
+  "connections": {
+    "title": "連接",
+    "description": "連接你自己的帳戶，並決定可以在其中做些什麼。",
+    "spotifyTitle": "Spotify",
+    "spotifyDescription": "連接 Spotify 後，「播放我最喜歡的歌」會直接在你平時聽音樂的裝置上背景播放，而不是在瀏覽器裡開啟一個頁面。",
+    "connected": "已連接",
+    "connectedAs": "已以 {{name}} 連接",
+    "notConnected": "未連接",
+    "clientIdLabel": "用戶端 ID",
+    "clientIdPlaceholder": "Spotify 主控台中的 32 個字元",
+    "clientIdHelp": "在 Spotify 開發者主控台建立一個應用程式，並把它的用戶端 ID 貼到這裡。它不是密鑰，也永遠不需要用戶端密鑰。",
+    "clientIdInvalid": "這看起來不像是 Spotify 用戶端 ID。",
+    "clientIdSaved": "用戶端 ID 已儲存",
+    "connect": "連接",
+    "reconnect": "重新連接",
+    "disconnect": "中斷連接",
+    "connectFailed": "無法連接 Spotify：{{reason}}",
+    "signInNotice": "連接時會在你的瀏覽器中開啟 Spotify 自己的登入頁面，由你在那裡登入。本應用程式永遠看不到你的密碼，也絕不會向你索取。",
+    "permissionsTitle": "可以做什麼",
+    "capability": {
+      "playback_read": "查看正在播放的內容",
+      "playback_control": "播放、暫停和切換",
+      "library_read": "搜尋你的音樂庫",
+      "library_write": "加入你的播放清單"
+    },
+    "redirectTitle": "重新導向位址",
+    "redirectHelp": "把這三個位址都加入 Spotify 主控台中應用程式的「Redirect URIs」。Spotify 會完全精確比對，登入時會使用其中空閒的那個連接埠。"
   }
 }

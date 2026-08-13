@@ -7,6 +7,7 @@
 import { desktopCapturer, screen, type Display, type NativeImage } from 'electron';
 import { flashScreenEdges } from './screenFlash';
 import { cropForSelection, type Rect } from './selectionGeometry';
+import { chooseWindowSource } from '@/common/voice/windowTarget';
 
 /**
  * The screen, as the model gets to see it.
@@ -90,6 +91,50 @@ export const captureScreen = async (): Promise<ScreenCapture | null> => {
     return image ? toCapture(image, 'screen') : null;
   } catch (error) {
     console.error('[ScreenCapture] the screen could not be captured:', error instanceof Error ? error.message : error);
+    return null;
+  }
+};
+
+/**
+ * One application's window, rather than everything on the display.
+ *
+ * The narrower picture, and the one nearly every question wants. "What does
+ * that error say" is about a window; a photograph of three monitors gives the
+ * model four things it might be reading and no way to choose, which is how a
+ * look turns into another look. It is also less of the user's screen handed to
+ * a model than the question required.
+ *
+ * Falls back to the whole display when nothing matches the name. A wider picture
+ * is a worse answer; no picture at all is the assistant saying it cannot see,
+ * which for a window that is genuinely open would simply be wrong.
+ */
+export const captureWindow = async (match: string): Promise<ScreenCapture | null> => {
+  try {
+    const display = activeDisplay();
+    const width = Math.round(display.size.width * display.scaleFactor);
+    const height = Math.round(display.size.height * display.scaleFactor);
+
+    const sources = await withTimeout(
+      desktopCapturer.getSources({ types: ['window'], thumbnailSize: { width, height } }),
+      (): Electron.DesktopCapturerSource[] => []
+    );
+    // Our own windows are excluded by title rather than by handle: the sources
+    // carry a name and an id and nothing that ties one back to a BrowserWindow.
+    const chosen = chooseWindowSource(
+      sources.map((source) => ({ id: source.id, name: source.name })),
+      match,
+      ['The Fool']
+    );
+
+    flashScreenEdges();
+    const found = chosen ? sources.find((source) => source.id === chosen.id) : undefined;
+    if (!found || found.thumbnail.isEmpty()) {
+      const whole = await captureDisplayImage(display);
+      return whole ? toCapture(whole, 'screen') : null;
+    }
+    return toCapture(found.thumbnail, 'window');
+  } catch (error) {
+    console.error('[ScreenCapture] the window could not be captured:', error instanceof Error ? error.message : error);
     return null;
   }
 };

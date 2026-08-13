@@ -17,6 +17,7 @@ import { initScreenCaptureBridge } from '@process/voice/screenCaptureBridge';
 import { initPreviewBridge } from '@process/preview/previewBridge';
 import { initSkillRecorderBridge } from '@process/voice/skillRecorderBridge';
 import { initWorkspaceAppBridge } from '@process/workspace/workspaceAppBridge';
+import { initSpotifyBridge } from '@process/spotify/spotifyBridge';
 
 export type BridgeDependencies = {
   foolVoice?: Partial<FoolVoiceBridgeHandlers>;
@@ -36,6 +37,7 @@ export function initAllBridges(deps: BridgeDependencies = {}): void {
   initPreviewBridge();
   initSkillRecorderBridge();
   initWorkspaceAppBridge();
+  initSpotifyBridge();
 }
 
 export {
@@ -48,6 +50,7 @@ export {
   initWindowControlsBridge,
   initWebuiBridge,
   initFoolVoiceBridge,
+  initSpotifyBridge,
 };
 export { registerWindowMaximizeListeners } from './windowControlsBridge';
 export const disposeAllTeamSessions = (): Promise<void> => Promise.resolve();

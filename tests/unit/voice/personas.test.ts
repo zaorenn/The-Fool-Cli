@@ -164,9 +164,66 @@ describe('what it admits it cannot do', () => {
   it('says how to actually do something on the computer', () => {
     const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
     expect(instructions).toContain('`app_ask_jester`');
-    expect(instructions).toContain('anything at all on this computer');
+    // The framing, in whatever words it is currently put: not a fixed list of
+    // things it was handed, but the machine itself.
+    expect(instructions).toContain('anything the user could do sitting at it');
     // And that refusing without having tried is itself the failure.
     expect(instructions).toContain('without having asked');
+  });
+
+  /**
+   * The agent is the last resort, and that ordering is the whole fix.
+   *
+   * Asked for a favourite song, it searched YouTube and then drove the pointer
+   * at the results — four tools, two screenshots, the user's cursor borrowed,
+   * and nothing playing at the end of it. Every one of those requests has a
+   * background route that reports its own result, so the rule the persona has
+   * to carry is which reach comes first.
+   */
+  it('routes playing and launching away from the agent that drives the desktop', () => {
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
+
+    expect(instructions).toContain('`app_play`');
+    expect(instructions).toContain('`app_open_app`');
+    expect(instructions).toContain('last resort');
+    // Playing a result is not a search followed by clicking at it.
+    expect(instructions).toContain('not a search followed by clicking');
+  });
+
+  /**
+   * The sentence that started this: "your favourite song should now be playing".
+   *
+   * A hedge is the shape a model reaches for when it does not know, so the
+   * persona has to name the hedges rather than only forbid the plain claim.
+   */
+  it('forbids reporting a hoped-for outcome as a result', () => {
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
+
+    expect(instructions).toContain('Say what the result said');
+    expect(instructions).toContain('A page opening is not a song playing');
+  });
+
+  /**
+   * Announcing is not doing, and five announcements in a row is what the
+   * observed transcript actually looked like from the user's side.
+   */
+  it('tells it to act before it narrates', () => {
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
+    expect(instructions).toContain('Do it first, then say what you did');
+  });
+
+  /**
+   * The consent rule for connecting an account, kept in the persona as well as
+   * in the tool: ask, and let them sign in themselves.
+   */
+  it('makes connecting an account something the user is asked about first', () => {
+    const instructions = buildPersonaInstructions({ ...base, presetId: 'companion' });
+
+    expect(instructions).toContain('`app_connect`');
+    expect(instructions).toContain('only call `app_connect` if they say yes');
+    expect(instructions).toContain('never fill in a login');
+    // And that a credential is never something this conversation collects.
+    expect(instructions).toContain('Never ask them for a password');
   });
 
   it('sends the half of a request that comes after a page is open to the agent', () => {

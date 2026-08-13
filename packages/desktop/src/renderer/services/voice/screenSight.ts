@@ -45,8 +45,18 @@ export type ScreenSightRequest = {
   model: string;
   /** The language the answer is spoken in. */
   language: string;
-  /** Whole display, or only this window. */
+  /** Whole display, or only this app's own window. */
   source: 'window' | 'screen';
+  /**
+   * One application's window to look at instead of the whole display.
+   *
+   * Preferred over `source` when it matches something on screen. Almost every
+   * spoken question is about a single window — "what does that error say", "did
+   * it finish" — and a photograph of the whole desktop gives the model several
+   * things it might be reading and no way to choose between them. A name that
+   * matches nothing falls back to `source`, so this can only narrow the picture.
+   */
+  windowMatch?: string;
   signal?: AbortSignal;
 };
 
@@ -90,8 +100,17 @@ const systemPrompt = (language: string): string =>
   ].join(' ');
 
 /** PNG bytes of the requested surface, as a data URL. */
-const capture = async (source: 'window' | 'screen'): Promise<string> => {
-  const grab = source === 'screen' ? window.electronAPI?.captureScreen : window.electronAPI?.captureFeedbackScreenshot;
+const capture = async (source: 'window' | 'screen', windowMatch: string): Promise<string> => {
+  const byWindow = window.electronAPI?.captureWindow;
+  // A named window first, and the wider picture only when there is no name or
+  // no way to take it. The narrow one answers the question that was asked and
+  // shows the model less of the user's screen than the question needed.
+  const grab =
+    windowMatch.trim().length > 0 && typeof byWindow === 'function'
+      ? () => byWindow(windowMatch.trim())
+      : source === 'screen'
+        ? window.electronAPI?.captureScreen
+        : window.electronAPI?.captureFeedbackScreenshot;
   if (typeof grab !== 'function') throw new ScreenSightError('capture-unavailable');
 
   let shot: { filename: string; data: number[] } | null | undefined;
@@ -120,7 +139,7 @@ const capture = async (source: 'window' | 'screen'): Promise<string> => {
  *   caller can turn into something the user can act on.
  */
 export const describeScreen = async (request: ScreenSightRequest): Promise<string> => {
-  const imageUrl = await capture(request.source);
+  const imageUrl = await capture(request.source, request.windowMatch ?? '');
 
   const timeout = AbortSignal.timeout(DESCRIBE_TIMEOUT_MS);
   const signal = request.signal ? AbortSignal.any([request.signal, timeout]) : timeout;

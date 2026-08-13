@@ -817,6 +817,18 @@ export const application = {
    */
   findVideo: bridge.buildProvider<IBridgeResponse<FoundVideo | null>, { query: string }>('app.find-video'),
   /**
+   * Starts or stops an application, through the operating system.
+   *
+   * Here because the alternative was the agent doing it with the pointer: find
+   * the taskbar, find the icon, click, screenshot, find the close button, click
+   * again — minutes of the user's own cursor being borrowed for something every
+   * platform does in one call. The name is validated before it becomes a
+   * command; see `common/voice/appLaunch.ts`.
+   */
+  controlApp: bridge.buildProvider<IBridgeResponse<void>, { name: string; action: 'open' | 'close' }>(
+    'app.control-app'
+  ),
+  /**
    * Starts a coding agent's own sign-in, in a terminal the user can see.
    *
    * The setup panel used to print `claude login` as a line to copy. That is an
@@ -2276,6 +2288,46 @@ export type IRealtimeReconnectedEvent = {
 
 export const realtime = {
   reconnected: wsEmitter<IRealtimeReconnectedEvent>('realtime.reconnected'),
+};
+
+// ---------------------------------------------------------------------------
+// Spotify — Electron-native: the tokens live in the main process and never
+// cross this boundary. The renderer can ask what is connected and ask for
+// something to be played; it cannot read what makes either possible.
+// ---------------------------------------------------------------------------
+
+/** What the settings page and the play tool are allowed to know. */
+export type ISpotifyStatus = {
+  /** Whether a client id has been entered. Without one nothing can be started. */
+  hasClientId: boolean;
+  clientId: string;
+  /** Whether there is a usable connection to an account. */
+  connected: boolean;
+  /** Who is connected, when Spotify told us. Empty otherwise. */
+  displayName: string;
+};
+
+/** The outcome of one play attempt. `playing` is only ever true from a device. */
+export type ISpotifyPlayResult = { ok: true; track: string; device: string } | { ok: false; reason: string };
+
+export const spotify = {
+  status: bridge.buildProvider<IBridgeResponse<ISpotifyStatus>, void>('spotify.status'),
+  /**
+   * Stores the user's own application id.
+   *
+   * A setting rather than a compiled-in constant because there is no id this
+   * project could ship honestly — see `common/voice/spotifyAuth.ts`.
+   */
+  setClientId: bridge.buildProvider<IBridgeResponse<ISpotifyStatus>, { clientId: string }>('spotify.set-client-id'),
+  /**
+   * Runs the sign-in, in the user's own browser.
+   *
+   * Resolves when they have answered Spotify's page or the wait ran out. No
+   * password, no token and no credential of any kind passes through this app.
+   */
+  connect: bridge.buildProvider<IBridgeResponse<ISpotifyStatus>, void>('spotify.connect'),
+  disconnect: bridge.buildProvider<IBridgeResponse<ISpotifyStatus>, void>('spotify.disconnect'),
+  play: bridge.buildProvider<IBridgeResponse<ISpotifyPlayResult>, { query: string; uri?: string }>('spotify.play'),
 };
 
 export const team = {

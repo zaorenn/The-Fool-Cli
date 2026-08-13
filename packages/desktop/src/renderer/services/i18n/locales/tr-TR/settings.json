@@ -1713,7 +1713,19 @@
     },
     "conversationUnprompted": "Sorulmadan konuşsun",
     "conversationUnpromptedOnHint": "Biten bir işi kendisi söyleyebilir ya da sana bir şey sorabilir; saatte en fazla bir kez ve asla bir şeyin ortasında değil.",
-    "conversationUnpromptedOffHint": "Sadece cevap verir. Sen bir şey söylemeden hiçbir şey söylemez."
+    "conversationUnpromptedOffHint": "Sadece cevap verir. Sen bir şey söylemeden hiçbir şey söylemez.",
+    "conversationPlaying": "{{device}} üzerinde {{track}} çalıyor",
+    "conversationOpenedToPlay": "Tarayıcında açıldı",
+    "conversationConnectAsk": "Önce Spotify’ı bağlamak isteyip istemediğini sor.",
+    "conversationConnectNeedsClientId": "Spotify için önce Ayarlar › Bağlantılar’da bir istemci kimliği gerekiyor.",
+    "conversationConnectWaiting": "Tarayıcındaki oturum açma bekleniyor…",
+    "conversationConnected": "Spotify bağlandı",
+    "conversationConnectFailed": "Spotify bağlanamadı",
+    "conversationAppBadName": "Bu, açılabilecek bir uygulama adı değil",
+    "conversationAppNotRunning": "{{name}} zaten çalışmıyordu",
+    "conversationAppCouldNotOpen": "{{name}} açılamadı",
+    "conversationAppClosed": "{{name}} kapatıldı",
+    "conversationAppOpened": "{{name}} açıldı"
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",
@@ -2098,5 +2110,33 @@
       "press": "Tıklayınca ne kadar gömüldüğü.",
       "ambient": "Nefes alan zemin, nabız, dalga."
     }
+  },
+  "connections": {
+    "title": "Bağlantılar",
+    "description": "Kendi hesaplarını bağla ve içlerinde neler yapılabileceğini seç.",
+    "spotifyTitle": "Spotify",
+    "spotifyDescription": "Spotify bağlıyken “en sevdiğim şarkıyı çal” tarayıcıda bir sayfa açmak yerine, müziğinin zaten geldiği cihazda arka planda çalar.",
+    "connected": "Bağlı",
+    "connectedAs": "{{name}} olarak bağlı",
+    "notConnected": "Bağlı değil",
+    "clientIdLabel": "İstemci kimliği",
+    "clientIdPlaceholder": "Spotify panelindeki 32 karakter",
+    "clientIdHelp": "Spotify geliştirici panelinde bir uygulama oluştur ve istemci kimliğini buraya yapıştır. Bu bir sır değildir ve hiçbir zaman istemci parolası gerekmez.",
+    "clientIdInvalid": "Bu bir Spotify istemci kimliğine benzemiyor.",
+    "clientIdSaved": "İstemci kimliği kaydedildi",
+    "connect": "Bağlan",
+    "reconnect": "Yeniden bağlan",
+    "disconnect": "Bağlantıyı kes",
+    "connectFailed": "Spotify bağlanamadı: {{reason}}",
+    "signInNotice": "Bağlanmak, tarayıcında Spotify’ın kendi oturum açma sayfasını açar. Oturumu orada sen açarsın. Bu uygulama parolanı hiçbir zaman görmez ve senden asla istemez.",
+    "permissionsTitle": "Neler yapabilir",
+    "capability": {
+      "playback_read": "Ne çaldığını görme",
+      "playback_control": "Çalma, duraklatma ve geçme",
+      "library_read": "Kitaplığında arama",
+      "library_write": "Çalma listelerine ekleme"
+    },
+    "redirectTitle": "Yönlendirme adresleri",
+    "redirectHelp": "Üçünü de Spotify panelindeki uygulamanın “Redirect URIs” bölümüne ekle. Spotify bunları birebir eşleştirir ve oturum açma hangi bağlantı noktası boşsa onu kullanır."
   }
 }

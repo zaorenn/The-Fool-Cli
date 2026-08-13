@@ -6,7 +6,7 @@
 
 import type { BrowserWindow } from 'electron';
 import { app } from 'electron';
-import { spawn } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { ipcBridge } from '@/common';
 import { connectableAgent, LINUX_TERMINALS, signInLaunchFor } from '@/common/config/connectableAgents';
 import { ProcessConfig } from '@process/utils/initStorage';
@@ -17,6 +17,7 @@ import { initApplicationBridgeCore } from './applicationBridgeCore';
 import type { IStartOnBootStatus } from '@/common/adapter/ipcBridge';
 import { restartApplication } from './restartApplication';
 import { parseFirstVideo, youtubeSearchUrl } from '@/common/voice/videoSearch';
+import { launchCommandFor } from '@/common/voice/appLaunch';
 
 let mainWindowRef: BrowserWindow | null = null;
 
@@ -210,6 +211,35 @@ export function initApplicationBridge(): void {
     } finally {
       clearTimeout(timeout);
     }
+  });
+
+  /**
+   * Starts or stops an application, through the operating system.
+   *
+   * The reason this exists is a transcript: asked to open something, the agent
+   * drove the user's own pointer at their taskbar and took screenshots of it
+   * loading. Every platform this runs on opens and closes an application from a
+   * single call, in the background, and the user keeps their cursor.
+   *
+   * Two things make it safe to hand to a model. The name is validated against a
+   * closed character set before it becomes anything — see `appLaunch.ts` — and
+   * it is run through `execFile` with the arguments already separated, so there
+   * is no shell to talk into a second command.
+   */
+  ipcBridge.application.controlApp.provider(({ name, action }) => {
+    const command = launchCommandFor(process.platform, action, name ?? '');
+    if (!command) return Promise.resolve({ success: false, msg: 'unsupported-app-name' });
+
+    return new Promise((resolve) => {
+      execFile(command.file, [...command.args], { timeout: 15_000, windowsHide: true }, (error) => {
+        // `taskkill` and `pkill` both exit non-zero when nothing matched, which
+        // is "that application was not running" rather than a fault — but the
+        // caller still has to hear it, because the assistant must not say it
+        // closed something that was never open.
+        if (error) resolve({ success: false, msg: action === 'open' ? 'could-not-open' : 'not-running' });
+        else resolve({ success: true });
+      });
+    });
   });
 
   // CDP status and configuration

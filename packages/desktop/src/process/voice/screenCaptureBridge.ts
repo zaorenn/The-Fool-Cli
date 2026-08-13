@@ -8,12 +8,14 @@ import { ipcMain } from 'electron';
 import type { ScreenCapture } from './screenCapture';
 
 /**
- * The two ways the renderer can ask for a picture of the screen.
+ * The three ways the renderer can ask for a picture of the screen.
  *
- * Both are pull-only and both are user-initiated: nothing here can be triggered
- * by a model, and neither handler takes an argument, so a compromised renderer
- * cannot aim the camera at a display or a rectangle of its choosing. The most it
- * can do is take the same screenshot the user could have taken.
+ * All pull-only, and the most any of them can do is take a screenshot the user
+ * could have taken themselves. Only one takes an argument, and it can only
+ * *narrow* the picture: a window name, which either matches something already on
+ * screen or falls back to the same whole display the argument-less handler
+ * returns. Nothing here can be aimed at a display or a rectangle of the
+ * caller's choosing.
  *
  * The capture modules are imported inside the handlers, not at the top: the
  * bridges are wired at module scope, which is *before* Electron is ready, and
@@ -33,6 +35,11 @@ export function initScreenCaptureBridge(): void {
   ipcMain.handle('voice:capture-screen', async (): Promise<ScreenCapture | null> => {
     const { captureScreen } = await import('./screenCapture');
     return captureScreen();
+  });
+
+  ipcMain.handle('voice:capture-window', async (_event, payload: { match?: string }): Promise<ScreenCapture | null> => {
+    const { captureWindow } = await import('./screenCapture');
+    return captureWindow(typeof payload?.match === 'string' ? payload.match : '');
   });
 
   ipcMain.handle('voice:capture-screen-region', async (): Promise<ScreenCapture | null> => {

@@ -1714,7 +1714,19 @@
     },
     "conversationUnprompted": "Заговорювати першим",
     "conversationUnpromptedOnHint": "Може повідомити про завершене завдання або поставити запитання — не частіше разу на годину й ніколи посеред справи.",
-    "conversationUnpromptedOffHint": "Лише відповідає. Поки ви не заговорите, він мовчить."
+    "conversationUnpromptedOffHint": "Лише відповідає. Поки ви не заговорите, він мовчить.",
+    "conversationPlaying": "{{track}} грає на {{device}}",
+    "conversationOpenedToPlay": "Відкрито у вашому браузері",
+    "conversationConnectAsk": "Спершу запитайте, чи хочуть вони підключити Spotify.",
+    "conversationConnectNeedsClientId": "Для Spotify спершу потрібен ідентифікатор клієнта в «Налаштування › Підключення».",
+    "conversationConnectWaiting": "Очікування входу у вашому браузері…",
+    "conversationConnected": "Spotify підключено",
+    "conversationConnectFailed": "Не вдалося підключити Spotify",
+    "conversationAppBadName": "Це не та назва програми, яку можна відкрити",
+    "conversationAppNotRunning": "{{name}} не був запущений",
+    "conversationAppCouldNotOpen": "Не вдалося відкрити {{name}}",
+    "conversationAppClosed": "{{name}} закрито",
+    "conversationAppOpened": "{{name}} відкрито"
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",
@@ -2099,5 +2111,33 @@
       "press": "Наскільки вона просідає при кліку.",
       "ambient": "Тло, що дихає, пульс, дрейф."
     }
+  },
+  "connections": {
+    "title": "Підключення",
+    "description": "Підключіть власні облікові записи та вирішіть, що в них можна робити.",
+    "spotifyTitle": "Spotify",
+    "spotifyDescription": "Коли Spotify підключено, «увімкни мою улюблену пісню» грає у фоні на тому пристрої, де ви зазвичай слухаєте музику, а не відкриває сторінку в браузері.",
+    "connected": "Підключено",
+    "connectedAs": "Підключено як {{name}}",
+    "notConnected": "Не підключено",
+    "clientIdLabel": "Ідентифікатор клієнта",
+    "clientIdPlaceholder": "32 символи з панелі Spotify",
+    "clientIdHelp": "Створіть застосунок у панелі розробника Spotify і вставте сюди його ідентифікатор клієнта. Це не секрет, і клієнтський секрет ніколи не потрібен.",
+    "clientIdInvalid": "Це не схоже на ідентифікатор клієнта Spotify.",
+    "clientIdSaved": "Ідентифікатор клієнта збережено",
+    "connect": "Підключити",
+    "reconnect": "Перепідключити",
+    "disconnect": "Відключити",
+    "connectFailed": "Не вдалося підключити Spotify: {{reason}}",
+    "signInNotice": "Під час підключення у вашому браузері відкриється власна сторінка входу Spotify. Ви входите там самі. Цей застосунок ніколи не бачить вашого пароля і ніколи його не попросить.",
+    "permissionsTitle": "Що дозволено",
+    "capability": {
+      "playback_read": "Бачити, що грає",
+      "playback_control": "Відтворювати, ставити на паузу та перемикати",
+      "library_read": "Шукати у вашій медіатеці",
+      "library_write": "Додавати до ваших плейлистів"
+    },
+    "redirectTitle": "URI перенаправлення",
+    "redirectHelp": "Додайте всі три в розділ Redirect URIs вашого застосунку в панелі Spotify. Spotify звіряє їх точно, а вхід використовує той порт, який вільний."
   }
 }

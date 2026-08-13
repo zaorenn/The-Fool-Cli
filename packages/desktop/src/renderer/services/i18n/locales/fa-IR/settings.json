@@ -1713,7 +1713,19 @@
     },
     "conversationUnprompted": "خودش حرف بزند",
     "conversationUnpromptedOnHint": "می‌تواند پایان یک کار را بگوید یا از شما چیزی بپرسد؛ حداکثر ساعتی یک بار و هرگز وسط کاری.",
-    "conversationUnpromptedOffHint": "فقط پاسخ می‌دهد. تا شما چیزی نگویید، چیزی نمی‌گوید."
+    "conversationUnpromptedOffHint": "فقط پاسخ می‌دهد. تا شما چیزی نگویید، چیزی نمی‌گوید.",
+    "conversationPlaying": "{{track}} روی {{device}} در حال پخش است",
+    "conversationOpenedToPlay": "در مرورگر شما باز شد",
+    "conversationConnectAsk": "اول بپرس که آیا می‌خواهند Spotify را وصل کنند.",
+    "conversationConnectNeedsClientId": "Spotify ابتدا به یک شناسهٔ کلاینت در تنظیمات › اتصال‌ها نیاز دارد.",
+    "conversationConnectWaiting": "در انتظار ورود شما در مرورگر…",
+    "conversationConnected": "Spotify وصل شد",
+    "conversationConnectFailed": "اتصال به Spotify ممکن نشد",
+    "conversationAppBadName": "این نام برنامه‌ای نیست که بتوان باز کرد",
+    "conversationAppNotRunning": "{{name}} در حال اجرا نبود",
+    "conversationAppCouldNotOpen": "باز کردن {{name}} ممکن نشد",
+    "conversationAppClosed": "{{name}} بسته شد",
+    "conversationAppOpened": "{{name}} باز شد"
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",
@@ -2098,5 +2110,33 @@
       "press": "هنگام کلیک چقدر فرو می‌رود.",
       "ambient": "زمینه‌ای که نفس می‌کشد، تپش، موج."
     }
+  },
+  "connections": {
+    "title": "اتصال‌ها",
+    "description": "حساب‌های خودت را وصل کن و انتخاب کن در آن‌ها چه کارهایی می‌توان کرد.",
+    "spotifyTitle": "Spotify",
+    "spotifyDescription": "با وصل بودن Spotify، «آهنگ محبوبم را پخش کن» به‌جای باز کردن یک صفحه در مرورگر، در پس‌زمینه روی همان دستگاهی پخش می‌شود که موسیقی‌ات از آن می‌آید.",
+    "connected": "وصل شده",
+    "connectedAs": "وصل شده به‌عنوان {{name}}",
+    "notConnected": "وصل نشده",
+    "clientIdLabel": "شناسهٔ کلاینت",
+    "clientIdPlaceholder": "۳۲ نویسه از داشبورد Spotify شما",
+    "clientIdHelp": "در داشبورد توسعه‌دهندهٔ Spotify یک برنامه بساز و شناسهٔ کلاینت آن را اینجا بچسبان. این یک راز نیست و هرگز به client secret نیازی نیست.",
+    "clientIdInvalid": "این شبیه شناسهٔ کلاینت Spotify نیست.",
+    "clientIdSaved": "شناسهٔ کلاینت ذخیره شد",
+    "connect": "اتصال",
+    "reconnect": "اتصال دوباره",
+    "disconnect": "قطع اتصال",
+    "connectFailed": "اتصال به Spotify ممکن نشد: {{reason}}",
+    "signInNotice": "اتصال، صفحهٔ ورود خودِ Spotify را در مرورگر تو باز می‌کند. ورود را همان‌جا خودت انجام می‌دهی. این برنامه هرگز رمز تو را نمی‌بیند و هرگز آن را نمی‌پرسد.",
+    "permissionsTitle": "چه کارهایی مجاز است",
+    "capability": {
+      "playback_read": "دیدن آنچه در حال پخش است",
+      "playback_control": "پخش، مکث و رد کردن",
+      "library_read": "جست‌وجو در کتابخانه‌ات",
+      "library_write": "افزودن به فهرست‌های پخش"
+    },
+    "redirectTitle": "نشانی‌های بازگشت",
+    "redirectHelp": "هر سه را در بخش Redirect URIs برنامه‌ات در داشبورد Spotify اضافه کن. Spotify آن‌ها را دقیقاً مطابقت می‌دهد و ورود از هر پورتی که آزاد باشد استفاده می‌کند."
   }
 }

@@ -1715,7 +1715,19 @@
     },
     "conversationUnprompted": "먼저 말 걸기",
     "conversationUnpromptedOnHint": "끝난 작업을 알리거나 질문할 수 있습니다. 한 시간에 한 번까지, 무언가의 도중에는 절대 하지 않습니다.",
-    "conversationUnpromptedOffHint": "답만 합니다. 당신이 먼저 말하지 않으면 아무 말도 하지 않습니다."
+    "conversationUnpromptedOffHint": "답만 합니다. 당신이 먼저 말하지 않으면 아무 말도 하지 않습니다.",
+    "conversationPlaying": "{{device}}에서 {{track}} 재생 중",
+    "conversationOpenedToPlay": "브라우저에서 열었습니다",
+    "conversationConnectAsk": "먼저 Spotify를 연결할지 물어보세요.",
+    "conversationConnectNeedsClientId": "Spotify를 사용하려면 먼저 설정 › 연결에서 클라이언트 ID가 필요합니다.",
+    "conversationConnectWaiting": "브라우저에서 로그인하기를 기다리는 중…",
+    "conversationConnected": "Spotify가 연결되었습니다",
+    "conversationConnectFailed": "Spotify를 연결하지 못했습니다",
+    "conversationAppBadName": "열 수 있는 애플리케이션 이름이 아닙니다",
+    "conversationAppNotRunning": "{{name}}이(가) 실행 중이 아니었습니다",
+    "conversationAppCouldNotOpen": "{{name}}을(를) 열지 못했습니다",
+    "conversationAppClosed": "{{name}}을(를) 닫았습니다",
+    "conversationAppOpened": "{{name}}을(를) 열었습니다"
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",
@@ -2100,5 +2112,33 @@
       "press": "눌렀을 때 얼마나 가라앉는지.",
       "ambient": "숨 쉬는 바탕, 맥박, 일렁임."
     }
+  },
+  "connections": {
+    "title": "연결",
+    "description": "자신의 계정을 연결하고, 그 안에서 무엇을 할 수 있는지 정하세요.",
+    "spotifyTitle": "Spotify",
+    "spotifyDescription": "Spotify를 연결하면 \"내가 좋아하는 노래 틀어줘\"가 브라우저에서 페이지를 여는 대신, 평소 음악을 듣던 기기에서 백그라운드로 재생됩니다.",
+    "connected": "연결됨",
+    "connectedAs": "{{name}}(으)로 연결됨",
+    "notConnected": "연결되지 않음",
+    "clientIdLabel": "클라이언트 ID",
+    "clientIdPlaceholder": "Spotify 대시보드의 32자",
+    "clientIdHelp": "Spotify 개발자 대시보드에서 앱을 만들고 클라이언트 ID를 여기에 붙여넣으세요. 비밀 값이 아니며, 클라이언트 시크릿은 전혀 필요하지 않습니다.",
+    "clientIdInvalid": "Spotify 클라이언트 ID처럼 보이지 않습니다.",
+    "clientIdSaved": "클라이언트 ID가 저장되었습니다",
+    "connect": "연결",
+    "reconnect": "다시 연결",
+    "disconnect": "연결 해제",
+    "connectFailed": "Spotify를 연결하지 못했습니다: {{reason}}",
+    "signInNotice": "연결하면 브라우저에서 Spotify 자체 로그인 페이지가 열립니다. 로그인은 거기에서 직접 하세요. 이 앱은 비밀번호를 절대 보지 않으며 요청하지도 않습니다.",
+    "permissionsTitle": "허용할 작업",
+    "capability": {
+      "playback_read": "재생 중인 항목 보기",
+      "playback_control": "재생, 일시정지, 건너뛰기",
+      "library_read": "보관함 검색",
+      "library_write": "재생목록에 추가"
+    },
+    "redirectTitle": "리디렉션 URI",
+    "redirectHelp": "Spotify 대시보드의 앱 \"Redirect URIs\"에 세 개를 모두 추가하세요. Spotify는 정확히 일치하는지 확인하며, 로그인에는 비어 있는 포트가 사용됩니다."
   }
 }

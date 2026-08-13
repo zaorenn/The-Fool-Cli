@@ -19,6 +19,9 @@ import {
 } from '@/common/config/themeOverrides';
 import { parseOpenUrls } from '@/common/realtime/openUrls';
 import { buildSiteSearch } from '@/common/realtime/siteSearch';
+import { isGranted, sanitizeConnectorGrants, CONNECTOR_GRANTS_CONFIG_KEY } from '@/common/permissions/connectors';
+import { isLaunchableAppName } from '@/common/voice/appLaunch';
+import { choosePlayRoute, type PlayOutcome } from '@/common/voice/playRequest';
 import { findLocalSkill } from '@/common/voice/localSkills';
 import {
   forgetLocalSkill,
@@ -175,10 +178,12 @@ export const applyThemeAction = async (
  * conversation, defaulting to it: the fast conversational model is often
  * text-only, and a picture sent to one is refused rather than ignored.
  */
-export const lookAtScreen = async (question: string): Promise<string> => {
+export const lookAtScreen = async (question: string, windowMatch = ''): Promise<string> => {
   // Started the moment the user's words pointed at a screen, which is a whole
-  // model round trip before this call exists. Usually already answered.
-  const alreadyLooking = takeScreenLook();
+  // model round trip before this call exists. Usually already answered — but
+  // only for the wide look it started, so a question about one named window
+  // takes its own picture rather than reading the whole desktop again.
+  const alreadyLooking = windowMatch.trim().length > 0 ? null : takeScreenLook();
   if (alreadyLooking) {
     try {
       return await alreadyLooking;
@@ -201,7 +206,77 @@ export const lookAtScreen = async (question: string): Promise<string> => {
     // just said "look at my screen", and answering with a photograph of the app
     // they are talking to is answering a question nobody asked.
     source: 'screen',
+    // Narrower still when a window was named, which is the case worth having:
+    // one application's window is what the question was about, and it is less
+    // of the user's screen than handing over all of it.
+    windowMatch,
   });
+};
+
+/**
+ * Whether the user has connected a music service and allowed it to be driven.
+ *
+ * Both halves are asked, and they are different questions. The tokens live in
+ * the main process, so only it can say whether an account is attached; the
+ * *permission* is the user's answer in settings, kept beside every other
+ * connector grant. A connection without the grant is an account somebody linked
+ * and has not said may be used, and starting their music anyway is exactly the
+ * thing `common/permissions/connectors.ts` was written to prevent.
+ */
+const mayPlayOnSpotify = async (): Promise<boolean> => {
+  const grants = sanitizeConnectorGrants(configService.get(CONNECTOR_GRANTS_CONFIG_KEY));
+  if (!isGranted(grants, { connector: 'spotify', capability: 'playback.control' })) return false;
+
+  const status = await ipcBridge.spotify.status.invoke();
+  return status.success === true && status.data?.connected === true;
+};
+
+/**
+ * Plays something, in the background, and reports only what actually happened.
+ *
+ * The order is the whole design. A connected music service first, because it
+ * plays where the user's music already comes from and can say what is on; the
+ * default browser second, because a page opening is instant and honest. The
+ * pointer is never used, at any point, for either.
+ *
+ * The failure path is the part worth reading. When the service is connected and
+ * refuses — nothing open to play on, a free account, a track it does not have —
+ * the browser still gets the request, so the user ends up with something rather
+ * than an apology. What comes back then says `playing: false`, because a page
+ * opening is not a song starting, and the claim gate reads that field.
+ */
+const playSomething = async (t: ToolHost['t'], what: string, address: string): Promise<PlayOutcome> => {
+  const route = choosePlayRoute({ what, address, spotifyConnected: await mayPlayOnSpotify() });
+  if (route.kind === 'nothing') return { ok: false, error: t('settings.voice.conversationActionUnsupported') };
+
+  if (route.kind === 'spotify') {
+    const answer = await ipcBridge.spotify.play.invoke({ query: route.query, uri: route.uri ?? undefined });
+    const played = answer.success ? answer.data : null;
+    if (played?.ok === true) return { ok: true, playing: true, track: played.track, device: played.device };
+
+    // It could not play there, so it falls through to the browser rather than
+    // stopping — with the reason carried along, which is how the assistant gets
+    // to say "Spotify is not open anywhere, so I have opened it in your browser"
+    // instead of either lying or giving up.
+    const fallback = choosePlayRoute({ what, address, spotifyConnected: false });
+    if (fallback.kind !== 'browser') return { ok: false, error: t('settings.voice.conversationActionUnsupported') };
+
+    await ipcBridge.shell.openExternal.invoke(fallback.url);
+    return {
+      ok: true,
+      playing: false,
+      opened: true,
+      url: fallback.url,
+      reason: played?.ok === false ? played.reason : 'not-connected',
+    };
+  }
+
+  await ipcBridge.shell.openExternal.invoke(route.url);
+  // No `reason`: nothing went wrong, this is simply what playing looks like
+  // without a connected service. The model is told it opened a page, which is
+  // the only sentence it is then allowed to say — and that it may *ask* about
+  // connecting one, which is a question, not a sign-in.
+  return { ok: true, playing: false, opened: true, url: route.url, offerSpotify: true };
 };
 
 /**
@@ -322,7 +397,7 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
 
     if (invocation.name === 'app_look_at_screen') {
       host.updateActivity(invocation.callId, { detail: t('settings.voice.conversationLooking'), state: 'running' });
-      const description = await lookAtScreen(text('question'));
+      const description = await lookAtScreen(text('question'), text('window'));
       host.updateActivity(invocation.callId, { detail: description.slice(0, 160), state: 'completed' });
       host.backToListening();
       // Handed back as the screen's own words rather than a summary of them: the
@@ -353,6 +428,92 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
       // The count goes back so the model can say how many opened rather than
       // guessing, and notice when its list was longer than what was allowed.
       return { ok: true, opened: urls.length };
+    }
+
+    if (invocation.name === 'app_play') {
+      const outcome = await playSomething(t, text('what'), text('url'));
+      host.updateActivity(invocation.callId, {
+        detail:
+          outcome.ok === false
+            ? outcome.error
+            : outcome.playing
+              ? t('settings.voice.conversationPlaying', { track: outcome.track, device: outcome.device })
+              : t('settings.voice.conversationOpenedToPlay'),
+        state: outcome.ok === false ? 'failed' : 'completed',
+      });
+      host.backToListening();
+      // Handed back exactly as it happened. `playing: false` beside an address
+      // is the whole truth about a page that opened, and it is what the claim
+      // gate reads to refuse "it should now be playing".
+      return { ...outcome };
+    }
+
+    if (invocation.name === 'app_connect') {
+      const service = text('service').trim() || 'spotify';
+      if (service !== 'spotify') throw new Error(t('settings.voice.conversationActionUnsupported'));
+
+      // The consent gate, in code rather than in the description. Called without
+      // it, this opens nothing and answers with the question to ask — so the
+      // worst a model that reached for it unprompted can do is be told to ask
+      // first, instead of a sign-in window appearing on somebody's screen for a
+      // reason they never agreed to.
+      if (!flag('confirmed')) {
+        const ask = t('settings.voice.conversationConnectAsk');
+        host.updateActivity(invocation.callId, { detail: ask, state: 'completed' });
+        host.backToListening();
+        return { ok: true, connected: false, mustAskFirst: true, ask };
+      }
+
+      const before = await ipcBridge.spotify.status.invoke();
+      // Nothing can be started without the user's own application id, and there
+      // is no honest one to compile in. Named as a place in settings rather than
+      // as a failure, because it is a thing they have to go and do.
+      if (before.success !== true || before.data?.hasClientId !== true) {
+        throw new Error(t('settings.voice.conversationConnectNeedsClientId'));
+      }
+
+      host.updateActivity(invocation.callId, {
+        detail: t('settings.voice.conversationConnectWaiting'),
+        state: 'running',
+      });
+      // Their browser, their password manager, their sign-in. This application
+      // has no code path that types a credential and must never grow one.
+      const answer = await ipcBridge.spotify.connect.invoke();
+      if (answer.success !== true) throw new Error(t('settings.voice.conversationConnectFailed'));
+
+      const detail = t('settings.voice.conversationConnected');
+      host.updateActivity(invocation.callId, { detail, state: 'completed' });
+      host.backToListening();
+      return { ok: true, connected: true, detail };
+    }
+
+    if (invocation.name === 'app_open_app') {
+      const name = text('name').trim();
+      const action = text('action') === 'close' ? 'close' : 'open';
+      // Refused here as well as in the main process, because here there is
+      // somebody to tell: a name with a slash or a quote in it is a request
+      // this tool does not take, not a launch that quietly did nothing.
+      if (!isLaunchableAppName(name)) throw new Error(t('settings.voice.conversationAppBadName'));
+
+      const answer = await ipcBridge.application.controlApp.invoke({ name, action });
+      // Told apart rather than lumped together: "it was not running" is a true
+      // and useful sentence, and reporting it as "I could not close it" would be
+      // the assistant apologising for a thing that was already the case.
+      if (!answer.success) {
+        throw new Error(
+          answer.msg === 'not-running'
+            ? t('settings.voice.conversationAppNotRunning', { name })
+            : t('settings.voice.conversationAppCouldNotOpen', { name })
+        );
+      }
+
+      const detail =
+        action === 'close'
+          ? t('settings.voice.conversationAppClosed', { name })
+          : t('settings.voice.conversationAppOpened', { name });
+      host.updateActivity(invocation.callId, { detail, state: 'completed' });
+      host.backToListening();
+      return { ok: true, detail };
     }
 
     if (invocation.name === 'app_search') {

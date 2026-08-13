@@ -178,13 +178,18 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_look_at_screen',
     description:
-      "Look at what is on the user's screen right now and get it back described in words. Call this whenever the user says to look at their screen, or asks about a page, a window, an error or anything they can see and you cannot — including 'summarise this page'. Looking takes a few seconds, so say you are looking before you call it, then tell the user what is there in your own words.",
+      "Look at what is on the user's screen right now and get it back described in words. Call this whenever the user says to look at their screen, or asks about a page, a window, an error or anything they can see and you cannot — including 'summarise this page'. Call it first and speak afterwards: announcing the look before making it is a second or two of the user waiting for a sentence that does nothing, and if you then say what is there before the result arrives you are describing a screen you have not seen. Tell them what is there in your own words once it comes back.",
     parameters: {
       type: 'object',
       properties: {
         question: {
           type: 'string',
           description: 'What to look for, in a sentence. Leave out for a plain summary of the screen.',
+        },
+        window: {
+          type: 'string',
+          description:
+            "The application whose window to look at — 'Spotify', 'Chrome', 'Visual Studio Code'. Give it whenever the question is about one program, which is nearly always: a picture of one window is the answer to what was asked, where a picture of the whole desktop is four things it might be about. Leave it out only when they genuinely mean the whole screen. A name that matches no open window falls back to the whole display.",
         },
       },
       required: [],
@@ -193,7 +198,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_open_url',
     description:
-      "Open one or more web pages in the user's own default browser, each in a new tab of the browser they already have open. Pass every address you want open in a single call — 'open each of those in my browser' is one call with the whole list, not one call per page. Use this only when getting the addresses open is the whole request; anything that has to happen after a page loads (searching in it, clicking a result, playing something) is app_ask_jester's job. Say how many you are opening and what they are, in a few words; do not read the addresses out.",
+      "Open one or more web pages in the user's own default browser, each in a new tab of the browser they already have open. Pass every address you want open in a single call — 'open each of those in my browser' is one call with the whole list, not one call per page. Use this only when getting the addresses open is the whole request. Playing something is app_play, which does it in the background; searching inside a site is app_search; anything else that has to happen after a page loads is app_ask_jester's job. Open them first and then say how many you opened and what they are, in a few words; do not read the addresses out.",
     parameters: {
       type: 'object',
       properties: {
@@ -208,9 +213,63 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_play',
+    description:
+      "Play a song, an album or a video, in the background. This is the whole of 'put my favourite song on', 'play Bunny Girl', 'put some music on' — one call, nothing to click, and the user keeps their screen and their pointer. When they have connected a music service it plays there, on the device their music already comes from, and comes back with the track and the speaker so you can say what is on; otherwise it opens the thing in their own default browser and comes back saying that it opened it and nothing more. Never drive the screen to play something and never hand playing to app_ask_jester: clicking a play button through a browser takes minutes, hijacks their cursor and cannot tell you whether any sound came out. Call it first and say what happened after — and say exactly what the result says. If it comes back with `playing` false, it opened a page and you do not know whether anything is playing, so do not say that it is.",
+    parameters: {
+      type: 'object',
+      properties: {
+        what: {
+          type: 'string',
+          description: "What to play, in the user's own words — a song title, an artist, a video name.",
+        },
+        url: {
+          type: 'string',
+          description:
+            'A real address for it, when you already have one from app_find_video or from the user. Never one you assembled from a title: an address built out of a name does not exist.',
+        },
+      },
+      required: ['what'],
+    },
+  },
+  {
+    name: 'app_connect',
+    description:
+      "Connect one of the user's own accounts, so the assistant can act in it. Right now that is Spotify, which is what makes 'play my favourite song' happen in the background on their own speakers instead of as a page opening. Three rules, and they are absolute. **Ask first** — never call this because it would be useful; call it only after they have said yes to a plain question like 'would you like to connect Spotify?'. **They sign in, not you** — this opens the service's own page in their own browser, and from that moment it is theirs: never type into it, never fill a login form, never look at that window, and never drive it with clicks. **Never ask for a password, a code or a token in this conversation, and refuse if they offer one.** Say in a few words that their browser is open and that you will wait; when it comes back, say whether it worked.",
+    parameters: {
+      type: 'object',
+      properties: {
+        service: { type: 'string', enum: ['spotify'], description: 'Which account to connect.' },
+        confirmed: {
+          type: 'boolean',
+          description:
+            'True only when they have actually said yes to being asked. Without it this does nothing but tell you to ask, because opening a sign-in nobody agreed to is a browser window appearing for no reason they can see.',
+        },
+      },
+      required: ['service'],
+    },
+  },
+  {
+    name: 'app_open_app',
+    description:
+      "Open or close an application on the user's computer, through the operating system. 'Open Spotify', 'close Discord', 'quit Steam' — one call, instantly, with no window driven and no pointer taken. Use this rather than app_ask_jester for anything that is only starting or stopping a program: the agent would do it by finding the icon and clicking it, which takes minutes of the user's own screen. Give the application's ordinary name, as they said it. Closing asks the application to quit, so anything unsaved is still theirs to answer.",
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: "The application's name, as a person says it. 'Spotify', 'Notepad'." },
+        action: {
+          type: 'string',
+          enum: ['open', 'close'],
+          description: "'open' starts it, 'close' asks it to quit. Defaults to opening.",
+        },
+      },
+      required: ['name'],
+    },
+  },
+  {
     name: 'app_search',
     description:
-      "Search inside a site and put the results in front of the user, in one step. This is the whole of 'open YouTube and find that song', 'search GitHub for it', 'look it up on Wikipedia' — it goes straight to the site's own results page, so it happens instantly instead of taking the agent minutes of clicking. Use it for every request that ends in a search on a named site, and for a plain web search when no site was named. Say what you looked for and where, in a few words; do not read the address out. If they then want something done with a result — playing it, buying it, replying to it — that part is app_ask_jester.",
+      "Search inside a site and put the results in front of the user, in one step. This is the whole of 'open YouTube and find that song', 'search GitHub for it', 'look it up on Wikipedia' — it goes straight to the site's own results page, so it happens instantly instead of taking the agent minutes of clicking. Use it for every request that ends in a search on a named site, and for a plain web search when no site was named. Search first and then say what you looked for and where, in a few words; do not read the address out. Playing one of the results is app_play, not a search followed by clicking; buying or replying is app_ask_jester.",
     parameters: {
       type: 'object',
       properties: {
@@ -227,7 +286,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_ask_jester',
     description:
-      "Do anything at all on this computer, through an agent that drives it. Opening and using applications, clicking, typing, searching inside a page that is already open, filling in forms, sending a message in Discord or an email, files, code, research. This is not a fixed list: it is the user's own machine, so anything they could do sitting at it can be asked for in a sentence. Use it for every request that changes something outside this conversation, including the second half of a request whose first half was opening a page. It runs while you keep talking, so say briefly that you are on it, and report the outcome in a sentence when it comes back. Do not use it merely to look at the screen; that is app_look_at_screen.",
+      "Do anything at all on this computer, through an agent that drives it. Opening and using applications, clicking, typing, searching inside a page that is already open, filling in forms, sending a message in Discord or an email, files, code, research. This is not a fixed list: it is the user's own machine, so anything they could do sitting at it can be asked for in a sentence. Use it for every request that changes something outside this conversation, including the second half of a request whose first half was opening a page. Call it before you say anything about it — it runs while you keep talking, so start it and then say briefly that you are on it, rather than announcing it and starting it a sentence later. Report the outcome when it comes back. Do not use it to look at the screen, to play something, or to open or close an application: those are app_look_at_screen, app_play and app_open_app, and each of them is instant where this is minutes of driving the user's own desktop.",
     parameters: {
       type: 'object',
       properties: { request: { type: 'string', description: "The task, in the user's own words." } },

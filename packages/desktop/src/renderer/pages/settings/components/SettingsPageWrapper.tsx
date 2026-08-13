@@ -17,6 +17,7 @@ import {
   Earth,
   Info,
   Lightning,
+  Link,
   LinkCloud,
   Puzzle,
   Robot,
@@ -72,6 +73,12 @@ export function getBuiltinSettingsNavItems(isDesktop: boolean, t: TranslateFn): 
       label: t('settings.tools', { defaultValue: 'Tools' }),
       icon: <Toolkit theme='outline' size='16' />,
       path: 'tools',
+    },
+    connections: {
+      id: 'connections',
+      label: t('settings.connections.title', { defaultValue: 'Connections' }),
+      icon: <Link theme='outline' size='16' />,
+      path: 'connections',
     },
     voice: {
       id: 'voice',

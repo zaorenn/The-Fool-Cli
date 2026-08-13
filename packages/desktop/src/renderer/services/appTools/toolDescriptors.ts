@@ -26,8 +26,13 @@ export type ToolDescriptor = {
  * `app_ask_jester` hands a request to an agent. Offered to an agent it is a way
  * of delegating to itself, and nothing in the chain counts how deep it has
  * gone.
+ *
+ * `app_connect` opens a sign-in in the user's browser, and it is only allowed to
+ * happen after they have been asked out loud and said yes. An agent working
+ * through a task has nobody to ask — a consent screen appearing mid-run is a
+ * window somebody has to explain to themselves — so it is not offered one.
  */
-const SPOKEN_ONLY: ReadonlySet<string> = new Set(['app_standby', 'app_resume', 'app_ask_jester']);
+const SPOKEN_ONLY: ReadonlySet<string> = new Set(['app_standby', 'app_resume', 'app_ask_jester', 'app_connect']);
 
 /**
  * The application's own tools, in the shape MCP asks for.
@@ -52,6 +57,12 @@ export const CORE_APP_TOOLS: readonly string[] = [
   'app_look_at_screen',
   'app_search',
   'app_open_url',
+  // Playing something, and starting or stopping a program, are the two requests
+  // that were being answered by driving the user's own pointer. Both belong in
+  // the half that is always in the prompt: a tool the model has to ask for is a
+  // tool it reaches past.
+  'app_play',
+  'app_open_app',
   'app_skill_do',
   'app_remember',
 ];

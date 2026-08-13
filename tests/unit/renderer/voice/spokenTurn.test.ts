@@ -209,14 +209,81 @@ describe('runSpokenTurn and the claim gate', () => {
     expect(refused).toHaveLength(1);
   });
 
-  it('speaks the same claim once a tool has come back', async () => {
+  it('speaks a claim of work done once a tool has come back', async () => {
     const spoken: string[] = [];
-    const turn = runSpokenTurn({ conversationId: 'c1', said: 'favori şarkımı aç', onSentence: (s) => spoken.push(s) });
+    const turn = runSpokenTurn({ conversationId: 'c1', said: 'mesajı gönder', onSentence: (s) => spoken.push(s) });
     await settle();
 
     // A step on the stream is the agent doing something, which is what makes
     // the claim true rather than a lie.
     emit({ type: 'tool_call', data: { name: 'app_skill_do' } });
+    emit({ type: 'content', data: 'Mesajı gönderdim.' });
+    emit({ type: 'finish' });
+    await turn;
+
+    expect(spoken).toEqual(['Mesajı gönderdim.']);
+  });
+
+  /**
+   * A claim about sound is not licensed by a tool having run, and on this
+   * surface it cannot be licensed at all.
+   *
+   * `app_skill_do` ends with an address in a browser, which is a page opening
+   * rather than a song starting — the exact substitution the observed
+   * transcript made. So the count that satisfies every other gate has to leave
+   * this one unsatisfied.
+   */
+  it('never speaks a claim that something is playing on a tool count alone', async () => {
+    const spoken: string[] = [];
+    const refused: string[] = [];
+    const turn = runSpokenTurn({
+      conversationId: 'c1',
+      said: 'favori şarkımı aç',
+      onSentence: (s) => spoken.push(s),
+      onRefused: (c) => refused.push(c),
+    });
+    await settle();
+
+    emit({ type: 'tool_call', data: { name: 'app_skill_do' } });
+    emit({ type: 'content', data: 'Şimdi çalıyor.' });
+    emit({ type: 'finish' });
+    await turn;
+
+    expect(spoken).toEqual([]);
+    expect(refused).toHaveLength(1);
+  });
+
+  /**
+   * Not even `app_play` running is enough here, and that asymmetry is
+   * deliberate. This stream carries the *name* of what ran and never what it
+   * answered — and `app_play` answers just as successfully having opened a page
+   * as having started a song. Only the loop that reads the result may say so,
+   * through `startedPlayback`.
+   */
+  it('does not treat the player having run as evidence that it played', async () => {
+    const spoken: string[] = [];
+    const turn = runSpokenTurn({ conversationId: 'c1', said: 'favori şarkımı aç', onSentence: (s) => spoken.push(s) });
+    await settle();
+
+    emit({ type: 'tool_call', data: { name: 'app_play' } });
+    emit({ type: 'content', data: 'Şimdi çalıyor.' });
+    emit({ type: 'finish' });
+    await turn;
+
+    expect(spoken).toEqual([]);
+  });
+
+  it('speaks it when whoever read the result says a player started', async () => {
+    const spoken: string[] = [];
+    const turn = runSpokenTurn({
+      conversationId: 'c1',
+      said: 'favori şarkımı aç',
+      onSentence: (s) => spoken.push(s),
+      startedPlayback: () => true,
+    });
+    await settle();
+
+    emit({ type: 'tool_call', data: { name: 'app_play' } });
     emit({ type: 'content', data: 'Şimdi çalıyor.' });
     emit({ type: 'finish' });
     await turn;

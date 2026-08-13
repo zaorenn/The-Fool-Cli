@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { guardSpokenSentence, stillOwed, type SpokenTurnEvidence } from '@renderer/services/voice/session/spokenOutput';
 
 /** A turn that has done nothing and seen nothing, which is the interesting case. */
-const nothing: SpokenTurnEvidence = { toolsRan: 0, remembered: 3, lookedAtScreen: false };
+const nothing: SpokenTurnEvidence = { toolsRan: 0, remembered: 3, lookedAtScreen: false, startedPlayback: false };
 
 describe('guardSpokenSentence', () => {
   it('refuses a sentence claiming a completed action when no tool ran', () => {
@@ -22,8 +22,27 @@ describe('guardSpokenSentence', () => {
     expect(verdict.speak === false && verdict.correction.length > 0).toBe(true);
   });
 
-  it('allows the same sentence when a tool did run', () => {
-    expect(guardSpokenSentence('Şimdi çalıyor.', { ...nothing, toolsRan: 1 }).speak).toBe(true);
+  it('allows a claim of work done when a tool did run', () => {
+    expect(guardSpokenSentence('Mesajı gönderdim.', { ...nothing, toolsRan: 1 }).speak).toBe(true);
+  });
+
+  /**
+   * A tool running is no longer enough for *this* sentence, and that is the
+   * change rather than a regression.
+   *
+   * "Şimdi çalıyor" is a claim about sound, and the turn this was written from
+   * ran four tools before saying it — a search, two screenshots and a click,
+   * not one of which could make it true. Counting calls licensed it. Only a
+   * player reporting a track and a device does now.
+   */
+  it('refuses a claim that something is playing on a tool count alone', () => {
+    expect(guardSpokenSentence('Şimdi çalıyor.', { ...nothing, toolsRan: 4 }).speak).toBe(false);
+  });
+
+  it('allows it once a player has actually reported playback', () => {
+    // A player ran and answered, so both gates are satisfied — which is the
+    // only combination that should ever let this sentence out.
+    expect(guardSpokenSentence('Şimdi çalıyor.', { ...nothing, toolsRan: 1, startedPlayback: true }).speak).toBe(true);
   });
 
   it('refuses a claim to remember on an empty memory', () => {
@@ -73,6 +92,68 @@ describe('describing a screen', () => {
   it('never refuses the honest answer, whatever the evidence', () => {
     expect(guardSpokenSentence('Ekranını göremiyorum.', nothing).speak).toBe(true);
     expect(guardSpokenSentence('Bir bakayım.', nothing).speak).toBe(true);
+  });
+});
+
+/**
+ * The fourth gate, written from a transcript rather than from a worry.
+ *
+ * Asked to play a favourite song, the assistant searched YouTube, clicked at
+ * the results with the pointer, took two screenshots of a loading page, and
+ * finished with three sentences that cannot all be true: it should now be
+ * playing, it is loaded and ready to play, and would the user like it to press
+ * play. Four tools had run, so every count-based check was satisfied.
+ */
+describe('claiming something is playing', () => {
+  it('refuses the exact sentence the user was told', () => {
+    const verdict = guardSpokenSentence("Your favourite song 'Bunny Girl' should now be playing in the browser!", {
+      ...nothing,
+      toolsRan: 4,
+    });
+
+    expect(verdict.speak).toBe(false);
+    // The correction has to name the honest sentence, not only the mistake:
+    // told merely that it was unverified, the model says it again more softly.
+    expect(verdict.speak === false && verdict.correction).toContain('opened');
+  });
+
+  it('refuses the hedge that came after it', () => {
+    for (const sentence of [
+      'The video is loaded and ready to play.',
+      'It should be playing now.',
+      'It must be playing in your browser.',
+    ]) {
+      expect(guardSpokenSentence(sentence, { ...nothing, toolsRan: 4 }).speak, sentence).toBe(false);
+    }
+  });
+
+  /**
+   * A page opening is a true thing that happened, and saying so must stay
+   * sayable — otherwise the gate teaches silence instead of honesty.
+   */
+  it('never refuses the honest report of what actually happened', () => {
+    // A page did open, and a tool ran to open it, so saying so is a report.
+    expect(guardSpokenSentence('I opened it in your browser.', { ...nothing, toolsRan: 1 }).speak).toBe(true);
+
+    // These claim nothing at all, so they stand with no evidence behind them:
+    // an admission, an uncertainty, and an announcement of work about to start.
+    for (const sentence of [
+      "I can't play it, Spotify is not open anywhere.",
+      "I don't know whether it started.",
+      "I'm putting it on now.",
+    ]) {
+      expect(guardSpokenSentence(sentence, nothing).speak, sentence).toBe(true);
+    }
+  });
+
+  it('allows the report once a player has said so', () => {
+    expect(
+      guardSpokenSentence('Bunny Girl is now playing on the Kitchen speaker.', {
+        ...nothing,
+        toolsRan: 1,
+        startedPlayback: true,
+      }).speak
+    ).toBe(true);
   });
 });
 

@@ -536,6 +536,160 @@ export const unseenScreenCorrection = (reply: string): string =>
   ].join(' ');
 
 /**
+ * Saying a thing is playing when all that happened was a page being opened.
+ *
+ * The fourth lie, and the one the first three were all shaped to miss. Watched
+ * in the app, asked for a favourite song: it searched, drove the mouse at the
+ * results, took two screenshots, and finished with "your favourite song should
+ * now be playing in the browser — the video is loaded and ready to play. If you
+ * need me to click the play button, just let me know." Three sentences that
+ * cannot all be true, and a user who now believes their music is on.
+ *
+ * Every gate this file already had passed it.
+ *
+ * - {@link claimsCompletedAction} never fired: "should now be playing" is not
+ *   one of the completed forms, and it is not a first-person past either. The
+ *   hedge is what carries it — "should be", "must be", "is ready to" — and a
+ *   hedge is the shape a model reaches for precisely when it does not know.
+ * - {@link isUnbackedClaim} would not have refused it anyway. Four tools ran
+ *   that turn. *A tool ran* is the whole of what that gate asks, and none of the
+ *   four was capable of making the sentence true.
+ *
+ * So this asks the only question that settles it: did anything actually report
+ * that sound is coming out. Handing an address to a browser does not; it is a
+ * page opening, and the honest sentence about it is that it was opened. Only a
+ * player that answered "playing, this track, on that device" is evidence, which
+ * is what {@link startedPlayback} reads.
+ */
+
+/**
+ * Asserting that something is, or is about to be, audible.
+ *
+ * The hedged forms are first-class rather than an afterthought. "It should be
+ * playing" is the same claim as "it is playing" said less honestly, and it is
+ * the form actually observed — a model that has opened a page and cannot see it
+ * writes the sentence it hopes is true.
+ */
+const ASSERTS_PLAYING: readonly RegExp[] = [
+  // ── Turkish ──────────────────────────────────────────────────────────────
+  // Playing, and the hedge that is the same claim: "çalıyor olmalı".
+  edged('caliyor(\\s+olmali)?'),
+  edged('calmaya (basladi|baslamis|hazir)'),
+  edged('(oynatiliyor|oynuyor|caliniyor|calinmaya basladi)'),
+  edged('(sarki|muzik|video|parca)\\w*\\s+(basladi|basliyor|calmaya basladi)'),
+  // ── English ──────────────────────────────────────────────────────────────
+  edged("(is|are|'?s|'?re)\\s+(now\\s+)?playing"),
+  edged('(should|must|ought to|will)\\s+(now\\s+)?be\\s+(playing|starting)'),
+  edged('now playing'),
+  edged('(started|begun|begins) playing'),
+  edged('playing (now|in (your|the) (browser|player|background))'),
+  // The second sentence of the observed reply. "Loaded", "ready to play" are
+  // assertions about a page nobody looked at, offered in place of the playing
+  // that could not be confirmed.
+  edged('(loaded|ready)( and ready)? to (play|go)'),
+  edged('(song|track|video|music) (is|has) (on|started|begun)'),
+];
+
+/**
+ * Saying plainly that it is not playing, or cannot play it.
+ *
+ * The sentence this gate wants more of, and it is built from the same words as
+ * the lie. Checked first and wins outright, exactly like {@link CANNOT_SEE}.
+ */
+const NOT_PLAYING: readonly RegExp[] = [
+  edged('(calmiyor|calamiyorum|calamam|calamadim|baslatamadim|acamadim)'),
+  edged('(caldigini|caldigindan) emin degilim'),
+  edged("(i )?(can'?t|cannot|could not|couldn'?t|was not able to) (play|start)"),
+  edged("(is|'?s|are) not playing"),
+  edged("(i )?(don'?t|do not) know (whether|if) it (is|started)"),
+];
+
+/**
+ * About to start it, rather than reporting that it started.
+ *
+ * The same exemption the other three gates give, for the same reason: "I'm
+ * putting it on now" is the announce-then-call behaviour the prompt asks for,
+ * and refusing it would leave nothing sayable between the request and the tool.
+ */
+const ABOUT_TO_PLAY: readonly RegExp[] = [
+  edged('(caliyorum|aciyorum|baslatiyorum|koyuyorum|ariyorum)'),
+  edged('(calmaya|acmaya|baslatmaya) (calisiyorum|gidiyorum)'),
+  edged("i'?m (playing|putting|starting|opening|queuing|queueing)"),
+  edged('let me (play|put|start)'),
+  edged("i'?ll (play|put|start)"),
+];
+
+/**
+ * Whether this reply asserts that something is audible.
+ *
+ * Read together with its caller in the same way as every other gate here: it is
+ * consulted only when nothing has reported that playback began, so the question
+ * is never "is this true" but "could it be, given that no player said so".
+ */
+export const claimsPlayback = (reply: string): boolean => {
+  const text = reply.trim();
+  if (text.length === 0) return false;
+  if (ASKING.test(text)) return false;
+
+  const folded = fold(text);
+  if (NOT_PLAYING.some((pattern) => pattern.test(folded))) return false;
+  if (ABOUT_TO_PLAY.some((pattern) => pattern.test(folded))) return false;
+
+  return ASSERTS_PLAYING.some((pattern) => pattern.test(folded));
+};
+
+/**
+ * The only tools through which this assistant can know something is playing.
+ *
+ * A set for the same reason `SCREEN_TOOLS` is one: the answer to "did anything
+ * start playing" must not be spread over three files that each remember a
+ * different spelling, and whoever adds a second player will find the list here.
+ *
+ * `app_open_url`, `app_search` and `app_skill_do` are deliberately *not* in it.
+ * All three end with an address in a browser, which is a page opening and
+ * nothing more — the exact substitution this gate exists to refuse.
+ */
+export const PLAYBACK_TOOLS: ReadonlySet<string> = new Set(['app_play']);
+
+/**
+ * Whether a tool result actually reports that sound is coming out.
+ *
+ * The evidence is the result, never the invocation — the lesson
+ * {@link showedTheScreen} was rewritten to learn. `app_play` answers `playing:
+ * true` only when a player accepted the track and named the device it is coming
+ * from; asked for the same song with nothing connected it answers `playing:
+ * false` beside the address it opened instead, and that is not evidence of
+ * anything being audible.
+ */
+export const startedPlayback = (name: string, result: unknown): boolean => {
+  if (!PLAYBACK_TOOLS.has(name)) return false;
+  if (result === null || typeof result !== 'object') return false;
+
+  const record = result as { ok?: unknown; playing?: unknown };
+  if (record.ok === false) return false;
+  return record.playing === true;
+};
+
+/** Whether this sentence claims a playback nothing has confirmed. */
+export const isUnverifiedPlaybackClaim = (reply: string, playbackStarted: boolean): boolean =>
+  !playbackStarted && claimsPlayback(reply);
+
+/**
+ * What to tell the model when it has said a page opening was a song starting.
+ *
+ * Names the honest sentence rather than only the mistake, because "you did not
+ * verify that" on its own is answered with the same claim in a softer hedge —
+ * which is how "it is playing" became "it should be playing" in the first place.
+ */
+export const unverifiedPlaybackCorrection = (reply: string): string =>
+  [
+    `You just said: "${reply.trim()}"`,
+    'That says something is playing, and nothing has reported that it is. Opening a page in a browser is not playing: the page may still be loading, it may be an advert, and nothing has pressed play.',
+    'Do not hedge it into "should be playing" or "is ready to play" — a guess about sound is the same mistake said less clearly.',
+    'Say only what actually happened — that you opened it — or call `app_play`, which plays it in the background and answers with the track and the device when it really is playing.',
+  ].join(' ');
+
+/**
  * Whether a tool result is evidence that something was *finished*.
  *
  * Not every tool that comes back has done anything yet. A task handed to the

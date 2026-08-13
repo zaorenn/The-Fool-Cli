@@ -12,6 +12,7 @@ import {
   Earth,
   Info,
   Lightning,
+  Link,
   LinkCloud,
   Puzzle,
   Speed,
@@ -33,6 +34,7 @@ export const BUILTIN_TAB_IDS = [
   'model',
   'skills',
   'tools',
+  'connections',
   'voice',
   'memory',
   'appearance',
@@ -50,7 +52,7 @@ export const BUILTIN_TAB_IDS = [
  * order above so adding a desktop-only page is one edit rather than a filter
  * clause hidden further down.
  */
-const DESKTOP_ONLY_TAB_IDS: ReadonlySet<string> = new Set(['pet', 'voice']);
+const DESKTOP_ONLY_TAB_IDS: ReadonlySet<string> = new Set(['pet', 'voice', 'connections']);
 
 /**
  * Legacy anchor IDs that have been merged into other tabs.
@@ -122,6 +124,12 @@ const SettingsSider: React.FC<{ collapsed?: boolean; tooltipEnabled?: boolean }>
         label: t('settings.tools', { defaultValue: 'Tools' }),
         icon: <Toolkit />,
         path: 'tools',
+      },
+      connections: {
+        id: 'connections',
+        label: t('settings.connections.title'),
+        icon: <Link />,
+        path: 'connections',
       },
       voice: { id: 'voice', label: t('settings.voice.title'), icon: <Voice />, path: 'voice' },
       memory: { id: 'memory', label: t('settings.memory.title'), icon: <Brain />, path: 'memory' },

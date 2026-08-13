@@ -60,6 +60,19 @@ export type SpokenTurnInput = {
   /** Told when a look has come back, so the conversation can remember it. */
   onLookedAtScreen?: () => void;
   /**
+   * Whether a player has reported that something is on, read per sentence.
+   *
+   * A function for the same reason `lookedAtScreen` is one: the answer changes
+   * mid-turn, and read once at the start it would be "no" for exactly the turn
+   * that does the playing — refusing the model's report of its own work.
+   *
+   * Read-only here, and there is no `onStartedPlayback` beside it on purpose.
+   * This surface sees the names of tools that ran and never their results,
+   * and `app_play` runs successfully when all it did was open a page. Whoever
+   * knows a song started is whoever read the result; this only asks them.
+   */
+  startedPlayback?: () => boolean;
+  /**
    * Called with a sentence that was refused before it could be spoken.
    *
    * The correction is written to the model, not the user: it goes back as the
@@ -248,6 +261,7 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
       toolsRan,
       remembered,
       lookedAtScreen: input.lookedAtScreen?.() ?? false,
+      startedPlayback: input.startedPlayback?.() ?? false,
     });
     if (verdict.speak === false) {
       refuse(trimmed, verdict.correction);
@@ -399,6 +413,14 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
       // so this is weaker than `showedTheScreen`, which the loops that can see
       // their own results use instead.
       if (SCREEN_TOOLS.has(toolNameOf(message.data))) input.onLookedAtScreen?.();
+      // There is deliberately no matching line for playing, and the asymmetry
+      // is the point. A look that ran without failing *did* look, so its name
+      // is evidence. `app_play` answers just as successfully having opened a
+      // page instead of starting a song — that is its designed fallback — so
+      // its name says only that a route was taken, not that anything is
+      // audible. This stream carries no result, so on this surface there is
+      // nothing that can license the claim, and the gate refuses it. Reading a
+      // name here would reopen exactly the hole it was written to close.
     }
   }
 

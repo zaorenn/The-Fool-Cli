@@ -1715,7 +1715,19 @@
     },
     "conversationUnprompted": "自分から話す",
     "conversationUnpromptedOnHint": "終わった作業を伝えたり質問したりします。1時間に1回まで、作業の途中では決して話しません。",
-    "conversationUnpromptedOffHint": "答えるだけです。あなたが話さない限り何も言いません。"
+    "conversationUnpromptedOffHint": "答えるだけです。あなたが話さない限り何も言いません。",
+    "conversationPlaying": "{{device}} で {{track}} を再生しています",
+    "conversationOpenedToPlay": "ブラウザで開きました",
+    "conversationConnectAsk": "まず Spotify を連携してよいか尋ねてください。",
+    "conversationConnectNeedsClientId": "Spotify には先に「設定 › 連携」でクライアント ID が必要です。",
+    "conversationConnectWaiting": "ブラウザでのサインインを待っています…",
+    "conversationConnected": "Spotify を連携しました",
+    "conversationConnectFailed": "Spotify を連携できませんでした",
+    "conversationAppBadName": "それは開けるアプリケーション名ではありません",
+    "conversationAppNotRunning": "{{name}} は起動していませんでした",
+    "conversationAppCouldNotOpen": "{{name}} を開けませんでした",
+    "conversationAppClosed": "{{name}} を閉じました",
+    "conversationAppOpened": "{{name}} を開きました"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",
@@ -2100,5 +2112,33 @@
       "press": "クリックしたときどれだけ沈むか。",
       "ambient": "呼吸する地色、脈、ゆらぎ。"
     }
+  },
+  "connections": {
+    "title": "連携",
+    "description": "自分のアカウントを連携し、そこで何ができるかを決めます。",
+    "spotifyTitle": "Spotify",
+    "spotifyDescription": "Spotify を連携すると、「お気に入りの曲をかけて」がブラウザでページを開くのではなく、普段音楽を聴いているデバイスでバックグラウンド再生されます。",
+    "connected": "連携済み",
+    "connectedAs": "{{name}} として連携済み",
+    "notConnected": "未連携",
+    "clientIdLabel": "クライアント ID",
+    "clientIdPlaceholder": "Spotify ダッシュボードの 32 文字",
+    "clientIdHelp": "Spotify デベロッパーダッシュボードでアプリを作成し、そのクライアント ID をここに貼り付けてください。これは秘密情報ではなく、クライアントシークレットは一切必要ありません。",
+    "clientIdInvalid": "これは Spotify のクライアント ID ではないようです。",
+    "clientIdSaved": "クライアント ID を保存しました",
+    "connect": "連携する",
+    "reconnect": "再連携する",
+    "disconnect": "連携を解除",
+    "connectFailed": "Spotify を連携できませんでした: {{reason}}",
+    "signInNotice": "連携すると、ブラウザで Spotify 自身のサインインページが開きます。サインインはそこで行ってください。このアプリがパスワードを見ることはなく、尋ねることもありません。",
+    "permissionsTitle": "できること",
+    "capability": {
+      "playback_read": "再生中の内容を見る",
+      "playback_control": "再生・一時停止・スキップ",
+      "library_read": "ライブラリを検索する",
+      "library_write": "プレイリストに追加する"
+    },
+    "redirectTitle": "リダイレクト URI",
+    "redirectHelp": "Spotify ダッシュボードのアプリの「Redirect URIs」に 3 つすべてを追加してください。Spotify は完全一致で照合し、サインインには空いているポートが使われます。"
   }
 }

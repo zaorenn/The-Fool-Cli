@@ -1714,7 +1714,19 @@
     },
     "conversationUnprompted": "主动开口",
     "conversationUnpromptedOnHint": "它可以主动告知已完成的任务或向你提问，每小时最多一次，且绝不打断。",
-    "conversationUnpromptedOffHint": "只回答。你不开口，它就不说话。"
+    "conversationUnpromptedOffHint": "只回答。你不开口，它就不说话。",
+    "conversationPlaying": "正在 {{device}} 上播放 {{track}}",
+    "conversationOpenedToPlay": "已在你的浏览器中打开",
+    "conversationConnectAsk": "先询问对方是否愿意连接 Spotify。",
+    "conversationConnectNeedsClientId": "Spotify 需要先在“设置 › 连接”中填写客户端 ID。",
+    "conversationConnectWaiting": "正在等待你在浏览器中登录…",
+    "conversationConnected": "Spotify 已连接",
+    "conversationConnectFailed": "无法连接 Spotify",
+    "conversationAppBadName": "这不是一个可以打开的应用名称",
+    "conversationAppNotRunning": "{{name}} 并未在运行",
+    "conversationAppCouldNotOpen": "无法打开 {{name}}",
+    "conversationAppClosed": "已关闭 {{name}}",
+    "conversationAppOpened": "已打开 {{name}}"
   },
   "themeCustomizer": {
     "title": "自定义主题",
@@ -2099,5 +2111,33 @@
       "press": "点击时下沉多少。",
       "ambient": "会呼吸的底色、脉动与流动。"
     }
+  },
+  "connections": {
+    "title": "连接",
+    "description": "连接你自己的帐户，并决定可以在其中做些什么。",
+    "spotifyTitle": "Spotify",
+    "spotifyDescription": "连接 Spotify 后，“播放我最喜欢的歌”会直接在你平时听音乐的设备上后台播放，而不是在浏览器里打开一个页面。",
+    "connected": "已连接",
+    "connectedAs": "已作为 {{name}} 连接",
+    "notConnected": "未连接",
+    "clientIdLabel": "客户端 ID",
+    "clientIdPlaceholder": "Spotify 控制台中的 32 个字符",
+    "clientIdHelp": "在 Spotify 开发者控制台创建一个应用，并把它的客户端 ID 粘贴到这里。它不是密钥，也永远不需要客户端密钥。",
+    "clientIdInvalid": "这看起来不像是 Spotify 客户端 ID。",
+    "clientIdSaved": "客户端 ID 已保存",
+    "connect": "连接",
+    "reconnect": "重新连接",
+    "disconnect": "断开连接",
+    "connectFailed": "无法连接 Spotify：{{reason}}",
+    "signInNotice": "连接时会在你的浏览器中打开 Spotify 自己的登录页面，由你在那里登录。本应用永远看不到你的密码，也绝不会向你索取。",
+    "permissionsTitle": "可以做什么",
+    "capability": {
+      "playback_read": "查看正在播放的内容",
+      "playback_control": "播放、暂停和切歌",
+      "library_read": "搜索你的音乐库",
+      "library_write": "添加到你的播放列表"
+    },
+    "redirectTitle": "重定向地址",
+    "redirectHelp": "把这三个地址都添加到 Spotify 控制台中应用的“Redirect URIs”里。Spotify 会完全精确匹配，登录时会使用其中空闲的那个端口。"
   }
 }

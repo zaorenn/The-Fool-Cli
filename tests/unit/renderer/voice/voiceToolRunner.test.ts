@@ -49,9 +49,23 @@ vi.mock('@renderer/services/voice/screenSight', () => ({ describeScreen: vi.fn()
 vi.mock('@renderer/services/voice/voiceSettingsStore', () => ({ peekVoiceSettings: () => ({}) }));
 vi.mock('@renderer/utils/theme/applyThemeOverrides', () => ({ applyThemeOverrides: vi.fn() }));
 vi.mock('@renderer/pages/voice/localPipeline', () => ({ normalizeEndpoint: (value: string) => value }));
-vi.mock('@/common', () => ({ ipcBridge: { shell: { openExternal: { invoke: vi.fn() } } } }));
+vi.mock('@/common', () => ({
+  ipcBridge: {
+    shell: { openExternal: { invoke: vi.fn() } },
+    spotify: {
+      status: { invoke: vi.fn() },
+      play: { invoke: vi.fn() },
+      connect: { invoke: vi.fn() },
+    },
+    application: { controlApp: { invoke: vi.fn() } },
+  },
+}));
+
+/** Whatever the settings currently say, so a test can grant a capability. */
+const settings = new Map<string, unknown>();
+
 vi.mock('@/common/config/configService', () => ({
-  configService: { get: () => undefined, set: async () => {} },
+  configService: { get: (key: string) => settings.get(key), set: async () => {} },
 }));
 
 const { runVoiceTool } = await import('@renderer/pages/voice/runtime/toolRunner');
@@ -461,6 +475,215 @@ describe('searching inside a site', () => {
       argumentsJson: JSON.stringify({ site: 'youtube', query: '   ' }),
     });
 
+    expect(result.ok).toBe(false);
+  });
+});
+
+/**
+ * Playing something, and the transcript this was written from.
+ *
+ * "Play my favourite song" was answered with `app_search`, then a click on the
+ * first result, then a screenshot of the loading page, then another click and
+ * another screenshot — the user's pointer and screen borrowed for two minutes
+ * — and the reply said it was playing. Nothing had played.
+ *
+ * These tests are about the production path rather than the routing function it
+ * calls: the defect this project keeps producing is code that is written and
+ * tested and never reached, so what matters here is which bridge actually gets
+ * invoked when the tool runs.
+ */
+describe('playing something', () => {
+  const bridge = async () => (await import('@/common')).ipcBridge;
+
+  beforeEach(async () => {
+    activities.clear();
+    runAgentTask.mockReset();
+    settings.clear();
+
+    const ipcBridge = await bridge();
+    vi.mocked(ipcBridge.shell.openExternal.invoke).mockClear();
+    vi.mocked(ipcBridge.spotify.status.invoke).mockReset();
+    vi.mocked(ipcBridge.spotify.play.invoke).mockReset();
+    vi.mocked(ipcBridge.spotify.connect.invoke).mockReset();
+  });
+
+  /** Connected, and told in settings that playback may be controlled. */
+  const connected = async (): Promise<void> => {
+    settings.set('connectors.grants', [{ connector: 'spotify', capability: 'playback.control', granted: true }]);
+    const ipcBridge = await bridge();
+    vi.mocked(ipcBridge.spotify.status.invoke).mockResolvedValue({
+      success: true,
+      data: { hasClientId: true, clientId: 'a'.repeat(32), connected: true, displayName: 'Serhan' },
+    });
+  };
+
+  it('opens the browser rather than driving the screen when nothing is connected', async () => {
+    const ipcBridge = await bridge();
+    vi.mocked(ipcBridge.spotify.status.invoke).mockResolvedValue({ success: true, data: { connected: false } });
+
+    const result = await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_play',
+      argumentsJson: JSON.stringify({ what: 'Bunny Girl' }),
+    });
+
+    // The whole point: a background route was taken, and the agent that drives
+    // the desktop with a pointer was never asked for anything.
+    expect(runAgentTask).not.toHaveBeenCalled();
+    expect(vi.mocked(ipcBridge.shell.openExternal.invoke)).toHaveBeenCalledTimes(1);
+
+    // And it says a page opened, which is the whole truth about what happened.
+    expect(result).toMatchObject({ ok: true, playing: false, opened: true });
+  });
+
+  it('plays in the background on the service when it is connected', async () => {
+    await connected();
+    const ipcBridge = await bridge();
+    vi.mocked(ipcBridge.spotify.play.invoke).mockResolvedValue({
+      success: true,
+      data: { ok: true, track: 'Bunny Girl', device: 'Kitchen' },
+    });
+
+    const result = await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_play',
+      argumentsJson: JSON.stringify({ what: 'Bunny Girl' }),
+    });
+
+    expect(vi.mocked(ipcBridge.spotify.play.invoke)).toHaveBeenCalledWith({ query: 'Bunny Girl', uri: undefined });
+    // Nothing opened, nothing focused, no window changed.
+    expect(vi.mocked(ipcBridge.shell.openExternal.invoke)).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ ok: true, playing: true, track: 'Bunny Girl', device: 'Kitchen' });
+  });
+
+  /**
+   * A connection is not permission. The grant is the user's answer in settings,
+   * and without it an account somebody linked must not be driven.
+   */
+  it('does not touch the service when the capability was never granted', async () => {
+    const ipcBridge = await bridge();
+    vi.mocked(ipcBridge.spotify.status.invoke).mockResolvedValue({
+      success: true,
+      data: { hasClientId: true, clientId: 'a'.repeat(32), connected: true, displayName: 'Serhan' },
+    });
+
+    await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_play',
+      argumentsJson: JSON.stringify({ what: 'Bunny Girl' }),
+    });
+
+    expect(vi.mocked(ipcBridge.spotify.play.invoke)).not.toHaveBeenCalled();
+    expect(vi.mocked(ipcBridge.shell.openExternal.invoke)).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * Spotify is connected but not open anywhere, so it cannot play. The user
+   * still ends up with something, and the answer still says a page opened
+   * rather than claiming a song started.
+   */
+  it('falls back to the browser when the service refuses, and says so', async () => {
+    await connected();
+    const ipcBridge = await bridge();
+    vi.mocked(ipcBridge.spotify.play.invoke).mockResolvedValue({
+      success: true,
+      data: { ok: false, reason: 'no-device' },
+    });
+
+    const result = await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_play',
+      argumentsJson: JSON.stringify({ what: 'Bunny Girl' }),
+    });
+
+    expect(vi.mocked(ipcBridge.shell.openExternal.invoke)).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({ ok: true, playing: false, opened: true, reason: 'no-device' });
+  });
+
+  /**
+   * The field the claim gate reads. `playing` may only ever be true when a
+   * player named a device — an optimistic value here would reopen the hole one
+   * layer down, where nobody would think to look.
+   */
+  it('never reports playing for a route that only opened a page', async () => {
+    const ipcBridge = await bridge();
+    vi.mocked(ipcBridge.spotify.status.invoke).mockResolvedValue({ success: true, data: { connected: false } });
+
+    for (const args of [{ what: 'Bunny Girl' }, { what: 'Bunny Girl', url: 'https://example.com/song' }]) {
+      const result = await runVoiceTool(host, {
+        callId: 'call-1',
+        name: 'app_play',
+        argumentsJson: JSON.stringify(args),
+      });
+
+      expect(result).toMatchObject({ playing: false });
+    }
+  });
+});
+
+/**
+ * Connecting an account is something the user is asked about first.
+ *
+ * The consent lives in code rather than in the tool's description, so the worst
+ * a model that reached for it unprompted can do is be told to ask — instead of
+ * a sign-in window appearing on somebody's screen for a reason they never
+ * agreed to.
+ */
+describe('connecting an account', () => {
+  const bridge = async () => (await import('@/common')).ipcBridge;
+
+  beforeEach(async () => {
+    activities.clear();
+    const ipcBridge = await bridge();
+    vi.mocked(ipcBridge.spotify.connect.invoke).mockReset();
+    vi.mocked(ipcBridge.spotify.status.invoke).mockReset();
+  });
+
+  it('opens no sign-in until the user has actually said yes', async () => {
+    const ipcBridge = await bridge();
+
+    const result = await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_connect',
+      argumentsJson: JSON.stringify({ service: 'spotify' }),
+    });
+
+    expect(vi.mocked(ipcBridge.spotify.connect.invoke)).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ ok: true, connected: false, mustAskFirst: true });
+  });
+
+  it('runs the sign-in once they have', async () => {
+    const ipcBridge = await bridge();
+    vi.mocked(ipcBridge.spotify.status.invoke).mockResolvedValue({
+      success: true,
+      data: { hasClientId: true, clientId: 'a'.repeat(32), connected: false, displayName: '' },
+    });
+    vi.mocked(ipcBridge.spotify.connect.invoke).mockResolvedValue({ success: true, data: { connected: true } });
+
+    const result = await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_connect',
+      argumentsJson: JSON.stringify({ service: 'spotify', confirmed: true }),
+    });
+
+    expect(vi.mocked(ipcBridge.spotify.connect.invoke)).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({ ok: true, connected: true });
+  });
+
+  it('says where to get a client id rather than opening a sign-in that cannot work', async () => {
+    const ipcBridge = await bridge();
+    vi.mocked(ipcBridge.spotify.status.invoke).mockResolvedValue({
+      success: true,
+      data: { hasClientId: false, clientId: '', connected: false, displayName: '' },
+    });
+
+    const result = await runVoiceTool(host, {
+      callId: 'call-1',
+      name: 'app_connect',
+      argumentsJson: JSON.stringify({ service: 'spotify', confirmed: true }),
+    });
+
+    expect(vi.mocked(ipcBridge.spotify.connect.invoke)).not.toHaveBeenCalled();
     expect(result.ok).toBe(false);
   });
 });

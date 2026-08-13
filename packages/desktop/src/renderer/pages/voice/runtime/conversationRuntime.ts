@@ -37,7 +37,7 @@ import {
 } from '@renderer/services/voice/session/voiceMemoryStore';
 import { peekVoiceSettings, subscribeVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import { guardSpokenSentence } from '@renderer/services/voice/session/spokenOutput';
-import { showedTheScreen } from '@/common/voice/actionClaims';
+import { showedTheScreen, startedPlayback } from '@/common/voice/actionClaims';
 import { continuityFor } from '@/common/voice/sessionSummary';
 import {
   CURIOSITY_REFUSALS_CONFIG_KEY,
@@ -426,6 +426,7 @@ class ConversationRuntime {
         toolsRan: this.toolsRanThisTurn,
         remembered,
         lookedAtScreen: this.sawScreen,
+        startedPlayback: this.playbackStarted,
       }).speak === false
     );
   }
@@ -553,6 +554,10 @@ class ConversationRuntime {
     // no screen in it, and the gate has to be able to tell those apart — that is
     // the whole difference between "a tool ran" and "it has seen something".
     if (showedTheScreen(invocation.name, result)) this.sawScreen = true;
+    // Read from the result for the same reason a look is: `app_play` answers
+    // with the address it opened instead when nothing is connected, and that
+    // call ran just as successfully while nothing became audible.
+    if (startedPlayback(invocation.name, result)) this.playbackStarted = true;
     return result;
   };
 
@@ -565,6 +570,15 @@ class ConversationRuntime {
    * history and the model may still refer to what was in it.
    */
   private sawScreen = false;
+
+  /**
+   * Whether a player has reported this conversation that something is on.
+   *
+   * Not reset per turn, and for the same reason `sawScreen` is not: a song
+   * started three turns ago is still playing, and answering "yes, that is the
+   * one that is on" is a report rather than a claim.
+   */
+  private playbackStarted = false;
 
   /**
    * Told to stop volunteering things, for the rest of this conversation.
