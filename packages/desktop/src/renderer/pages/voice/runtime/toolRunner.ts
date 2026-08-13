@@ -51,6 +51,7 @@ import { peekSurfaceChoice, SURFACE_STYLE_CONFIG_KEY } from '@renderer/hooks/con
 import { applyThemeOverrides } from '@renderer/utils/theme/applyThemeOverrides';
 import { normalizeEndpoint } from '../localPipeline';
 import { buildAndPreview } from './buildTool';
+import { fillPdfWithQuestions, type KnownValue, type PdfFillOutcome } from './pdfTool';
 import { applySpokenSetting } from './settingsTool';
 import { runSkillTool } from './skillTool';
 import { runWorkspaceTool } from './workspaceTool';
@@ -359,6 +360,30 @@ const trackSteps = (host: ToolHost, callId: string): { note: (step: AgentTaskSte
 };
 
 /**
+ * The values a model claims to already have, taken at arm's length.
+ *
+ * Everything here arrives as parsed JSON from a language model, so the shape is
+ * a hope rather than a fact: entries that are not a pair of strings are dropped
+ * instead of being coerced into one. A dropped entry is not lost — the field it
+ * was meant for is required and empty, so it becomes a question.
+ */
+const readKnownValues = (raw: unknown): KnownValue[] => {
+  if (!Array.isArray(raw)) return [];
+
+  const values: KnownValue[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const record = entry as Record<string, unknown>;
+    // `field` is the schema; `name` is what a small local model sends anyway.
+    const field = record.field ?? record.name;
+    const value = record.value;
+    if (typeof field !== 'string' || typeof value !== 'string') continue;
+    values.push({ field, value });
+  }
+  return values;
+};
+
+/**
  * Runs one tool the model called, and answers with the result.
  *
  * Returns the result rather than sending it, because the two transports deliver
@@ -514,6 +539,51 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
       host.updateActivity(invocation.callId, { detail, state: 'completed' });
       host.backToListening();
       return { ok: true, detail };
+    }
+
+    if (invocation.name === 'app_fill_pdf') {
+      const path = text('path').trim();
+      if (path.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));
+
+      host.updateActivity(invocation.callId, {
+        detail: t('settings.voice.conversationPdfReading'),
+        state: 'running',
+      });
+
+      // Filling a form is minutes long when it has to stop and ask, so the
+      // conversation is told it is still going rather than left silent — this
+      // application has learned that a long silence reads as a crash.
+      const stopHeartbeat = host.startWorkingHeartbeat();
+      let outcome: PdfFillOutcome;
+      try {
+        outcome = await fillPdfWithQuestions(t, path, readKnownValues(args.values), invocation.callId, (detail) =>
+          host.updateActivity(invocation.callId, { detail, state: 'running' })
+        );
+      } finally {
+        stopHeartbeat();
+      }
+
+      if (outcome.status === 'failed') throw new Error(outcome.error);
+
+      // The two halves of the truth, kept together. `unfilled` is what stops
+      // the model calling a form complete when part of it is still empty, so it
+      // is in the detail the user sees and in the result the model reads.
+      const detail =
+        outcome.unfilled.length === 0
+          ? t('settings.voice.conversationPdfFilled', { count: outcome.filled })
+          : t('settings.voice.conversationPdfPartly', {
+              count: outcome.filled,
+              missing: outcome.unfilled.join(', '),
+            });
+      host.updateActivity(invocation.callId, { detail, state: 'completed' });
+      host.backToListening();
+      return {
+        ok: true,
+        detail,
+        writtenTo: outcome.writtenTo,
+        filled: outcome.filled,
+        stillEmpty: outcome.unfilled,
+      };
     }
 
     if (invocation.name === 'app_search') {

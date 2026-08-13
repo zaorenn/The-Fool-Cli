@@ -1725,7 +1725,17 @@
     "conversationAppNotRunning": "{{name}} was not running",
     "conversationAppCouldNotOpen": "{{name}} could not be opened",
     "conversationAppClosed": "Closed {{name}}",
-    "conversationAppOpened": "Opened {{name}}"
+    "conversationAppOpened": "Opened {{name}}",
+    "conversationPdfReading": "Reading the form",
+    "conversationPdfAskField": "What should go in \"{{field}}\"?",
+    "conversationPdfAskUnnamed": "The form has a required box I cannot name. What should go in it?",
+    "conversationPdfAskContext": "The form asks for this and I have not been told it.",
+    "conversationPdfFilled": "Filled in {{count}} fields",
+    "conversationPdfPartly": "Filled in {{count}} fields; still empty: {{missing}}",
+    "conversationPdfNoFields": "That PDF has no form fields to fill in.",
+    "conversationPdfUnreadable": "I could not open that PDF.",
+    "conversationPdfWriteFailed": "I could not save the filled copy.",
+    "conversationPdfNothingToWrite": "Nothing was answered, so there was nothing to write."
   },
   "themeCustomizer": {
     "title": "Customize theme",
@@ -2027,7 +2037,15 @@
     "allow": "Allow once",
     "always": "Always allow this",
     "deny": "Do not allow",
-    "noAlwaysForSending": "This one is asked every time. Something that leaves this machine is not something to agree to in advance."
+    "noAlwaysForSending": "This one is asked every time. Something that leaves this machine is not something to agree to in advance.",
+    "questionTitle": "I need something to carry on",
+    "questionAnswer": "Answer",
+    "questionSkip": "Leave it blank",
+    "questionPlaceholder": "Type your answer",
+    "questionYes": "Yes",
+    "questionNo": "No",
+    "questionNotchKeys": "Press the number of your answer",
+    "questionNotchSpeak": "Answer in the app"
   },
   "appearance": {
     "material": {

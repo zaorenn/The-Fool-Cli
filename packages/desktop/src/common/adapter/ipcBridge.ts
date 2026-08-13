@@ -52,6 +52,7 @@ import type {
   VoiceTranscribeResponse,
 } from '@/common/types/foolVoice';
 import type { VoicePermissionRequest, VoiceStageEvent } from '@/common/types/voiceStage';
+import type { PdfFillResult, PdfReadResult } from '@/common/voice/pdfForm';
 import type { OpenDialogOptions } from 'electron';
 import type {
   ICssTheme,
@@ -375,6 +376,30 @@ export const localModels = {
    * WebGL will name the card without ever saying how large it is.
    */
   machineMemory: bridge.buildProvider<MachineMemory, void>('local-models.machine-memory'),
+};
+
+// ---------------------------------------------------------------------------
+// PDF forms — reading the fields a document asks for, and writing them back
+// ---------------------------------------------------------------------------
+
+/**
+ * A form filled by writing the file, not by driving a viewer.
+ *
+ * In the main process because that is where a filesystem and `pdf-lib` are, and
+ * over IPC rather than as UI automation because the alternative — opening the
+ * document in a reader and typing into it with the user's own pointer — is the
+ * thing this application keeps having to stop itself doing. The user's mouse
+ * stays theirs, and the window does not even have to be in front.
+ *
+ * The results carry their own failure shapes rather than an `IBridgeResponse`:
+ * "this is not a form" and "I could not read it" are different sentences, and
+ * the assistant has to be able to say the right one.
+ */
+export const pdfForm = {
+  read: bridge.buildProvider<PdfReadResult, { path: string }>('pdf-form.read'),
+  fill: bridge.buildProvider<PdfFillResult, { path: string; answers: { name: string; value: string }[] }>(
+    'pdf-form.fill'
+  ),
 };
 
 // ---------------------------------------------------------------------------

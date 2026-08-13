@@ -1727,7 +1727,17 @@
     "conversationAppNotRunning": "{{name}}이(가) 실행 중이 아니었습니다",
     "conversationAppCouldNotOpen": "{{name}}을(를) 열지 못했습니다",
     "conversationAppClosed": "{{name}}을(를) 닫았습니다",
-    "conversationAppOpened": "{{name}}을(를) 열었습니다"
+    "conversationAppOpened": "{{name}}을(를) 열었습니다",
+    "conversationPdfReading": "양식을 읽는 중",
+    "conversationPdfAskField": "\"{{field}}\"에는 무엇을 넣을까요?",
+    "conversationPdfAskUnnamed": "양식에 이름을 알 수 없는 필수 항목이 있어요. 무엇을 넣을까요?",
+    "conversationPdfAskContext": "양식이 이 항목을 요구하는데 아직 듣지 못했어요.",
+    "conversationPdfFilled": "{{count}}개 항목을 채웠어요",
+    "conversationPdfPartly": "{{count}}개 항목을 채웠어요. 아직 빈 곳: {{missing}}",
+    "conversationPdfNoFields": "그 PDF에는 채울 양식 항목이 없어요.",
+    "conversationPdfUnreadable": "그 PDF를 열 수 없었어요.",
+    "conversationPdfWriteFailed": "채운 사본을 저장하지 못했어요.",
+    "conversationPdfNothingToWrite": "답한 것이 없어서 쓸 내용이 없었어요."
   },
   "themeCustomizer": {
     "title": "테마 사용자 지정",
@@ -2029,7 +2039,15 @@
     "allow": "한 번 허용",
     "always": "항상 허용",
     "deny": "허용하지 않음",
-    "noAlwaysForSending": "이것은 매번 묻습니다. 이 컴퓨터를 떠나는 일은 미리 허락하지 않습니다."
+    "noAlwaysForSending": "이것은 매번 묻습니다. 이 컴퓨터를 떠나는 일은 미리 허락하지 않습니다.",
+    "questionTitle": "계속하려면 알려줄 것이 있어요",
+    "questionAnswer": "답하기",
+    "questionSkip": "비워 두기",
+    "questionPlaceholder": "답을 입력하세요",
+    "questionYes": "예",
+    "questionNo": "아니오",
+    "questionNotchKeys": "답의 번호를 누르세요",
+    "questionNotchSpeak": "앱에서 답하세요"
   },
   "appearance": {
     "material": {

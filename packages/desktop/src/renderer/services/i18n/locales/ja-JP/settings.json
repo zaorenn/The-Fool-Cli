@@ -1727,7 +1727,17 @@
     "conversationAppNotRunning": "{{name}} は起動していませんでした",
     "conversationAppCouldNotOpen": "{{name}} を開けませんでした",
     "conversationAppClosed": "{{name}} を閉じました",
-    "conversationAppOpened": "{{name}} を開きました"
+    "conversationAppOpened": "{{name}} を開きました",
+    "conversationPdfReading": "フォームを読み込んでいます",
+    "conversationPdfAskField": "「{{field}}」には何を入れますか？",
+    "conversationPdfAskUnnamed": "フォームに名前のわからない必須項目があります。何を入れますか？",
+    "conversationPdfAskContext": "フォームがこの項目を求めていますが、まだ聞いていません。",
+    "conversationPdfFilled": "{{count}} 項目を入力しました",
+    "conversationPdfPartly": "{{count}} 項目を入力しました。未入力：{{missing}}",
+    "conversationPdfNoFields": "その PDF には入力できるフォーム項目がありません。",
+    "conversationPdfUnreadable": "その PDF を開けませんでした。",
+    "conversationPdfWriteFailed": "入力済みのコピーを保存できませんでした。",
+    "conversationPdfNothingToWrite": "回答が一つもなかったので、書き込む内容がありませんでした。"
   },
   "themeCustomizer": {
     "title": "テーマをカスタマイズ",
@@ -2029,7 +2039,15 @@
     "allow": "一度だけ許可",
     "always": "常に許可",
     "deny": "許可しない",
-    "noAlwaysForSending": "これは毎回確認されます。この端末を出ていくものは事前に許可しません。"
+    "noAlwaysForSending": "これは毎回確認されます。この端末を出ていくものは事前に許可しません。",
+    "questionTitle": "続けるために教えてほしいことがあります",
+    "questionAnswer": "回答する",
+    "questionSkip": "空欄のままにする",
+    "questionPlaceholder": "回答を入力",
+    "questionYes": "はい",
+    "questionNo": "いいえ",
+    "questionNotchKeys": "回答の番号を押してください",
+    "questionNotchSpeak": "アプリで回答してください"
   },
   "appearance": {
     "material": {

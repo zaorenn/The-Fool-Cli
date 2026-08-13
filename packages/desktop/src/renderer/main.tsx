@@ -88,7 +88,9 @@ import { registerPwa } from './services/registerPwa';
 import { ipcBridge } from '@/common';
 import { repairAllCronJobTimeZonesOnce } from '@renderer/pages/cron/repairCronJobTimeZone';
 import { PermissionAskCard } from '@renderer/components/permissions/PermissionAskCard';
+import { QuestionAskCard } from '@renderer/components/permissions/QuestionAskCard';
 import { startAppToolChannel } from '@renderer/services/appTools/appToolChannel';
+import { startQuestionChannel } from '@renderer/services/permissions/questionStore';
 import { bootstrapRendererConfig } from '@renderer/services/bootstrapRenderer';
 
 // Components and utilities
@@ -328,6 +330,12 @@ const Main = () => {
     return startAppToolChannel();
   }, [ready]);
 
+  // The keys pressed at the notch to answer a question a task stopped on. Not
+  // waiting on `ready`: this one talks to the main process rather than the
+  // backend, and a question can be raised by work that started before the
+  // backend was reachable.
+  useEffect(() => startQuestionChannel(), []);
+
   if (!ready || !configReady) {
     return null;
   }
@@ -337,6 +345,9 @@ const Main = () => {
       {/* Beside the router rather than inside a page: a tool call can need an
           answer while the window is minimised and no page is looking. */}
       <PermissionAskCard />
+      {/* And the other half of the same idea: not "may I", but "I need
+          something you have not told me". Same reason for living out here. */}
+      <QuestionAskCard />
       <Router
         layout={
           <ConversationHistoryProvider>

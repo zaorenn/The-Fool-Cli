@@ -1725,7 +1725,17 @@
     "conversationAppNotRunning": "{{name}} n’était pas en cours d’exécution",
     "conversationAppCouldNotOpen": "Impossible d’ouvrir {{name}}",
     "conversationAppClosed": "{{name}} fermé",
-    "conversationAppOpened": "{{name}} ouvert"
+    "conversationAppOpened": "{{name}} ouvert",
+    "conversationPdfReading": "Lecture du formulaire",
+    "conversationPdfAskField": "Que faut-il mettre dans « {{field}} » ?",
+    "conversationPdfAskUnnamed": "Le formulaire a un champ obligatoire que je ne sais pas nommer. Que faut-il y mettre ?",
+    "conversationPdfAskContext": "Le formulaire le demande et personne ne me l’a dit.",
+    "conversationPdfFilled": "{{count}} champs remplis",
+    "conversationPdfPartly": "{{count}} champs remplis ; toujours vides : {{missing}}",
+    "conversationPdfNoFields": "Ce PDF n’a aucun champ de formulaire à remplir.",
+    "conversationPdfUnreadable": "Je n’ai pas pu ouvrir ce PDF.",
+    "conversationPdfWriteFailed": "Je n’ai pas pu enregistrer la copie remplie.",
+    "conversationPdfNothingToWrite": "Rien n’a été répondu, il n’y avait donc rien à écrire."
   },
   "themeCustomizer": {
     "title": "Personnaliser le thème",
@@ -2027,7 +2037,15 @@
     "allow": "Autoriser une fois",
     "always": "Toujours autoriser",
     "deny": "Ne pas autoriser",
-    "noAlwaysForSending": "Celle-ci est demandée chaque fois. Ce qui quitte cette machine ne s'accepte pas à l'avance."
+    "noAlwaysForSending": "Celle-ci est demandée chaque fois. Ce qui quitte cette machine ne s'accepte pas à l'avance.",
+    "questionTitle": "Il me manque quelque chose pour continuer",
+    "questionAnswer": "Répondre",
+    "questionSkip": "Laisser vide",
+    "questionPlaceholder": "Saisissez votre réponse",
+    "questionYes": "Oui",
+    "questionNo": "Non",
+    "questionNotchKeys": "Appuyez sur le numéro de votre réponse",
+    "questionNotchSpeak": "Répondez dans l'application"
   },
   "appearance": {
     "material": {

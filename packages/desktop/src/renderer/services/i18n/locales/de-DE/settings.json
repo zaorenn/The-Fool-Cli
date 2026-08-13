@@ -1725,7 +1725,17 @@
     "conversationAppNotRunning": "{{name}} lief nicht",
     "conversationAppCouldNotOpen": "{{name}} konnte nicht geöffnet werden",
     "conversationAppClosed": "{{name}} geschlossen",
-    "conversationAppOpened": "{{name}} geöffnet"
+    "conversationAppOpened": "{{name}} geöffnet",
+    "conversationPdfReading": "Formular wird gelesen",
+    "conversationPdfAskField": "Was soll in \"{{field}}\"?",
+    "conversationPdfAskUnnamed": "Im Formular gibt es ein Pflichtfeld, das ich nicht benennen kann. Was soll hinein?",
+    "conversationPdfAskContext": "Das Formular verlangt das, und mir wurde es nicht gesagt.",
+    "conversationPdfFilled": "{{count}} Felder ausgefüllt",
+    "conversationPdfPartly": "{{count}} Felder ausgefüllt; noch leer: {{missing}}",
+    "conversationPdfNoFields": "Dieses PDF hat keine Formularfelder zum Ausfüllen.",
+    "conversationPdfUnreadable": "Ich konnte dieses PDF nicht öffnen.",
+    "conversationPdfWriteFailed": "Ich konnte die ausgefüllte Kopie nicht speichern.",
+    "conversationPdfNothingToWrite": "Es wurde nichts beantwortet, also gab es nichts zu schreiben."
   },
   "themeCustomizer": {
     "title": "Design anpassen",
@@ -2027,7 +2037,15 @@
     "allow": "Einmal erlauben",
     "always": "Immer erlauben",
     "deny": "Nicht erlauben",
-    "noAlwaysForSending": "Danach wird jedes Mal gefragt. Was dieses Gerät verlässt, wird nicht im Voraus erlaubt."
+    "noAlwaysForSending": "Danach wird jedes Mal gefragt. Was dieses Gerät verlässt, wird nicht im Voraus erlaubt.",
+    "questionTitle": "Mir fehlt etwas, um weiterzumachen",
+    "questionAnswer": "Antworten",
+    "questionSkip": "Leer lassen",
+    "questionPlaceholder": "Antwort eingeben",
+    "questionYes": "Ja",
+    "questionNo": "Nein",
+    "questionNotchKeys": "Drücke die Zahl deiner Antwort",
+    "questionNotchSpeak": "Antworte in der App"
   },
   "appearance": {
     "material": {

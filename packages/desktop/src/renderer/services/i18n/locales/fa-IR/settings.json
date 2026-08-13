@@ -1725,7 +1725,17 @@
     "conversationAppNotRunning": "{{name}} در حال اجرا نبود",
     "conversationAppCouldNotOpen": "باز کردن {{name}} ممکن نشد",
     "conversationAppClosed": "{{name}} بسته شد",
-    "conversationAppOpened": "{{name}} باز شد"
+    "conversationAppOpened": "{{name}} باز شد",
+    "conversationPdfReading": "در حال خواندن فرم",
+    "conversationPdfAskField": "در «{{field}}» چه بنویسم؟",
+    "conversationPdfAskUnnamed": "فرم یک فیلد اجباری دارد که نامش را نمی‌دانم. چه چیزی در آن بنویسم؟",
+    "conversationPdfAskContext": "فرم این را می‌خواهد و کسی به من نگفته است.",
+    "conversationPdfFilled": "{{count}} فیلد پر شد",
+    "conversationPdfPartly": "{{count}} فیلد پر شد؛ هنوز خالی: {{missing}}",
+    "conversationPdfNoFields": "آن PDF هیچ فیلد فرمی برای پر کردن ندارد.",
+    "conversationPdfUnreadable": "نتوانستم آن PDF را باز کنم.",
+    "conversationPdfWriteFailed": "نتوانستم نسخهٔ پرشده را ذخیره کنم.",
+    "conversationPdfNothingToWrite": "به چیزی پاسخ داده نشد، پس چیزی برای نوشتن نبود."
   },
   "themeCustomizer": {
     "title": "سفارشی‌سازی پوسته",
@@ -2027,7 +2037,15 @@
     "allow": "یک بار اجازه بده",
     "always": "همیشه اجازه بده",
     "deny": "اجازه نده",
-    "noAlwaysForSending": "این مورد هر بار پرسیده می‌شود. چیزی که از این دستگاه بیرون می‌رود از پیش پذیرفته نمی‌شود."
+    "noAlwaysForSending": "این مورد هر بار پرسیده می‌شود. چیزی که از این دستگاه بیرون می‌رود از پیش پذیرفته نمی‌شود.",
+    "questionTitle": "برای ادامه به چیزی نیاز دارم",
+    "questionAnswer": "پاسخ دادن",
+    "questionSkip": "خالی بگذار",
+    "questionPlaceholder": "پاسخ خود را بنویسید",
+    "questionYes": "بله",
+    "questionNo": "خیر",
+    "questionNotchKeys": "شمارهٔ پاسخ خود را فشار دهید",
+    "questionNotchSpeak": "در برنامه پاسخ دهید"
   },
   "appearance": {
     "material": {

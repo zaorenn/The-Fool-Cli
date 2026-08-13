@@ -1726,7 +1726,17 @@
     "conversationAppNotRunning": "{{name}} 并未在运行",
     "conversationAppCouldNotOpen": "无法打开 {{name}}",
     "conversationAppClosed": "已关闭 {{name}}",
-    "conversationAppOpened": "已打开 {{name}}"
+    "conversationAppOpened": "已打开 {{name}}",
+    "conversationPdfReading": "正在读取表单",
+    "conversationPdfAskField": "“{{field}}”这一项该填什么？",
+    "conversationPdfAskUnnamed": "表单里有一个必填项我叫不出名字。它该填什么？",
+    "conversationPdfAskContext": "表单要求填写这一项，而我还不知道内容。",
+    "conversationPdfFilled": "已填写 {{count}} 项",
+    "conversationPdfPartly": "已填写 {{count}} 项；仍为空：{{missing}}",
+    "conversationPdfNoFields": "那个 PDF 没有可填写的表单字段。",
+    "conversationPdfUnreadable": "我打不开那个 PDF。",
+    "conversationPdfWriteFailed": "我无法保存填好的副本。",
+    "conversationPdfNothingToWrite": "没有任何回答，所以没有内容可写入。"
   },
   "themeCustomizer": {
     "title": "自定义主题",
@@ -2028,7 +2038,15 @@
     "allow": "允许一次",
     "always": "始终允许",
     "deny": "不允许",
-    "noAlwaysForSending": "这一项每次都会询问。离开这台机器的事情不会提前答应。"
+    "noAlwaysForSending": "这一项每次都会询问。离开这台机器的事情不会提前答应。",
+    "questionTitle": "还差一项信息才能继续",
+    "questionAnswer": "回答",
+    "questionSkip": "留空",
+    "questionPlaceholder": "输入你的回答",
+    "questionYes": "是",
+    "questionNo": "否",
+    "questionNotchKeys": "按下答案对应的数字",
+    "questionNotchSpeak": "在应用里回答"
   },
   "appearance": {
     "material": {

@@ -1725,7 +1725,17 @@
     "conversationAppNotRunning": "{{name}} zaten çalışmıyordu",
     "conversationAppCouldNotOpen": "{{name}} açılamadı",
     "conversationAppClosed": "{{name}} kapatıldı",
-    "conversationAppOpened": "{{name}} açıldı"
+    "conversationAppOpened": "{{name}} açıldı",
+    "conversationPdfReading": "Form okunuyor",
+    "conversationPdfAskField": "\"{{field}}\" alanına ne yazılsın?",
+    "conversationPdfAskUnnamed": "Formda adını çıkaramadığım zorunlu bir alan var. Oraya ne yazılsın?",
+    "conversationPdfAskContext": "Form bunu istiyor ve bana söylenmedi.",
+    "conversationPdfFilled": "{{count}} alan dolduruldu",
+    "conversationPdfPartly": "{{count}} alan dolduruldu; hâlâ boş: {{missing}}",
+    "conversationPdfNoFields": "O PDF’te doldurulacak form alanı yok.",
+    "conversationPdfUnreadable": "O PDF’i açamadım.",
+    "conversationPdfWriteFailed": "Doldurulmuş kopyayı kaydedemedim.",
+    "conversationPdfNothingToWrite": "Hiçbir şey yanıtlanmadı, yazılacak bir şey de yoktu."
   },
   "themeCustomizer": {
     "title": "Temayı özelleştir",
@@ -2027,7 +2037,15 @@
     "allow": "Bir kez izin ver",
     "always": "Buna her zaman izin ver",
     "deny": "İzin verme",
-    "noAlwaysForSending": "Bu her seferinde sorulur. Bu makineden çıkan bir şeye önceden söz verilmez."
+    "noAlwaysForSending": "Bu her seferinde sorulur. Bu makineden çıkan bir şeye önceden söz verilmez.",
+    "questionTitle": "Devam etmek için bir şey bilmem gerek",
+    "questionAnswer": "Yanıtla",
+    "questionSkip": "Boş bırak",
+    "questionPlaceholder": "Yanıtını yaz",
+    "questionYes": "Evet",
+    "questionNo": "Hayır",
+    "questionNotchKeys": "Yanıtının numarasına bas",
+    "questionNotchSpeak": "Uygulamadan yanıtla"
   },
   "appearance": {
     "material": {

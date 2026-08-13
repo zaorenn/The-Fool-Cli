@@ -6,7 +6,7 @@
 
 import { promises as fs } from 'node:fs';
 import { PDFCheckBox, PDFDocument, PDFDropdown, PDFRadioGroup, PDFTextField } from 'pdf-lib';
-import type { PdfField, PdfFieldKind } from '@/common/voice/pdfForm';
+import type { PdfField, PdfFieldKind, PdfFillResult, PdfReadResult } from '@/common/voice/pdfForm';
 
 /**
  * Reading a PDF form and writing a filled copy of it.
@@ -31,9 +31,9 @@ const kindOf = (field: unknown): PdfFieldKind | null => {
   return null;
 };
 
-export type PdfReadResult =
-  | { ok: true; fields: PdfField[]; pages: number }
-  | { ok: false; reason: 'unreadable' | 'not-a-form'; detail?: string };
+// The two result shapes live in `common/voice/pdfForm` so the IPC bridge can
+// name them without a renderer importing this file — and `node:fs` with it.
+export type { PdfFillResult, PdfReadResult };
 
 /**
  * The fields a document is asking for.
@@ -75,16 +75,18 @@ export const readPdfFields = async (path: string): Promise<PdfReadResult> => {
             ? (field.getSelected()?.[0] ?? '')
             : '';
 
-    fields.push({ name: field.getName(), kind, value, ...(options ? { options } : {}) });
+    // The document's own flag, read rather than guessed from the name. It is
+    // what decides whether a missing value is worth stopping to ask about, so
+    // a document that lies about it is the only thing that can make this
+    // interrupt for nothing.
+    const required = field.isRequired();
+
+    fields.push({ name: field.getName(), kind, value, required, ...(options ? { options } : {}) });
   }
 
   if (fields.length === 0) return { ok: false, reason: 'not-a-form' };
   return { ok: true, fields, pages: document.getPageCount() };
 };
-
-export type PdfFillResult =
-  | { ok: true; writtenTo: string; filled: string[]; skipped: string[] }
-  | { ok: false; reason: 'unreadable' | 'write-failed'; detail?: string };
 
 /**
  * Writes a filled copy, and says plainly what it could not fill.

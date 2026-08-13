@@ -31,10 +31,70 @@ export type PdfField = {
   options?: readonly string[];
   /** Whatever is already in it, so an answered field is not asked again. */
   value?: string;
+  /**
+   * Whether the document itself says this one has to be filled.
+   *
+   * The line between interrupting the user and guessing. A required field with
+   * no known value is worth stopping the whole task to ask about; an optional
+   * one is not, and a form with forty optional boxes would otherwise become
+   * forty questions nobody agreed to answer.
+   */
+  required?: boolean;
 };
+
+/**
+ * Fields that must be asked about before the form can be called filled.
+ *
+ * Required, and nothing known for them. Optional blanks are left blank and
+ * reported — which is the honest outcome, and the one the user can act on.
+ */
+export const fieldsToAsk = (fields: readonly PdfField[]): PdfField[] =>
+  fields.filter((field) => field.required === true && (field.value ?? '').trim().length === 0);
 
 /** One answer, ready to be written. */
 export type PdfAnswer = { name: string; value: string };
+
+/**
+ * What came back from opening a document.
+ *
+ * Here rather than beside `pdf-lib` in the main process because the IPC bridge
+ * is shared, and a renderer naming its own return type would otherwise drag
+ * `node:fs` across the process boundary to get at it.
+ *
+ * A document with no form fields is reported as such rather than as an empty
+ * form: "there is nothing to fill in" and "I could not find the fields" are
+ * different answers, and a model told the first will say the document is blank.
+ */
+export type PdfReadResult =
+  | { ok: true; fields: PdfField[]; pages: number }
+  | { ok: false; reason: 'unreadable' | 'not-a-form'; detail?: string };
+
+/**
+ * What came back from writing a filled copy.
+ *
+ * `skipped` is not decoration. It is the fields that were asked for and did not
+ * take, and it exists so the assistant can name them rather than report a form
+ * as complete while part of it is still empty.
+ */
+export type PdfFillResult =
+  | { ok: true; writtenTo: string; filled: string[]; skipped: string[] }
+  | { ok: false; reason: 'unreadable' | 'write-failed'; detail?: string };
+
+/**
+ * Narrowing helpers, because `if (!result.ok)` does not narrow in this project.
+ *
+ * `strictNullChecks` is off, and without it a `true`/`false` literal is not a
+ * discriminant TypeScript will follow — reading `.reason` off the failure
+ * branch is an error even after the check that proves it is the failure branch.
+ * New unions here discriminate on a string for that reason (see
+ * `QuestionOutcome`); these two are already public and already tested, so they
+ * keep their shape and get a guard apiece instead.
+ */
+export const pdfReadFailed = (result: PdfReadResult): result is Extract<PdfReadResult, { ok: false }> =>
+  result.ok === false;
+
+export const pdfFillFailed = (result: PdfFillResult): result is Extract<PdfFillResult, { ok: false }> =>
+  result.ok === false;
 
 /**
  * A field name turned into a question a person can answer.

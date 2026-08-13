@@ -8,11 +8,44 @@ import { describe, expect, it } from 'vitest';
 import {
   acceptsValue,
   asCheckbox,
+  fieldsToAsk,
+  pdfFillFailed,
+  pdfReadFailed,
   planAnswers,
   readableFieldName,
   unansweredFields,
   type PdfField,
 } from '@/common/voice/pdfForm';
+
+describe('fieldsToAsk', () => {
+  const fields: PdfField[] = [
+    { name: 'txtSurname', kind: 'text', required: true, value: '' },
+    { name: 'txtGiven', kind: 'text', required: true, value: 'Ada' },
+    { name: 'txtNickname', kind: 'text', required: false, value: '' },
+    { name: 'txtNotes', kind: 'text', value: '' },
+  ];
+
+  it('asks only about required blanks', () => {
+    // A form with forty optional boxes would otherwise become forty questions
+    // nobody agreed to answer, and a field already filled would be asked twice.
+    expect(fieldsToAsk(fields).map((field) => field.name)).toEqual(['txtSurname']);
+  });
+
+  it('treats a field that never said it was required as optional', () => {
+    // Absent is not the same as true. Erring towards asking would interrupt on
+    // every document whose builder never set the flag, which is most of them.
+    expect(fieldsToAsk([{ name: 'x', kind: 'text', value: '' }])).toEqual([]);
+  });
+});
+
+describe('the failure guards', () => {
+  it('narrow where a boolean does not, because strictNullChecks is off here', () => {
+    expect(pdfReadFailed({ ok: false, reason: 'not-a-form' })).toBe(true);
+    expect(pdfReadFailed({ ok: true, fields: [], pages: 1 })).toBe(false);
+    expect(pdfFillFailed({ ok: false, reason: 'write-failed' })).toBe(true);
+    expect(pdfFillFailed({ ok: true, writtenTo: 'x.pdf', filled: [], skipped: [] })).toBe(false);
+  });
+});
 
 describe('readableFieldName', () => {
   it('turns a form builder’s name into something you can ask about', () => {

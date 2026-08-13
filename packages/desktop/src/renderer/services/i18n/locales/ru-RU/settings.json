@@ -1725,7 +1725,17 @@
     "conversationAppNotRunning": "{{name}} не был запущен",
     "conversationAppCouldNotOpen": "Не удалось открыть {{name}}",
     "conversationAppClosed": "{{name}} закрыт",
-    "conversationAppOpened": "{{name}} открыт"
+    "conversationAppOpened": "{{name}} открыт",
+    "conversationPdfReading": "Читаю форму",
+    "conversationPdfAskField": "Что вписать в поле «{{field}}»?",
+    "conversationPdfAskUnnamed": "В форме есть обязательное поле, название которого я не могу разобрать. Что в него вписать?",
+    "conversationPdfAskContext": "Форма требует это поле, а мне его не называли.",
+    "conversationPdfFilled": "Заполнено полей: {{count}}",
+    "conversationPdfPartly": "Заполнено полей: {{count}}; всё ещё пусто: {{missing}}",
+    "conversationPdfNoFields": "В этом PDF нет полей формы для заполнения.",
+    "conversationPdfUnreadable": "Не удалось открыть этот PDF.",
+    "conversationPdfWriteFailed": "Не удалось сохранить заполненную копию.",
+    "conversationPdfNothingToWrite": "Ответов не было, поэтому записывать оказалось нечего."
   },
   "themeCustomizer": {
     "title": "Настроить тему",
@@ -2027,7 +2037,15 @@
     "allow": "Разрешить один раз",
     "always": "Разрешать всегда",
     "deny": "Не разрешать",
-    "noAlwaysForSending": "Об этом спрашивают каждый раз. То, что уходит с этой машины, заранее не разрешают."
+    "noAlwaysForSending": "Об этом спрашивают каждый раз. То, что уходит с этой машины, заранее не разрешают.",
+    "questionTitle": "Мне нужно кое-что узнать, чтобы продолжить",
+    "questionAnswer": "Ответить",
+    "questionSkip": "Оставить пустым",
+    "questionPlaceholder": "Введите ответ",
+    "questionYes": "Да",
+    "questionNo": "Нет",
+    "questionNotchKeys": "Нажмите номер ответа",
+    "questionNotchSpeak": "Ответьте в приложении"
   },
   "appearance": {
     "material": {

@@ -64,6 +64,30 @@ describe('readPdfFields', () => {
     expect(country?.options).toEqual(['Türkiye', 'Japan']);
   });
 
+  it("reads the document's own required flag, which decides what is worth asking about", async () => {
+    // Read rather than guessed from the field's name: it is what separates a
+    // blank the assistant must stop and ask about from one it may leave alone.
+    const document = await PDFDocument.create();
+    const page = document.addPage([600, 400]);
+    const form = document.getForm();
+
+    const surname = form.createTextField('applicant.surname');
+    surname.addToPage(page, { x: 50, y: 300, width: 200, height: 20 });
+    surname.enableRequired();
+
+    const nickname = form.createTextField('applicant.nickname');
+    nickname.addToPage(page, { x: 50, y: 260, width: 200, height: 20 });
+
+    const file = path.join(dir, 'required.pdf');
+    await fs.writeFile(file, await document.save());
+
+    const result = await readPdfFields(file);
+    if (result.ok !== true) throw new Error('expected a form');
+
+    const required = Object.fromEntries(result.fields.map((field) => [field.name, field.required]));
+    expect(required).toEqual({ 'applicant.surname': true, 'applicant.nickname': false });
+  });
+
   it('says a document without fields is not a form', async () => {
     // "There is nothing to fill in" and "I could not find the fields" are
     // different answers, and a model told the first says the document is blank.

@@ -1725,7 +1725,17 @@
     "conversationAppNotRunning": "{{name}} no estaba en ejecución",
     "conversationAppCouldNotOpen": "No se pudo abrir {{name}}",
     "conversationAppClosed": "{{name}} cerrado",
-    "conversationAppOpened": "{{name}} abierto"
+    "conversationAppOpened": "{{name}} abierto",
+    "conversationPdfReading": "Leyendo el formulario",
+    "conversationPdfAskField": "¿Qué pongo en \"{{field}}\"?",
+    "conversationPdfAskUnnamed": "El formulario tiene un campo obligatorio que no sé nombrar. ¿Qué pongo en él?",
+    "conversationPdfAskContext": "El formulario lo pide y nadie me lo ha dicho.",
+    "conversationPdfFilled": "{{count}} campos rellenados",
+    "conversationPdfPartly": "{{count}} campos rellenados; siguen vacíos: {{missing}}",
+    "conversationPdfNoFields": "Ese PDF no tiene campos de formulario que rellenar.",
+    "conversationPdfUnreadable": "No he podido abrir ese PDF.",
+    "conversationPdfWriteFailed": "No he podido guardar la copia rellenada.",
+    "conversationPdfNothingToWrite": "No se respondió nada, así que no había nada que escribir."
   },
   "themeCustomizer": {
     "title": "Personalizar tema",
@@ -2027,7 +2037,15 @@
     "allow": "Permitir una vez",
     "always": "Permitir siempre",
     "deny": "No permitir",
-    "noAlwaysForSending": "Esto se pregunta cada vez. Lo que sale de este equipo no se acepta por adelantado."
+    "noAlwaysForSending": "Esto se pregunta cada vez. Lo que sale de este equipo no se acepta por adelantado.",
+    "questionTitle": "Necesito saber algo para continuar",
+    "questionAnswer": "Responder",
+    "questionSkip": "Dejar en blanco",
+    "questionPlaceholder": "Escribe tu respuesta",
+    "questionYes": "Sí",
+    "questionNo": "No",
+    "questionNotchKeys": "Pulsa el número de tu respuesta",
+    "questionNotchSpeak": "Responde en la aplicación"
   },
   "appearance": {
     "material": {

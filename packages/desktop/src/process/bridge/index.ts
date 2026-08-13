@@ -18,6 +18,7 @@ import { initPreviewBridge } from '@process/preview/previewBridge';
 import { initSkillRecorderBridge } from '@process/voice/skillRecorderBridge';
 import { initWorkspaceAppBridge } from '@process/workspace/workspaceAppBridge';
 import { initSpotifyBridge } from '@process/spotify/spotifyBridge';
+import { initPdfFormBridge } from '@process/pdf/pdfFormBridge';
 
 export type BridgeDependencies = {
   foolVoice?: Partial<FoolVoiceBridgeHandlers>;
@@ -38,6 +39,7 @@ export function initAllBridges(deps: BridgeDependencies = {}): void {
   initSkillRecorderBridge();
   initWorkspaceAppBridge();
   initSpotifyBridge();
+  initPdfFormBridge();
 }
 
 export {

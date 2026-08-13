@@ -267,6 +267,34 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_fill_pdf',
+    description:
+      "Fill in a PDF form. 'Fill this in', 'complete that form', 'put my details in this PDF' — start it the moment you are asked, before saying anything: this writes the file directly and takes seconds, so an announcement first is a delay for no reason. Do NOT use app_ask_jester for a PDF form; that one opens a viewer and types with the user's own pointer, which is minutes of their screen for something this does without a window. Pass any values you genuinely already know from the conversation or the user's memory. Do not ask them here for the ones you do not know and do not guess them — this tool stops and asks the user itself for every required field still empty, waits for the answer, and then carries on, so asking first would put the same question twice. The original document is never changed; a filled copy is written beside it. When it returns, say where the copy went and name anything it reports as still unfilled — never call a form complete while that list has something in it.",
+    parameters: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'The full path of the PDF file to fill in.' },
+        values: {
+          type: 'array',
+          description:
+            'Only what you already know. Leave it out entirely if you know nothing — the missing fields are asked about for you.',
+          items: {
+            type: 'object',
+            properties: {
+              field: {
+                type: 'string',
+                description: "The field, by the name the form uses or in ordinary words such as 'surname'.",
+              },
+              value: { type: 'string', description: 'What to put in it.' },
+            },
+            required: ['field', 'value'],
+          },
+        },
+      },
+      required: ['path'],
+    },
+  },
+  {
     name: 'app_search',
     description:
       "Search inside a site and put the results in front of the user, in one step. This is the whole of 'open YouTube and find that song', 'search GitHub for it', 'look it up on Wikipedia' — it goes straight to the site's own results page, so it happens instantly instead of taking the agent minutes of clicking. Use it for every request that ends in a search on a named site, and for a plain web search when no site was named. Search first and then say what you looked for and where, in a few words; do not read the address out. Playing one of the results is app_play, not a search followed by clicking; buying or replying is app_ask_jester.",

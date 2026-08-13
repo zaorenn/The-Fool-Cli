@@ -1726,7 +1726,17 @@
     "conversationAppNotRunning": "{{name}} не був запущений",
     "conversationAppCouldNotOpen": "Не вдалося відкрити {{name}}",
     "conversationAppClosed": "{{name}} закрито",
-    "conversationAppOpened": "{{name}} відкрито"
+    "conversationAppOpened": "{{name}} відкрито",
+    "conversationPdfReading": "Читаю форму",
+    "conversationPdfAskField": "Що вписати в поле «{{field}}»?",
+    "conversationPdfAskUnnamed": "У формі є обов’язкове поле, назву якого я не можу розібрати. Що в нього вписати?",
+    "conversationPdfAskContext": "Форма вимагає це поле, а мені його не називали.",
+    "conversationPdfFilled": "Заповнено полів: {{count}}",
+    "conversationPdfPartly": "Заповнено полів: {{count}}; досі порожньо: {{missing}}",
+    "conversationPdfNoFields": "У цьому PDF немає полів форми для заповнення.",
+    "conversationPdfUnreadable": "Не вдалося відкрити цей PDF.",
+    "conversationPdfWriteFailed": "Не вдалося зберегти заповнену копію.",
+    "conversationPdfNothingToWrite": "Відповідей не було, тож не було чого записувати."
   },
   "themeCustomizer": {
     "title": "Налаштувати тему",
@@ -2028,7 +2038,15 @@
     "allow": "Дозволити один раз",
     "always": "Дозволяти завжди",
     "deny": "Не дозволяти",
-    "noAlwaysForSending": "Про це запитують щоразу. Те, що покидає цю машину, заздалегідь не дозволяють."
+    "noAlwaysForSending": "Про це запитують щоразу. Те, що покидає цю машину, заздалегідь не дозволяють.",
+    "questionTitle": "Мені потрібно дещо дізнатися, щоб продовжити",
+    "questionAnswer": "Відповісти",
+    "questionSkip": "Залишити порожнім",
+    "questionPlaceholder": "Введіть відповідь",
+    "questionYes": "Так",
+    "questionNo": "Ні",
+    "questionNotchKeys": "Натисніть номер відповіді",
+    "questionNotchSpeak": "Відповідайте в застосунку"
   },
   "appearance": {
     "material": {
