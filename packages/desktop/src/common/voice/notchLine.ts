@@ -41,7 +41,44 @@ const flatten = (text: string): string =>
     .trim();
 
 /**
- * The first sentence of a reply, or as much of it as has arrived.
+ * A sentence boundary: the punctuation, and the space or the end after it.
+ *
+ * The whitespace is required so that `3.14` and an `e.g.` mid-sentence are not
+ * read as the end of one.
+ */
+const BOUNDARY = /[.!?…]+(?:\s+|$)/g;
+
+/**
+ * The sentence being written, rather than the first one that was.
+ *
+ * This runs on every frame of a stream, against everything received so far. So
+ * taking the *first* sentence meant that the moment one finished the strip
+ * stopped moving: the assistant would be four sentences further on and the
+ * notch still showed the opening words. A strip whose entire purpose is to say
+ * what is happening was reliably reporting what had already happened.
+ *
+ * What it shows now is the fragment after the last completed sentence while one
+ * is in progress, and the last completed sentence once the reply stops. Still
+ * one sentence and still capped, so the wall of text this function exists to
+ * prevent cannot come back in through here.
+ */
+const currentSentence = (flat: string): string => {
+  BOUNDARY.lastIndex = 0;
+  let start = 0;
+
+  for (let match = BOUNDARY.exec(flat); match !== null; match = BOUNDARY.exec(flat)) {
+    const end = match.index + match[0].length;
+    // The reply ends on this boundary, so the sentence it closes is the newest
+    // thing there is to show.
+    if (end >= flat.length) break;
+    start = end;
+  }
+
+  return flat.slice(start).trim();
+};
+
+/**
+ * One line for the notch, following the reply as it is written.
  *
  * Cut at a word rather than mid-syllable, because this is read at a glance and
  * a truncated word reads as a glitch.
@@ -50,8 +87,7 @@ export const notchLine = (reply: string): string => {
   const flat = flatten(reply);
   if (flat.length === 0) return '';
 
-  const end = flat.search(/[.!?…]\s|[.!?…]$/);
-  const sentence = end === -1 ? flat : flat.slice(0, end + 1);
+  const sentence = currentSentence(flat);
   if (sentence.length <= LIMIT) return sentence;
 
   const cut = sentence.slice(0, LIMIT);

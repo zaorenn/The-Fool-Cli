@@ -8,10 +8,38 @@ import { describe, expect, it } from 'vitest';
 import { notchLine } from '@/common/voice/notchLine';
 
 describe('notchLine', () => {
-  it('takes the first sentence, not the whole reply', () => {
-    expect(notchLine('Bir saniye, bakıyorum. Sonra sana bütün detayları anlatacağım ve daha da uzatacağım.')).toBe(
-      'Bir saniye, bakıyorum.'
+  it('takes one sentence, not the whole reply', () => {
+    expect(notchLine('Bir saniye, bakıyorum. Sonra sana bütün detayları anlatacağım.')).toBe(
+      'Sonra sana bütün detayları anlatacağım.'
     );
+  });
+
+  /**
+   * The defect this replaced: `notchLine` runs on every frame of a stream with
+   * everything received so far, and it used to return the *first* sentence. So
+   * the strip froze on the opening words while the assistant went on talking —
+   * which reads exactly as the notch lagging behind reality, because it was.
+   */
+  it('follows the reply instead of freezing on its opening words', () => {
+    const frames = [
+      'Dosyayı',
+      'Dosyayı açıyorum.',
+      'Dosyayı açıyorum. Formu',
+      'Dosyayı açıyorum. Formu dolduruyorum.',
+      'Dosyayı açıyorum. Formu dolduruyorum. Kaydediyorum.',
+    ];
+
+    expect(frames.map(notchLine)).toEqual([
+      'Dosyayı',
+      'Dosyayı açıyorum.',
+      'Formu',
+      'Formu dolduruyorum.',
+      'Kaydediyorum.',
+    ]);
+  });
+
+  it('does not mistake a decimal point for the end of a sentence', () => {
+    expect(notchLine('Sürüm 2.5 hazır')).toBe('Sürüm 2.5 hazır');
   });
 
   it('drops the markdown the agent writes', () => {
