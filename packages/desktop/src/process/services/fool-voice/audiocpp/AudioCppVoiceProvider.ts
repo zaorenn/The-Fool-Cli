@@ -10,6 +10,7 @@ import { ClonedVoiceStore, parseClonedProfileId } from '../ClonedVoiceStore';
 import { AudioCppClient, type AudioCppSpeechRequest, type AudioCppSpeechResult } from './AudioCppClient';
 import { AudioCppRuntime, type AudioCppRuntimeOptions, type AudioCppServerModel } from './AudioCppRuntime';
 import { getAudioCppModelSpec, presetSpeakerNameFor, wireLanguageFor, wireParamsFor } from './audioCppEngineSpecs';
+import { toSpeakableText } from './speakableText';
 
 /**
  * The `local-audiocpp` provider.
@@ -267,7 +268,9 @@ export class AudioCppVoiceProvider {
 
     const request: AudioCppSpeechRequest = {
       model: spec.serverModelId,
-      input: text,
+      // Not the text verbatim: a character the model has no index entry for is
+      // a 500 for the whole sentence, not a character quietly dropped.
+      input: toSpeakableText(text),
       // Top-level, not an option: the server folds it into the transcript, and a
       // model that reads its language from there never sees an `options.language`.
       // Spelled the way this family wants it — Qwen3 refuses a BCP code outright,
