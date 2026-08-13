@@ -102,6 +102,7 @@ import { ConversationHistoryProvider } from './hooks/context/ConversationHistory
 import { useAutoReadAloud } from './hooks/voice/useAutoReadAloud';
 import { useVoiceSessionRouter } from './hooks/voice/useVoiceSessionRouter';
 import { useWakeWordListener } from './hooks/voice/useWakeWordListener';
+import { dismissBootSplash } from './utils/bootSplash';
 import HOC from './utils/ui/HOC';
 import type { BackendStartupFailureInfo } from '@/common/types/platform/electron';
 import type { IRuntimeStatusEvent, RuntimeFailureKind } from '@/common/adapter/ipcBridge';
@@ -479,25 +480,5 @@ if (backendStartupFailure && shouldShowBackendStartupFailureDialog) {
     </AppProviders>
   );
 }
-
-/**
- * Retires the boot splash declared in `index.html`.
- *
- * Waits two frames so the first React paint is already on screen — removing it
- * on mount alone can expose a blank window for a frame.
- */
-const dismissBootSplash = (): void => {
-  const splash = document.getElementById('boot-splash');
-  if (!splash) return;
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      splash.classList.add('boot-splash--leaving');
-      splash.addEventListener('transitionend', () => splash.remove(), { once: true });
-      // Fallback for the case where the transition never fires.
-      window.setTimeout(() => splash.remove(), 600);
-    });
-  });
-};
 
 dismissBootSplash();
