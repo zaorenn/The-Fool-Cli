@@ -73,8 +73,22 @@ export const estimateHistoryTokens = (history: readonly BudgetedMessage[]): numb
  * healthy. A fixed cost of nine and a half thousand tokens is defensible
  * against the 64k window the app now reads from the local server, and would not
  * be against the 8k it used to assume.
+ *
+ * **Re-based on 13 Aug 2026, from 9,600 to 12,100.** Four tools arrived on a
+ * branch that did not carry this guard — `app_play`, `app_fill_pdf`,
+ * `app_connect` and a larger `app_theme` — and the union measured 12,008. The
+ * number is raised rather than the tools trimmed, and the reason is a
+ * measurement rather than a preference: the spoken pipeline now asks the server
+ * what the loaded model can read instead of assuming, and on this machine the
+ * answer is 64,256, not 8,192. Against that window 12,008 leaves about 36,000
+ * tokens for the conversation. Against the old assumption it left none, which
+ * is the state this guard was written to describe.
+ *
+ * What has not changed is what the marker is for. Twelve thousand tokens on
+ * every turn is still a cost somebody should have to justify, and raising this
+ * again should mean showing the window it is being justified against.
  */
-export const FIXED_OVERHEAD_BUDGET_TOKENS = 9600;
+export const FIXED_OVERHEAD_BUDGET_TOKENS = 12_100;
 
 /**
  * The window assumed when the provider does not say.

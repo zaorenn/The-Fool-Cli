@@ -114,24 +114,26 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_theme',
     description:
-      "Change how the app looks: its colours ('set'), what it is made of ('style'), and how it moves ('dial'). 'Soften the shadows', 'calm it down', 'rounder corners' are dials nudged with 'more' or 'less'.",
+      "Change how the app looks: its colour ('palette'), what it is made of ('style'), and how it moves ('dial'). 'Soften the shadows', 'calm it down', 'rounder corners' are dials nudged with 'more' or 'less'.",
     parameters: {
       type: 'object',
       properties: {
         action: {
           type: 'string',
-          enum: ['set', 'style', 'dial', 'save', 'use', 'reset'],
+          enum: ['palette', 'style', 'dial', 'reset'],
           description:
-            "'set' applies a colour now, 'style' changes what the app is made of, 'dial' moves one aspect of it, 'save' keeps the current look under a name, 'use' puts a saved one back on, 'reset' returns to the app's own.",
+            "'palette' changes the colour, 'style' changes what the app is made of, 'dial' moves one aspect of it, 'reset' returns to the app's own.",
         },
-        target: {
+        palette: {
           type: 'string',
-          enum: ['accent', 'background', 'surface', 'text'],
-          description: "What the colour is for. Defaults to the accent, which is what 'the colour' usually means.",
+          enum: ['ember', 'amber', 'wheat', 'moss', 'lagoon', 'indigo', 'orchid', 'rose', 'slate'],
+          description:
+            "For 'palette'. ember is red, amber orange, wheat yellow, moss green, lagoon teal, indigo blue, orchid purple, rose pink, slate grey. Pick the nearest one to what they described; a colour word on its own works too.",
         },
         color: {
           type: 'string',
-          description: "A hex colour such as #1f6f8b, for 'set'. Choose it from what the user described.",
+          description:
+            "For 'palette', when they named an exact colour such as #1f6f8b. It is matched to the nearest palette above rather than used as given, because only those nine are checked for readability.",
         },
         material: {
           type: 'string',
@@ -170,7 +172,6 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
           description: 'Which way to move the dial. Use this rather than a number unless they named one.',
         },
         amount: { type: 'number', description: 'An exact value for the dial, when the user named one.' },
-        name: { type: 'string', description: "The user's own name for a palette, for 'save' and 'use'." },
       },
       required: ['action'],
     },

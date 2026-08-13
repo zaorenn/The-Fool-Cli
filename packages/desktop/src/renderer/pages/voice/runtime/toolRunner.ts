@@ -6,17 +6,8 @@
 
 import { ipcBridge } from '@/common';
 import { configService } from '@/common/config/configService';
-import {
-  isValidHexColor,
-  MAX_THEME_PALETTES,
-  normalizePaletteName,
-  sanitizeThemeOverrides,
-  sanitizeThemePalettes,
-  THEME_OVERRIDES_CONFIG_KEY,
-  THEME_PALETTES_CONFIG_KEY,
-  type ThemeColorKey,
-  type ThemeOverrides,
-} from '@/common/config/themeOverrides';
+import { isValidHexColor } from '@/common/config/themeOverrides';
+import { nearestPalette, paletteForRequest, PALETTES, type ThemePalette } from '@/common/theme/palettes';
 import { parseOpenUrls } from '@/common/realtime/openUrls';
 import { buildSiteSearch } from '@/common/realtime/siteSearch';
 import { isGranted, sanitizeConnectorGrants, CONNECTOR_GRANTS_CONFIG_KEY } from '@/common/permissions/connectors';
@@ -48,7 +39,6 @@ import { peekVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import { applySurfaceIntent, readSurfaceIntent, type SurfaceIntent } from '@/common/theme/surfaceIntent';
 import { defaultSurfaceChoice, type SurfaceStyleChoice } from '@/common/theme/surfaceChoice';
 import { peekSurfaceChoice, SURFACE_STYLE_CONFIG_KEY } from '@renderer/hooks/config/useSurfaceStyle';
-import { applyThemeOverrides } from '@renderer/utils/theme/applyThemeOverrides';
 import { normalizeEndpoint } from '../localPipeline';
 import { buildAndPreview } from './buildTool';
 import { fillPdfWithQuestions, type KnownValue, type PdfFillOutcome } from './pdfTool';
@@ -68,12 +58,6 @@ import type { ToolHost, ToolInvocation } from './types';
  */
 
 /**
- * What the spoken word for a colour's job maps to in the theme.
- *
- * "Accent" rather than "primary" in the tool, because that is what a person
- * calls it — the stored key keeps the name the rest of the app uses.
- */
-/**
  * Writes a material choice the way the panel does.
  *
  * Through `configService` rather than onto the document, so the change reaches
@@ -84,44 +68,33 @@ const writeSurfaceChoice = async (choice: SurfaceStyleChoice): Promise<void> => 
   await configService.set(SURFACE_STYLE_CONFIG_KEY, choice);
 };
 
-const THEME_TARGETS: Record<string, ThemeColorKey> = {
-  accent: 'primary',
-  background: 'background',
-  surface: 'surface',
-  text: 'text',
-};
-
 /**
- * Changes, keeps or recalls the app's colours, as asked out loud.
+ * Changes the app's colour, material or movement, as asked out loud.
  *
- * The colour itself comes from the model rather than from a table here.
- * "Warmer", "like the sea", "the green of an old terminal" are language
- * problems, and a fixed list of five tones answered all of them with the same
- * five colours — the setting existed, the request did not survive it.
+ * Colour is a palette now, not a hex value. There used to be a `set` action
+ * that took any colour the model chose and wrote it to `--color-bg-*` through
+ * the override layer. Two things were wrong with it, and both were reported by
+ * the user rather than caught here:
  *
- * Everything written is validated before it reaches a CSS variable: a hex value
- * from a model is untrusted input like any other.
+ * The override layer asserts nothing since the colour customiser was removed,
+ * so `set` with a target of background, surface or text wrote a config value,
+ * painted no pixel, and returned "theme set". Asked out loud to make the app
+ * green, it said it had and nothing moved.
+ *
+ * And an arbitrary hex from a model is exactly the unbounded colour space the
+ * closed list exists to close. The nine palettes are checked against all seven
+ * materials in both appearances; a tenth colour invented in a sentence is
+ * checked against nothing. So a colour that is named is matched to the nearest
+ * of the nine rather than used as given.
  */
 export const applyThemeAction = async (
   t: ToolHost['t'],
   action: string,
-  target: string,
+  palette: string,
   color: string,
-  name: string,
   intent: SurfaceIntent = {}
 ): Promise<string> => {
-  const stored = sanitizeThemeOverrides(configService.get(THEME_OVERRIDES_CONFIG_KEY));
-  const palettes = sanitizeThemePalettes(configService.get(THEME_PALETTES_CONFIG_KEY));
-  const key = THEME_TARGETS[target] ?? 'primary';
-
-  const commit = async (colors: ThemeOverrides['colors']): Promise<void> => {
-    const next = { colors };
-    applyThemeOverrides(next);
-    await configService.set(THEME_OVERRIDES_CONFIG_KEY, next);
-  };
-
   if (action === 'reset') {
-    await commit({});
     await writeSurfaceChoice(defaultSurfaceChoice());
     return t('settings.voice.conversationThemeReset');
   }
@@ -140,36 +113,41 @@ export const applyThemeAction = async (
     });
   }
 
-  if (action === 'set') {
-    const hex = color.trim().toLowerCase();
-    if (!isValidHexColor(hex)) throw new Error(t('settings.voice.conversationThemeBadColor'));
-    await commit({ ...stored.colors, [key]: hex });
-    // The accent is also the one colour the material derives everything from,
-    // so setting it here and not there would leave the application half
-    // changed — the buttons the new colour and the surfaces the old one.
-    if (key === 'primary') await writeSurfaceChoice({ ...peekSurfaceChoice(), accent: hex });
-    return t('settings.voice.conversationThemeSet', { target: t(`settings.voice.conversationThemeTarget.${key}`) });
-  }
+  if (action === 'palette') {
+    const chosen = resolvePalette(palette, color);
+    if (!chosen) throw new Error(t('settings.voice.conversationThemeBadColor'));
 
-  const label = normalizePaletteName(name);
-  if (label.length === 0) throw new Error(t('settings.voice.conversationThemeNoName'));
-
-  if (action === 'save') {
-    // Oldest first, so a library kept out loud never grows without bound.
-    const kept = Object.entries(palettes).slice(-(MAX_THEME_PALETTES - 1));
-    const next = Object.fromEntries([...kept, [label, stored.colors]]);
-    await configService.set(THEME_PALETTES_CONFIG_KEY, next);
-    return t('settings.voice.conversationThemeSaved', { name: label });
-  }
-
-  if (action === 'use') {
-    const found = palettes[label];
-    if (!found) throw new Error(t('settings.voice.conversationThemeUnknownName', { name: label }));
-    await commit(found);
-    return t('settings.voice.conversationThemeUsed', { name: label });
+    // The accent is the seed the whole palette is derived from, so writing it is
+    // writing the palette — ground, card and ink all follow from it.
+    await writeSurfaceChoice({ ...peekSurfaceChoice(), accent: chosen.seed });
+    return t('settings.voice.conversationThemePalette', { name: t(chosen.name) });
   }
 
   throw new Error(t('settings.voice.conversationActionUnsupported'));
+};
+
+/**
+ * The palette a spoken request meant, from whatever the model actually sent.
+ *
+ * Three spellings of the same intent, because a small local model asked for an
+ * enum sends the enum some of the time and the user's own word the rest of it:
+ * an id (`moss`), a colour word in any language this app speaks (`green`,
+ * `yeşil`), or a hex value it invented. All three land on one of the nine, and
+ * `null` means it named no colour at all rather than "use the first one".
+ */
+export const resolvePalette = (palette: string, color: string): ThemePalette | null => {
+  const asked = palette.trim().toLowerCase();
+  const exact = PALETTES.find((entry) => entry.id === asked);
+  if (exact) return exact;
+
+  const byWord = asked.length > 0 ? paletteForRequest(asked) : null;
+  if (byWord) return byWord;
+
+  const hex = color.trim().toLowerCase();
+  if (isValidHexColor(hex)) return nearestPalette(hex);
+
+  // A colour word can also arrive in the `color` field rather than the hex one.
+  return color.trim().length > 0 ? paletteForRequest(color) : null;
 };
 
 /**
@@ -407,14 +385,7 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
       args[key] === true || (typeof args[key] === 'string' && /^(true|yes)$/i.test(args[key] as string));
 
     if (invocation.name === 'app_theme') {
-      const detail = await applyThemeAction(
-        t,
-        text('action'),
-        text('target') || 'accent',
-        text('color'),
-        text('name'),
-        readSurfaceIntent(args)
-      );
+      const detail = await applyThemeAction(t, text('action'), text('palette'), text('color'), readSurfaceIntent(args));
       host.updateActivity(invocation.callId, { detail, state: 'completed' });
       host.backToListening();
       return { ok: true, detail };

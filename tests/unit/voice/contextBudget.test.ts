@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { REALTIME_TOOLS } from '@/common/realtime';
 import { buildPersonaInstructions } from '@/common/realtime/personas';
-import { FIXED_OVERHEAD_BUDGET_TOKENS, estimateTokens, fitHistoryToBudget } from '@/common/voice/contextBudget';
+import {
+  FIXED_OVERHEAD_BUDGET_TOKENS,
+  estimateTokens,
+  fitHistoryToBudget,
+  historyBudgetTokens,
+} from '@/common/voice/contextBudget';
 
 /**
  * The prompt and the tool schemas as a default installation sends them.
@@ -31,18 +36,44 @@ describe('spoken-turn context budget', () => {
   /**
    * The regression this exists to prevent.
    *
-   * A spoken conversation on a local 9B model has an 8k window, and the app
-   * cannot know it — the provider row carries no `context_limit`. So the fixed
-   * cost of every single request has to leave room for the conversation and the
-   * reply, or the window overflows before anybody speaks and the server
-   * truncates from the front. What sits at the front is the system prompt, so
-   * the first thing lost is every instruction the assistant was given.
+   * The fixed cost of every single request has to leave room for the
+   * conversation and the reply, or the window overflows before anybody speaks
+   * and the server truncates from the front. What sits at the front is the
+   * system prompt, so the first thing lost is every instruction the assistant
+   * was given.
+   *
+   * This used to say the app could not know the window — that the provider row
+   * carried no `context_limit` and 8k had to be assumed. Half of that was true:
+   * `GET /v1/models` reports nothing but an id. LM Studio's own `/api/v0/models`
+   * on the same port reports `loaded_context_length`, and the spoken pipeline
+   * now asks. So the marker below is measured against a real window rather than
+   * a guessed one, and the test underneath it says so in tokens.
    */
   it('does not grow past what a spoken turn already costs', () => {
     const { prompt, schemas } = fixedOverhead();
     const total = estimateTokens(prompt) + estimateTokens(schemas);
 
     expect(total).toBeLessThan(FIXED_OVERHEAD_BUDGET_TOKENS);
+  });
+
+  /**
+   * What the marker above is a proxy for, asserted directly.
+   *
+   * A token count on its own says nothing: it is only large or small relative
+   * to a window. 64256 is what `GET /api/v0/models` reports for
+   * `qwen/qwen3.5-9b` on the machine this was written on — a measurement rather
+   * than a round number — and the spoken pipeline now reads it instead of
+   * assuming 8192.
+   *
+   * This is the assertion that fails in the case that actually matters: a fixed
+   * cost grown until a real conversation no longer fits behind it, whatever the
+   * marker happens to have been raised to.
+   */
+  it('leaves a real conversation room inside the window the server reports', () => {
+    const { prompt, schemas } = fixedOverhead();
+    const total = estimateTokens(prompt) + estimateTokens(schemas);
+
+    expect(historyBudgetTokens(64_256, total)).toBeGreaterThan(20_000);
   });
 });
 

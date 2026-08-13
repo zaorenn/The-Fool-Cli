@@ -27,6 +27,8 @@ import {
   forgetScreenLook,
   preloadScreenCapture,
 } from '@renderer/services/voice/screenSight';
+import { fitHistoryToBudget, historyBudgetTokens } from '@/common/voice/contextBudget';
+import { readContextWindow } from '@/common/voice/contextWindow';
 import { MEMORY_REVIEW_PROMPT, readProposals } from '@/common/voice/memoryProposal';
 import { isBackchannel } from '@/common/voice/backchannel';
 import { concernsFor, describeTurn } from '@/common/voice/turnMetrics';
@@ -538,6 +540,14 @@ export class LocalVoicePipeline {
   private drainOwner: AbortController | null = null;
   private settingsChanged = false;
 
+  /**
+   * What the loaded model can read, once the server has said.
+   *
+   * `null` until the answer arrives and if it never does, which is the same
+   * thing to everything downstream: the documented assumption stands.
+   */
+  private contextWindow: number | null = null;
+
   constructor(options: LocalPipelineOptions) {
     this.options = options;
   }
@@ -603,6 +613,15 @@ export class LocalVoicePipeline {
     const readiness = await checkLocalReadiness(this.options.settings);
     if (readiness.ok === false) throw new Error(`LOCAL_${readiness.reason.toUpperCase().replaceAll('-', '_')}`);
     this.ready = readiness;
+
+    // Asked once, here, because the answer is a property of how the model was
+    // loaded rather than of this turn — and because a request per turn would
+    // put a network round trip in front of the first word. `null` keeps the
+    // documented assumption; see `contextWindow.ts` for what the two model
+    // lists do and do not report.
+    void readContextWindow(readiness.endpoint, this.thinkingModelId(readiness)).then((window) => {
+      this.contextWindow = window;
+    });
 
     this.history = [{ role: 'system', content: this.systemPrompt() }];
 
@@ -2042,6 +2061,14 @@ export class LocalVoicePipeline {
    * as many turns as it took for the cut to land in the wrong place.
    */
   private trimHistory(): void {
+    // The token pass runs whatever the message count is. A count cannot tell
+    // sixty short spoken lines from one screen description, and the description
+    // is the one that overflows a window on its own — which is the assumption
+    // `MAX_HISTORY_TURNS` was built on and the reason `fitHistoryToBudget` was
+    // written. It had no production caller until now, so nothing in a spoken
+    // conversation was ever measured in tokens at all.
+    this.history = this.fitToWindow(this.history);
+
     if (this.history.length <= MAX_HISTORY_TURNS + 1) return;
     const [system, ...rest] = this.history;
     let kept = rest.slice(-MAX_HISTORY_TURNS);
@@ -2071,6 +2098,45 @@ export class LocalVoicePipeline {
     );
 
     this.history = summary ? [system, { role: 'system', content: summary }, ...kept] : [system, ...kept];
+  }
+
+  /**
+   * The conversation cut to what the model can actually read.
+   *
+   * Two things have to survive a cut and they pull against each other. The
+   * system message is never a candidate, which `fitHistoryToBudget` guarantees.
+   * And a window may not open on a `tool` message or on the assistant turn that
+   * called for one, because the server rejects a request whose first message is
+   * an answer to a question it cannot see — so the front is walked forward
+   * again afterwards, exactly as the count-based cut does.
+   */
+  private fitToWindow(history: readonly Turn[]): Turn[] {
+    // Only when the server actually said. Falling back to the assumed 8192 here
+    // would be worse than not trimming at all: against today's fixed overhead
+    // that assumption leaves a budget of zero, so every turn on any server that
+    // does not answer — llama.cpp, Ollama, anything not LM Studio — would be
+    // sent with its history deleted. An unknown window keeps exactly the
+    // behaviour that shipped, which is the count-based cut below.
+    if (this.contextWindow === null) return [...history];
+
+    const budget = historyBudgetTokens(this.contextWindow);
+    const fitted = fitHistoryToBudget(
+      history.map((message) => ({
+        role: message.role,
+        content: typeof message.content === 'string' ? message.content : '',
+      })),
+      budget
+    );
+    // Nothing was dropped, so nothing can have become illegal.
+    if (fitted.length === history.length) return [...history];
+
+    const dropped = history.length - fitted.length;
+    const [system, ...rest] = history;
+    let kept = rest.slice(dropped);
+    while (kept.length > 0 && (kept[0].role === 'tool' || (kept[0].role === 'assistant' && kept[0].tool_calls))) {
+      kept = kept.slice(1);
+    }
+    return [system, ...kept];
   }
 }
 
