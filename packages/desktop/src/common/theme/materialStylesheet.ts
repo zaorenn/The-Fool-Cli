@@ -112,8 +112,44 @@ const ramp = (palette: Palette): Entry[] => {
     ['--color-border-3', mix(ground, ink, 0.22)],
     ['--color-border-4', mix(ground, ink, 0.32)],
     ['--border-base', mix(ground, ink, 0.14)],
+    ['--border-base-color', mix(ground, ink, 0.14)],
     ['--border-light', mix(ground, ink, 0.08)],
     ['--border-special', mix(ground, ink, 0.2)],
+
+    // Names the application reads that nothing used to write.
+    //
+    // They fell through to whatever the base stylesheet happened to say, which
+    // is why a popup could not match the theme however carefully somebody chose
+    // it, and why the `--aou-*` surfaces — a whole family, inherited from
+    // upstream — stayed put while everything around them moved. A coverage test
+    // now fails the build for any colour variable left in this state.
+    ['--color-bg-0', ground],
+    ['--bg-base-color', ground],
+    ['--aou-1', ground],
+    ['--aou-2', card],
+    ['--color-bg-popup', card],
+    ['--fill-1', step(0.05)],
+    ['--aou-3', step(0.05)],
+    ['--fill-2', step(0.09)],
+    ['--aou-4', step(0.09)],
+    ['--fill-3', step(0.15)],
+    ['--aou-5', step(0.22)],
+    ['--color-bg-6', inkSoft],
+    ['--aou-8', step(0.72)],
+    ['--aou-9', step(0.88)],
+    ['--color-bg-9', step(0.88)],
+
+    ['--text-base-color', ink],
+    ['--text-t-primary', ink],
+    ['--text-tertiary', inkSoft],
+    // Text that sits on the accent, so it is measured against the accent rather
+    // than assumed to be white — an acid yellow needs dark ink on it.
+    ['--text-white', palette.onAccent],
+
+    ['--color-primary-6', palette.accent],
+    ['--color-primary-base', palette.accent],
+    ['--aou-6-brand', palette.accent],
+    ['--brand-light', mix(palette.accent, card, 0.35)],
   ];
 };
 
