@@ -13,7 +13,36 @@
 declare global {
   interface Window {
     __backendPort?: number;
+    __bootstrapSecret?: string | null;
   }
+}
+
+/** The header the backend reads the launcher's proof from. */
+const BOOTSTRAP_SECRET_HEADER = 'x-foolcore-bootstrap-secret';
+
+/**
+ * Paths the backend admits only from the process that launched it.
+ *
+ * Kept to this list on purpose. The secret is proof of being the host, so
+ * attaching it to every request would spend it on calls that have a session to
+ * identify them and would put it in far more places than it belongs.
+ */
+const isHostOnlyPath = (path: string): boolean => path.split('?')[0].startsWith('/api/webui/');
+
+/**
+ * The launcher's proof, when this context has one.
+ *
+ * Present in the Electron renderer, which the preload hands it to, and in main.
+ * Absent in a WebUI browser — no preload runs there, so a page served over the
+ * network cannot obtain it, and its `/api/webui/*` calls are refused by the
+ * static server before they reach the backend at all.
+ */
+function getBootstrapSecret(): string | null {
+  if (typeof window !== 'undefined' && (window as Window).__bootstrapSecret) {
+    return (window as Window).__bootstrapSecret as string;
+  }
+  const g = globalThis as typeof globalThis & { __bootstrapSecret?: string | null };
+  return g.__bootstrapSecret ?? null;
 }
 
 /**
@@ -181,6 +210,13 @@ export async function httpRequest<T>(
 
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
+  }
+
+  if (isHostOnlyPath(path)) {
+    const secret = getBootstrapSecret();
+    if (secret) {
+      headers[BOOTSTRAP_SECRET_HEADER] = secret;
+    }
   }
 
   console.debug(

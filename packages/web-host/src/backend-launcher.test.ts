@@ -33,6 +33,8 @@ import { mkdirSync, statSync } from 'node:fs';
 import { connect, createServer } from 'node:net';
 import { cleanupRegisteredAgentProcesses } from './agent-process-registry.js';
 import {
+  backendRunsUnauthenticated,
+  bootstrapSecretFor,
   buildSpawnArgs,
   buildSpawnEnv,
   findAvailablePort,
@@ -112,6 +114,51 @@ beforeEach(() => {
 afterEach(() => {
   // Do NOT call restoreAllMocks; it would remove vi.mock() module factories.
   vi.useRealTimers();
+});
+
+describe('backendRunsUnauthenticated', () => {
+  /**
+   * The launcher used to hardcode local mode, so exposing the static server to
+   * the network published every data route to the subnet with no credential and
+   * handed out signed-in WebSockets — while `/api/auth/*` kept answering 401 and
+   * made the whole thing look guarded.
+   */
+  it('keeps auth off while only this machine can reach the backend', () => {
+    expect(backendRunsUnauthenticated({})).toBe(true);
+    expect(backendRunsUnauthenticated({ allowRemote: false })).toBe(true);
+  });
+
+  it('turns auth on as soon as the server is exposed to the network', () => {
+    expect(backendRunsUnauthenticated({ allowRemote: true })).toBe(false);
+  });
+});
+
+describe('bootstrapSecretFor', () => {
+  it('mints no secret in local mode, where the mode is the proof', () => {
+    expect(bootstrapSecretFor({})).toBeUndefined();
+    expect(bootstrapSecretFor({ allowRemote: false })).toBeUndefined();
+  });
+
+  it('mints one when the backend authenticates, so the host can still be admitted', () => {
+    const secret = bootstrapSecretFor({ allowRemote: true });
+    expect(secret).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('never repeats a secret between launches', () => {
+    expect(bootstrapSecretFor({ allowRemote: true })).not.toBe(bootstrapSecretFor({ allowRemote: true }));
+  });
+});
+
+describe('buildSpawnEnv with a bootstrap secret', () => {
+  const dirs = { cacheDir: '/c', workDir: '/w', logDir: '/l' };
+
+  it('passes the secret to the backend it is spawning', () => {
+    expect(buildSpawnEnv(dirs, 'abc123').FOOLCORE_BOOTSTRAP_SECRET).toBe('abc123');
+  });
+
+  it('sets nothing when there is no secret, so local mode is unchanged', () => {
+    expect(buildSpawnEnv(dirs).FOOLCORE_BOOTSTRAP_SECRET).toBeUndefined();
+  });
 });
 
 describe('buildSpawnArgs', () => {

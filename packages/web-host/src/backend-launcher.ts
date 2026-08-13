@@ -9,6 +9,7 @@
  */
 
 import { type ChildProcess, spawn } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { mkdirSync, statSync } from 'node:fs';
 import { connect, createServer, type Socket } from 'node:net';
 import { cleanupRegisteredAgentProcesses } from './agent-process-registry.js';
@@ -75,7 +76,44 @@ type SpawnConfig = {
 
 export type BackendLaunchFlags = {
   recoverCorruptedDatabase?: boolean;
+  /**
+   * Whether the static server in front of this backend is reachable from the
+   * network rather than only from this machine.
+   *
+   * It decides whether the backend authenticates anybody at all. `--local`
+   * makes foolcore skip JWT verification and act as a fixed default user, and
+   * makes its WebSocket accept every caller — correct while the only possible
+   * caller is this machine, and a way of handing the whole subnet a signed-in
+   * session the moment the static server binds `0.0.0.0`. The login page, the
+   * JWT and the QR flow all keep working while that happens, because
+   * `/api/auth/*` is guarded and the data routes are the ones that are not, so
+   * nothing about it looks wrong from outside.
+   */
+  allowRemote?: boolean;
 };
+
+/**
+ * Whether the backend should run unauthenticated.
+ *
+ * Stated as its own rule because the mistake it prevents lives at a call site
+ * rather than in a calculation: the launcher passed a hardcoded `true` here,
+ * which no test of the argument builder could see. Anything deciding this from
+ * something other than reachability is wrong.
+ */
+export const backendRunsUnauthenticated = (flags: BackendLaunchFlags): boolean => flags.allowRemote !== true;
+
+/**
+ * The secret that proves a caller is this launcher, or none when unneeded.
+ *
+ * The WebUI admin endpoints — minting a QR code, seeding the first admin
+ * password — are the host process talking to its own backend, and local mode
+ * used to be proof enough of that. Once the backend authenticates, it is not,
+ * and without a second proof the backend would refuse the very calls that
+ * enrol a phone. Generated per launch and never persisted: it is only ever
+ * needed by this process and the backend it just spawned.
+ */
+export const bootstrapSecretFor = (flags: BackendLaunchFlags): string | undefined =>
+  backendRunsUnauthenticated(flags) ? undefined : randomBytes(32).toString('hex');
 
 export type BackendDirConfig = {
   cacheDir: string;
@@ -95,10 +133,20 @@ export type BackendLaunchOptions = {
    * process.env and will likely report wrong/empty dirs.
    */
   dirs?: BackendDirConfig;
+  /**
+   * Whether the static server in front of this backend is exposed to the
+   * network. Decides whether the backend authenticates its callers at all.
+   */
+  allowRemote?: boolean;
 };
 
 export type BackendHandle = {
   port: number;
+  /**
+   * Proof to send with privileged `/api/webui/*` calls. Undefined in local
+   * mode, where the backend admits the host process without one.
+   */
+  bootstrapSecret?: string;
   stop: () => Promise<void>;
 };
 
@@ -213,12 +261,15 @@ export function buildSpawnArgs(config: SpawnConfig): string[] {
  * backend's `/api/system/info` matches what Electron main persists in
  * ProcessEnv('fool.dir').
  */
-export function buildSpawnEnv(dirs: BackendDirConfig): NodeJS.ProcessEnv {
+export function buildSpawnEnv(dirs: BackendDirConfig, bootstrapSecret?: string): NodeJS.ProcessEnv {
   return {
     ...process.env,
     FOOL_CACHE_DIR: dirs.cacheDir,
     FOOL_WORK_DIR: dirs.workDir,
     FOOL_LOG_DIR: dirs.logDir,
+    // Read once at startup by the backend's bootstrap. Absent in local mode,
+    // where the backend admits the host process on the strength of the mode.
+    ...(bootstrapSecret ? { FOOLCORE_BOOTSTRAP_SECRET: bootstrapSecret } : {}),
   };
 }
 
@@ -491,6 +542,8 @@ async function probeHealthCheckTcpConnect(port: number, timeoutMs = 1_000): Prom
 export class BackendLifecycleManager {
   private childProcess: ChildProcess | null = null;
   private _port = 0;
+  /** Proves to the backend that a privileged call came from this launcher. */
+  private _bootstrapSecret: string | undefined;
   private _status: BackendStatus = 'stopped';
   private _lastDbPath = '';
   private _lastLogDir?: string;
@@ -512,6 +565,11 @@ export class BackendLifecycleManager {
 
   get status(): BackendStatus {
     return this._status;
+  }
+
+  /** Undefined in local mode, where the backend needs no second proof. */
+  get bootstrapSecret(): string | undefined {
+    return this._bootstrapSecret;
   }
 
   private isPeerAlreadyRunningError(error: unknown): boolean {
@@ -631,10 +689,15 @@ export class BackendLifecycleManager {
       );
     };
 
+    // Minted once and kept for the manager's lifetime. A crash restart respawns
+    // the backend, and anything already holding this — the renderer got its
+    // copy through preload at window creation — would be left with a secret the
+    // new process never heard of.
+    this._bootstrapSecret ??= bootstrapSecretFor(launchFlags);
     const args = buildSpawnArgs({
       port: this._port,
       dbPath,
-      local: true,
+      local: backendRunsUnauthenticated(launchFlags),
       parentPid: process.pid,
       logDir,
       workDir: dirs?.workDir,
@@ -658,7 +721,9 @@ export class BackendLifecycleManager {
     try {
       this.childProcess = spawn(binaryPath, args, {
         stdio: ['pipe', 'pipe', 'pipe'],
-        env: dirs ? buildSpawnEnv(dirs) : process.env,
+        env: dirs
+          ? buildSpawnEnv(dirs, this._bootstrapSecret)
+          : { ...process.env, ...(this._bootstrapSecret ? { FOOLCORE_BOOTSTRAP_SECRET: this._bootstrapSecret } : {}) },
         cwd: dirs?.workDir ?? dbPath,
         detached: process.platform !== 'win32',
       });
@@ -1018,9 +1083,12 @@ export async function startBackend(opts: BackendLaunchOptions): Promise<BackendH
   if (!dataDir) {
     throw new Error('startBackend: dataDir is required');
   }
-  const port = await manager.start(dataDir, opts.logDir, opts.dirs);
+  const port = await manager.start(dataDir, opts.logDir, opts.dirs, undefined, opts.port, {
+    allowRemote: opts.allowRemote === true,
+  });
   return {
     port,
+    bootstrapSecret: manager.bootstrapSecret,
     stop: () => manager.stop(),
   };
 }

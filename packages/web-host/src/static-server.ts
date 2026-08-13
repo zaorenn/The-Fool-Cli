@@ -43,6 +43,21 @@ function getLanIP(): string | null {
   return null;
 }
 
+/**
+ * Whether a path belongs to the host process alone and must never be proxied.
+ *
+ * Given its own name because it is a security boundary rather than a routing
+ * detail: everything under `/api/webui/` mints a QR login token, generates a
+ * new admin password, or renames the admin. The desktop renderer reaches those
+ * on the backend's loopback port directly and never arrives here (see
+ * `getBaseUrl` in `common/adapter/httpBridge.ts`), so refusing them costs no
+ * caller anything.
+ */
+export function isHostOnlyPath(url: string): boolean {
+  const path = url.split('?')[0];
+  return path === '/api/webui' || path.startsWith('/api/webui/');
+}
+
 function forwardToBackend(req: IncomingMessage, res: ServerResponse, backendPort: number): void {
   const options: http.RequestOptions = {
     hostname: '127.0.0.1',
@@ -159,6 +174,19 @@ export async function startStaticServer(opts: StaticServerOptions): Promise<Stat
     try {
       if (!req.url || !req.method) {
         res.writeHead(400).end();
+        return;
+      }
+
+      // /api/webui/* is the host process talking to its own backend: minting a
+      // QR code, seeding the first admin password, renaming the admin. Nothing
+      // arriving through this server is that process — the desktop renderer
+      // reaches the backend's loopback port directly and never comes past here
+      // (see getBaseUrl in common/adapter/httpBridge.ts). So there is no caller
+      // to serve and every reason to refuse: these endpoints hand out a login
+      // token and a new password.
+      if (isHostOnlyPath(req.url)) {
+        res.writeHead(404, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: 'Route not found.', code: 'NOT_FOUND' }));
         return;
       }
 

@@ -5,7 +5,35 @@ import os from 'node:os';
 import path from 'node:path';
 import net from 'node:net';
 import type { AddressInfo } from 'node:net';
-import { startStaticServer, type StaticServerHandle } from './static-server.js';
+import { isHostOnlyPath, startStaticServer, type StaticServerHandle } from './static-server.js';
+
+describe('isHostOnlyPath', () => {
+  /**
+   * These endpoints mint a QR login token and generate a new admin password.
+   * The desktop renderer reaches them on the backend's loopback port and never
+   * arrives here, so anything asking this server for them is something else.
+   */
+  it('refuses every WebUI admin endpoint', () => {
+    expect(isHostOnlyPath('/api/webui/generate-qr-token')).toBe(true);
+    expect(isHostOnlyPath('/api/webui/reset-password')).toBe(true);
+    expect(isHostOnlyPath('/api/webui/change-password')).toBe(true);
+    expect(isHostOnlyPath('/api/webui/change-username')).toBe(true);
+  });
+
+  it('ignores the query string when deciding', () => {
+    expect(isHostOnlyPath('/api/webui/reset-password?x=1')).toBe(true);
+  });
+
+  it('lets the routes the browser legitimately needs through', () => {
+    expect(isHostOnlyPath('/api/auth/qr-login')).toBe(false);
+    expect(isHostOnlyPath('/api/conversations')).toBe(false);
+    expect(isHostOnlyPath('/login')).toBe(false);
+  });
+
+  it('is not fooled by a path that merely starts with the same letters', () => {
+    expect(isHostOnlyPath('/api/webuinotreally')).toBe(false);
+  });
+});
 
 async function mkRendererFixture(): Promise<string> {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'ws-static-'));

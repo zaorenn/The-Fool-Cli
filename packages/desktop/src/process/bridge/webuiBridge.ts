@@ -64,7 +64,14 @@ async function maybeSeedInitialPassword(): Promise<void> {
     setDesktopWebUIInitialPassword(undefined);
     return;
   }
-  const resetRes = await fetch(`http://127.0.0.1:${port}/api/webui/reset-password`, { method: 'POST' });
+  // Raw fetch rather than the http bridge, so the launcher's proof has to be
+  // attached by hand. Absent in local mode, where the backend needs none.
+  const bootstrapSecret = (globalThis as typeof globalThis & { __bootstrapSecret?: string | null })
+    .__bootstrapSecret;
+  const resetRes = await fetch(`http://127.0.0.1:${port}/api/webui/reset-password`, {
+    method: 'POST',
+    headers: bootstrapSecret ? { 'x-foolcore-bootstrap-secret': bootstrapSecret } : {},
+  });
   if (!resetRes.ok) {
     throw new Error(`[WebUI] /api/webui/reset-password returned ${resetRes.status}`);
   }

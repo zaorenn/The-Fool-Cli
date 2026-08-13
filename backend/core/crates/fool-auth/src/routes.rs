@@ -149,6 +149,31 @@ fn ensure_local_mode(local: bool) -> Result<(), ApiError> {
     ))
 }
 
+/// Whether this caller is the process that launched this backend.
+///
+/// The WebUI admin endpoints — minting a QR code, seeding the first admin
+/// password, changing the admin's name — are not user features. They are the
+/// host process talking to the backend it started, and local mode used to be a
+/// complete proof of that: the desktop embeds the backend, reaches it over
+/// loopback with no session, and nothing else can reach it at all.
+///
+/// It stops being a proof the moment the host exposes itself to the network,
+/// because then the backend has to authenticate everybody, `local` is false,
+/// and the guard starts refusing the one caller it was written to admit. That
+/// made the feature impossible in the only configuration it exists for: a phone
+/// can only be enrolled against a server it can reach, a reachable server must
+/// authenticate, and the code to enrol it could then never be minted.
+///
+/// The bootstrap secret is the proof that survives. The launcher generates it,
+/// hands it over at spawn, and no other caller has it — including anything that
+/// arrives through the static server, which never forwards the header.
+fn ensure_host_process(state: &AuthRouterState, headers: &HeaderMap) -> Result<(), ApiError> {
+    if state.local {
+        return Ok(());
+    }
+    require_bootstrap_secret(headers, state.bootstrap_secret.as_deref())
+}
+
 fn require_bootstrap_secret(headers: &HeaderMap, expected: Option<&str>) -> Result<(), ApiError> {
     let Some(expected) = expected else {
         return Err(ApiError::coded(
@@ -985,9 +1010,10 @@ async fn resolve_webui_admin(user_repo: &dyn IUserRepository) -> Result<User, Ap
 
 async fn webui_change_password_handler(
     State(state): State<AuthRouterState>,
+    headers: HeaderMap,
     body: Result<Json<WebuiChangePasswordRequest>, JsonRejection>,
 ) -> Result<Json<ApiResponse<()>>, ApiError> {
-    ensure_local_mode(state.local)?;
+    ensure_host_process(&state, &headers)?;
     let Json(req) = body.map_err(ApiError::from)?;
 
     validate_password(&req.new_password)?;
@@ -1014,9 +1040,10 @@ async fn webui_change_password_handler(
 
 async fn webui_change_username_handler(
     State(state): State<AuthRouterState>,
+    headers: HeaderMap,
     body: Result<Json<WebuiChangeUsernameRequest>, JsonRejection>,
 ) -> Result<Json<ApiResponse<WebuiChangeUsernameResponse>>, ApiError> {
-    ensure_local_mode(state.local)?;
+    ensure_host_process(&state, &headers)?;
     let Json(req) = body.map_err(ApiError::from)?;
 
     let trimmed = req.new_username.trim().to_owned();
@@ -1041,8 +1068,9 @@ async fn webui_change_username_handler(
 
 async fn webui_reset_password_handler(
     State(state): State<AuthRouterState>,
+    headers: HeaderMap,
 ) -> Result<Json<ApiResponse<WebuiResetPasswordResponse>>, ApiError> {
-    ensure_local_mode(state.local)?;
+    ensure_host_process(&state, &headers)?;
 
     let user = resolve_webui_admin(&*state.user_repo).await?;
 
@@ -1067,8 +1095,9 @@ async fn webui_reset_password_handler(
 
 async fn webui_generate_qr_token_handler(
     State(state): State<AuthRouterState>,
+    headers: HeaderMap,
 ) -> Result<Json<ApiResponse<WebuiGenerateQrTokenResponse>>, ApiError> {
-    ensure_local_mode(state.local)?;
+    ensure_host_process(&state, &headers)?;
 
     let (token, expires_at_ms) = state.qr_token_store.generate_with_expiry();
 
@@ -1082,6 +1111,55 @@ async fn webui_generate_qr_token_handler(
 mod error_mapping_tests {
     use super::*;
     use axum::http::StatusCode;
+
+    fn headers_with_secret(secret: &str) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        headers.insert(BOOTSTRAP_SECRET_HEADER, secret.parse().unwrap());
+        headers
+    }
+
+    // The WebUI admin endpoints admit the host process and nobody else. Local
+    // mode used to be the only proof, which made minting a QR code impossible
+    // in the one configuration a phone can be enrolled from — an exposed server
+    // must authenticate, so `local` is false exactly when the code is needed.
+
+    #[test]
+    fn local_mode_alone_admits_the_host() {
+        let headers = HeaderMap::new();
+        assert!(may_mint_qr_token(true, None, &headers));
+    }
+
+    #[test]
+    fn an_authenticating_backend_admits_the_launcher_by_its_secret() {
+        let headers = headers_with_secret("s3cret");
+        assert!(may_mint_qr_token(false, Some("s3cret"), &headers));
+    }
+
+    #[test]
+    fn an_authenticating_backend_refuses_a_caller_with_no_secret() {
+        let headers = HeaderMap::new();
+        assert!(!may_mint_qr_token(false, Some("s3cret"), &headers));
+    }
+
+    #[test]
+    fn an_authenticating_backend_refuses_a_wrong_secret() {
+        let headers = headers_with_secret("guess");
+        assert!(!may_mint_qr_token(false, Some("s3cret"), &headers));
+    }
+
+    #[test]
+    fn an_authenticating_backend_with_no_secret_configured_admits_nobody() {
+        let headers = headers_with_secret("anything");
+        assert!(!may_mint_qr_token(false, None, &headers));
+    }
+
+    /// Mirrors `ensure_host_process` without needing a whole `AuthRouterState`.
+    fn may_mint_qr_token(local: bool, expected: Option<&str>, headers: &HeaderMap) -> bool {
+        if local {
+            return true;
+        }
+        require_bootstrap_secret(headers, expected).is_ok()
+    }
 
     #[test]
     fn invalid_credentials_maps_to_unauthorized() {

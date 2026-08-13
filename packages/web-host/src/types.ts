@@ -47,6 +47,12 @@ export type WebHostOptions = {
 export type WebHostHandle = {
   port: number;
   backendPort: number;
+  /**
+   * Proof to send with privileged `/api/webui/*` calls — minting a QR code,
+   * seeding the first admin password. Undefined while the backend runs in local
+   * mode, which is every launch that is not exposed to the network.
+   */
+  bootstrapSecret?: string;
   url: string;
   localUrl: string;
   networkUrl?: string;

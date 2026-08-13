@@ -37,11 +37,15 @@ export async function startWebHost(opts: WebHostOptions): Promise<WebHostHandle>
       dataDir: opts.dataDir,
       logDir: opts.logDir,
       dirs: opts.dirs,
+      // The backend decides whether to authenticate anybody from this, so it
+      // has to hear the same answer the static server binds on.
+      allowRemote: opts.allowRemote ?? false,
     });
   } else {
     // useExistingBackend: create a fake handle
     backendHandle = {
       port: opts.backend.port,
+      bootstrapSecret: undefined,
       stop: async () => {
         // no-op: external backend
       },
@@ -67,6 +71,7 @@ export async function startWebHost(opts: WebHostOptions): Promise<WebHostHandle>
   return {
     port: staticHandle.port,
     backendPort: backendHandle.port,
+    bootstrapSecret: backendHandle.bootstrapSecret,
     url: staticHandle.url,
     localUrl: staticHandle.localUrl,
     networkUrl: staticHandle.networkUrl,

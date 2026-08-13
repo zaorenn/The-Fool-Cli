@@ -221,6 +221,20 @@ ipcMain.on('get-backend-port', (event) => {
   event.returnValue = backendManager.port;
 });
 
+/**
+ * The proof the renderer needs for `/api/webui/*` — minting a QR code, seeding
+ * the first admin password.
+ *
+ * Those calls go from the renderer straight to the backend's loopback port, so
+ * once the backend authenticates they need the same proof the launcher holds.
+ * Empty while it runs in local mode, where the mode is proof enough, and empty
+ * in a WebUI browser — which has no preload, so a page served over the network
+ * can never read this.
+ */
+ipcMain.on('get-bootstrap-secret', (event) => {
+  event.returnValue = backendManager.bootstrapSecret ?? '';
+});
+
 ipcMain.on('get-initial-language', (event) => {
   event.returnValue = rendererInitialLanguage;
 });
@@ -338,6 +352,10 @@ function exposeBackendPort(backendPort: number): void {
   // ipcBridge.* invoke from the main process — the renderer side reads
   // window.__backendPort via preload, but main has no `window`.
   (globalThis as typeof globalThis & { __backendPort?: number }).__backendPort = backendPort;
+  // Same reason, for the `/api/webui/*` calls that need to prove they are this
+  // process. Null while the backend runs in local mode and needs no proof.
+  (globalThis as typeof globalThis & { __bootstrapSecret?: string | null }).__bootstrapSecret =
+    backendManager.bootstrapSecret ?? null;
 }
 
 function ensureAdminUserOnce(backendPort: number): Promise<void> {
