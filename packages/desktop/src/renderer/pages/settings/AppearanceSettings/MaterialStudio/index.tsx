@@ -14,7 +14,7 @@ import AccentPicker from './AccentPicker';
 import BackgroundPicker from './BackgroundPicker';
 import DialGroups from './DialGroups';
 import MaterialCards from './MaterialCards';
-import { ACCENT_AXES, accentAxisValue, accentWithAxis, isAccentAxis, type DialKey } from './dials';
+import { offeredDials, type DialKey } from './dials';
 import styles from './MaterialStudio.module.css';
 
 /**
@@ -41,10 +41,7 @@ const MaterialStudio: React.FC = () => {
   const prefersDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
   const dark = isDark(choice.style, prefersDark);
 
-  const valueOf = useCallback(
-    (key: DialKey): number => (isAccentAxis(key) ? accentAxisValue(choice.accent, key) : tokens[key]),
-    [choice.accent, tokens]
-  );
+  const valueOf = useCallback((key: DialKey): number => tokens[key as MaterialTokenKey], [tokens]);
 
   /**
    * Shown now, kept later.
@@ -57,9 +54,7 @@ const MaterialStudio: React.FC = () => {
    */
   const move = useCallback(
     (key: DialKey, value: number): void => {
-      const next: SurfaceStyleChoice = isAccentAxis(key)
-        ? { ...choice, accent: accentWithAxis(choice.accent, key, value) }
-        : { ...choice, tokens: { ...choice.tokens, [key]: value } };
+      const next: SurfaceStyleChoice = { ...choice, tokens: { ...choice.tokens, [key]: value } };
       applySurfaceChoice(next);
     },
     [choice]
@@ -67,13 +62,9 @@ const MaterialStudio: React.FC = () => {
 
   const settle = useCallback(
     (key: DialKey, value: number): void => {
-      if (isAccentAxis(key)) {
-        void setAccent(accentWithAxis(choice.accent, key, value));
-        return;
-      }
       void setToken(key as MaterialTokenKey, value);
     },
-    [choice.accent, setAccent, setToken]
+    [setToken]
   );
 
   return (
@@ -121,15 +112,13 @@ const MaterialStudio: React.FC = () => {
         </div>
       </div>
 
-      {/* Only the dials this material can feel. The three axes of the colour are
-          always among them: the accent is not the material's, it is the one
-          thing everything else is derived from. */}
-      <DialGroups
-        available={new Set<DialKey>([...ACCENT_AXES, ...SURFACE_STYLES[choice.style].dials])}
-        value={valueOf}
-        onMove={move}
-        onSettle={settle}
-      />
+      {/* Only the dials this material can feel — and no colour dials at all.
+          Hue, vividness, brightness and the grey tint used to sit here, and
+          every one of them could walk a chosen palette out of the contrast the
+          palette was chosen for. Shape is safe to hand over: no radius, shadow
+          or spacing can make text unreadable. Colour is not, so the choice is
+          the palette and the rest is derived. */}
+      <DialGroups available={offeredDials(choice.style)} value={valueOf} onMove={move} onSettle={settle} />
     </section>
   );
 };

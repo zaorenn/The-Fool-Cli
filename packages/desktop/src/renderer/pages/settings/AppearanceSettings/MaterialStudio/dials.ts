@@ -21,10 +21,12 @@
 
 import {
   MATERIAL_SPECS,
+  SURFACE_STYLES,
   hexToHsl,
   hslToHex,
   type MaterialTokenKey,
   type MaterialSpec,
+  type SurfaceStyleId,
 } from '@/common/theme/surfaceStyle';
 
 /**
@@ -155,3 +157,22 @@ export const accentWithAxis = (accent: string, axis: AccentAxis, value: number):
   if (axis === 'accentSaturation') return hslToHex({ ...hsl, s: value });
   return hslToHex({ ...hsl, l: value });
 };
+
+/**
+ * The dials a material actually offers, which is no longer all of them.
+ *
+ * Hue, vividness, brightness and the grey tint used to sit in a "Colour" group
+ * here. Every one of them could walk a chosen palette out of the contrast it
+ * was chosen for — and the whole point of replacing the colour wheel with a
+ * closed list was that all 126 palette, material and appearance combinations
+ * are checked at 4.5:1. A slider that can leave that set gives the guarantee
+ * back.
+ *
+ * Shape is safe to hand over: no radius, shadow, spacing or duration can make
+ * text unreadable. So shape stays adjustable and colour does not.
+ *
+ * The accent axes remain defined above because the spoken tool and the stored
+ * shape still refer to them; they are simply not offered as controls.
+ */
+export const offeredDials = (style: SurfaceStyleId): ReadonlySet<DialKey> =>
+  new Set<DialKey>(SURFACE_STYLES[style].dials.filter((dial) => dial !== 'tint'));
