@@ -183,12 +183,31 @@
   background: transparent;
   border-bottom: none;
   padding-left: 0;
-  padding-right: 0;
+  /* Room for the chevron, which the rule below moves to this edge. */
+  padding-right: 20px;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--color-text-3);
+}
+
+/*
+ * The chevron, moved to the end of the row it belongs to.
+ *
+ * Arco positions it absolutely at `left: 13px` and reserves the space for it
+ * with `padding-left: 32px` on the header. Taking the padding away — which is
+ * what puts these headings on the same left edge as the labels above them —
+ * does not move the icon, so it was drawn on top of the heading, over the third
+ * letter of each: the stray dot in "A·NYTHING TO ADD".
+ *
+ * Reserving the space again would indent four headings out of line with every
+ * other label in the panel. So the icon goes to the other end, where a
+ * disclosure arrow reads as one anyway and nothing collides with it.
+ */
+.settingsGroups :global(.arco-collapse-item .arco-collapse-item-icon-hover) {
+  left: auto;
+  right: 0;
 }
 
 .settingsGroups :global(.arco-collapse-item-header:hover) {

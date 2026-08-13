@@ -34,7 +34,14 @@
 import { colorVariables, parseHexColor } from '@/common/config/themeOverrides';
 import { defaultSurfaceBackground, hasBackgroundImage, type SurfaceBackground } from '@/common/theme/surfaceBackground';
 import { resolveTokens, type SurfaceStyleChoice } from '@/common/theme/surfaceChoice';
-import { derivePalette, effectiveAlpha, isDark, surfaceVariables, type Palette } from '@/common/theme/surfaceStyle';
+import {
+  derivePalette,
+  effectiveAlpha,
+  isDark,
+  readableAccent,
+  surfaceVariables,
+  type Palette,
+} from '@/common/theme/surfaceStyle';
 
 type Entry = readonly [string, string];
 
@@ -156,6 +163,13 @@ const ramp = (palette: Palette): Entry[] => {
     ['--color-primary-base', palette.accent],
     ['--aou-6-brand', palette.accent],
     ['--brand-light', mix(palette.accent, card, 0.35)],
+
+    // The accent when it has to be read rather than filled with — a selected
+    // tab, a link, an active row. Kept apart from the accent itself so that
+    // fixing a word does not repaint every button: a fill is judged against the
+    // shape it makes and carries `--text-white` on top, while a word has to
+    // resolve against the surface behind it.
+    ['--fool-accent-text', readableAccent(palette.accent, [ground, card, mix(card, ink, 0.04)])],
   ];
 };
 
@@ -388,15 +402,46 @@ ${SURFACES} {
   color: var(--fool-ink) !important;
 }`,
 
+    // Where the accent is a word rather than a shape.
+    //
+    // Arco writes these as `rgb(var(--primary-6))`, the same value it fills a
+    // primary button with. A fill only has to be noticed; a word has to be
+    // resolved against what is behind it, and the accent chosen for the first
+    // job fails the second — measured between 2.64:1 and 4.24:1 on the selected
+    // tab of the voice panel, across every material.
+    `.arco-tabs-header-title-active,
+.arco-tabs-header-title-active:hover,
+.arco-link,
+.arco-menu-item.arco-menu-selected,
+.arco-select-option-selected,
+.arco-breadcrumb-item:last-child {
+  color: var(--fool-accent-text) !important;
+}`,
+
     // The frame the pages sit in. A sidebar still wearing the old grey while
     // every page behind it has changed is the single most visible way for this
     // to look broken.
+    //
+    // Except a sidebar that has declared itself a surface. The application's own
+    // sider carries `.fool-surface`, so it is asking to be a pane, and forcing it
+    // transparent made it the one large thing on screen showing the page wash
+    // raw. Those washes are radial gradients placed by percentage, so the first
+    // of them lands at 14% of the window — which is where the sidebar is. The
+    // result was a saturated block beside near-white panes, with a seam down the
+    // middle: reported as the sidebar not matching them.
+    //
+    // `:not(.fool-surface)` keeps the original promise for every other sider —
+    // no Arco grey — while letting the one that asked to be a pane be one.
     `.arco-layout,
-.arco-layout-sider,
+.arco-layout-sider:not(.fool-surface),
 .arco-layout-header,
 .arco-layout-content,
 .arco-layout-footer {
   background: transparent !important;
+  color: var(--fool-ink) !important;
+}`,
+
+    `.arco-layout-sider.fool-surface {
   color: var(--fool-ink) !important;
 }`,
 

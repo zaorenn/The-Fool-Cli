@@ -99,7 +99,12 @@ const MaterialStudio: React.FC = () => {
 
       {/* Real elements wearing the real thing, for the part of the application
           that is not on screen while somebody is on this page. */}
-      <div className={`fool-page ${styles.preview}`} data-testid='material-preview'>
+      {/* `data-fool-preview` is what paints the page background here. The page
+          class no longer does: the window's ground is painted once, on `#root`,
+          and a second coat put the wash on the sidebar and the content pane at
+          two different scales. A preview is the one place that genuinely is a
+          picture of a page, so it asks for the ground by name. */}
+      <div className={`fool-page ${styles.preview}`} data-fool-preview data-testid='material-preview'>
         <div className={`fool-surface ${styles.previewCard}`}>
           <span className='fool-heading text-14px'>{t('settings.material.previewTitle')}</span>
           <span className='fool-body fool-muted text-12px'>{t('settings.material.previewBody')}</span>

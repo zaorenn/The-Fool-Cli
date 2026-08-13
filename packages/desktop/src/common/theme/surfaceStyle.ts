@@ -454,6 +454,56 @@ export const contrastRatio = (a: string, b: string): number => {
 export const READABLE_CONTRAST = 4.5;
 
 /**
+ * The accent, moved until it can be *read* on a surface rather than filled with.
+ *
+ * `readableOn` answers the opposite question — what goes on top of the accent —
+ * and that is the one the buttons needed. This is the other half, and it went
+ * unanswered: an accent is also used *as* text, for a selected tab, a link, an
+ * active menu row. Measured in the running app, the selected tab of the voice
+ * panel came out between 2.64:1 and 4.24:1 depending on the material, because
+ * the accent is chosen to be seen against the page as a shape, and a shape only
+ * has to be noticed while a word has to be resolved.
+ *
+ * Hue and saturation are kept, so it still reads as the palette's colour, and
+ * only lightness moves — away from the surface, because that is the direction
+ * contrast is in. Running out of room returns the closest it got, which is the
+ * same honesty `readableOn` ends on: an unreachable bar is reported by the
+ * colour being as far as it goes, not by pretending.
+ */
+export const readableAccent = (accent: string, backgrounds: readonly string[]): string => {
+  // Every surface the word can land on, not just the one somebody had in mind.
+  // A panel and the page beside it are a step apart in the ramp, and an accent
+  // corrected against the easier of the two is still unreadable on the other.
+  const worst = (colour: string): number =>
+    backgrounds.reduce((lowest, background) => Math.min(lowest, contrastRatio(colour, background)), Infinity);
+
+  if (worst(accent) >= READABLE_CONTRAST) return accent;
+
+  const { h, s } = hexToHsl(accent);
+  const start = hexToHsl(accent).l;
+  // Away from the surfaces: lighter on dark ones, darker on light ones. Decided
+  // by their average, because they are steps of one ramp and never straddle.
+  const meanLuminance =
+    backgrounds.reduce((total, background) => total + relativeLuminance(background), 0) / backgrounds.length;
+  const towardsLight = meanLuminance < 0.5;
+
+  let best = accent;
+  let bestRatio = worst(accent);
+  for (let step = 1; step <= 100; step += 1) {
+    const l = towardsLight ? Math.min(100, start + step) : Math.max(0, start - step);
+    const candidate = hslToHex({ h, s, l });
+    const ratio = worst(candidate);
+    if (ratio > bestRatio) {
+      best = candidate;
+      bestRatio = ratio;
+    }
+    if (ratio >= READABLE_CONTRAST) return candidate;
+    if (l === 0 || l === 100) break;
+  }
+  return best;
+};
+
+/**
  * What to write on top of a colour so that it can actually be read.
  *
  * The old rule picked black or white either side of a luminance threshold,

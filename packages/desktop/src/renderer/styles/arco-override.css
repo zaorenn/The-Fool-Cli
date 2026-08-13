@@ -543,3 +543,18 @@ body[arco-theme='dark'] .arco-message-error {
 [data-theme='dark'] .arco-empty-description {
   color: #adb4bd;
 }
+
+/* An icon drawn straight into a button keeps the size it was given.
+
+   Arco lays a button out with flexbox and pads it horizontally. An @icon-park
+   icon arrives wrapped in `span.i-icon`, whose automatic minimum size is its
+   content, so the padding cannot squeeze it. A bare `<svg>` has no such floor —
+   in flexbox its automatic minimum is zero — so the padding wins and the glyph
+   is compressed into the few pixels left over.
+
+   Measured in the running app: the sidebar toggle and the feedback bubble, both
+   declared `width="18" height="18"`, were drawn 4px wide inside a 36px button,
+   and the maximise control 8px instead of 14. They read as a dot. */
+.arco-btn > svg {
+  flex-shrink: 0;
+}
