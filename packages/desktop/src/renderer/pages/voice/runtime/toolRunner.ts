@@ -157,7 +157,10 @@ export const resolvePalette = (palette: string, color: string): ThemePalette | n
  * conversation, defaulting to it: the fast conversational model is often
  * text-only, and a picture sent to one is refused rather than ignored.
  */
-export const lookAtScreen = async (question: string, windowMatch = ''): Promise<string> => {
+export const lookAtScreen = async (
+  question: string,
+  windowMatch = ''
+): Promise<{ text: string; scope: 'window' | 'display' }> => {
   // Started the moment the user's words pointed at a screen, which is a whole
   // model round trip before this call exists. Usually already answered — but
   // only for the wide look it started, so a question about one named window
@@ -393,13 +396,25 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
 
     if (invocation.name === 'app_look_at_screen') {
       host.updateActivity(invocation.callId, { detail: t('settings.voice.conversationLooking'), state: 'running' });
-      const description = await lookAtScreen(text('question'), text('window'));
-      host.updateActivity(invocation.callId, { detail: description.slice(0, 160), state: 'completed' });
+      const wanted = text('window').trim();
+      const look = await lookAtScreen(text('question'), wanted);
+      host.updateActivity(invocation.callId, { detail: look.text.slice(0, 160), state: 'completed' });
       host.backToListening();
       // Handed back as the screen's own words rather than a summary of them: the
       // model is about to say this out loud in its own voice, and summarising it
       // here would be a second, worse rewrite.
-      return { ok: true, screen: description };
+      //
+      // `lookedAt` is the other half, and it is the honest half. A window that is
+      // not open falls back to the whole display, and until now that happened
+      // silently — so a look asked for on Spotify came back as an ordinary
+      // description and the assistant said it had looked at Spotify. It is told
+      // what it actually got, and which window it failed to find.
+      return {
+        ok: true,
+        screen: look.text,
+        lookedAt: look.scope,
+        ...(wanted.length > 0 && look.scope === 'display' ? { windowNotFound: wanted } : {}),
+      };
     }
 
     if (invocation.name === 'app_open_url') {

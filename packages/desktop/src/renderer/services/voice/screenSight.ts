@@ -99,8 +99,27 @@ const systemPrompt = (language: string): string =>
     language === 'auto' ? 'Answer in the language of the question.' : `Answer in ${language}.`,
   ].join(' ');
 
-/** PNG bytes of the requested surface, as a data URL. */
-const capture = async (source: 'window' | 'screen', windowMatch: string): Promise<string> => {
+/**
+ * What was photographed, which is not always what was asked for.
+ *
+ * The main process falls back to the whole display when a name matches no open
+ * window, and it says so in the filename: `window-…` or `screen-…`. Measured
+ * against the running app — `captureWindow('Fool')` returns 314KB named
+ * `window-…`, `captureWindow('zzzz')` returns 1.76MB named `screen-…`.
+ *
+ * That distinction has to reach the caller. Without it a look at "Spotify" that
+ * found no Spotify window comes back as an ordinary description, and the
+ * assistant reports having looked at Spotify — the unverified claim this
+ * application is built against, arrived at through a photograph rather than a
+ * sentence.
+ */
+export type CaptureScope = 'window' | 'display';
+
+/** PNG bytes of the requested surface, as a data URL, with what it turned out to be. */
+const capture = async (
+  source: 'window' | 'screen',
+  windowMatch: string
+): Promise<{ url: string; scope: CaptureScope }> => {
   const byWindow = window.electronAPI?.captureWindow;
   // A named window first, and the wider picture only when there is no name or
   // no way to take it. The narrow one answers the question that was asked and
@@ -129,7 +148,12 @@ const capture = async (source: 'window' | 'screen', windowMatch: string): Promis
   for (let offset = 0; offset < bytes.length; offset += BLOCK) {
     binary += String.fromCharCode(...bytes.subarray(offset, offset + BLOCK));
   }
-  return `data:image/png;base64,${btoa(binary)}`;
+  return {
+    url: `data:image/png;base64,${btoa(binary)}`,
+    // The main process names what it took. A window was asked for and a screen
+    // came back means the window was not open.
+    scope: shot.filename.startsWith('window-') ? 'window' : 'display',
+  };
 };
 
 /**
@@ -142,7 +166,11 @@ const capture = async (source: 'window' | 'screen', windowMatch: string): Promis
  * cache can produce that the user cannot see. So the name is part of the key,
  * and a mismatch simply costs the head start.
  */
-let preloadedCapture: { url: Promise<string>; source: 'window' | 'screen'; windowMatch: string } | null = null;
+let preloadedCapture: {
+  shot: Promise<{ url: string; scope: CaptureScope }>;
+  source: 'window' | 'screen';
+  windowMatch: string;
+} | null = null;
 
 /**
  * Starts a screen capture in the background before it is asked for.
@@ -151,9 +179,9 @@ let preloadedCapture: { url: Promise<string>; source: 'window' | 'screen'; windo
  */
 export const preloadScreenCapture = (source: 'window' | 'screen' = 'screen', windowMatch = ''): void => {
   // Overwrite any stale capture with a fresh one
-  preloadedCapture = { url: capture(source, windowMatch), source, windowMatch: windowMatch.trim() };
+  preloadedCapture = { shot: capture(source, windowMatch), source, windowMatch: windowMatch.trim() };
   // Sink rejections so they don't crash unhandled in the background
-  preloadedCapture.url.catch((): void => undefined);
+  preloadedCapture.shot.catch((): void => undefined);
 };
 
 /** Discards a preloaded capture, usually because the user stopped speaking and didn't ask about the screen. */
@@ -167,7 +195,7 @@ export const dropPreloadedCapture = (): void => {
  * @throws {ScreenSightError} for every way this can fail, each with a reason the
  *   caller can turn into something the user can act on.
  */
-export const describeScreen = async (request: ScreenSightRequest): Promise<string> => {
+export const describeScreen = async (request: ScreenSightRequest): Promise<{ text: string; scope: CaptureScope }> => {
   const windowMatch = (request.windowMatch ?? '').trim();
 
   // Taken or discarded either way: a preload belongs to the utterance being
@@ -176,9 +204,9 @@ export const describeScreen = async (request: ScreenSightRequest): Promise<strin
   const preloaded = preloadedCapture;
   preloadedCapture = null;
 
-  const imageUrl =
+  const taken =
     preloaded !== null && preloaded.source === request.source && preloaded.windowMatch === windowMatch
-      ? await preloaded.url
+      ? await preloaded.shot
       : await capture(request.source, windowMatch);
 
   const timeout = AbortSignal.timeout(DESCRIBE_TIMEOUT_MS);
@@ -197,7 +225,7 @@ export const describeScreen = async (request: ScreenSightRequest): Promise<strin
             role: 'user',
             content: [
               { type: 'text', text: request.question.trim() || 'What is on the screen right now?' },
-              { type: 'image_url', image_url: { url: imageUrl } },
+              { type: 'image_url', image_url: { url: taken.url } },
             ],
           },
         ],
@@ -243,7 +271,7 @@ export const describeScreen = async (request: ScreenSightRequest): Promise<strin
   // anything is the one failure worth naming separately: retrying with a bigger
   // budget is the fix, and the caller cannot know that from a generic error.
   if (text.length === 0) throw new ScreenSightError('no-description');
-  return text;
+  return { text, scope: taken.scope };
 };
 
 /**
@@ -269,7 +297,7 @@ export const describeScreen = async (request: ScreenSightRequest): Promise<strin
 /** How long a look started ahead of the request stays worth using. */
 export const LOOK_AHEAD_TTL_MS = 45_000;
 
-type StartedLook = { startedAt: number; answer: Promise<string> };
+type StartedLook = { startedAt: number; answer: Promise<{ text: string; scope: CaptureScope }> };
 
 let started: StartedLook | null = null;
 
@@ -295,7 +323,7 @@ export const beginScreenLook = (request: ScreenSightRequest): void => {
  * Handed over rather than shared: whoever takes it owns it, and the next
  * question about the screen deserves a fresh photograph.
  */
-export const takeScreenLook = (): Promise<string> | null => {
+export const takeScreenLook = (): Promise<{ text: string; scope: CaptureScope }> | null => {
   if (started === null) return null;
 
   const taken = started;

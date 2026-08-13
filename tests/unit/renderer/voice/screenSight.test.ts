@@ -64,7 +64,12 @@ describe('describeScreen', () => {
     }));
     vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
-    await expect(describeScreen(REQUEST)).resolves.toBe('Bir kod editörü açık.');
+    // The words, and what was actually photographed beside them. `screen.png`
+    // is the display, so a caller cannot report it as a look at one window.
+    await expect(describeScreen(REQUEST)).resolves.toEqual({
+      text: 'Bir kod editörü açık.',
+      scope: 'display',
+    });
 
     const body = JSON.parse(String((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body));
     expect(body.model).toBe('google/gemma-4-e4b');
@@ -184,7 +189,7 @@ describe('a look started before anything asked for one', () => {
     const taken = takeScreenLook();
 
     expect(taken).not.toBeNull();
-    await expect(taken).resolves.toBe('Bir hata mesajı var.');
+    await expect(taken).resolves.toEqual({ text: 'Bir hata mesajı var.', scope: 'display' });
   });
 
   /// One slot, not a queue: two looks would be two photographs of two moments,
