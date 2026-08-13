@@ -246,11 +246,6 @@ function buildDefaultMcpServers(): McpImportServer[] {
       ]
     : [];
 
-  const uaccConfig = {
-    command: 'c:\\Fool-AionUI\\uacc-sidecar\\.venv\\Scripts\\python.exe',
-    args: ['c:\\Fool-AionUI\\uacc-sidecar\\main.py'],
-  };
-
   const computerUseConfig = {
     command: 'npx',
     args: ['-y', '@betrayzl/windows-computer-use-mcp@latest'],
@@ -259,18 +254,6 @@ function buildDefaultMcpServers(): McpImportServer[] {
   return [
     ...browserServers,
     ...settingsServers,
-    {
-      name: 'uacc-computer-control',
-      description: 'Universal AI Computer Control (UACC) - Native screen capture and OS interactions.',
-      enabled: true,
-      builtin: true,
-      transport: {
-        type: 'stdio',
-        command: uaccConfig.command,
-        args: uaccConfig.args,
-      },
-      original_json: JSON.stringify({ mcpServers: { 'uacc-computer-control': uaccConfig } }, null, 2),
-    },
     {
       name: BUILTIN_CHROME_DEVTOOLS_NAME,
       description: 'Default MCP server: chrome-devtools',
@@ -369,6 +352,44 @@ function buildOriginalJsonFromTransport(server: Pick<IMcpServer, 'name' | 'descr
   );
 }
 
+/**
+ * Builtin servers that were shipped and are no longer wanted.
+ *
+ * The bootstrap only ever adds: `missing` is the defaults that are not in the
+ * database yet, and nothing walks the other way. So taking an entry out of
+ * `buildDefaultMcpServers` spares new installations and leaves every existing
+ * one carrying it forever, which is not what "remove it" means.
+ *
+ * `uacc-computer-control` is the first of these. It drove the screen through a
+ * Python sidecar at `c:\Fool-AionUI\uacc-sidecar` — an absolute path on one
+ * developer's machine, shipped as a builtin — and the user asked for the
+ * capability itself to go, not to be switched off. Work on the computer belongs
+ * to the tools that do it in the background.
+ */
+const RETIRED_BUILTIN_MCP_SERVERS: readonly string[] = ['uacc-computer-control'];
+
+/**
+ * Deletes them, once, and never resurrects them.
+ *
+ * By name rather than by id because the name is what identifies a builtin here,
+ * and a failure to delete one is not a reason to stop the app starting: it is
+ * retried on the next launch, which is the same guarantee the rest of this
+ * bootstrap gives.
+ */
+async function removeRetiredBuiltinServers(existing: readonly IMcpServer[]): Promise<void> {
+  const retired = existing.filter((server) => RETIRED_BUILTIN_MCP_SERVERS.includes(server.name));
+  if (retired.length === 0) return;
+
+  for (const server of retired) {
+    try {
+      await mcpService.deleteServer.invoke({ id: server.id });
+      console.log(`[Migration] removed retired builtin MCP server: ${server.name}`);
+    } catch (error) {
+      console.warn(`[Migration] could not remove ${server.name}:`, error);
+    }
+  }
+}
+
 async function ensureBootstrapMcpServersInDb(configFile: ConfigFile): Promise<void> {
   const [backendPrefs, fileImageConfig, providers] = await Promise.all([
     fetchBackendClientPreferences(),
@@ -392,6 +413,8 @@ async function ensureBootstrapMcpServersInDb(configFile: ConfigFile): Promise<vo
   if (missing.length > 0) {
     await mcpService.batchImportServers.invoke({ servers: missing });
   }
+
+  await removeRetiredBuiltinServers(existing ?? []);
 
   const existingChromeDevtools = existingByName.get(BUILTIN_CHROME_DEVTOOLS_NAME);
   if (
