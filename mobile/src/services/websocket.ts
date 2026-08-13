@@ -75,6 +75,17 @@ export class WebSocketService {
       return;
     }
 
+    // Nothing has been configured yet, so there is no server to reach. Building
+    // the URL anyway produces `ws://:/ws`, and React Native opens that socket on
+    // the native modules thread, where okhttp throws on the empty host with no
+    // JavaScript frame to catch it — the process dies. On a first launch that is
+    // the entire app: WebSocketProvider reconnects when the app becomes active,
+    // which happens before anyone has scanned a QR code.
+    if (!this.host || !this.port) {
+      this.setState('disconnected');
+      return;
+    }
+
     // If token is already expired, go through auth challenge instead of attempting connection
     if (this.isTokenExpired()) {
       console.warn('[WS] Token expired before connect, triggering auth challenge');

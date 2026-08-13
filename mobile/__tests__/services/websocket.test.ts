@@ -272,4 +272,58 @@ describe('WebSocketService', () => {
       expect(service.state).toBe('connecting');
     });
   });
+
+  /**
+   * A service that has never been configured has no server to reach, and
+   * `ws://:/ws` is not a URL. React Native builds that socket on the native
+   * modules thread, where okhttp rejects the empty host with an
+   * IllegalArgumentException that no JavaScript try/catch is holding — the
+   * process dies. On a release build that is the whole app: it launches, runs
+   * its JavaScript, and disappears back to the launcher.
+   *
+   * It reaches this state on a first launch. WebSocketProvider reconnects
+   * whenever the app becomes active, and at that moment nothing has been
+   * configured yet.
+   */
+  describe('before a server is configured', () => {
+    let unconfigured: WebSocketService;
+
+    beforeEach(() => {
+      unconfigured = new WebSocketService();
+    });
+
+    it('opens no socket on connect', () => {
+      unconfigured.connect();
+
+      expect(mockWSInstances).toHaveLength(0);
+    });
+
+    it('opens no socket when the app foregrounds and calls reconnect', () => {
+      unconfigured.reconnect();
+
+      expect(mockWSInstances).toHaveLength(0);
+    });
+
+    it('stays disconnected rather than reporting a connection in progress', () => {
+      unconfigured.connect();
+
+      expect(unconfigured.state).toBe('disconnected');
+    });
+
+    it('schedules no retry, since retrying cannot help', () => {
+      unconfigured.connect();
+      jest.advanceTimersByTime(30000);
+
+      expect(mockWSInstances).toHaveLength(0);
+    });
+
+    it('connects normally once a server is configured', () => {
+      unconfigured.connect();
+      unconfigured.configure('192.168.0.5', '25808', 'token');
+      unconfigured.connect();
+
+      expect(mockWSInstances).toHaveLength(1);
+      expect(latestWS().url).toBe('ws://192.168.0.5:25808/ws');
+    });
+  });
 });
