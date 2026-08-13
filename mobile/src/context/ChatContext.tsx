@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { bridge } from '../services/bridge';
+import { listMessages } from '../services/conversations';
 import { consumePendingInitialMessage } from '../services/pendingInitialMessages';
 import { transformMessage, composeMessage, type TMessage, type IResponseMessage } from '../utils/messageAdapter';
 import { uuid } from '../utils/uuid';
@@ -59,12 +60,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setThought(null);
 
     try {
-      const data = await bridge.request<TMessage[]>('database.get-conversation-messages', {
-        conversation_id: id,
-      });
-      if (Array.isArray(data)) {
-        setMessages(data);
-      }
+      // Was `database.get-conversation-messages` on the bridge, a channel the
+      // desktop deleted when this moved to REST.
+      setMessages(await listMessages<TMessage>(id));
     } catch (e) {
       console.warn('[Chat] Failed to load messages:', e);
     }

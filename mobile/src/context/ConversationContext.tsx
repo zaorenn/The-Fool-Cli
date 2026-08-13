@@ -1,6 +1,13 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { bridge } from '../services/bridge';
+import {
+  // Aliased: this file exports its own `createConversation` hook that wraps it.
+  createConversation as postConversation,
+  listConversations,
+  removeConversation as deleteConversationRequest,
+  updateConversation,
+} from '../services/conversations';
 import { setPendingInitialMessage } from '../services/pendingInitialMessages';
 import { useConnection } from './ConnectionContext';
 
@@ -107,13 +114,11 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
     if (connectionState !== 'connected') return;
     setIsLoading(true);
     try {
-      const data = await bridge.request<Conversation[]>('database.get-user-conversations', {
-        page: 0,
-        pageSize: 100,
-      });
-      if (Array.isArray(data)) {
-        setConversations(data);
-      }
+      // Was `database.get-user-conversations` on the bridge, a channel the
+      // desktop no longer has. It answered nothing, and an empty list is what
+      // that looked like from here.
+      const page = await listConversations<Conversation>({ limit: 100, offset: 0 });
+      setConversations(page.items);
     } catch (e) {
       console.warn('[Conversations] Failed to fetch:', e);
     } finally {
@@ -220,7 +225,7 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
             ...(params.currentModelId ? { currentModelId: params.currentModelId } : {}),
           },
         };
-        const result = await bridge.request<Conversation>('create-conversation', fullParams);
+        const result = await postConversation<Conversation>(fullParams as unknown as Record<string, unknown>);
         if (result?.id) {
           await refresh();
           return result;
@@ -264,7 +269,7 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
   const deleteConversation = useCallback(
     async (id: string) => {
       try {
-        await bridge.request('remove-conversation', { id });
+        await deleteConversationRequest(id);
         // If deleting the active conversation, switch to next one
         if (id === activeConversationId) {
           const remaining = conversations.filter((c) => c.id !== id);
@@ -283,14 +288,11 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
   const renameConversation = useCallback(
     async (id: string, name: string) => {
       try {
-        const success = await bridge.request<boolean>('update-conversation', {
-          id,
-          updates: { name },
-        });
-        if (success) {
-          await refresh();
-        }
-        return !!success;
+        // Throws when the server refuses, rather than returning a falsy value
+        // that silently skipped the refresh and left the old name on screen.
+        await updateConversation(id, { name });
+        await refresh();
+        return true;
       } catch (e) {
         console.warn('[Conversations] Failed to rename:', e);
         return false;
