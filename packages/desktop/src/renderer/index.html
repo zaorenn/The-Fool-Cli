@@ -14,6 +14,47 @@
     <link rel="apple-touch-icon" href="./pwa/icon-180.png" />
     <title>The Fool</title>
     <script>
+      /*
+        crypto.randomUUID exists only in a secure context. Over HTTPS or on
+        localhost it is there; reached from a phone at http://192.168.x.x it is
+        not, and the first call throws during module evaluation. React never
+        mounts, so WebUI on the local network is a black window with one console
+        line — the exact thing remote access is for.
+
+        crypto.getRandomValues carries no such restriction, so the identifiers
+        stay cryptographically random. Classic (non-module) and inline so it is
+        installed before the bundle is parsed.
+      */
+      (function () {
+        if (typeof crypto === 'undefined' || typeof crypto.getRandomValues !== 'function') return;
+        if (typeof crypto.randomUUID === 'function') return;
+
+        crypto.randomUUID = function randomUUID() {
+          var bytes = crypto.getRandomValues(new Uint8Array(16));
+          // Version 4, variant 1, per RFC 4122.
+          bytes[6] = (bytes[6] & 0x0f) | 0x40;
+          bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+          var hex = [];
+          for (var i = 0; i < bytes.length; i++) {
+            hex.push((bytes[i] + 0x100).toString(16).slice(1));
+          }
+
+          return (
+            hex.slice(0, 4).join('') +
+            '-' +
+            hex.slice(4, 6).join('') +
+            '-' +
+            hex.slice(6, 8).join('') +
+            '-' +
+            hex.slice(8, 10).join('') +
+            '-' +
+            hex.slice(10, 16).join('')
+          );
+        };
+      })();
+    </script>
+    <script>
       // Synchronously restore theme appearance from localStorage to prevent theme flash
       (function () {
         try {
@@ -33,7 +74,15 @@
         overflow: hidden;
       }
 
-      /* Boot splash — inline so it paints before the bundle loads. */
+      /*
+        Boot splash — inline so it paints before the bundle loads.
+
+        It reads as a presence waking up rather than a product logo: the
+        character keeps juggling, the window breathes, and two rings travel
+        outward the way a voice assistant shows it is attending to you. The
+        earlier screen stacked an oversized mark under a block-character
+        wordmark with no sign of progress, so any slow start read as a freeze.
+      */
       #boot-splash {
         position: fixed;
         inset: 0;
@@ -42,63 +91,118 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 52px;
-        background: #141414;
+        gap: 26px;
+        background: #0f1012;
         transition: opacity 260ms ease;
       }
       #boot-splash.boot-splash--leaving {
         opacity: 0;
         pointer-events: none;
       }
-      .boot-splash__wordmark {
-        /* Block-character wordmark: no font file to ship, and it renders the
-           same everywhere because every glyph is a full-block cell. 77 columns
-           wide, so the size is driven off viewport width. */
-        font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
-        font-size: min(1.55vw, 15px);
-        line-height: 1.02;
-        letter-spacing: 0;
-        margin: 0;
-        color: #c4123f;
-        white-space: pre;
-        text-shadow: 0 0 18px rgba(196, 18, 63, 0.35);
-        animation: boot-wordmark-in 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+
+      .boot-splash__stage {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 220px;
+        height: 220px;
+      }
+      /* The rings sit behind the character and are purely ambient. */
+      .boot-splash__aura {
+        position: absolute;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 1px solid #c4123f;
+        opacity: 0;
+        animation: boot-aura 3400ms ease-out infinite;
+      }
+      .boot-splash__aura--2 {
+        animation-delay: 1700ms;
       }
       .boot-splash__juggler {
-        width: clamp(180px, 30vw, 300px);
+        position: relative;
+        width: 150px;
         height: auto;
-        animation: boot-juggler-in 620ms cubic-bezier(0.22, 1, 0.36, 1) 220ms both;
-      }
-      .boot-splash__tip {
-        margin: 0;
-        max-width: 44ch;
-        text-align: center;
-        font-family: ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
-        font-size: 13px;
-        line-height: 1.5;
-        color: #8b8b8b;
-        opacity: 1;
-        transform: translateY(0);
-        transition:
-          opacity 300ms ease,
-          transform 300ms ease;
-        animation: boot-tip-in 520ms ease-out 460ms both;
-      }
-      .boot-splash__tip--out {
-        opacity: 0;
-        transform: translateY(-6px);
+        animation:
+          boot-juggler-in 620ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both,
+          boot-breathe 3400ms ease-in-out 800ms infinite;
       }
 
-      @keyframes boot-wordmark-in {
+      .boot-splash__wordmark {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+        font-size: 15px;
+        font-weight: 500;
+        /* The trailing space of the tracking would push the word off centre. */
+        letter-spacing: 0.36em;
+        text-indent: 0.36em;
+        color: #ece9e3;
+        animation: boot-fade-in 620ms ease-out 380ms both;
+      }
+      .boot-splash__status {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+        font-size: 12px;
+        color: #7c7d82;
+        animation: boot-fade-in 620ms ease-out 520ms both;
+      }
+      /*
+        Indeterminate on purpose. The splash paints before the bundle, so it has
+        no idea how far along startup is, and a bar that fills to a number it
+        invented is worse than one that only says work is happening.
+      */
+      .boot-splash__progress {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 2px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.07);
+      }
+      .boot-splash__progress::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 32%;
+        background: #c4123f;
+        animation: boot-progress 1900ms cubic-bezier(0.65, 0, 0.35, 1) infinite;
+      }
+
+      @keyframes boot-aura {
         from {
+          transform: scale(0.55);
+          opacity: 0.5;
+        }
+        to {
+          transform: scale(1.4);
           opacity: 0;
-          transform: translateY(-14px) scale(0.97);
-          filter: blur(2px);
         }
       }
-      @keyframes boot-tip-in {
+      @keyframes boot-breathe {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-6px);
+        }
+      }
+      @keyframes boot-progress {
+        from {
+          transform: translateX(-110%);
+        }
+        to {
+          transform: translateX(420%);
+        }
+      }
+      @keyframes boot-fade-in {
         from {
           opacity: 0;
+          transform: translateY(6px);
         }
       }
       @keyframes boot-juggler-in {
@@ -108,10 +212,16 @@
         }
       }
       @media (prefers-reduced-motion: reduce) {
-        .boot-splash__wordmark,
+        .boot-splash__aura,
         .boot-splash__juggler,
-        .boot-splash__tip {
+        .boot-splash__wordmark,
+        .boot-splash__status,
+        .boot-splash__progress::after {
           animation: none;
+        }
+        .boot-splash__progress::after {
+          width: 100%;
+          opacity: 0.5;
         }
       }
     </style>
@@ -130,41 +240,23 @@
       the app has mounted.
     -->
     <div id="boot-splash" role="status" aria-label="The Fool is starting">
-      <pre class="boot-splash__wordmark" aria-hidden="true">
-█████ █   █ █████    █████  ███   ███  █         ███   ████ █████ █   █ █████
-  █   █   █ █        █     █   █ █   █ █        █   █ █     █     ██  █   █  
-  █   █████ ████     ████  █   █ █   █ █        █████ █  ██ ████  █ █ █   █  
-  █   █   █ █        █     █   █ █   █ █        █   █ █   █ █     █  ██   █  
-  █   █   █ █████    █      ███   ███  █████    █   █  ███  █████ █   █   █  </pre
-      >
-      <img class="boot-splash__juggler" src="./boot/juggle.svg" alt="" aria-hidden="true" />
-      <p class="boot-splash__tip" id="boot-splash-tip" aria-hidden="true"></p>
+      <div class="boot-splash__stage" aria-hidden="true">
+        <div class="boot-splash__aura"></div>
+        <div class="boot-splash__aura boot-splash__aura--2"></div>
+        <img class="boot-splash__juggler" src="./boot/juggle.svg" alt="" />
+      </div>
+      <p class="boot-splash__wordmark" aria-hidden="true">THE FOOL</p>
+      <p class="boot-splash__status" id="boot-splash-status" aria-hidden="true"></p>
+      <div class="boot-splash__progress" aria-hidden="true"></div>
     </div>
     <script>
-      // Rotating tips. Inline because the splash paints before the bundle — and
-      // therefore before i18n — loads. Falls back to English for any language
-      // without its own set.
+      // The status line is inline because the splash paints before the bundle,
+      // and therefore before i18n, loads. It says only what is actually known
+      // at this point — that startup is under way. Falls back to English.
       (function () {
-        var TIPS = {
-          en: [
-            'Press the microphone in the composer to talk instead of type.',
-            'Every model installed in LM Studio shows up in the model picker.',
-            'Voice replies summarise what happened — they never read code aloud.',
-            'Pick a voice by ear: Settings › Voice has a preview on every one.',
-            'Speaking while it talks interrupts it, just like a real conversation.',
-            'Recolour the whole app from Settings › Appearance.',
-          ],
-          tr: [
-            'Yazmak yerine konuşmak için mesaj kutusundaki mikrofona bas.',
-            'LM Studio’da kurulu her model, model listesinde görünür.',
-            'Sesli yanıt olanı özetler — kodu asla sesli okumaz.',
-            'Sesi kulağınla seç: Ayarlar › Ses’te her birinin önizlemesi var.',
-            'O konuşurken konuşursan sözünü kesersin, gerçek sohbet gibi.',
-            'Uygulamanın renklerini Ayarlar › Görünüm’den değiştir.',
-          ],
-        };
+        var STATUS = { en: 'Starting up', tr: 'Başlatılıyor' };
 
-        var node = document.getElementById('boot-splash-tip');
+        var node = document.getElementById('boot-splash-status');
         if (!node) return;
 
         var lang = 'en';
@@ -173,32 +265,7 @@
           if (stored.toLowerCase().indexOf('tr') === 0) lang = 'tr';
         } catch (e) {}
 
-        var tips = TIPS[lang] || TIPS.en;
-        var index = Math.floor(Math.random() * tips.length);
-
-        function show() {
-          node.textContent = tips[index % tips.length];
-          node.classList.remove('boot-splash__tip--out');
-          index += 1;
-        }
-        show();
-
-        var timer = setInterval(function () {
-          node.classList.add('boot-splash__tip--out');
-          setTimeout(show, 320);
-        }, 3200);
-
-        // Stop cycling as soon as the splash starts leaving.
-        var splash = document.getElementById('boot-splash');
-        if (splash) {
-          var observer = new MutationObserver(function () {
-            if (splash.classList.contains('boot-splash--leaving')) {
-              clearInterval(timer);
-              observer.disconnect();
-            }
-          });
-          observer.observe(splash, { attributes: true, attributeFilter: ['class'] });
-        }
+        node.textContent = STATUS[lang] || STATUS.en;
       })();
     </script>
     <div id="root"></div>
