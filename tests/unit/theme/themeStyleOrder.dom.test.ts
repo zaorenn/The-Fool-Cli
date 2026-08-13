@@ -57,38 +57,44 @@ describe('theme stylesheet order', () => {
     document.head.innerHTML = '';
   });
 
-  it('puts the colours the user picked above the material that would otherwise derive them', () => {
+  /**
+   * The layer that used to sit here wrote four hand-picked colours over the
+   * material, knowing nothing about light or dark — so a ground chosen in the
+   * dark kept winning after a switch, and choosing a material visibly failed to
+   * move most of the interface. Nothing outranks the material now, and this is
+   * the test that says so.
+   */
+  it('writes no colour layer above the material at all', () => {
     applyThemeOverrides({ colors: { background: '#123456' } });
     publishMaterial();
 
-    expect(positionOf('theme-overrides')).toBeGreaterThan(positionOf('fool-material'));
+    expect(positionOf('theme-overrides')).toBe(-1);
+    expect(document.getElementById('theme-overrides')).toBeNull();
   });
 
-  it('keeps them there after a material change, which is when they used to be lost', () => {
+  it('still has nothing to assert after a material change', () => {
     applyThemeOverrides({ colors: { background: '#123456' } });
     publishMaterial();
     publishMaterial();
 
-    expect(positionOf('theme-overrides')).toBeGreaterThan(positionOf('fool-material'));
+    expect(positionOf('theme-overrides')).toBe(-1);
   });
 
-  it('keeps them there after a theme change, which rewrites the preset underneath', () => {
+  it('keeps the material above the preset after a theme change rewrites it', () => {
     applyThemeOverrides({ colors: { background: '#123456' } });
     publishMaterial();
     applyTheme(decorated, document);
 
-    expect(positionOf('theme-overrides')).toBeGreaterThan(positionOf('fool-material'));
     expect(positionOf('fool-material')).toBeGreaterThan(positionOf('theme-decoration'));
+    expect(positionOf('theme-overrides')).toBe(-1);
   });
 
-  it('puts the dials above the material and below the chosen colours', () => {
-    applyThemeOverrides({ colors: { background: '#123456' } });
+  it('puts the dials above the material, which is now the top of the colour stack', () => {
     publishMaterial();
     // A moved dial, so the stylesheet is written rather than left empty.
     applyLayoutTokens({ ...defaultLayoutTokens(), radius: 12 });
 
     expect(positionOf('fool-layout-tokens')).toBeGreaterThan(positionOf('fool-material'));
-    expect(positionOf('theme-overrides')).toBeGreaterThan(positionOf('fool-layout-tokens'));
   });
 
   it('leaves the safety net last, whatever else was written', () => {

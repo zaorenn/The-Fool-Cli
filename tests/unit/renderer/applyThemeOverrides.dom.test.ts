@@ -5,7 +5,11 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { applyThemeOverrides, reassertThemeOverrides } from '@renderer/utils/theme/applyThemeOverrides';
+import {
+  applyThemeOverrides,
+  reassertThemeOverrides,
+  restackThemeStyles,
+} from '@renderer/utils/theme/applyThemeOverrides';
 
 const overrideStyle = () => document.getElementById('theme-overrides');
 
@@ -18,6 +22,26 @@ const injectPreset = () => {
   return preset;
 };
 
+const injectMaterial = () => {
+  const material = document.createElement('style');
+  material.id = 'fool-material';
+  material.textContent = ':root { --color-bg-1: #101014 !important; }';
+  document.head.appendChild(material);
+  return material;
+};
+
+/**
+ * This module used to publish four hand-picked colours over everything else.
+ *
+ * They were stored with no idea which appearance was showing, so a ground
+ * chosen in the dark kept winning after a switch to light; and they outranked
+ * the material, so choosing a material visibly failed to move most of the
+ * interface. Colour is a palette now — a closed list, every member checked
+ * against every material in both appearances — and this layer has nothing left
+ * to say.
+ *
+ * What it still does is restack, because every theme change ends on this call.
+ */
 describe('applyThemeOverrides', () => {
   beforeEach(() => {
     document.head.innerHTML = '';
@@ -30,73 +54,35 @@ describe('applyThemeOverrides', () => {
     expect(overrideStyle()).toBeNull();
   });
 
-  it('publishes the chosen colour as a stylesheet', () => {
-    applyThemeOverrides({ colors: { primary: '#2ad17a' } });
-
-    const css = overrideStyle()?.textContent ?? '';
-    expect(css).toContain('--color-primary: #2ad17a !important');
-    // The whole accent family moves together.
-    expect(css).toContain('--brand: #2ad17a !important');
-    expect(css).toMatch(/--primary-6: 42, 209, 122 !important/);
-  });
-
-  it('marks every declaration important, because presets do too', () => {
-    applyThemeOverrides({ colors: { surface: '#33185c' } });
-
-    const declarations = (overrideStyle()?.textContent ?? '').match(/--[a-z0-9-]+:[^;]+;/g) ?? [];
-    expect(declarations.length).toBeGreaterThan(0);
-    expect(declarations.every((declaration) => declaration.includes('!important'))).toBe(true);
-  });
-
-  it('comes after the theme preset, so equal importance is decided in its favour', () => {
-    const preset = injectPreset();
-
-    applyThemeOverrides({ colors: { primary: '#2ad17a' } });
-
-    const styles = Array.from(document.head.querySelectorAll('style'));
-    expect(styles.indexOf(overrideStyle() as HTMLStyleElement)).toBeGreaterThan(styles.indexOf(preset));
-  });
-
-  it('repaints the window shell, which presets set with a literal colour', () => {
-    applyThemeOverrides({ colors: { background: '#241040' } });
-
-    const css = overrideStyle()?.textContent ?? '';
-    expect(css).toMatch(/html, body, #root \{ background-color: #[0-9a-f]{6} !important; \}/);
-  });
-
-  it('leaves the shell alone when only the accent was changed', () => {
-    applyThemeOverrides({ colors: { primary: '#2ad17a' } });
-
-    expect(overrideStyle()?.textContent).not.toContain('html, body, #root');
-  });
-
-  it('removes the override entirely when the colours are cleared', () => {
-    applyThemeOverrides({ colors: { primary: '#2ad17a' } });
-    expect(overrideStyle()).not.toBeNull();
-
-    applyThemeOverrides({ colors: {} });
+  it('writes nothing even for colours somebody stored before the picker went', () => {
+    applyThemeOverrides({ colors: { primary: '#123456', background: '#654321', surface: '#abcdef', text: '#fedcba' } });
 
     expect(overrideStyle()).toBeNull();
   });
 
-  it('re-asserts itself after a theme switch moves the preset to the end', () => {
-    applyThemeOverrides({ colors: { primary: '#2ad17a' } });
-    const preset = injectPreset();
-    // The preset now sits after the override, which would win on source order.
-    expect(Array.from(document.head.children).indexOf(preset)).toBeGreaterThan(
-      Array.from(document.head.children).indexOf(overrideStyle() as HTMLStyleElement)
-    );
+  it('leaves the window shell to the material rather than repainting it', () => {
+    injectPreset();
+    applyThemeOverrides({ colors: { background: '#123456' } });
 
+    expect(overrideStyle()).toBeNull();
+    expect(document.documentElement.getAttribute('style')).toBeNull();
+  });
+
+  it('still puts the material above the preset when re-asserted', () => {
+    injectPreset();
+    injectMaterial();
     reassertThemeOverrides();
 
-    const styles = Array.from(document.head.querySelectorAll('style'));
-    expect(styles.indexOf(overrideStyle() as HTMLStyleElement)).toBeGreaterThan(styles.indexOf(preset));
-    expect(overrideStyle()?.textContent).toContain('--color-primary: #2ad17a !important');
+    const ids = [...document.head.querySelectorAll('style[id]')].map((element) => element.id);
+    expect(ids.indexOf('fool-material')).toBeGreaterThan(ids.indexOf('theme-decoration'));
   });
 
-  it('ignores a stored colour that is not a valid hex value', () => {
-    applyThemeOverrides({ colors: { primary: 'url(evil)' as string } });
+  it('restacks without inventing a layer of its own', () => {
+    injectMaterial();
+    injectPreset();
+    restackThemeStyles();
 
-    expect(overrideStyle()).toBeNull();
+    const ids = [...document.head.querySelectorAll('style[id]')].map((element) => element.id);
+    expect(ids).toEqual(['theme-decoration', 'fool-material']);
   });
 });

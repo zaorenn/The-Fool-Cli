@@ -9,16 +9,25 @@ import AppearanceModalContent from '@/renderer/components/settings/SettingsModal
 import SettingsPageWrapper from '../components/SettingsPageWrapper';
 import LayoutCustomizer from './layout/LayoutCustomizer';
 import MaterialStudio from './MaterialStudio';
-import ThemeCustomizer from './ThemeCustomizer';
 
+/**
+ * There used to be a colour customiser here: four hex pickers for accent,
+ * background, panels and text. It has gone, and its absence is the point.
+ *
+ * Those four values were stored without any idea which appearance was showing,
+ * and they outranked the material — so a ground chosen in the dark kept winning
+ * in light mode, and choosing a different material visibly failed to move most
+ * of the interface. An arbitrary point on a colour wheel also carries no
+ * promise that anything remains readable, which is how a 2.41:1 button label
+ * shipped.
+ *
+ * Colour is chosen in the Material section now, from a list whose every member
+ * is checked against every material in both appearances.
+ */
 const AppearanceSettings: React.FC = () => {
   return (
     <SettingsPageWrapper>
       <AppearanceModalContent />
-      {/* Sits under the theme pickers: overrides layer on the chosen preset. */}
-      <div className='mt-24px pt-24px border-t border-fill-2'>
-        <ThemeCustomizer />
-      </div>
       {/* The material everything is made of. Above the layout section because
           it is the change people come here to make — and because choosing one
           moves more of the interface than any other control on this page. */}

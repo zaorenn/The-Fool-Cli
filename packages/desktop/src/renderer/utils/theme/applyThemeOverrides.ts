@@ -4,13 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  THEME_COLOR_KEYS,
-  colorVariables,
-  defaultThemeOverrides,
-  shellBackgroundCss,
-  type ThemeOverrides,
-} from '@/common/config/themeOverrides';
+import { defaultThemeOverrides, type ThemeOverrides } from '@/common/config/themeOverrides';
 import { SURFACE_IDS } from '@/common/config/surfaceLayouts';
 
 /** Style element holding the user's colour choices. */
@@ -65,49 +59,29 @@ export function restackThemeStyles(root: Document = document): void {
   }
 }
 
-/**
- * Selectors the presets themselves use, so the override matches their reach.
- *
- * A preset declares its palette for `:root` and for the appearance attributes;
- * repeating that list keeps the override applicable whichever one is active.
- */
-const ROOT_SELECTORS = [
-  ':root',
-  "[data-theme='dark']",
-  "[data-theme='light']",
-  "body[arco-theme='dark']",
-  "body[arco-theme='light']",
-].join(',\n');
-
 /** The last overrides applied, so they can be re-asserted after a theme change. */
 let lastApplied: ThemeOverrides = defaultThemeOverrides();
 
-const buildCss = (overrides: ThemeOverrides): string => {
-  const declarations: string[] = [];
-
-  for (const key of THEME_COLOR_KEYS) {
-    const hex = overrides.colors[key];
-    if (!hex) continue;
-    for (const [cssVar, value] of colorVariables(key, hex)) {
-      // `!important` is not belt-and-braces here: theme presets are injected
-      // through the custom-CSS processor, which stamps `!important` onto their
-      // declarations. Without it the user's colour loses to the preset it is
-      // supposed to override.
-      declarations.push(`  ${cssVar}: ${value} !important;`);
-    }
-  }
-
-  if (declarations.length === 0) return '';
-
-  const rules = [`${ROOT_SELECTORS} {\n${declarations.join('\n')}\n}`];
-
-  // Presets also paint the window shell with a literal colour, which no variable
-  // can reach.
-  const shell = overrides.colors.background ? shellBackgroundCss(overrides.colors.background) : null;
-  if (shell) rules.push(shell);
-
-  return rules.join('\n\n');
-};
+/**
+ * Nothing, deliberately. Four hand-picked colours no longer outrank the material.
+ *
+ * This layer wrote `--color-bg-*`, `--bg-*` and `--color-text-*` from a
+ * `{ primary, background, surface, text }` record that had no idea which
+ * appearance was showing. So a ground chosen in the dark kept winning after a
+ * switch to light, and the material's own derivation — which *is* appearance
+ * aware, and which measures its ink against the ground it produced — lost to it
+ * everywhere. That is why light mode was unusable, and why choosing a different
+ * material visibly failed to move most of the interface.
+ *
+ * The colour somebody chooses is a palette now: a closed list whose every member
+ * is checked against every material in both appearances. There is nothing left
+ * for this layer to assert, so it asserts nothing and `upsert` removes the
+ * element.
+ *
+ * Kept as a function rather than deleted outright because the stylesheet still
+ * has to be restacked on every theme change, and this is the call that does it.
+ */
+const buildCss = (_overrides: ThemeOverrides): string => '';
 
 const upsert = (css: string, root: Document): void => {
   const existing = root.getElementById(OVERRIDE_STYLE_ID);
