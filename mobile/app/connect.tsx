@@ -9,22 +9,7 @@ import { ThemedText } from '../src/components/ui/ThemedText';
 import { useConnection } from '../src/context/ConnectionContext';
 import { useThemeColor } from '../src/hooks/useThemeColor';
 import { wsService } from '../src/services/websocket';
-
-function parseQrLoginUrl(data: string): { host: string; port: string; qrToken: string } | null {
-  try {
-    const url = new URL(data);
-    if (url.pathname !== '/qr-login') return null;
-    const qrToken = url.searchParams.get('token');
-    if (!qrToken) return null;
-    return {
-      host: url.hostname,
-      port: url.port || '25808',
-      qrToken,
-    };
-  } catch {
-    return null;
-  }
-}
+import { parseQrLoginUrl, qrLoginBody, qrLoginEndpoint } from '../src/services/qrLogin';
 
 export default function ConnectScreen() {
   const { t } = useTranslation();
@@ -51,9 +36,7 @@ export default function ConnectScreen() {
     setIsVerifying(true);
     try {
       const { host, port, qrToken } = parsed;
-      const response = await axios.post(`http://${host}:${port}/api/auth/qr-login`, {
-        qrToken,
-      });
+      const response = await axios.post(qrLoginEndpoint(host, port), qrLoginBody(qrToken));
       const jwt: string = response.data.token;
 
       await connect(host, port, jwt);

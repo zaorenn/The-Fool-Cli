@@ -85,7 +85,11 @@ export class WebSocketService {
     this.shouldReconnect = true;
     this.setState('connecting');
 
-    const url = `ws://${this.host}:${this.port}`;
+    // Path must be `/ws`. The desktop's static server reverse-proxies `/api/*`
+    // and splices WebSocket upgrades only under `/ws`; an upgrade on the root
+    // path reaches the SPA file server instead and never becomes a socket.
+    // The browser client (common/adapter/browser.ts) targets the same path.
+    const url = `ws://${this.host}:${this.port}/ws`;
 
     try {
       // Pass token via Sec-WebSocket-Protocol header (server supports this)

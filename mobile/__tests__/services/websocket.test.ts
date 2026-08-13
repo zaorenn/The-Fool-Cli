@@ -88,7 +88,10 @@ describe('WebSocketService', () => {
     it('creates WebSocket with correct URL and token protocol', () => {
       service.connect();
       const ws = latestWS();
-      expect(ws.url).toBe('ws://localhost:8080');
+      // `/ws` is not decoration: the desktop only splices upgrades on that path,
+      // so a root-path socket never connects. This assertion held the wrong URL
+      // and stayed green, which is how the app shipped unable to connect at all.
+      expect(ws.url).toBe('ws://localhost:8080/ws');
       expect(ws.protocols).toEqual(['test-token']);
     });
 
