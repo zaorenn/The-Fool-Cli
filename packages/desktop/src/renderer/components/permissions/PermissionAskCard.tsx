@@ -37,20 +37,22 @@ export const PermissionAskCard: React.FC = () => {
   return (
     <Modal
       visible
-      title={t('permissions.askTitle')}
+      title={t('settings.permissions.askTitle')}
       onCancel={() => answerAsk(ask.id, 'deny')}
       maskClosable={false}
       footer={
         <div className='flex justify-end gap-8px'>
-          <Button onClick={() => answerAsk(ask.id, 'deny')}>{t('permissions.deny')}</Button>
-          {ask.always ? <Button onClick={() => void answerAlways(ask.id)}>{t('permissions.always')}</Button> : null}
+          <Button onClick={() => answerAsk(ask.id, 'deny')}>{t('settings.permissions.deny')}</Button>
+          {ask.always ? (
+            <Button onClick={() => void answerAlways(ask.id)}>{t('settings.permissions.always')}</Button>
+          ) : null}
           <Button type='primary' onClick={() => answerAsk(ask.id, 'allow')}>
-            {t('permissions.allow')}
+            {t('settings.permissions.allow')}
           </Button>
         </div>
       }
     >
-      <Typography.Paragraph>{t('permissions.askBody', { tool: ask.call.tool })}</Typography.Paragraph>
+      <Typography.Paragraph>{t('settings.permissions.askBody', { tool: ask.call.tool })}</Typography.Paragraph>
       {target.length > 0 ? (
         <Typography.Text code className='break-all'>
           {target}
@@ -58,7 +60,7 @@ export const PermissionAskCard: React.FC = () => {
       ) : null}
       {ask.always ? null : (
         <Typography.Paragraph type='secondary' className='mt-8px mb-0'>
-          {t('permissions.noAlwaysForSending')}
+          {t('settings.permissions.noAlwaysForSending')}
         </Typography.Paragraph>
       )}
     </Modal>
