@@ -41,7 +41,16 @@ pub async fn csrf_middleware(
     // cannot attach cross-site without a CORS preflight. The token itself is
     // still fully validated by the auth middleware behind this layer.
     let is_runtime_token_request = request.headers().contains_key(crate::middleware::RUNTIME_TOKEN_HEADER);
+    // The launcher's calls are exempt for the same reason and on the same
+    // terms: the proof travels in an explicit custom header rather than an
+    // ambient cookie, which is the thing CSRF defends against, and browsers
+    // cannot attach it cross-site without a preflight. The secret itself is
+    // still compared in constant time by the handler behind this layer.
+    let is_bootstrap_request = request
+        .headers()
+        .contains_key(crate::middleware::BOOTSTRAP_SECRET_HEADER);
     let is_exempt = path == "/login"
+        || is_bootstrap_request
         || path == "/api/auth/qr-login"
         || path.starts_with("/api/auth/internal/external-users/")
         || path.starts_with("/api/auth/internal/external-sessions")

@@ -23,6 +23,11 @@ pub enum AuthIdentityMode {
 /// Header carrying the conversation-runtime helper token minted by the backend
 /// and injected into agent subprocess environments as `FOOL_RUNTIME_TOKEN`.
 pub const RUNTIME_TOKEN_HEADER: &str = "x-fool-runtime-token";
+
+/// Header carrying the launcher's proof of being the process that spawned this
+/// backend. Lives here rather than beside its only reader so the CSRF layer,
+/// which has to exempt it, can name it without depending on the route module.
+pub const BOOTSTRAP_SECRET_HEADER: &str = "x-foolcore-bootstrap-secret";
 /// Header carrying the acting user id asserted by the helper CLI.
 pub const RUNTIME_USER_ID_HEADER: &str = "x-fool-user-id";
 /// Header carrying the conversation id the helper CLI runs inside.

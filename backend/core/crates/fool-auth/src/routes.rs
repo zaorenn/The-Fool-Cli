@@ -35,7 +35,7 @@ use crate::service::{AuthProvisionService, ProvisionError};
 use crate::validation::{validate_password, validate_username};
 use crate::{CookieConfig, JwtService};
 
-const BOOTSTRAP_SECRET_HEADER: &str = "x-foolcore-bootstrap-secret";
+use crate::middleware::BOOTSTRAP_SECRET_HEADER;
 
 pub type SessionRevokedHook = dyn Fn(&str) + Send + Sync;
 
