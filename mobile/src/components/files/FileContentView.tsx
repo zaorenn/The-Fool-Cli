@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '../ui/ThemedText';
 import { MarkdownContent } from '../chat/MarkdownContent';
 import { bridge } from '../../services/bridge';
+import { getImageBase64 } from '../../services/files';
 import { useThemeColor } from '../../hooks/useThemeColor';
 
 type ContentType = 'markdown' | 'code' | 'html' | 'diff' | 'image' | 'unsupported';
@@ -86,8 +87,10 @@ export function FileContentView({ path }: FileContentViewProps) {
 
     try {
       if (contentType === 'image') {
-        const base64 = await bridge.request<string>('get-image-base64', { path });
-        setImageUri(base64);
+        // Was `get-image-base64` on the bridge, a channel the desktop no longer
+        // has. It answered nothing, which looked exactly like an image that
+        // would not render. The REST route returns a ready `data:` URL.
+        setImageUri(await getImageBase64(path));
       } else {
         const text = await bridge.request<string>('read-file', { path });
         setContent(text);

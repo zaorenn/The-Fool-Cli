@@ -11,16 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { ThemedText } from '../ui/ThemedText';
 import { useThemeColor } from '../../hooks/useThemeColor';
-import { bridge } from '../../services/bridge';
-
-type IDirOrFile = {
-  name: string;
-  fullPath: string;
-  relativePath: string;
-  isDir: boolean;
-  isFile: boolean;
-  children?: IDirOrFile[];
-};
+import { getFilesByDir, type DirOrFile } from '../../services/files';
 
 type FlatItem = {
   name: string;
@@ -53,7 +44,7 @@ export function FilePickerSheet({
   const tint = useThemeColor({}, 'tint');
   const iconColor = useThemeColor({}, 'icon');
 
-  const [tree, setTree] = useState<IDirOrFile[]>([]);
+  const [tree, setTree] = useState<DirOrFile[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set(selectedFiles));
   const [loading, setLoading] = useState(false);
@@ -63,15 +54,14 @@ export function FilePickerSheet({
   const fetchFiles = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await bridge.request<IDirOrFile[]>('get-file-by-dir', {
-        dir,
-        root: dir,
-      });
-      if (Array.isArray(res)) {
-        setTree(res);
-      }
-    } catch {
-      // silently fail
+      // Was `get-file-by-dir` on the bridge, a channel the desktop deleted when
+      // this moved to REST. It answered nothing, and an empty directory is what
+      // that looked like from here.
+      setTree(await getFilesByDir(dir));
+    } catch (e) {
+      // The old channel's silence is what this replaces, so a refusal is worth
+      // saying out loud rather than leaving as an empty tree.
+      console.warn('[FilePicker] Failed to list directory:', e);
     } finally {
       setLoading(false);
     }
@@ -110,13 +100,13 @@ export function FilePickerSheet({
   }, []);
 
   const flatData = useMemo(() => {
-    const sortNodes = (nodes: IDirOrFile[]): IDirOrFile[] =>
+    const sortNodes = (nodes: DirOrFile[]): DirOrFile[] =>
       [...nodes].sort((a, b) => {
         if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
         return a.name.localeCompare(b.name);
       });
 
-    const flatten = (nodes: IDirOrFile[], depth: number): FlatItem[] => {
+    const flatten = (nodes: DirOrFile[], depth: number): FlatItem[] => {
       const result: FlatItem[] = [];
       for (const node of sortNodes(nodes)) {
         const isExpanded = node.isDir && expanded.has(node.fullPath);
