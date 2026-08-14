@@ -125,6 +125,18 @@ vi.mock('@arco-design/web-react', () => {
         {droplist}
       </div>
     ),
+    // Arco hands onChange the new value rather than the event, and forwards
+    // data-testid onto the native input. The skill/MCP search boxes (via
+    // FoolInlineSearchInput) depend on both, so the mock mirrors them.
+    Input: ({
+      value,
+      onChange,
+      ...props
+    }: {
+      value?: string;
+      onChange?: (value: string) => void;
+      [key: string]: unknown;
+    }) => <input value={value ?? ''} onChange={(e) => onChange?.(e.target.value)} {...props} />,
     Menu,
     Message: { success: vi.fn(), error: vi.fn() },
     Tooltip: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,

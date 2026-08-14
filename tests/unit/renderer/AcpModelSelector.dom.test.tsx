@@ -166,6 +166,18 @@ vi.mock('@arco-design/web-react', () => {
         {droplist}
       </div>
     ),
+    // Arco hands onChange the new value rather than the event, and forwards
+    // data-testid onto the native input. The model search box (via
+    // FoolInlineSearchInput) depends on both, so the mock mirrors them.
+    Input: ({
+      value,
+      onChange,
+      ...props
+    }: {
+      value?: string;
+      onChange?: (value: string) => void;
+      [key: string]: unknown;
+    }) => <input value={value ?? ''} onChange={(e) => onChange?.(e.target.value)} {...props} />,
     Menu,
     Message: {
       success: messageSuccessMock,
