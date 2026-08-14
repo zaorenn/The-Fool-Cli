@@ -6,9 +6,11 @@
 
 import React, { useMemo, useState } from 'react';
 import { Alert, Button, Message, Tabs, Tag, Typography } from '@arco-design/web-react';
-import { Check, CloseOne, Link, Magic, Microphone, PauseOne, Voice } from '@icon-park/react';
+import { Check, CloseOne, FolderOpen, Link, Magic, Microphone, PauseOne, Voice } from '@icon-park/react';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
+import { ipcBridge } from '@/common';
+import { filesFromDrop, sanitizeConversationFiles, type ConversationFile } from '@/common/voice/conversationFiles';
 import { useFoolVoiceSettings } from '@renderer/hooks/voice/useFoolVoiceSettings';
 import { useSurfaceLayout } from '@renderer/hooks/config/useSurfaceLayout';
 import ShimmerText from '@renderer/components/ShimmerText';
@@ -41,7 +43,7 @@ const VoiceConversationPage: React.FC = () => {
   const { settings, update } = useFoolVoiceSettings();
   const conversation = useConversation();
   const { layout } = useSurfaceLayout('voice');
-  const { phase, error, activities } = conversation;
+  const { phase, error, activities, held } = conversation;
 
   const active = phase !== 'idle';
   const phaseLabel = useMemo(() => t(`settings.voice.conversationPhase.${phase}`), [phase, t]);
@@ -50,35 +52,60 @@ const VoiceConversationPage: React.FC = () => {
   const [over, setOver] = useState(false);
 
   /**
+   * The absolute path of a dropped file, on whichever Electron this is.
+   *
+   * `File.path` was removed in Electron 32 and this page was still reading it,
+   * so on every build since then a drop produced an empty path, the list was
+   * filtered away to nothing, and the handler returned before it could even say
+   * so. Dropping a document on the conversation did *nothing*, silently.
+   *
+   * `webUtils.getPathForFile` is the replacement and the preload has exposed it
+   * the whole time. The old property is still tried afterwards, because the
+   * browser build has no `electronAPI` and there is nothing to lose by asking.
+   */
+  const pathOf = (file: File): string =>
+    window.electronAPI?.getPathForFile?.(file) || (file as File & { path?: string }).path || '';
+
+  /**
    * Handing the assistant a document by dropping it on the window.
    *
    * The alternative was reading a path out loud or sending the agent to find
-   * it, and both are worse than the problem. Electron gives a real path on a
-   * dropped `File`, which is the whole reason this can work at all — a browser
-   * would give a sandboxed handle nothing else on the machine could open.
+   * it, and both are worse than the problem.
    */
+  const take = (files: readonly ConversationFile[]): void => {
+    if (files.length === 0) return;
+    conversationRuntime.hold(files);
+    const name = files.map((file) => file.name).join(', ');
+    // Held either way — the question is only whether this turn's model will be
+    // told. A socket provider keeps its prompt on the far side of a socket and
+    // cannot be handed anything mid-call, so the file waits for the next one.
+    if (conversationRuntime.heldFilesReachTheModel()) {
+      Message.info(t('settings.voice.conversationHolding', { name }));
+    } else {
+      Message.warning(t('settings.voice.conversationCannotHold'));
+    }
+  };
+
   const onDrop = (event: React.DragEvent<HTMLElement>): void => {
     event.preventDefault();
     setOver(false);
+    take(filesFromDrop([...(event.dataTransfer?.files ?? [])], pathOf));
+  };
 
-    const dropped = [...(event.dataTransfer?.files ?? [])]
-      .map((file) => {
-        const path = (file as File & { path?: string }).path ?? '';
-        // A folder arrives with an empty type and no size; that is the only
-        // signal available here, and getting it wrong only changes a word in
-        // the prompt rather than what can be done with it.
-        return { path, name: file.name, directory: file.type === '' && file.size === 0 };
-      })
-      .filter((file) => file.path.length > 0);
-
-    if (dropped.length === 0) return;
-
-    const taken = conversationRuntime.hold(dropped);
-    Message.info(
-      taken
-        ? t('settings.voice.conversationHolding', { name: dropped.map((file) => file.name).join(', ') })
-        : t('settings.voice.conversationCannotHold')
-    );
+  /**
+   * The same thing, for somebody who would rather not drag.
+   *
+   * A drop is the good gesture and it is not always available: the file may be
+   * behind a folder the user has to navigate to, and on a laptop trackpad
+   * dragging across two windows is genuinely awkward.
+   */
+  const browse = async (): Promise<void> => {
+    const chosen = await ipcBridge.dialog.showOpen.invoke({
+      properties: ['openFile', 'multiSelections'],
+    });
+    // No name given on purpose: the picker hands back paths, and `sanitize`
+    // takes the last segment, which is what a person calls the thing.
+    take(sanitizeConversationFiles((chosen ?? []).map((path) => ({ path, directory: false }))));
   };
 
   return (
@@ -120,6 +147,35 @@ const VoiceConversationPage: React.FC = () => {
         {error ? (
           <Alert className='mt-16px' type='error' content={error} closable onClose={() => conversation.setError('')} />
         ) : null}
+
+        {/* What the assistant is holding, above whichever shell is drawn.
+
+            Outside the layout branch on purpose: this is the answer to "does it
+            actually have my file", and it has to be the same answer in both
+            shapes of the page. Held files used to be invisible — the only
+            feedback was a toast that vanished, which meant a drop that was
+            silently discarded looked exactly like one that worked. */}
+        <div className='mt-12px flex flex-wrap items-center gap-8px'>
+          <Button size='mini' shape='round' icon={<FolderOpen size={13} />} onClick={() => void browse()}>
+            {t('settings.voice.conversationAttach')}
+          </Button>
+          {held.map((file) => (
+            <Tag
+              key={file.path}
+              size='small'
+              closable
+              title={file.path}
+              onClose={() => conversationRuntime.release(file.path)}
+            >
+              {file.name}
+            </Tag>
+          ))}
+          {held.length > 0 && !conversation.heldReachesModel ? (
+            <Typography.Text className='text-11px text-warning-6'>
+              {t('settings.voice.conversationCannotHold')}
+            </Typography.Text>
+          ) : null}
+        </div>
 
         {/* The page is one of two shapes, chosen per surface and kept in the
             user's own preferences. The instrument is the default and lives here;

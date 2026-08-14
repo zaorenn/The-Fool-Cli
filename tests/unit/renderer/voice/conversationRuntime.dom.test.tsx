@@ -38,13 +38,31 @@ class FakePipeline {
   pushAudio = vi.fn();
   speakAside = vi.fn(async () => {});
   rememberConversation = vi.fn(async () => {});
+  holdFiles = vi.fn();
+  releaseFiles = vi.fn();
 }
+
+/**
+ * The desktop-wide talk key, held so a test can press it.
+ *
+ * The runtime subscribes once at import and keeps the handler for the life of
+ * the app, so this is captured at module load rather than per test — which is
+ * also the only way to reach the barge-in path from outside.
+ */
+let pressTalkKey: ((payload: { holding: boolean }) => void) | null = null;
 
 vi.mock('@/common', () => ({
   ipcBridge: {
     foolVoice: {
       conversationActive: { emit: (payload: { active: boolean }) => conversationActive(payload) },
-      holdToTalk: { on: () => () => {} },
+      holdToTalk: {
+        on: (listener: (payload: { holding: boolean }) => void) => {
+          pressTalkKey = listener;
+          return () => {
+            pressTalkKey = null;
+          };
+        },
+      },
       realtimeSession: { invoke: (request: unknown) => realtimeSession(request) },
     },
     shell: { openExternal: { invoke: vi.fn() } },
@@ -154,6 +172,11 @@ describe('conversationRuntime', () => {
     closed.mockClear();
     microphoneStopped.mockClear();
     conversationActive.mockClear();
+    // The runtime is a module singleton and holds files across conversations on
+    // purpose — a document dropped before start has to survive being started.
+    // `reset` would also drop the talk-key subscription, which is taken once at
+    // import and never taken again.
+    for (const file of conversationRuntime.getSnapshot().held) conversationRuntime.release(file.path);
     realtimeSession.mockReset().mockResolvedValue({
       ok: true,
       data: { token: 't', endpoint: 'wss://example.test', ephemeral: true, providerName: 'OpenAI' },
@@ -277,5 +300,102 @@ describe('what a conversation leaves in the memory', () => {
 
     expect(FakePipeline.instances[0].rememberConversation).toHaveBeenCalledTimes(1);
     expect(rememberedSessions).toEqual([]);
+  });
+
+  /**
+   * Barge-in has to stop whichever transport is talking.
+   *
+   * It silenced the local pipeline and flushed the speaker, and said nothing to
+   * a socket provider — so on OpenAI Realtime and Gemini Live the buffer went
+   * quiet, the server carried on generating, and the voice came back over the
+   * top of the person who had just cut in.
+   */
+  describe('barge-in on the talk key', () => {
+    /** Puts the conversation into `speaking`, which is the only phase this acts in. */
+    const startSpeaking = (): void => {
+      const emit = (FakeRealtimeClient.last ?? FakePipeline.instances[0]).options.onEvent;
+      emit({ kind: 'phase', phase: 'speaking' });
+    };
+
+    it('tells a socket provider to stop, not just the speaker', async () => {
+      providerId = 'openai-realtime';
+      render(<Page />);
+      await conversationRuntime.start();
+      startSpeaking();
+      expect(conversationRuntime.getSnapshot().phase).toBe('speaking');
+
+      pressTalkKey?.({ holding: true });
+
+      expect(FakeRealtimeClient.last?.interrupt).toHaveBeenCalledTimes(1);
+      expect(conversationRuntime.getSnapshot().phase).toBe('listening');
+    });
+
+    it('still stops the local pipeline', async () => {
+      render(<Page />);
+      await conversationRuntime.start();
+      startSpeaking();
+
+      pressTalkKey?.({ holding: true });
+
+      expect(FakePipeline.instances[0].interrupt).toHaveBeenCalledTimes(1);
+    });
+
+    it('does nothing when nothing is being said', async () => {
+      providerId = 'openai-realtime';
+      render(<Page />);
+      await conversationRuntime.start();
+
+      pressTalkKey?.({ holding: true });
+
+      expect(FakeRealtimeClient.last?.interrupt).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * The order people actually do this in is: drop the document, then start
+   * talking about it. `hold` used to refuse anything handed over before the
+   * pipeline existed, so the ordinary case was the one that did not work.
+   */
+  describe('files handed over', () => {
+    const report = { path: 'C:/reports/q4.pdf', name: 'q4.pdf', directory: false };
+
+    it('keeps a file dropped before the conversation opens, and passes it on', async () => {
+      render(<Page />);
+
+      expect(conversationRuntime.hold([report])).toBe(true);
+      expect(conversationRuntime.getSnapshot().held).toEqual([report]);
+
+      await conversationRuntime.start();
+
+      expect(FakePipeline.instances[0].holdFiles).toHaveBeenCalledWith([report]);
+    });
+
+    it('hands a file dropped mid-conversation straight to the pipeline', async () => {
+      render(<Page />);
+      await conversationRuntime.start();
+
+      conversationRuntime.hold([report]);
+
+      expect(FakePipeline.instances[0].holdFiles).toHaveBeenCalledWith([report]);
+    });
+
+    it('lets go of one without forgetting the others', async () => {
+      const other = { path: 'C:/reports/q3.pdf', name: 'q3.pdf', directory: false };
+      render(<Page />);
+      conversationRuntime.hold([report, other]);
+
+      conversationRuntime.release(report.path);
+
+      expect(conversationRuntime.getSnapshot().held).toEqual([other]);
+    });
+
+    it('says a socket provider cannot be told, rather than refusing the file', async () => {
+      providerId = 'openai-realtime';
+      render(<Page />);
+      await conversationRuntime.start();
+
+      expect(conversationRuntime.hold([report])).toBe(true);
+      expect(conversationRuntime.heldFilesReachTheModel()).toBe(false);
+    });
   });
 });

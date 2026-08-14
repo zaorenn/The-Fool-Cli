@@ -2725,6 +2725,7 @@ export type I18nKey =
   | 'settings.voice.conversationAppNotRunning'
   | 'settings.voice.conversationAppOpened'
   | 'settings.voice.conversationAsideFailed'
+  | 'settings.voice.conversationAttach'
   | 'settings.voice.conversationBuildNoEntry'
   | 'settings.voice.conversationBuildOpened'
   | 'settings.voice.conversationBuildUnavailable'

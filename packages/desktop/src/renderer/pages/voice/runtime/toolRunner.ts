@@ -11,7 +11,7 @@ import { nearestPalette, paletteForRequest, PALETTES, type ThemePalette } from '
 import { parseOpenUrls } from '@/common/realtime/openUrls';
 import { buildSiteSearch } from '@/common/realtime/siteSearch';
 import { isGranted, sanitizeConnectorGrants, CONNECTOR_GRANTS_CONFIG_KEY } from '@/common/permissions/connectors';
-import { isLaunchableAppName } from '@/common/voice/appLaunch';
+import { isSearchableAppName } from '@/common/voice/appLaunch';
 import { choosePlayRoute, type PlayOutcome } from '@/common/voice/playRequest';
 import { findLocalSkill } from '@/common/voice/localSkills';
 import {
@@ -499,25 +499,36 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
     }
 
     if (invocation.name === 'app_open_app') {
-      const name = text('name').trim();
+      const spoken = text('name').trim();
       const action = text('action') === 'close' ? 'close' : 'open';
       // Refused here as well as in the main process, because here there is
-      // somebody to tell: a name with a slash or a quote in it is a request
-      // this tool does not take, not a launch that quietly did nothing.
-      if (!isLaunchableAppName(name)) throw new Error(t('settings.voice.conversationAppBadName'));
+      // somebody to tell: an empty or absurd name is a request this tool does
+      // not take, not a launch that quietly did nothing.
+      //
+      // The *searchable* rule, not the launchable one. The launchable set has no
+      // apostrophe in it, and a Turkish speaker saying "Spotify'ı aç" has the
+      // model hand over `Spotify'ı` — refused outright, for a word that is
+      // unmistakably Spotify. Nothing here reaches a command: the name is
+      // matched against a list the operating system wrote, and the strict set
+      // still guards the fallback that does build one.
+      if (!isSearchableAppName(spoken)) throw new Error(t('settings.voice.conversationAppBadName'));
 
-      const answer = await ipcBridge.application.controlApp.invoke({ name, action });
+      const answer = await ipcBridge.application.controlApp.invoke({ name: spoken, action });
       // Told apart rather than lumped together: "it was not running" is a true
       // and useful sentence, and reporting it as "I could not close it" would be
       // the assistant apologising for a thing that was already the case.
       if (!answer.success) {
         throw new Error(
           answer.msg === 'not-running'
-            ? t('settings.voice.conversationAppNotRunning', { name })
-            : t('settings.voice.conversationAppCouldNotOpen', { name })
+            ? t('settings.voice.conversationAppNotRunning', { name: spoken })
+            : t('settings.voice.conversationAppCouldNotOpen', { name: spoken })
         );
       }
 
+      // What the system calls it, when the index recognised it. "open vs code"
+      // is answered with "opened Visual Studio Code", which is a report; echoing
+      // `vs code` back would only prove the words were received.
+      const name = answer.data?.name || spoken;
       const detail =
         action === 'close'
           ? t('settings.voice.conversationAppClosed', { name })

@@ -847,10 +847,16 @@ export const application = {
    * Here because the alternative was the agent doing it with the pointer: find
    * the taskbar, find the icon, click, screenshot, find the close button, click
    * again — minutes of the user's own cursor being borrowed for something every
-   * platform does in one call. The name is validated before it becomes a
-   * command; see `common/voice/appLaunch.ts`.
+   * platform does in one call.
+   *
+   * The name is resolved against what is actually installed before anything
+   * runs — see `process/services/apps` — and the application's *own* name comes
+   * back, so the assistant reports "Visual Studio Code" for "open vs code"
+   * rather than repeating the words it was given. A name the index does not
+   * have falls back to the command path in `common/voice/appLaunch.ts`, which
+   * validates it before it becomes an argument.
    */
-  controlApp: bridge.buildProvider<IBridgeResponse<void>, { name: string; action: 'open' | 'close' }>(
+  controlApp: bridge.buildProvider<IBridgeResponse<{ name: string }>, { name: string; action: 'open' | 'close' }>(
     'app.control-app'
   ),
   /**

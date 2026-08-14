@@ -28,6 +28,14 @@ export type ConversationHandle = ConversationSnapshot & {
   stop: () => void;
   interrupt: () => void;
   setError: (message: string) => void;
+  /**
+   * Whether a file handed over now would reach the model.
+   *
+   * Derived here rather than stored, because it is a fact about the transport
+   * and the phase — both already in the snapshot's causal chain — and a stored
+   * copy would be one more thing that can disagree with them.
+   */
+  heldReachesModel: boolean;
 };
 
 export const useConversation = (): ConversationHandle => {
@@ -47,5 +55,6 @@ export const useConversation = (): ConversationHandle => {
     stop: conversationRuntime.stop,
     interrupt: conversationRuntime.interrupt,
     setError: conversationRuntime.setError,
+    heldReachesModel: conversationRuntime.heldFilesReachTheModel(),
   };
 };

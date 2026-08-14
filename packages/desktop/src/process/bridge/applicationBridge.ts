@@ -17,7 +17,6 @@ import { initApplicationBridgeCore } from './applicationBridgeCore';
 import type { IStartOnBootStatus } from '@/common/adapter/ipcBridge';
 import { restartApplication } from './restartApplication';
 import { parseFirstVideo, youtubeSearchUrl } from '@/common/voice/videoSearch';
-import { launchCommandFor } from '@/common/voice/appLaunch';
 
 let mainWindowRef: BrowserWindow | null = null;
 
@@ -98,6 +97,14 @@ export function setStartOnBootEnabled(enabled: boolean): IStartOnBootStatus {
 export function setApplicationMainWindow(win: BrowserWindow): void {
   mainWindowRef = win;
 }
+
+/**
+ * How long after startup the application index is built.
+ *
+ * Past the window appearing and past the first agent connecting, because it is
+ * the least urgent thing this process does and the most obviously deferrable.
+ */
+const WARM_APP_INDEX_AFTER_MS = 8_000;
 
 export function initApplicationBridge(): void {
   // Platform-agnostic handlers: systemInfo, updateSystemInfo, getPath
@@ -221,25 +228,27 @@ export function initApplicationBridge(): void {
    * loading. Every platform this runs on opens and closes an application from a
    * single call, in the background, and the user keeps their cursor.
    *
-   * Two things make it safe to hand to a model. The name is validated against a
-   * closed character set before it becomes anything — see `appLaunch.ts` — and
-   * it is run through `execFile` with the arguments already separated, so there
-   * is no shell to talk into a second command.
+   * What the name becomes is decided in `process/services/apps`: it is resolved
+   * against the list of installed applications first, and only a name that list
+   * does not have falls through to being built into a command. Both halves are
+   * safe to hand a model. The index compares against a list the operating system
+   * wrote and launches that list's own id, so nothing the model said reaches a
+   * command at all; the fallback validates against a closed character set — see
+   * `appLaunch.ts` — and runs through `execFile` with the arguments already
+   * separated, so there is no shell to talk into a second command.
    */
-  ipcBridge.application.controlApp.provider(({ name, action }) => {
-    const command = launchCommandFor(process.platform, action, name ?? '');
-    if (!command) return Promise.resolve({ success: false, msg: 'unsupported-app-name' });
+  ipcBridge.application.controlApp.provider(async ({ name, action }) => {
+    const { controlApp } = await import('@process/services/apps/launchApp');
+    const outcome = await controlApp(name ?? '', action);
 
-    return new Promise((resolve) => {
-      execFile(command.file, [...command.args], { timeout: 15_000, windowsHide: true }, (error) => {
-        // `taskkill` and `pkill` both exit non-zero when nothing matched, which
-        // is "that application was not running" rather than a fault — but the
-        // caller still has to hear it, because the assistant must not say it
-        // closed something that was never open.
-        if (error) resolve({ success: false, msg: action === 'open' ? 'could-not-open' : 'not-running' });
-        else resolve({ success: true });
-      });
-    });
+    // The application's own name comes back, not the one that was said. "open vs
+    // code" should be reported as Visual Studio Code, and the only place that
+    // knows the difference is the index the name was resolved against.
+    if (outcome.status === 'opened' || outcome.status === 'closed') {
+      return { success: true, data: { name: outcome.name } };
+    }
+    if (outcome.status === 'not-running') return { success: false, msg: 'not-running' };
+    return { success: false, msg: 'could-not-open' };
   });
 
   // CDP status and configuration
@@ -335,4 +344,21 @@ export function initApplicationBridge(): void {
       return { success: false, msg: e.message || e.toString() };
     }
   });
+
+  /**
+   * Reads the list of installed applications, once the app has settled.
+   *
+   * Deferred rather than run here: this file is loaded before Electron is ready
+   * and the scan spawns a PowerShell, which at that moment is competing with the
+   * window the user is waiting for. Late is fine — what it must not be is *in
+   * the middle of a spoken turn*, which is where the cold 422 ms measured on the
+   * machine this was written on would otherwise land.
+   *
+   * Unreferenced so it cannot hold the process open, and unawaited because
+   * nothing is waiting: a scan that never finishes leaves the index empty, and
+   * an empty index falls back to the command path.
+   */
+  setTimeout(() => {
+    void import('@process/services/apps/appIndex').then(({ warmAppIndex }) => warmAppIndex());
+  }, WARM_APP_INDEX_AFTER_MS).unref?.();
 }
