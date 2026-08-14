@@ -296,6 +296,22 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_research',
+    description:
+      'Search the web and read the best few pages, so you answer from a source instead of from memory. Use it for anything current or specific — news, prices, versions, dates, who holds a post, what an error means — for a proper research request, and when you need to learn something before doing it. Answer only from what comes back. app_search is the different thing of putting a results page in front of the user.',
+    parameters: {
+      type: 'object',
+      properties: {
+        question: {
+          type: 'string',
+          description:
+            'What to find out, written as a search: the subject and the specifics, with a year or version when it matters.',
+        },
+      },
+      required: ['question'],
+    },
+  },
+  {
     name: 'app_search',
     description:
       "Search inside a site and put the results in front of the user, in one step. This is the whole of 'open YouTube and find that song', 'search GitHub for it', 'look it up on Wikipedia' — it goes straight to the site's own results page, so it happens instantly instead of taking the agent minutes of clicking. Use it for every request that ends in a search on a named site, and for a plain web search when no site was named. Search first and then say what you looked for and where, in a few words; do not read the address out. Playing one of the results is app_play, not a search followed by clicking; buying or replying is app_ask_jester.",

@@ -129,6 +129,20 @@ import type {
 } from '../update/updateTypes';
 import type { ReleaseNotesResult } from '../update/releaseNotes';
 import type { FoundVideo } from '../voice/videoSearch';
+
+/**
+ * What a lookup on the web hands back.
+ *
+ * Declared here rather than beside the service, because the renderer names it
+ * and importing the service would pull `fetch`-over-origins main-process code
+ * into the window. The digest is the evidence the model answers from; the list
+ * is what the assistant may say it read.
+ */
+export type ResearchAnswer = {
+  /** The sources' text, numbered and addressed. Empty when nothing was found. */
+  digest: string;
+  sources: { title: string; url: string }[];
+};
 import type { AgentMetadata } from '@/renderer/utils/model/agentTypes';
 import type { Theme } from '@/common/theme/types';
 import type { AttachFolderRequest, ProjectDetailDto, ProjectEntryDto } from '@/common/types/project';
@@ -841,6 +855,19 @@ export const application = {
    * since the caller offers this to the user as "is this the one?".
    */
   findVideo: bridge.buildProvider<IBridgeResponse<FoundVideo | null>, { query: string }>('app.find-video'),
+  /**
+   * Reads the web, rather than opening it.
+   *
+   * `app_search` builds an address and hands it to the browser, which is the
+   * whole of what this app could do about the web — so every question about
+   * something current, specific, or newer than the model was answered from
+   * weights, with no way for the user to tell knowledge from the shape of it.
+   * This searches, opens the best few results and hands back their text with
+   * their addresses attached. See `process/services/research`.
+   *
+   * In the main process because a renderer cannot fetch across origins.
+   */
+  research: bridge.buildProvider<IBridgeResponse<ResearchAnswer>, { question: string }>('app.research'),
   /**
    * Starts or stops an application, through the operating system.
    *

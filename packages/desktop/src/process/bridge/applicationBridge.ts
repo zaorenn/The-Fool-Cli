@@ -221,6 +221,24 @@ export function initApplicationBridge(): void {
   });
 
   /**
+   * Reads the web and hands back what it says, with addresses attached.
+   *
+   * The one tool whose whole purpose is to stop the assistant answering from
+   * memory. `null`-shaped failures are reported as an empty digest rather than
+   * as an error: "the sources did not say" is an answer the assistant can give,
+   * and a thrown error is one it will paper over.
+   */
+  ipcBridge.application.research.provider(async ({ question }) => {
+    const { research } = await import('@process/services/research/webResearch');
+    const outcome = await research(question ?? '');
+
+    if (outcome.status === 'found') {
+      return { success: true, data: { digest: outcome.digest, sources: outcome.sources } };
+    }
+    return { success: true, data: { digest: '', sources: [] } };
+  });
+
+  /**
    * Starts or stops an application, through the operating system.
    *
    * The reason this exists is a transcript: asked to open something, the agent

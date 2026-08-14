@@ -583,6 +583,47 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
       };
     }
 
+    if (invocation.name === 'app_research') {
+      const question = text('question').trim();
+      if (question.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));
+
+      // Named while it runs rather than after. Reading three pages is a couple
+      // of seconds of a spoken conversation, and a couple of seconds of nothing
+      // is how this application has learned a wait reads as a crash.
+      host.updateActivity(invocation.callId, {
+        label: question,
+        detail: t('settings.voice.conversationResearching', { question }),
+        state: 'running',
+      });
+
+      const answer = await ipcBridge.application.research.invoke({ question });
+      const digest = answer.success ? (answer.data?.digest ?? '') : '';
+      const sources = answer.success ? (answer.data?.sources ?? []) : [];
+
+      if (digest.length === 0) {
+        host.updateActivity(invocation.callId, {
+          detail: t('settings.voice.conversationResearchNothing'),
+          state: 'completed',
+        });
+        host.backToListening();
+        // Reported as a *result* and not as a failure, because it is one: the
+        // model has to be able to say "I looked and could not find it", and a
+        // thrown error is the shape it papers over with a guess.
+        return { ok: true, found: false, detail: t('settings.voice.conversationResearchNothing') };
+      }
+
+      host.updateActivity(invocation.callId, {
+        detail: t('settings.voice.conversationResearchRead', { count: sources.length }),
+        state: 'completed',
+      });
+      host.backToListening();
+
+      // The digest carries its own instruction to answer from it and nothing
+      // else — see `buildDigest`. It rides in the tool result rather than the
+      // system prompt because it is true of this text and no other.
+      return { ok: true, found: true, sources, evidence: digest };
+    }
+
     if (invocation.name === 'app_search') {
       // The whole of "open YouTube and find that song", in one navigation. It
       // used to be the agent's job — open a browser, find the box, type — which

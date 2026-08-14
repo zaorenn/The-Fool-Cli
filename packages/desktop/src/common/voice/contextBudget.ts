@@ -87,8 +87,23 @@ export const estimateHistoryTokens = (history: readonly BudgetedMessage[]): numb
  * What has not changed is what the marker is for. Twelve thousand tokens on
  * every turn is still a cost somebody should have to justify, and raising this
  * again should mean showing the window it is being justified against.
+ *
+ * **Re-based again on 14 Aug 2026, from 12,100 to 12,400,** for `app_research`
+ * — the tool that reads the web so the assistant answers from a page rather
+ * than from memory. Written naturally it measured 12,761, which is 661 over;
+ * trimming the tool description and folding three persona bullets into one took
+ * it to 12,327. The remaining 227 is the capability itself and cannot be
+ * removed without removing it.
+ *
+ * The window it is justified against is the same one the paragraph above names,
+ * and it is still measured rather than assumed: 64,256 on this machine, from
+ * the server's own report. Against that, 12,327 leaves about 51,900 tokens for
+ * the conversation. The headroom before this change was 121 tokens, which is
+ * the more useful number — it says that the fixed cost had reached the marker,
+ * and that the next capability added will have to be paid for by taking one
+ * away rather than by moving this line again.
  */
-export const FIXED_OVERHEAD_BUDGET_TOKENS = 12_100;
+export const FIXED_OVERHEAD_BUDGET_TOKENS = 12_400;
 
 /**
  * The window assumed when the provider does not say.
