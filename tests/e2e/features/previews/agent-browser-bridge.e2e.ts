@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Agent browser control ÔÇö the single-target CDP bridge.
  *
  * Regression coverage for the vulnerability this bridge replaced. Chromium's

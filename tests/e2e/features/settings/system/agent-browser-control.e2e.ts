@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Agent browser control toggle ÔÇö the production-visible switch.
  *
  * Regression coverage for a specific gap: agent browser control defaults to on, but the

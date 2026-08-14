@@ -114,9 +114,7 @@ function locate(pages: readonly PageText[], label: string): { page: PageText; ru
 /** The labels a document offers, so a caller can ask for exactly those. */
 export const readFlatFormLabels = async (source: Uint8Array): Promise<string[]> => {
   const pages = await readPageText(source);
-  return pages.flatMap((page) =>
-    page.runs.filter((run) => /[:：]\s*$/.test(run.text)).map((run) => run.text.trim())
-  );
+  return pages.flatMap((page) => page.runs.filter((run) => /[:：]\s*$/.test(run.text)).map((run) => run.text.trim()));
 };
 
 export type { PDFFont };

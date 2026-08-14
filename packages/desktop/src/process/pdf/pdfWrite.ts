@@ -55,12 +55,7 @@ export type Layout = {
  * line rather than dropped, because losing part of an answer silently is worse
  * than a line that runs wide, and the caller can still detect it.
  */
-export const layoutText = (
-  text: string,
-  box: Box,
-  font: PDFFont,
-  style: WriteStyle = defaultStyle
-): Layout => {
+export const layoutText = (text: string, box: Box, font: PDFFont, style: WriteStyle = defaultStyle): Layout => {
   const step = style.size * style.lineHeight;
   // The last line's descender hangs below its baseline, and the box is measured
   // to the same allowance runBox uses. Counting lines without it puts the tail
@@ -171,11 +166,7 @@ export const embedWritingFont = async (
  *
  * Returns a new document; the source is left alone.
  */
-export const growPageBottom = async (
-  source: PDFDocument,
-  pageIndex: number,
-  amount: number
-): Promise<PDFDocument> => {
+export const growPageBottom = async (source: PDFDocument, pageIndex: number, amount: number): Promise<PDFDocument> => {
   const out = await PDFDocument.create();
   const original = source.getPage(pageIndex);
   const { width, height } = original.getSize();

@@ -86,9 +86,7 @@ export const readPageText = async (data: Uint8Array): Promise<PageText[]> => {
 
 /** Finds the first run whose text matches, for use as an anchor. */
 export const findRun = (page: PageText, match: string | RegExp): TextRun | undefined =>
-  page.runs.find((run) =>
-    typeof match === 'string' ? run.text.trim() === match.trim() : match.test(run.text)
-  );
+  page.runs.find((run) => (typeof match === 'string' ? run.text.trim() === match.trim() : match.test(run.text)));
 
 /**
  * The empty band directly below an anchor, bounded by whatever is drawn next.

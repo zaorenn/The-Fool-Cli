@@ -5,7 +5,13 @@ import os from 'node:os';
 import path from 'node:path';
 import net from 'node:net';
 import type { AddressInfo } from 'node:net';
-import { isBackendPath, isHostOnlyPath, pickLanIP, startStaticServer, type StaticServerHandle } from './static-server.js';
+import {
+  isBackendPath,
+  isHostOnlyPath,
+  pickLanIP,
+  startStaticServer,
+  type StaticServerHandle,
+} from './static-server.js';
 
 describe('pickLanIP', () => {
   const iface = (address: string) => ({ address, family: 'IPv4', internal: false });
@@ -17,9 +23,7 @@ describe('pickLanIP', () => {
    * screen with nothing to say why.
    */
   it('never offers a link-local address, even when it is listed first', () => {
-    expect(
-      pickLanIP({ Tailscale: [iface('169.254.83.107')], 'Wi-Fi': [iface('192.168.0.10')] })
-    ).toBe('192.168.0.10');
+    expect(pickLanIP({ Tailscale: [iface('169.254.83.107')], 'Wi-Fi': [iface('192.168.0.10')] })).toBe('192.168.0.10');
   });
 
   it('prefers the real network over a Hyper-V or WSL switch', () => {

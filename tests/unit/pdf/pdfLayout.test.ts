@@ -94,7 +94,7 @@ describe('freeSpaceRightOf', () => {
     const label = findRun(form, 'TC Kimlik No:');
     const space = freeSpaceRightOf(form, label!);
 
-    expect(boxesOverlap(space, runBox(label!))) .toBe(false);
+    expect(boxesOverlap(space, runBox(label!))).toBe(false);
   });
 });
 

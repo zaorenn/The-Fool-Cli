@@ -17,14 +17,7 @@ import { describe, expect, it } from 'vitest';
  * deleting or breaking it fails here instead of on someone's phone.
  */
 
-const INDEX_HTML = join(
-  process.cwd(),
-  'packages',
-  'desktop',
-  'src',
-  'renderer',
-  'index.html'
-);
+const INDEX_HTML = join(process.cwd(), 'packages', 'desktop', 'src', 'renderer', 'index.html');
 
 /** The inline script that installs the polyfill, lifted from index.html. */
 function polyfillSource(): string {

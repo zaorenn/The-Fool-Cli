@@ -8,14 +8,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
-import {
-  boxesOverlap,
-  findRun,
-  freeBandBelow,
-  freeSpaceRightOf,
-  readPageText,
-  runBox,
-} from '@process/pdf/pdfLayout';
+import { boxesOverlap, findRun, freeBandBelow, freeSpaceRightOf, readPageText, runBox } from '@process/pdf/pdfLayout';
 import { appendContinuation, drawLines, growPageBottom, layoutText, defaultStyle } from '@process/pdf/pdfWrite';
 
 const fixture = (name: string): Uint8Array =>

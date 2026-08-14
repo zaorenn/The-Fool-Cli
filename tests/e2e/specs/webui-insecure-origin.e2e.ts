@@ -73,9 +73,7 @@ test.describe('WebUI over an insecure origin', () => {
 
   test.beforeAll(async () => {
     if (!fs.existsSync(path.join(RENDERER_DIR, 'index.html'))) {
-      throw new Error(
-        `No built renderer at ${RENDERER_DIR}. Run \`bun run package\` before the e2e suite.`
-      );
+      throw new Error(`No built renderer at ${RENDERER_DIR}. Run \`bun run package\` before the e2e suite.`);
     }
 
     server = await serveRenderer();

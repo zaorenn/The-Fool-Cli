@@ -59,9 +59,7 @@ describe('fillFlatForm', () => {
   });
 
   it('reports a label the document does not have instead of guessing', async () => {
-    const { placed, skipped } = await fillFlatForm(form(), [
-      { label: 'Kan Grubu', value: '0 Rh+' },
-    ]);
+    const { placed, skipped } = await fillFlatForm(form(), [{ label: 'Kan Grubu', value: '0 Rh+' }]);
 
     expect(placed).toEqual([]);
     expect(skipped).toEqual([{ label: 'Kan Grubu', value: '0 Rh+', reason: 'label-not-found' }]);
@@ -78,9 +76,7 @@ describe('fillFlatForm', () => {
   });
 
   it('refuses Turkish characters rather than mangling them without an embedded font', async () => {
-    const { placed, skipped } = await fillFlatForm(form(), [
-      { label: 'Adiniz Soyadiniz', value: 'Işıl Şahin' },
-    ]);
+    const { placed, skipped } = await fillFlatForm(form(), [{ label: 'Adiniz Soyadiniz', value: 'Işıl Şahin' }]);
 
     // The standard font encodes as WinAnsi, which has no ı, İ, ş or ğ.
     expect(placed).toEqual([]);
@@ -117,10 +113,7 @@ describe('fillFlatForm', () => {
 
     for (const original of before.runs) {
       const survivor = after.runs.find(
-        (run) =>
-          run.text === original.text &&
-          Math.abs(run.x - original.x) < 0.5 &&
-          Math.abs(run.y - original.y) < 0.5
+        (run) => run.text === original.text && Math.abs(run.x - original.x) < 0.5 && Math.abs(run.y - original.y) < 0.5
       );
       expect(survivor, `moved or vanished: ${original.text}`).toBeDefined();
     }
