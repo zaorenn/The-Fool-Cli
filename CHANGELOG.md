@@ -2,6 +2,134 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.5.5
+
+The first release since the packaging work in 2.5.4, and the one that carries
+everything that had been sitting on a branch: a theme system, a route to a
+phone that needs no cable, a PDF engine that can write on documents with no
+form fields, and the removal of two things that were only ever half here.
+
+### A palette you cannot pick your way out of
+
+A colour wheel lets anybody land on a point that derives an unreadable
+interface, and a model asked to pick a colour will do exactly that. The picker
+is gone. In its place is a closed list of nine accents that already carried the
+promise of deriving a readable palette in all seven materials — they now have
+names, keywords and ids, so they can be the choice rather than a hint beside a
+wheel. Asking for the theme in shades of green resolves to a palette; a hex
+written into the sentence resolves to nothing at all.
+
+Underneath it, three faults that had made the theme partly decorative:
+
+- **Twenty-four colour variables were read by the app and written by nothing.**
+  They had no value from the theme at all.
+- **The material was outranked by four colours that ignored the light.** A
+  material that names a colour now cannot override the light it is rendered in;
+  three of them had named white.
+- **Eighty-six files were never painted.** The palette now reaches them, and a
+  test asserts all 126 palette, material and appearance combinations are
+  readable rather than trusting that they are.
+
+The window also stops opening in the palette this project was forked from.
+`default-color-scheme.css` paints on the first frame while the active theme is
+still being read from storage, so the shell opened purple and changed a moment
+later — most visibly at the top-left corner where the sidebar meets the chrome.
+The four tokens painted before hydration now hold this project's values. It is
+a prepaint, not a second theme.
+
+### The phone, without a cable
+
+Installing on a phone meant USB and developer mode, or `eas build --local`,
+which still wants an Expo login and reads iOS passwords from the macOS keychain.
+Neither is a route from a Windows machine to a phone across the room.
+
+`npm run apk` runs `expo prebuild` and drives Gradle directly; `npm run apk:serve`
+puts the result on the local network so the phone installs it from its browser.
+The served addresses put private LAN ranges first and exclude link-local,
+because an adapter that never got a lease still advertises a 169.254 address
+that nothing can reach. Release builds are signed with a keystore created once
+under `~/.fool/android` rather than the shared debug key that `expo prebuild`
+rewrites from template on every run — measured across builds 17 and 18, same
+certificate digest, ascending version codes, which is what Android requires to
+accept an install as an update.
+
+Getting from built to actually connected took four more fixes, each independent
+of the others: the app died on its first launch; the QR code served the app
+instead of the login page; the address inside it was one nothing on the network
+could reach; and the phone then failed to connect for two further unrelated
+reasons. The remaining dead channels — conversations, the file tree, image
+previews — now go over REST like everything else.
+
+Two authentication faults went with them. CSRF was refusing the launcher's own
+privileged calls, and remote access was handing a signed-in session to the whole
+subnet.
+
+### A PDF that has no form to fill
+
+The fill path that shipped only works on documents carrying an AcroForm, and
+none of the three this was tested against has a single form field. `pdf-lib` can
+draw on a page but cannot read one, so filling a flat document means finding the
+anchor visually — the label to write beside, the question to write under.
+
+`pdfLayout` wraps pdfjs-dist to return every text run's box in PDF user space,
+the same space `drawText` uses, so an anchor can be handed straight to a draw
+call. Two queries sit on it: `freeSpaceRightOf` stops at whatever shares the
+baseline, because a value written past a second label on the same line lands on
+top of it, and `freeBandBelow` is floored only by things that actually overlap
+horizontally — a run in another column shares the vertical range without being
+in the way, and treating it as a floor reports no room where there is plenty.
+
+The measurement that shapes the rest is a test rather than a claim: the gap
+under each exam question is under 60 points, about three lines at 12pt, so a
+worked solution does not fit beneath its question.
+
+### The screen-driving sidecar is gone, including from machines that had it
+
+`uacc-computer-control` was a builtin MCP server pointing at an absolute path on
+one developer's machine, shipped enabled to every installation. Deleting the
+entry would not have removed it: bootstrap only ever imports the defaults not
+yet in the database and nothing walks the other way, so a builtin removed from
+the source stays registered forever on every machine that already received it.
+That is the shape of "removed" a user reports as "it is still there".
+
+There is a retirement list now, consulted on every launch, with each deletion's
+failure kept local so a builtin that will not delete is not a reason to stop the
+app starting. Verified in the running app: six registered servers before, five
+after, and no uacc among them.
+
+### Voice
+
+A turn can stop and ask for what it was not told, then carry on. A look says
+which window it got and admits when it got the desktop instead. Asking for a
+song plays one in the background rather than driving the screen to do it.
+
+Four faults behind them: the context budget was assumed rather than asked of the
+local server; a local model was re-summarising its whole conversation on every
+turn; each tool's behaviour was being stated twice, in two voices; and a
+substring was deciding what to do, in two separate places. The notch was
+reporting what had happened rather than what was happening, and a single
+ellipsis could make the assistant say nothing at all.
+
+### What was taken out rather than finished
+
+The in-app browser tabs were carried across in the port and never wired to
+anything. Measured before removing: `openBrowserTab` had no production callers,
+`PreviewContext` never declared it, and `BrowserTabLayer` was imported into
+`PreviewPanel.tsx` on the import line and rendered nowhere. The only route to
+any of it was an Explorer menu item opening a content type the preview panel has
+no viewer for. It is gone, and the Explorer's add-folder control is a button
+again rather than a dropdown built to house the browser entry beside it.
+
+The team board view is likewise withheld until the backend it calls exists.
+
+The suite is 593 files and 6010 tests with no failures. Four of those test files
+had been testing the removed browser code — one against a module that does not
+exist in this tree — and a fifth was a scratch probe that asserted nothing and
+wrote a JSON dump to a hardcoded path on a single machine, so it would have
+failed anywhere else, CI included.
+
+---
+
 ## 2.5.4
 
 ### A file name that two files spelled differently
