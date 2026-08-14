@@ -17,7 +17,8 @@ import { initApplicationBridgeCore } from './applicationBridgeCore';
 import type { IStartOnBootStatus } from '@/common/adapter/ipcBridge';
 import { restartApplication } from './restartApplication';
 import { parseFirstVideo, youtubeSearchUrl } from '@/common/voice/videoSearch';
-import { launchCommandFor } from '@/common/voice/appLaunch';
+import { appsFolderCommand, bestStartMenuMatch, launchCommandFor } from '@/common/voice/appLaunch';
+import { listStartMenuApps } from '../voice/startMenuApps';
 
 let mainWindowRef: BrowserWindow | null = null;
 
@@ -226,9 +227,33 @@ export function initApplicationBridge(): void {
    * it is run through `execFile` with the arguments already separated, so there
    * is no shell to talk into a second command.
    */
-  ipcBridge.application.controlApp.provider(({ name, action }) => {
+  ipcBridge.application.controlApp.provider(async ({ name, action }) => {
     const command = launchCommandFor(process.platform, action, name ?? '');
-    if (!command) return Promise.resolve({ success: false, msg: 'unsupported-app-name' });
+    if (!command) return { success: false, msg: 'unsupported-app-name' };
+
+    // A Store application — every Xbox game, and a good share of what people
+    // have installed — is reachable through neither PATH nor App Paths, so the
+    // `start` below cannot open it and does not fail quickly either: measured
+    // on Windows 11, `start "" "XBOX"` with the Xbox app installed launched
+    // nothing and had not returned two minutes later. The Start menu is asked
+    // first, and only what it does not know falls through to `start`.
+    if (process.platform === 'win32' && action === 'open') {
+      const match = bestStartMenuMatch(name ?? '', await listStartMenuApps());
+      const viaAppsFolder = match ? appsFolderCommand(match.appId) : null;
+      if (viaAppsFolder) {
+        return new Promise((resolve) => {
+          execFile(viaAppsFolder.file, [...viaAppsFolder.args], { timeout: 15_000, windowsHide: true }, (error) => {
+            // Explorer returns at once whatever happens, so its exit code says
+            // nothing about the application. What is being reported is what is
+            // actually known: the name resolved to something installed, and the
+            // shell accepted the request to start it. A failure here is the
+            // request being refused, which is worth telling apart from a name
+            // nobody could resolve.
+            resolve(error ? { success: false, msg: 'could-not-open' } : { success: true });
+          });
+        });
+      }
+    }
 
     return new Promise((resolve) => {
       execFile(command.file, [...command.args], { timeout: 15_000, windowsHide: true }, (error) => {

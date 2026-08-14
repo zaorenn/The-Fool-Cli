@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { isLaunchableAppName, launchCommandFor } from '@/common/voice/appLaunch';
+import { appsFolderCommand, bestStartMenuMatch, isLaunchableAppName, launchCommandFor } from '@/common/voice/appLaunch';
 
 /**
  * Starting and stopping an application without borrowing the user's pointer.
@@ -130,5 +130,61 @@ describe('launchCommandFor', () => {
 
     expect(command?.args).toContain('Visual Studio Code');
     expect(command?.file).toBe('cmd');
+  });
+});
+
+/**
+ * Measured on Windows 11 before this existed: `cmd /c start "" "XBOX"` — the
+ * command this module produced for an *installed* Store app — launched nothing
+ * and never returned, while `explorer.exe shell:AppsFolder\<AUMID>` opened it
+ * at once. `start` resolves through PATH and App Paths, and a Store app is in
+ * neither.
+ */
+describe('finding a Store application by the name a person says', () => {
+  const installed = [
+    { name: 'XBOX', appId: 'Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App' },
+    { name: 'Forza Horizon 6 Standard Edition', appId: 'Microsoft.SunriseBaseGame_8wekyb3d8bbwe!Game' },
+    { name: 'Spotify', appId: 'SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify' },
+  ];
+
+  it('matches the name exactly, whatever the casing', () => {
+    expect(bestStartMenuMatch('xbox', installed)?.appId).toContain('GamingApp');
+    expect(bestStartMenuMatch('XBOX', installed)?.appId).toContain('GamingApp');
+  });
+
+  /// The reported sentence. Nobody says "Standard Edition" out loud.
+  it('matches a game whose entry carries an edition after it', () => {
+    expect(bestStartMenuMatch('Forza Horizon 6', installed)?.appId).toContain('SunriseBaseGame');
+  });
+
+  it('does not guess when nothing resembles the name', () => {
+    expect(bestStartMenuMatch('Photoshop', installed)).toBeNull();
+  });
+
+  /// A prefix of a word is not a word. "Forza" alone would be a reasonable
+  /// match; "For" must not silently start a game.
+  it('does not match a fragment of a word', () => {
+    expect(bestStartMenuMatch('For', installed)).toBeNull();
+  });
+
+  it('prefers the exact entry over the longer one that contains it', () => {
+    const both = [{ name: 'Spotify Premium Trial', appId: 'trial!App' }, ...installed];
+    expect(bestStartMenuMatch('Spotify', both)?.appId).toBe('SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify');
+  });
+});
+
+describe('the command for a Store application', () => {
+  it('goes through AppsFolder, which is the only route that starts one', () => {
+    expect(appsFolderCommand('Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App')).toEqual({
+      file: 'explorer.exe',
+      args: ['shell:AppsFolder\\Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App'],
+    });
+  });
+
+  /// The id comes from the operating system rather than from the model, but it
+  /// still lands in a command line, so the same closed-set rule applies.
+  it('refuses an id with anything a shell would find interesting in it', () => {
+    expect(appsFolderCommand('Evil" & calc.exe')).toBeNull();
+    expect(appsFolderCommand('')).toBeNull();
   });
 });
