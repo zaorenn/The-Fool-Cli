@@ -36,6 +36,10 @@ export type ConversationHandle = ConversationSnapshot & {
    * copy would be one more thing that can disagree with them.
    */
   heldReachesModel: boolean;
+  /** Puts a typed turn into the conversation. False when the transport cannot take one. */
+  say: (text: string) => boolean;
+  /** Whether typing would reach the model at all, for whether to offer it. */
+  acceptsTyping: boolean;
 };
 
 export const useConversation = (): ConversationHandle => {
@@ -56,5 +60,7 @@ export const useConversation = (): ConversationHandle => {
     interrupt: conversationRuntime.interrupt,
     setError: conversationRuntime.setError,
     heldReachesModel: conversationRuntime.heldFilesReachTheModel(),
+    say: conversationRuntime.say,
+    acceptsTyping: conversationRuntime.acceptsTyping(),
   };
 };

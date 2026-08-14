@@ -5,7 +5,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Alert, Button, Message, Tabs, Tag, Typography } from '@arco-design/web-react';
+import { Alert, Button, Input, Message, Tabs, Tag, Typography } from '@arco-design/web-react';
 import { Check, CloseOne, FolderOpen, Link, Magic, Microphone, PauseOne, Voice } from '@icon-park/react';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
@@ -50,6 +50,17 @@ const VoiceConversationPage: React.FC = () => {
 
   /** Highlighted while something is being dragged over, so the drop is invited. */
   const [over, setOver] = useState(false);
+
+  /** What is being typed into the conversation, until it is sent. */
+  const [typed, setTyped] = useState('');
+
+  const sendTyped = (): void => {
+    if (typed.trim().length === 0) return;
+    // Cleared only if it was taken. A transport that cannot accept a typed turn
+    // should leave the words where the user can still copy them out.
+    if (conversation.say(typed)) setTyped('');
+    else Message.warning(t('settings.voice.conversationTypeUnsupported'));
+  };
 
   /**
    * The absolute path of a dropped file, on whichever Electron this is.
@@ -155,6 +166,33 @@ const VoiceConversationPage: React.FC = () => {
             shapes of the page. Held files used to be invisible — the only
             feedback was a toast that vanished, which meant a drop that was
             silently discarded looked exactly like one that worked. */}
+        {/* Typing into a spoken conversation.
+
+            There are things nobody says out loud to a microphone: a path, a
+            licence key, a name the transcriber mangles every time, a question
+            asked with somebody else in the room. Each of those used to mean
+            ending the conversation and starting again in the chat. What is
+            typed becomes an ordinary user turn — same history, same tools, and
+            the reply is still spoken. */}
+        {active && conversation.acceptsTyping ? (
+          <div className='mt-12px flex items-center gap-8px'>
+            <Input
+              value={typed}
+              onChange={setTyped}
+              // The reply is spoken, so pressing enter is the whole gesture:
+              // there is nothing to read afterwards that would justify a button
+              // the hand has to travel to.
+              onPressEnter={sendTyped}
+              placeholder={t('settings.voice.conversationTypePlaceholder')}
+              data-testid='voice-type'
+              allowClear
+            />
+            <Button type='primary' shape='round' disabled={typed.trim().length === 0} onClick={sendTyped}>
+              {t('settings.voice.conversationTypeSend')}
+            </Button>
+          </div>
+        ) : null}
+
         <div className='mt-12px flex flex-wrap items-center gap-8px'>
           <Button size='mini' shape='round' icon={<FolderOpen size={13} />} onClick={() => void browse()}>
             {t('settings.voice.conversationAttach')}

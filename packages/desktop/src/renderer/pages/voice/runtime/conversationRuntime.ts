@@ -976,6 +976,29 @@ class ConversationRuntime {
    */
   heldFilesReachTheModel = (): boolean => this.phase === 'idle' || this.local !== null;
 
+  /**
+   * A turn typed into a spoken conversation.
+   *
+   * There was no way to do this at all: the voice page took speech and nothing
+   * else. But there are things nobody says out loud to a microphone — a path, a
+   * licence key, a name the transcriber mangles every time, a question asked
+   * with somebody else in the room — and each of them meant ending the
+   * conversation and starting again in the chat.
+   *
+   * Answers whether it was taken. A socket provider holds its conversation on
+   * the far side of a socket and this app has no way to add a turn to it, so
+   * the page says so rather than swallowing what was typed.
+   */
+  say = (text: string): boolean => {
+    const said = text.trim();
+    if (said.length === 0 || !this.local) return false;
+    this.local.say(said);
+    return true;
+  };
+
+  /** Whether a typed turn would reach the model on the transport in use. */
+  acceptsTyping = (): boolean => this.local !== null;
+
   start = async (): Promise<void> => {
     if (this.phase !== 'idle') return;
 

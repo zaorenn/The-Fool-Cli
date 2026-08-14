@@ -40,6 +40,7 @@ class FakePipeline {
   rememberConversation = vi.fn(async () => {});
   holdFiles = vi.fn();
   releaseFiles = vi.fn();
+  say = vi.fn();
 }
 
 /**
@@ -396,6 +397,53 @@ describe('what a conversation leaves in the memory', () => {
 
       expect(conversationRuntime.hold([report])).toBe(true);
       expect(conversationRuntime.heldFilesReachTheModel()).toBe(false);
+    });
+  });
+
+  /**
+   * A turn that was typed rather than spoken.
+   *
+   * There was no way to do this at all: the voice page took speech and nothing
+   * else. But a path, a licence key, a name the transcriber mangles every time,
+   * or a question asked with somebody else in the room each meant ending the
+   * conversation and starting again in the chat.
+   */
+  describe('typing into the conversation', () => {
+    it('hands what was typed to the pipeline as a turn', async () => {
+      render(<Page />);
+      await conversationRuntime.start();
+
+      expect(conversationRuntime.say('  D:/projects/the-fool  ')).toBe(true);
+
+      expect(FakePipeline.instances[0].say).toHaveBeenCalledWith('D:/projects/the-fool');
+    });
+
+    it('does not open a turn for an empty line', async () => {
+      render(<Page />);
+      await conversationRuntime.start();
+
+      expect(conversationRuntime.say('   ')).toBe(false);
+      expect(FakePipeline.instances[0].say).not.toHaveBeenCalled();
+    });
+
+    /**
+     * A socket provider holds its conversation on the far side of a socket and
+     * this app has no way to add a turn to it. Answered as false so the page can
+     * say so, rather than swallowing what the user typed.
+     */
+    it('refuses on a transport that cannot take a typed turn', async () => {
+      providerId = 'openai-realtime';
+      render(<Page />);
+      await conversationRuntime.start();
+
+      expect(conversationRuntime.acceptsTyping()).toBe(false);
+      expect(conversationRuntime.say('hello')).toBe(false);
+    });
+
+    it('takes nothing before a conversation is open', () => {
+      render(<Page />);
+
+      expect(conversationRuntime.say('hello')).toBe(false);
     });
   });
 });

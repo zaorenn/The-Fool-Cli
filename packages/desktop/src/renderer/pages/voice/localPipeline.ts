@@ -1170,6 +1170,40 @@ export class LocalVoicePipeline {
     if (next !== undefined) void this.answer([], next);
   }
 
+  /**
+   * A turn that was typed rather than spoken.
+   *
+   * There are things nobody wants to say out loud to a microphone: a path, a
+   * licence key, a name that the transcriber will get wrong every time, a
+   * question asked while somebody else is in the room. A spoken conversation
+   * that cannot be handed one of those is a conversation you have to end and
+   * restart somewhere else.
+   *
+   * It joins the conversation as an ordinary user turn — same history, same
+   * tools, same spoken reply — because it *is* one. The only thing it skips is
+   * the transcriber, which is the one part of the loop that has nothing to do:
+   * `answer` already takes what was heard when it has been worked out
+   * elsewhere, and this is the second caller of that.
+   *
+   * Queued behind a reply in progress rather than cutting it off, exactly as a
+   * spoken interjection is. Typing while it talks is not the same gesture as
+   * reaching for the key, and guessing that it was would throw away an answer
+   * the user was still listening to.
+   */
+  say(text: string): void {
+    const said = text.trim();
+    if (this.closed || said.length === 0) return;
+
+    if (this.inFlight !== null) {
+      this.options.onEvent({ kind: 'user-transcript', text: said, final: true });
+      this.waiting.push(said);
+      if (this.waiting.length > MAX_WAITING) this.waiting.shift();
+      return;
+    }
+
+    void this.answer([], said);
+  }
+
   /** Transcribe, think, and speak — each stage feeding the next as it arrives. */
   private async answer(captured: readonly Uint8Array[], alreadyHeard?: string): Promise<void> {
     const readiness = this.ready;
