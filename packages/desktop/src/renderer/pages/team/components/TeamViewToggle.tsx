@@ -31,11 +31,10 @@ const TeamViewToggle: React.FC<Props> = ({ value, onChange }) => {
       icon: <Square theme='outline' size='15' fill='currentColor' />,
       label: t('team.view.single', { defaultValue: 'Single' }),
     },
-    {
-      mode: 'board',
-      icon: <ViewGridList theme='outline' size='15' fill='currentColor' />,
-      label: t('team.view.board', { defaultValue: 'Board' }),
-    },
+    // The board mode is withheld until its backend exists. TeamActivityView
+    // reads a team's activity feed and task board, and foolcore exposes no
+    // route for either, so offering the mode only leads to a screen that
+    // cannot load. Restore this entry together with the endpoints.
   ];
 
   return (

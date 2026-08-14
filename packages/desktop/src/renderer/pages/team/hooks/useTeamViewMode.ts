@@ -19,7 +19,10 @@ const storageKey = (team_id: string): string => `team-view-mode-${team_id}`;
 const readViewMode = (team_id: string): TeamViewMode => {
   try {
     const val = localStorage.getItem(storageKey(team_id));
-    return val === 'single' ? 'single' : val === 'board' ? 'board' : 'parallel';
+    // 'board' is deliberately not restored: the mode is withheld until its
+    // backend exists, and anyone who selected it before would otherwise be
+    // returned to a view that no longer renders.
+    return val === 'single' ? 'single' : 'parallel';
   } catch {
     return 'parallel';
   }
