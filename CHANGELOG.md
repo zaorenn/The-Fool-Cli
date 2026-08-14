@@ -2,12 +2,18 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
-## 2.5.5
+## 2.5.6
 
 The first release since the packaging work in 2.5.4, and the one that carries
 everything that had been sitting on a branch: a theme system, a route to a
 phone that needs no cable, a PDF engine that can write on documents with no
 form fields, and the removal of two things that were only ever half here.
+
+There is no 2.5.5. Its tag was cut and its build stopped at the first job on
+`oxfmt --check`, over three markdown tables under `.aionrs/` that a local
+format check never looks at — the local walk skips that dot-directory, so the
+scan is six files smaller than the one CI runs. Nothing was ever published
+under that number.
 
 ### A palette you cannot pick your way out of
 
