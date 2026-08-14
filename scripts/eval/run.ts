@@ -19,6 +19,10 @@
  *   bun scripts/eval/run.ts --repeat 3           # a flaky task is not a passing one
  *   bun scripts/eval/run.ts --json               # one object, for a chart later
  *
+ * It exits non-zero on two things: a score below `--min-score`, and a median
+ * wait past `MEDIAN_FIRST_WORD_BUDGET_MS`. The second is new, and it is the
+ * half that used to be measured, printed, and never checked.
+ *
  * It needs a model endpoint. Without one it says so and exits non-zero rather
  * than reporting a score of zero, which would look like a regression.
  *
@@ -41,6 +45,7 @@ import { deliberationFor, noDeliberation } from '../../packages/desktop/src/comm
 import {
   AUTOMATIC_TASKS,
   MANUAL_TASKS,
+  MEDIAN_FIRST_WORD_BUDGET_MS,
   medianFirstWordMs,
   scriptOf,
   scoreOf,
@@ -393,6 +398,14 @@ const main = async (): Promise<void> => {
 
   if (MIN_SCORE > 0 && passed < MIN_SCORE) {
     console.error(`\nBelow the floor: ${passed} < ${MIN_SCORE}.`);
+    process.exit(1);
+  }
+
+  // Measured, printed, and until now never checked — so a change that doubled
+  // the wait exited zero, while one that lost a single tool call failed loudly.
+  // A model that answers correctly after nine seconds has not answered.
+  if (median !== null && median > MEDIAN_FIRST_WORD_BUDGET_MS) {
+    console.error(`\nOver the wait budget: ${median} ms median to the first word > ${MEDIAN_FIRST_WORD_BUDGET_MS} ms.`);
     process.exit(1);
   }
 };

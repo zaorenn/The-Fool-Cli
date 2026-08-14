@@ -72,7 +72,7 @@ export type SpokenTurnEvidence = {
    */
   startedPlayback: boolean;
   /**
-   * Whether a launch was attempted in this turn and came back a failure.
+   * Whether the last launch attempted came back a failure.
    *
    * Deliberately not the mirror of the two above. Those ask whether the thing
    * that could make a sentence true happened; this asks whether the opposite
@@ -80,8 +80,11 @@ export type SpokenTurnEvidence = {
    * in your browser" and "Kod editörü açık" — a page that really did open, and
    * something learned by looking. See `appLaunchOutcome`.
    *
-   * Per turn rather than per conversation: a launch that failed ten minutes ago
-   * says nothing about what is running now.
+   * Overwritten by the next launch rather than cleared at a turn boundary, so a
+   * failure is forgotten as soon as something opens successfully — but one with
+   * no launch after it still reads as failed later in the conversation. That is
+   * more conservative than the gate needs, and narrowing it wants a turn
+   * boundary `createTurnEvidence` does not yet see.
    */
   appLaunchFailed: boolean;
 };

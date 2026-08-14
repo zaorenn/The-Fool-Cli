@@ -231,6 +231,29 @@ const pdfFailed = (): string => JSON.stringify({ ok: false, error: 'that file is
  */
 export const GREETING_FIRST_WORD_MS = 2_500;
 
+/**
+ * How long the median turn may take to its first spoken word.
+ *
+ * The only number a person in a conversation actually feels, and until this
+ * existed nothing checked it. The runner measured it, printed it, and then
+ * exited zero however bad it was — so a change that doubled the wait passed
+ * every gate this project has, while a change that lost a single tool call
+ * failed loudly. That is the wrong way round: a model that answers correctly
+ * after nine seconds has not answered.
+ *
+ * Set the way {@link GREETING_FIRST_WORD_MS} is: above the measurement so an
+ * ordinary busy machine does not fail an honest run, and below the thing being
+ * caught. Measured on this hardware — 940 ms median recorded for
+ * `qwen/qwen3.5-9b`, 1,200 ms on the run that grew this list — against 6,538 ms
+ * for the same endpoint with deliberation left switched on. There is nothing
+ * between three seconds and six that could be mistaken for either.
+ *
+ * The median rather than the worst: one task that waits on a slow tool is not
+ * a slow assistant, and a budget that fails on the worst case is a budget
+ * somebody switches off.
+ */
+export const MEDIAN_FIRST_WORD_BUDGET_MS = 3_000;
+
 export const SPOKEN_TASKS: readonly SpokenTask[] = [
   {
     id: 1,

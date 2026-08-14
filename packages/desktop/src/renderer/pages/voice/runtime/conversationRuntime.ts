@@ -37,7 +37,7 @@ import {
 } from '@renderer/services/voice/session/voiceMemoryStore';
 import { peekVoiceSettings, subscribeVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import { guardSpokenSentence } from '@renderer/services/voice/session/spokenOutput';
-import { appLaunchOutcome, showedTheScreen, startedPlayback } from '@/common/voice/actionClaims';
+import { createTurnEvidence } from '@/common/voice/turnEvidence';
 import { continuityFor } from '@/common/voice/sessionSummary';
 import {
   CURIOSITY_REFUSALS_CONFIG_KEY,
@@ -425,9 +425,9 @@ class ConversationRuntime {
       guardSpokenSentence(text, {
         toolsRan: this.toolsRanThisTurn,
         remembered,
-        lookedAtScreen: this.sawScreen,
-        startedPlayback: this.playbackStarted,
-        appLaunchFailed: this.appLaunchFailed,
+        lookedAtScreen: this.evidence.lookedAtScreen,
+        startedPlayback: this.evidence.startedPlayback,
+        appLaunchFailed: this.evidence.appLaunchFailed,
       }).speak === false
     );
   }
@@ -554,13 +554,10 @@ class ConversationRuntime {
     // Weighed, not counted. A look that came back with an error is a call with
     // no screen in it, and the gate has to be able to tell those apart — that is
     // the whole difference between "a tool ran" and "it has seen something".
-    if (showedTheScreen(invocation.name, result)) this.sawScreen = true;
+    this.evidence.observe(invocation.name, result);
     // Read from the result for the same reason a look is: `app_play` answers
     // with the address it opened instead when nothing is connected, and that
     // call ran just as successfully while nothing became audible.
-    if (startedPlayback(invocation.name, result)) this.playbackStarted = true;
-    const launch = appLaunchOutcome(invocation.name, result);
-    if (launch !== 'none') this.appLaunchFailed = launch === 'failed';
     return result;
   };
 
@@ -572,7 +569,8 @@ class ConversationRuntime {
    * claim made now, but a screenshot from five minutes ago is still in the
    * history and the model may still refer to what was in it.
    */
-  private sawScreen = false;
+  /** The three facts the gates need, derived in one place for both runtimes. */
+  private readonly evidence = createTurnEvidence();
 
   /**
    * Whether a player has reported this conversation that something is on.

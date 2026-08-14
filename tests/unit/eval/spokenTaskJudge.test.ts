@@ -9,6 +9,7 @@ import {
   AUTOMATIC_TASKS,
   GREETING_FIRST_WORD_MS,
   MANUAL_TASKS,
+  MEDIAN_FIRST_WORD_BUDGET_MS,
   SPOKEN_TASKS,
   medianFirstWordMs,
   scoreOf,
@@ -421,5 +422,22 @@ describe('the assistant, as opposed to the spoken turn', () => {
         { reply: 'Buradayım.', toolNames: [] },
       ]).passed
     ).toBe(false);
+  });
+});
+
+describe('the wait budget', () => {
+  /// Set the way the greeting budget is: above what this hardware measures, and
+  /// below the thing being caught. 940 ms and 1,200 ms have been recorded for
+  /// the local default; deliberation left on measured 6,538 ms.
+  it('sits between the measurement and the failure it is for', () => {
+    expect(MEDIAN_FIRST_WORD_BUDGET_MS).toBeGreaterThan(1_200);
+    expect(MEDIAN_FIRST_WORD_BUDGET_MS).toBeLessThan(6_538);
+  });
+
+  /// The greeting is answered without deliberating, so its budget must be the
+  /// tighter of the two — a greeting that takes as long as a considered answer
+  /// is the regression that budget exists to catch.
+  it('is looser than the budget for a greeting, which skips deliberation', () => {
+    expect(MEDIAN_FIRST_WORD_BUDGET_MS).toBeGreaterThan(GREETING_FIRST_WORD_MS);
   });
 });
