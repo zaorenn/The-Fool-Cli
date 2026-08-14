@@ -25,7 +25,6 @@ import OfficeDocPreview from '../viewers/OfficeDocViewer';
 import PptViewer from '../viewers/PptViewer';
 import CodeEditor from '../editors/CodeEditor';
 import URLViewer from '../viewers/URLViewer';
-import BrowserTabLayer from '../../browser/BrowserTabLayer';
 import {
   PreviewTabs,
   PreviewToolbar,

@@ -15,8 +15,8 @@
  * menu (new/delete/rename), and the Files/Changes tabs are out of this round.
  */
 
-import { Button, Input, Message, Modal, Spin, Dropdown, Menu } from '@arco-design/web-react';
-import { FolderPlus, Plus } from '@icon-park/react';
+import { Button, Input, Message, Modal, Spin } from '@arco-design/web-react';
+import { FolderPlus } from '@icon-park/react';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useSWR from 'swr';
@@ -291,35 +291,14 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
           {tabButton('changes', t('conversation.explorer.tabs.changes'))}
         </div>
         <div className='flex items-center gap-2px flex-shrink-0'>
-          <Dropdown
-            trigger='click'
-            position='br'
-            droplist={
-              <Menu>
-                <Menu.Item key='addFolder' onClick={handleAddFolder}>
-                  {t('conversation.explorer.addFolder')}
-                </Menu.Item>
-                <Menu.Item
-                  key='browser'
-                  onClick={() => {
-                    openPreview('about:blank', 'browser' as any, {
-                      title: t('preview.browser.newTab', { defaultValue: 'New Tab' }),
-                    });
-                  }}
-                >
-                  {t('preview.browser.name', { defaultValue: 'Browser' })}
-                </Menu.Item>
-              </Menu>
-            }
-          >
-            <Button
-              type='text'
-              size='mini'
-              icon={<Plus theme='outline' size='16' />}
-              aria-label={t('common.add')}
-              title={t('common.add')}
-            />
-          </Dropdown>
+          <Button
+            type='text'
+            size='mini'
+            icon={<FolderPlus theme='outline' size='16' />}
+            aria-label={t('conversation.explorer.addFolder')}
+            title={t('conversation.explorer.addFolder')}
+            onClick={handleAddFolder}
+          />
           {workspacePath && <WorkspaceOpenButton workspacePath={workspacePath} isTemporary={false} />}
         </div>
       </div>
