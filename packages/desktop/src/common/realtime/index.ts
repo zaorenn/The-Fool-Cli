@@ -296,6 +296,23 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_write_document',
+    description:
+      "Write a real PDF, Word file or spreadsheet into the user's Documents. Use it for any document, report, letter, CV, table or summary they want as a file. You write the content as markdown — headings, lists, tables, code — and it is typeset properly; for a spreadsheet each markdown table becomes a sheet. Say what you made and that it is in their Documents; never read the path out.",
+    parameters: {
+      type: 'object',
+      properties: {
+        markdown: {
+          type: 'string',
+          description: 'The whole document in markdown — the document itself, not a description of one.',
+        },
+        format: { type: 'string', enum: ['pdf', 'docx', 'xlsx'], description: 'docx is Word, xlsx is Excel.' },
+        name: { type: 'string', description: "What to call it. Omit to use the document's first heading." },
+      },
+      required: ['markdown', 'format'],
+    },
+  },
+  {
     name: 'app_research',
     description:
       'Search the web and read the best few pages, so you answer from a source instead of from memory. Use it for anything current or specific — news, prices, versions, dates, who holds a post, what an error means — for a proper research request, and when you need to learn something before doing it. Answer only from what comes back. app_search is the different thing of putting a results page in front of the user.',

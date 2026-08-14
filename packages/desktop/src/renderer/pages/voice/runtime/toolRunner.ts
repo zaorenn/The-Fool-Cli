@@ -583,6 +583,45 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
       };
     }
 
+    if (invocation.name === 'app_write_document') {
+      const markdown = text('markdown').trim();
+      const format = text('format').trim();
+      if (markdown.length === 0 || format.length === 0) {
+        throw new Error(t('settings.voice.conversationActionUnsupported'));
+      }
+
+      host.updateActivity(invocation.callId, {
+        detail: t('settings.voice.conversationWritingDocument', { format }),
+        state: 'running',
+      });
+
+      const written = await ipcBridge.application.writeDocument.invoke({
+        markdown,
+        format,
+        name: text('name').trim(),
+      });
+      if (!written.success) throw new Error(t('settings.voice.conversationDocumentFailed'));
+
+      const file = written.data?.path ?? '';
+      const name = file.replace(/^.*[\\/]/, '');
+      host.updateActivity(invocation.callId, {
+        detail: t('settings.voice.conversationDocumentWritten', { name }),
+        state: 'completed',
+      });
+      host.backToListening();
+
+      // `complete` travels back so the assistant can say the one thing that
+      // matters and that only it knows: a PDF written without a Unicode face
+      // has lost every ı, ş and ğ, and a name mangled in a filed document is
+      // worse than a document that was never written.
+      return {
+        ok: true,
+        writtenTo: name,
+        lettersIntact: written.data?.complete !== false,
+        detail: t('settings.voice.conversationDocumentWritten', { name }),
+      };
+    }
+
     if (invocation.name === 'app_research') {
       const question = text('question').trim();
       if (question.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));

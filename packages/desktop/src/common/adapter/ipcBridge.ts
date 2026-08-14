@@ -138,6 +138,16 @@ import type { FoundVideo } from '../voice/videoSearch';
  * into the window. The digest is the evidence the model answers from; the list
  * is what the assistant may say it read.
  */
+/**
+ * Where a written document ended up.
+ *
+ * `complete` is false when a PDF had to fall back to a face with no Turkish in
+ * it — reported rather than swallowed, because a document with the wrong
+ * letters in somebody's name is worse than one that was not written, and only
+ * the person reading it can decide that.
+ */
+export type WrittenDocument = { path: string; format: string; complete: boolean };
+
 export type ResearchAnswer = {
   /** The sources' text, numbered and addressed. Empty when nothing was found. */
   digest: string;
@@ -868,6 +878,18 @@ export const application = {
    * In the main process because a renderer cannot fetch across origins.
    */
   research: bridge.buildProvider<IBridgeResponse<ResearchAnswer>, { question: string }>('app.research'),
+  /**
+   * Writes a real .pdf, .docx or .xlsx from markdown the assistant produced.
+   *
+   * The model chooses a name and never a path — see `process/pdf/writeDocument`
+   * — because a tool that took a destination could be talked into writing
+   * anywhere on the machine, and "make me a report" is not a request that
+   * should be able to overwrite a system file.
+   */
+  writeDocument: bridge.buildProvider<
+    IBridgeResponse<WrittenDocument>,
+    { markdown: string; format: string; name?: string }
+  >('app.write-document'),
   /**
    * Starts or stops an application, through the operating system.
    *

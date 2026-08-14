@@ -221,6 +221,24 @@ export function initApplicationBridge(): void {
   });
 
   /**
+   * Writes a document the user can open, from markdown the assistant produced.
+   *
+   * The failure worth reporting is not "it did not write" but "it wrote the
+   * wrong letters": a PDF on a machine with no Unicode face loses every ı, ş
+   * and ğ, and a Turkish name silently mangled in a document that then gets
+   * filed is the outcome this whole path is built to avoid.
+   */
+  ipcBridge.application.writeDocument.provider(async ({ markdown, format, name }) => {
+    const { writeDocument } = await import('@process/pdf/writeDocument');
+    const outcome = await writeDocument(markdown ?? '', format ?? '', name ?? '');
+
+    if (outcome.status === 'written') {
+      return { success: true, data: { path: outcome.path, format: outcome.format, complete: outcome.complete } };
+    }
+    return { success: false, msg: outcome.reason };
+  });
+
+  /**
    * Reads the web and hands back what it says, with addresses attached.
    *
    * The one tool whose whole purpose is to stop the assistant answering from
