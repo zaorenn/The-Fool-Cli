@@ -33,15 +33,8 @@
 
 import { colorVariables, parseHexColor } from '@/common/config/themeOverrides';
 import { defaultSurfaceBackground, hasBackgroundImage, type SurfaceBackground } from '@/common/theme/surfaceBackground';
-import { resolveTokens, type SurfaceStyleChoice } from '@/common/theme/surfaceChoice';
-import {
-  derivePalette,
-  effectiveAlpha,
-  isDark,
-  readableAccent,
-  surfaceVariables,
-  type Palette,
-} from '@/common/theme/surfaceStyle';
+import { resolvePalette, resolveTokens, type SurfaceStyleChoice } from '@/common/theme/surfaceChoice';
+import { effectiveAlpha, isDark, readableAccent, surfaceVariables, type Palette } from '@/common/theme/surfaceStyle';
 
 type Entry = readonly [string, string];
 
@@ -183,7 +176,10 @@ const ramp = (palette: Palette): Entry[] => {
 export const materialTokens = (choice: SurfaceStyleChoice, prefersDark: boolean): readonly Entry[] => {
   const tokens = resolveTokens(choice);
   const dark = isDark(choice.style, prefersDark);
-  const palette = derivePalette(choice.accent, choice.style, prefersDark, tokens.tint);
+  // Through `resolvePalette`, so the user's own adjustments are in whatever
+  // this paints. Deriving here directly is how the settings panel and the
+  // application come to disagree about what was chosen.
+  const palette = resolvePalette(choice, prefersDark);
 
   return [
     ...surfaceVariables(choice.style, tokens, palette),
@@ -257,7 +253,7 @@ const CONTROLS = [
  */
 const backgroundLayer = (choice: SurfaceStyleChoice, prefersDark: boolean, background: SurfaceBackground): string => {
   const tokens = resolveTokens(choice);
-  const { ground } = derivePalette(choice.accent, choice.style, prefersDark, tokens.tint);
+  const { ground } = resolvePalette(choice, prefersDark);
   const channels = parseHexColor(ground);
   const veil = channels
     ? `rgb(${channels.red} ${channels.green} ${channels.blue} / ${(1 - background.opacity).toFixed(3)})`
