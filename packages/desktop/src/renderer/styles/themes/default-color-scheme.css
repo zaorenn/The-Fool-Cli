@@ -142,3 +142,26 @@
   --fill-white-to-black: #000000; /* 白到黑填充色（暗色模式下为黑色） */
   --border-special: #60677e; /* 特殊边框色 */
 }
+
+/*
+ * The Fool dark prepaint
+ *
+ * The stylesheet above is the scheme this project was forked from, and it is
+ * purple. It paints on the first frame, while the active theme is still being
+ * read from storage and injected, so the window opens in one palette and
+ * changes to another a moment later — the mismatch shows most at the top-left
+ * corner of the shell, where the sidebar meets the chrome.
+ *
+ * These four tokens are the ones the shell paints with before hydration, and
+ * they are held to the same values as the-fool.css so the first frame already
+ * looks like the theme that is about to load. Everything else stays as it was;
+ * this is a prepaint, not a second theme.
+ */
+:root[data-theme='dark'],
+[data-color-scheme='default'][data-theme='dark'],
+body[arco-theme='dark'] {
+  --bg-base: #0b0d10;
+  --primary: #c4123f;
+  --text-primary: #f5f1e8;
+  --border-base: #303741;
+}
