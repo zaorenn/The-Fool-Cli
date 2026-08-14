@@ -139,14 +139,17 @@ describe('ExplorerContainer data integration', () => {
 
     // Component-switcher tabs present (t returns the raw key here).
     fireEvent.click(screen.getByText('conversation.explorer.tabs.changes'));
-    // Changes tab shows the placeholder…
-    expect(screen.getByText('conversation.explorer.changesPlaceholder')).toBeInTheDocument();
-    // …and the explorer stays mounted (root still in the DOM, just hidden) — no rebuild.
+    // The changes lane was a placeholder when this was written and carries a
+    // source-control panel now, so the tab's own pressed state is what says
+    // which lane is showing. Asserting on whatever that panel renders would tie
+    // this test to a transient state of a different component.
+    expect(screen.getByRole('button', { pressed: true })).toHaveAttribute('data-explorer-tab', 'changes');
+    // The explorer stays mounted (root still in the DOM, just hidden) — no rebuild.
     expect(screen.getByText('Root Alpha')).toBeInTheDocument();
 
-    // Switching back hides the placeholder and keeps the tree.
+    // Switching back moves the pressed state and keeps the tree.
     fireEvent.click(screen.getByText('conversation.explorer.tabs.files'));
-    expect(screen.queryByText('conversation.explorer.changesPlaceholder')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { pressed: true })).toHaveAttribute('data-explorer-tab', 'files');
     expect(screen.getByText('Root Alpha')).toBeInTheDocument();
   });
 

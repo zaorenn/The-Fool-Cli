@@ -146,8 +146,7 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
   // commands; the change is pushed back as a delta on the parent dir's
   // subscription, so the tree updates itself (single source, no manual refetch).
   // Component switcher tab (host component switcher, this round in-container):
-  // 'files' = the Explorer, 'changes' = source-control placeholder (that lane is
-  // not built yet — the tab exists but shows an empty state).
+  // 'files' = the Explorer, 'changes' = the source-control panel.
   const [activeTab, setActiveTab] = useState<'files' | 'changes'>('files');
   const [renameDialog, setRenameDialog] = useState<RenameRequest | null>(null);
   const [nameValue, setNameValue] = useState('');
@@ -269,6 +268,10 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
       type='text'
       size='small'
       className={`flex-shrink-0 !px-8px ${activeTab === key ? '!text-t-primary !font-medium !bg-2' : '!text-t-secondary'}`}
+      // Which lane is showing was expressed only through styling, so neither
+      // assistive technology nor a test could read it.
+      aria-pressed={activeTab === key}
+      data-explorer-tab={key}
       onClick={() => setActiveTab(key)}
     >
       {label}
@@ -277,8 +280,7 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
 
   return (
     <div className='h-full flex flex-col min-h-0'>
-      {/* Host component-switcher tab bar: 文件 = explorer, 变更 = source-control
-          placeholder (that lane isn't built — tab present, empty state only).
+      {/* Host component-switcher tab bar: 文件 = explorer, 变更 = source control.
           Tabs are left-aligned and scroll horizontally when they overflow; the
           attach + open-externally cluster is pinned right (flex-shrink-0) with
           container padding, so it never scrolls with the tabs nor clips at narrow
