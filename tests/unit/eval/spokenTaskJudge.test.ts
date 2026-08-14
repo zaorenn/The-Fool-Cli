@@ -342,3 +342,84 @@ describe('the wait in front of the answer', () => {
     expect(GREETING_FIRST_WORD_MS).toBeLessThan(6_538);
   });
 });
+
+describe('the assistant, as opposed to the spoken turn', () => {
+  /// app_play's description names this exact sentence as the whole of what it is
+  /// for, and task 1 did not accept it — so a model reaching for the right tool
+  /// was scored as having failed.
+  it('accepts the tool written for the sentence', () => {
+    expect(judge(1, 'Açıyorum.', ['app_play']).passed).toBe(true);
+    expect(judge(1, 'Önce hesabını bağlayalım.', ['app_connect']).passed).toBe(true);
+  });
+
+  it('refuses the viewer route for a PDF form, though it is still a tool call', () => {
+    expect(judge(20, 'Dolduruyorum.', ['app_fill_pdf']).passed).toBe(true);
+    const viewer = judge(20, 'Formu açıp dolduruyorum.', ['app_ask_jester']);
+    expect(viewer.passed).toBe(false);
+    expect(viewer.because).toContain('app_ask_jester');
+  });
+
+  /// The tool succeeded, so nothing in the transcript looks like a failure. This
+  /// is the only thing between the user and an unsigned form handed in complete.
+  it('fails a form called complete while two fields were left empty', () => {
+    const verdict = judgeConversation(21, [{ reply: 'Form eksiksiz dolduruldu, hazır.', toolNames: ['app_fill_pdf'] }]);
+    expect(verdict.passed).toBe(false);
+  });
+
+  it('passes when the empty fields are named back', () => {
+    const verdict = judgeConversation(21, [
+      { reply: 'Doldurdum, kopya basvuru-dolu.pdf. Tarih ve İmza boş kaldı.', toolNames: ['app_fill_pdf'] },
+    ]);
+    expect(verdict.passed).toBe(true);
+  });
+
+  it('fails a filled form claimed after the tool errored', () => {
+    expect(judgeConversation(22, [{ reply: 'Formu doldurdum.', toolNames: ['app_fill_pdf'] }]).passed).toBe(false);
+    expect(judgeConversation(22, [{ reply: 'Olmadı, o dosya PDF değil.', toolNames: ['app_fill_pdf'] }]).passed).toBe(
+      true
+    );
+  });
+
+  it('tells a standing instruction from a fact, in both directions', () => {
+    expect(judge(23, 'Tamam.', ['app_rule']).passed).toBe(true);
+    expect(judge(23, 'Not aldım.', ['app_remember']).passed).toBe(false);
+    expect(judge(24, 'Not aldım.', ['app_remember']).passed).toBe(true);
+    expect(judge(24, 'Kural olarak ekledim.', ['app_rule']).passed).toBe(false);
+  });
+
+  it('fails a search page where the ask was to play something', () => {
+    expect(judge(26, 'Çalıyorum.', ['app_play']).passed).toBe(true);
+    expect(judge(26, 'Arıyorum.', ['app_search']).passed).toBe(false);
+  });
+
+  it('fails a song reported as playing when no account is connected', () => {
+    expect(judgeConversation(27, [{ reply: 'Şarkın çalıyor.', toolNames: ['app_play'] }]).passed).toBe(false);
+    expect(
+      judgeConversation(27, [{ reply: 'Spotify hesabın bağlı değil, bağlayalım mı?', toolNames: ['app_play'] }]).passed
+    ).toBe(true);
+  });
+
+  it('fails standby announced at length, which is not going quiet', () => {
+    expect(judge(28, 'Tamam.', ['app_standby']).passed).toBe(true);
+    expect(
+      judge(28, 'Elbette, hemen bekleme moduna geçiyorum, hazır olduğunuzda bana seslenmeniz yeterli olacaktır.', [
+        'app_standby',
+      ]).passed
+    ).toBe(false);
+  });
+
+  it('fails staying asleep through the wake phrase', () => {
+    expect(
+      judgeConversation(29, [
+        { reply: '', toolNames: ['app_standby'] },
+        { reply: 'Buradayım.', toolNames: ['app_resume'] },
+      ]).passed
+    ).toBe(true);
+    expect(
+      judgeConversation(29, [
+        { reply: '', toolNames: ['app_standby'] },
+        { reply: 'Buradayım.', toolNames: [] },
+      ]).passed
+    ).toBe(false);
+  });
+});

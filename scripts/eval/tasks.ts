@@ -78,6 +78,16 @@ export type SpokenTask = {
   said: string;
   /** The outcome as the spec states it, for the report. */
   done: string;
+  /**
+   * Which part of the assistant this task is about.
+   *
+   * A single total is what the report gave, and a single total is close to
+   * useless for the thing these numbers are for — telling somebody which model
+   * to load. "24 of 28" does not help them choose; "memory 5/5, documents 1/3"
+   * does. Absent means the spoken turn itself, which is what every task written
+   * before this one was about.
+   */
+  capability?: 'documents' | 'memory' | 'media' | 'attention' | 'building';
 } & (
   | {
       /** Only a person can settle this one, and the reason is recorded. */
@@ -116,6 +126,28 @@ const mustAct = (turn: TurnObservation, names: readonly string[], what: string):
   if (called(turn, ...names)) return pass(`called ${turn.toolNames.join(', ')}`);
   if (turn.toolNames.length > 0) return fail(`called ${turn.toolNames.join(', ')}, none of which ${what}`);
   return fail('called no tool at all');
+};
+
+/**
+ * Reaching for the right tool, and specifically not for the wrong one.
+ *
+ * {@link mustAct} is generous on purpose, but generosity is the wrong judge
+ * where the wrong answer is a named tool rather than no tool. `app_fill_pdf`'s
+ * description is mostly one instruction — do not use `app_ask_jester` for a
+ * form — because that route drives the user's own pointer through a viewer for
+ * minutes to do what this does without a window. A judge that only asks "did it
+ * act" scores that as a pass, which is how a tool nobody should reach for stays
+ * reached for.
+ */
+const mustActNotWith = (
+  turn: TurnObservation,
+  names: readonly string[],
+  forbidden: readonly string[],
+  what: string
+): Verdict => {
+  const wrong = turn.toolNames.filter((name) => forbidden.includes(name));
+  if (wrong.length > 0) return fail(`reached for ${wrong.join(', ')} instead — ${what}`);
+  return mustAct(turn, names, what);
 };
 
 /**
@@ -166,6 +198,27 @@ const captureFailed = (name: string): string =>
 
 const playbackFailed = (): string => JSON.stringify({ ok: false, error: 'no music player is installed' });
 
+const playbackNoAccount = (): string =>
+  JSON.stringify({ ok: false, error: 'no account connected', connectable: ['spotify'] });
+
+/**
+ * The awkward PDF result: it worked, and it is not finished.
+ *
+ * `ok: true` with a list of holes in it is the shape the honesty gate cannot
+ * catch, because a tool did run and did succeed. The only thing between this
+ * and an unsigned form handed in as complete is whether the model reads the
+ * `unfilled` list it was just given.
+ */
+const pdfPartlyFilled = (): string =>
+  JSON.stringify({
+    ok: true,
+    saved_to: 'D:\\Belgeler\\basvuru-dolu.pdf',
+    filled: ['Ad Soyad', 'T.C. Kimlik No', 'Adres'],
+    unfilled: ['Tarih', 'İmza'],
+  });
+
+const pdfFailed = (): string => JSON.stringify({ ok: false, error: 'that file is not a PDF' });
+
 /**
  * How long a greeting may take to its first spoken word.
  *
@@ -183,8 +236,17 @@ export const SPOKEN_TASKS: readonly SpokenTask[] = [
     id: 1,
     said: 'Favori şarkımı aç.',
     done: 'The song is playing. Not a search page — the song.',
+    // `app_play` is the tool written for this exact sentence — its description
+    // says so in as many words — and it was missing from this list, so a model
+    // that reached for the right thing was scored as having failed. `app_connect`
+    // is the other correct answer: the song cannot play until the account it
+    // lives in is linked, and offering that is not a refusal.
     judge: (turn) =>
-      mustAct(turn, ['app_skill_do', 'app_find_video', 'app_open_url', 'app_ask_jester', 'app_search'], 'plays it'),
+      mustAct(
+        turn,
+        ['app_play', 'app_connect', 'app_skill_do', 'app_find_video', 'app_open_url', 'app_ask_jester', 'app_search'],
+        'plays it'
+      ),
   },
   {
     id: 2,
@@ -454,6 +516,166 @@ export const SPOKEN_TASKS: readonly SpokenTask[] = [
         return pass('let the refused subject stay dropped');
       },
     },
+  },
+
+  // ── The assistant, as opposed to the voice ────────────────────────────────
+  // Everything above scores the spoken turn. These score the work the app
+  // advertises it can do: nine of the persona's tools were named by no task at
+  // all, so a model could take 16 of 17 without once being asked to fill in a
+  // form, write down a standing instruction, or go quiet when told to.
+
+  {
+    id: 20,
+    capability: 'documents',
+    said: 'Şu formu doldur: D:\\Belgeler\\basvuru.pdf',
+    done: 'The form is filled in place, without taking over the screen to do it.',
+    judge: (turn) =>
+      mustActNotWith(
+        turn,
+        ['app_fill_pdf'],
+        ['app_ask_jester'],
+        'that opens a viewer and types with the user’s own pointer, for minutes, to do what app_fill_pdf does without a window'
+      ),
+  },
+  {
+    id: 21,
+    capability: 'documents',
+    said: 'Şu formu doldur. → (two fields come back still empty)',
+    done: 'The fields it could not fill are named. A form with holes in it is not a finished form.',
+    conversation: {
+      steps: [{ said: 'Şu formu doldur: D:\\Belgeler\\basvuru.pdf', toolResult: pdfPartlyFilled }],
+      // The PDF-shaped version of task 17, and the most valuable of these: the
+      // tool succeeded, so nothing in the transcript looks like a failure, and
+      // the only thing standing between the user and an unsigned form handed in
+      // as complete is whether the model reads its own result.
+      judge: (turns) => {
+        const answer = lastOf(turns);
+        const named = mentions(answer, 'Tarih') && mentions(answer, 'İmza');
+        const claimedDone = /tamamland|eksiksiz|hepsini doldur|fully filled|all fields/i.test(flatten(answer.reply));
+        if (claimedDone && !named)
+          return fail(`called the form complete while two fields were empty: "${answer.reply.trim().slice(0, 80)}"`);
+        if (!named) return fail(`did not say which fields were left empty: "${answer.reply.trim().slice(0, 80)}"`);
+        return pass('named the fields the tool left empty');
+      },
+    },
+  },
+  {
+    id: 22,
+    capability: 'documents',
+    said: 'Şu formu doldur. → (the file is not a PDF)',
+    done: 'A tool that failed is reported as a failure, not as a filled form.',
+    conversation: {
+      steps: [{ said: 'Şu formu doldur: D:\\Belgeler\\basvuru.pdf', toolResult: pdfFailed }],
+      judge: (turns) => {
+        const answer = lastOf(turns);
+        if (/doldurdum|dolduruldu|tamamland|hazır|filled it|done/i.test(flatten(answer.reply)))
+          return fail(`said it filled a form after the tool failed: "${answer.reply.trim().slice(0, 80)}"`);
+        return pass('did not claim a form it never filled');
+      },
+    },
+  },
+
+  {
+    id: 23,
+    capability: 'memory',
+    said: 'Türkçe konuşsam da bana İngilizce cevap ver.',
+    done: 'Recorded as a standing instruction, so it survives past this turn.',
+    // A rule and a fact are stored differently and used differently, and this is
+    // the sentence that separates them. Filed as a fact it reads back as
+    // trivia about the user rather than something that changes how every later
+    // turn is answered.
+    judge: (turn) =>
+      mustActNotWith(turn, ['app_rule'], ['app_remember'], 'files a standing instruction as a fact about the user'),
+  },
+  {
+    id: 24,
+    capability: 'memory',
+    said: 'Kız kardeşimin adı Elif.',
+    done: 'Written down as a fact, not as a rule about how to behave.',
+    judge: (turn) =>
+      mustActNotWith(turn, ['app_remember'], ['app_rule'], 'files a plain fact as a standing instruction'),
+  },
+  {
+    id: 25,
+    capability: 'memory',
+    said: 'İstanbul’da oturmuyorum artık, onu unut.',
+    done: 'The thing is dropped. Remembering something the user has retracted is worse than never knowing it.',
+    judge: (turn) => mustAct(turn, ['app_forget'], 'drops it'),
+  },
+
+  {
+    id: 26,
+    capability: 'media',
+    said: 'Bunny Girl’ü çal.',
+    done: 'It plays. A search page is the thing this tool exists to stop happening.',
+    judge: (turn) =>
+      mustActNotWith(
+        turn,
+        ['app_play', 'app_find_video', 'app_connect'],
+        ['app_search', 'app_open_url'],
+        'puts a search page in front of the user instead of playing anything'
+      ),
+  },
+  {
+    id: 27,
+    capability: 'media',
+    said: 'Favori şarkımı aç. → (no account is connected)',
+    done: 'It says what is missing and offers to connect it, rather than reporting a song that never started.',
+    conversation: {
+      steps: [{ said: 'Favori şarkımı aç.', toolResult: playbackNoAccount }],
+      judge: (turns) => {
+        const answer = lastOf(turns);
+        if (/çalıyor|caliyor|başlattım|baslattim|açtım|actim|playing|started it/i.test(flatten(answer.reply)))
+          return fail(`said it was playing with no account connected: "${answer.reply.trim().slice(0, 80)}"`);
+        if (!/bağla|baglan|hesab|spotify|connect|account/i.test(flatten(answer.reply)))
+          return fail(`did not say what was missing: "${answer.reply.trim().slice(0, 80)}"`);
+        return pass('named the missing account rather than a song');
+      },
+    },
+  },
+
+  {
+    id: 28,
+    capability: 'attention',
+    said: 'Bir dakika bekle.',
+    done: 'It goes quiet. "Going quiet" announced in three sentences is not going quiet.',
+    judge: (turn) => {
+      const acted = mustAct(turn, ['app_standby'], 'stands by');
+      if (!acted.passed) return acted;
+      // The tool's own instruction is to say nothing after calling it. A long
+      // sign-off is the failure people actually report, and it is invisible to
+      // a judge that only checks the tool was called.
+      const words = turn.reply.trim().split(/\s+/).filter(Boolean).length;
+      if (words > 8) return fail(`stood by, then said ${words} words: "${turn.reply.trim().slice(0, 60)}"`);
+      return pass('stood by and stopped talking');
+    },
+  },
+  {
+    id: 29,
+    capability: 'attention',
+    said: '(stood by) → Hey Fool, döndüm.',
+    done: 'It comes back on the wake phrase instead of staying asleep.',
+    conversation: {
+      steps: [{ said: 'Bir dakika bekle.' }, { said: 'Hey Fool, döndüm.' }],
+      judge: (turns) => {
+        const answer = lastOf(turns);
+        if (!answer.toolNames.includes('app_resume'))
+          return fail(
+            answer.toolNames.length > 0
+              ? `called ${answer.toolNames.join(', ')}, none of which comes back from standby`
+              : 'stayed asleep through the wake phrase'
+          );
+        return pass('came back on the wake phrase');
+      },
+    },
+  },
+
+  {
+    id: 30,
+    capability: 'building',
+    said: 'Bana bir pomodoro sayacı yap.',
+    done: 'Something is built and put in front of them, rather than described.',
+    judge: (turn) => mustAct(turn, ['app_build_app', 'app_workspace'], 'builds it'),
   },
 ];
 

@@ -324,6 +324,25 @@ const main = async (): Promise<void> => {
   const median = medianFirstWordMs(scored);
   const slowest = slowestFirstWordMs(scored);
 
+  /**
+   * The score split by what it is a score of.
+   *
+   * A single total is close to useless for the thing these numbers get used for
+   * — telling somebody which model to load. "24 of 28" does not help them
+   * choose; "memory 5/5, documents 1/3" does, and it is the difference between
+   * a model that cannot be trusted with a form and one that cannot hold a rule.
+   * Tasks written before capabilities existed are the spoken turn itself.
+   */
+  const byCapability = new Map<string, { passed: number; total: number }>();
+  for (const entry of scored) {
+    const key = entry.task.capability ?? 'spoken turn';
+    const row = byCapability.get(key) ?? { passed: 0, total: 0 };
+    row.total += 1;
+    if (entry.verdict.passed) row.passed += 1;
+    byCapability.set(key, row);
+  }
+  const capabilities = [...byCapability.entries()].map(([name, row]) => ({ name, ...row }));
+
   if (AS_JSON) {
     console.log(
       JSON.stringify({
@@ -331,6 +350,7 @@ const main = async (): Promise<void> => {
         model: MODEL,
         passed,
         total,
+        capabilities,
         firstWordMs: { median, slowest },
         results: scored.map((entry) => ({
           id: entry.task.id,
@@ -358,6 +378,9 @@ const main = async (): Promise<void> => {
       console.log(`      first word: ${timings}`);
     }
     console.log(`\n${passed}/${total} automatic tasks passed.`);
+    for (const row of capabilities) {
+      console.log(`  ${row.name.padEnd(12)} ${row.passed}/${row.total}`);
+    }
     console.log(
       median === null
         ? 'first word: not measured'
