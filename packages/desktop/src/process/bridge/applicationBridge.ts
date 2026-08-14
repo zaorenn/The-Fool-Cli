@@ -17,7 +17,12 @@ import { initApplicationBridgeCore } from './applicationBridgeCore';
 import type { IStartOnBootStatus } from '@/common/adapter/ipcBridge';
 import { restartApplication } from './restartApplication';
 import { parseFirstVideo, youtubeSearchUrl } from '@/common/voice/videoSearch';
-import { appsFolderCommand, bestStartMenuMatch, launchCommandFor } from '@/common/voice/appLaunch';
+import {
+  appsFolderCommand,
+  bestStartMenuMatch,
+  executablePathCommand,
+  launchCommandFor,
+} from '@/common/voice/appLaunch';
 import { listStartMenuApps } from '../voice/startMenuApps';
 
 let mainWindowRef: BrowserWindow | null = null;
@@ -239,10 +244,13 @@ export function initApplicationBridge(): void {
     // first, and only what it does not know falls through to `start`.
     if (process.platform === 'win32' && action === 'open') {
       const match = bestStartMenuMatch(name ?? '', await listStartMenuApps());
-      const viaAppsFolder = match ? appsFolderCommand(match.appId) : null;
-      if (viaAppsFolder) {
+      // Two shapes come back from the Start menu: an AppUserModelID for a
+      // Store application, and a path for everything else. Games installed
+      // outside a store are the second kind, and had no route at all before.
+      const resolved = match ? (appsFolderCommand(match.appId) ?? executablePathCommand(match.appId)) : null;
+      if (resolved) {
         return new Promise((resolve) => {
-          execFile(viaAppsFolder.file, [...viaAppsFolder.args], { timeout: 15_000, windowsHide: true }, (error) => {
+          execFile(resolved.file, [...resolved.args], { timeout: 15_000, windowsHide: true }, (error) => {
             // Explorer returns at once whatever happens, so its exit code says
             // nothing about the application. What is being reported is what is
             // actually known: the name resolved to something installed, and the

@@ -5,7 +5,13 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { appsFolderCommand, bestStartMenuMatch, isLaunchableAppName, launchCommandFor } from '@/common/voice/appLaunch';
+import {
+  appsFolderCommand,
+  bestStartMenuMatch,
+  executablePathCommand,
+  isLaunchableAppName,
+  launchCommandFor,
+} from '@/common/voice/appLaunch';
 
 /**
  * Starting and stopping an application without borrowing the user's pointer.
@@ -186,5 +192,40 @@ describe('the command for a Store application', () => {
   it('refuses an id with anything a shell would find interesting in it', () => {
     expect(appsFolderCommand('Evil" & calc.exe')).toBeNull();
     expect(appsFolderCommand('')).toBeNull();
+  });
+});
+
+/**
+ * Half the Start menu lists a path rather than an AppUserModelID, and games
+ * installed outside a store are almost all of it. Read off this machine:
+ * `Marvels Spider-Man 2` is `C:\Games\Marvels Spider-Man 2\Spider-Man2.exe`.
+ * `start` cannot resolve the display name and AppsFolder does not take a path,
+ * so before this an installed game in the user's own Start menu had no route.
+ */
+describe('a Start menu entry that is already a path', () => {
+  it('runs the executable the Start menu points at', () => {
+    expect(executablePathCommand('C:\\Games\\Marvels Spider-Man 2\\Spider-Man2.exe')).toEqual({
+      file: 'C:\\Games\\Marvels Spider-Man 2\\Spider-Man2.exe',
+      args: [],
+    });
+  });
+
+  /// Spaces are the normal case here, and they need no quoting: execFile takes
+  /// a file and an argument list rather than a shell string.
+  it('does not quote or escape a path with spaces in it', () => {
+    const command = executablePathCommand('C:\\Program Files\\Thing\\thing.exe');
+    expect(command?.file).toBe('C:\\Program Files\\Thing\\thing.exe');
+    expect(command?.args).toEqual([]);
+  });
+
+  it('refuses an AppUserModelID, which is the other route', () => {
+    expect(executablePathCommand('Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App')).toBeNull();
+  });
+
+  it('refuses anything that is not an absolute path to an executable', () => {
+    expect(executablePathCommand('Spider-Man2.exe')).toBeNull();
+    expect(executablePathCommand('C:\\Games\\readme.txt')).toBeNull();
+    expect(executablePathCommand('C:\\Games\\a"b\\x.exe')).toBeNull();
+    expect(executablePathCommand('')).toBeNull();
   });
 });

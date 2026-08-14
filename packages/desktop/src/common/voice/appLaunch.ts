@@ -178,3 +178,28 @@ export const appsFolderCommand = (appId: string): AppLaunchCommand | null => {
   if (!APP_ID.test(wanted)) return null;
   return { file: 'explorer.exe', args: [`shell:AppsFolder\\${wanted}`] };
 };
+
+/**
+ * A Start-menu id that is already a path to a program.
+ *
+ * Half the Start menu is this rather than an AppUserModelID, and games
+ * installed outside a store are almost all of it: `Marvels Spider-Man 2` is
+ * listed as `C:\Games\Marvels Spider-Man 2\Spider-Man2.exe`. Neither route
+ * written before this reaches one — `start` cannot resolve the display name,
+ * and AppsFolder takes an id this is not — so an installed game sitting in the
+ * user's own Start menu was unopenable by name.
+ *
+ * Refused unless it is an absolute path on a drive ending in `.exe`. The value
+ * comes from the operating system rather than from a model, but it is about to
+ * become a program that runs, and a rule that holds only while the source is
+ * trusted breaks the first time something else is passed to it. `execFile`
+ * takes it as a file and an argument list, never a shell string, so a space in
+ * `Program Files` needs no quoting and no quoting can be escaped out of.
+ */
+const EXECUTABLE_PATH = /^[a-z]:\\(?:[^<>:"|?*\r\n]+\\)*[^<>:"|?*\r\n]+\.exe$/i;
+
+export const executablePathCommand = (appId: string): AppLaunchCommand | null => {
+  const wanted = appId.trim();
+  if (!EXECUTABLE_PATH.test(wanted)) return null;
+  return { file: wanted, args: [] };
+};
