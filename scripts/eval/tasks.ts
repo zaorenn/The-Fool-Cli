@@ -220,6 +220,25 @@ const pdfPartlyFilled = (): string =>
 const pdfFailed = (): string => JSON.stringify({ ok: false, error: 'that file is not a PDF' });
 
 /**
+ * A build that worked, handed back with the address in it.
+ *
+ * The address is deliberately present, because the tool description's one
+ * prohibition is about saying it aloud and a model repeats what it is given. A
+ * spoken `http://127.0.0.1:4173` is unusable to somebody listening and takes
+ * ten seconds to say.
+ */
+const appBuilt = (): string =>
+  JSON.stringify({
+    ok: true,
+    built: true,
+    title: 'Notes',
+    url: 'http://127.0.0.1:4173',
+    opened: true,
+  });
+
+const buildFailed = (): string => JSON.stringify({ ok: false, error: 'the build did not finish' });
+
+/**
  * How long a greeting may take to its first spoken word.
  *
  * Not a round number picked for looking sensible. `reasoning.ts` measured the
@@ -699,6 +718,81 @@ export const SPOKEN_TASKS: readonly SpokenTask[] = [
     said: 'Bana bir pomodoro sayacı yap.',
     done: 'Something is built and put in front of them, rather than described.',
     judge: (turn) => mustAct(turn, ['app_build_app', 'app_workspace'], 'builds it'),
+  },
+
+  // ── Building something, and which kind ────────────────────────────────────
+  // Two tools build a page and they are not interchangeable. `app_build_app`
+  // serves a one-off and opens it in the user's browser; `app_workspace` gives
+  // the page the agent as a back end, keeps it under a name and moves them into
+  // it — "there tomorrow and can be sent to somebody". Picking the lighter one
+  // for a thing somebody wants to keep loses it the moment the tab closes, and
+  // that is invisible in the transcript, which is why it is scored.
+
+  {
+    id: 31,
+    capability: 'building',
+    said: 'Bana build’larımı izleyen, kendi verisini tutan bir panel yap. Yarın da açabileyim.',
+    done: 'Kept: a page with a back end behind it, under a name, that survives the session.',
+    judge: (turn) =>
+      mustActNotWith(
+        turn,
+        ['app_workspace'],
+        ['app_build_app', 'app_ask_jester'],
+        'serves a one-off with nowhere to keep it, for something they asked to have tomorrow'
+      ),
+  },
+  {
+    id: 32,
+    capability: 'building',
+    said: 'Şu rakamları bir grafik yapıp göster, bir kere bakacağım.',
+    done: 'A one-off is built and shown, without a workspace made for something nobody wants to keep.',
+    judge: (turn) =>
+      mustActNotWith(
+        turn,
+        ['app_build_app'],
+        ['app_ask_jester'],
+        'builds the same thing and leaves them with nowhere to see it'
+      ),
+  },
+  {
+    id: 33,
+    capability: 'building',
+    said: 'Bana bir web uygulaması yap, macOS tarzı olsun. → (it is built)',
+    done: 'It says what it made and that it is open — and never reads the address out.',
+    conversation: {
+      steps: [{ said: 'Bana bir web uygulaması yap, macOS tarzı olsun.', toolResult: appBuilt }],
+      // The address is the one thing the tool description forbids saying aloud,
+      // and it is exactly what a model repeats back when it is handed a URL in
+      // a result: a spoken localhost address with a port in it is unusable to a
+      // person and takes ten seconds to say.
+      judge: (turns) => {
+        const answer = lastOf(turns);
+        if (/https?:\/\/|localhost|127\.0\.0\.1|:\d{4}/i.test(answer.reply))
+          return fail(`read the address out loud: "${answer.reply.trim().slice(0, 80)}"`);
+        // Folded spellings, because that is what these are matched against.
+        if (!/acik|acti|actim|hazir|yaptim|olusturdum|open|ready|built|made/i.test(flatten(answer.reply)))
+          return fail(`did not say it was made and open: "${answer.reply.trim().slice(0, 80)}"`);
+        return pass('said what it made without reading the address out');
+      },
+    },
+  },
+  {
+    id: 34,
+    capability: 'building',
+    said: 'Bana bir pano yap. → (the build failed)',
+    done: 'A build that failed is reported as a failure, not as a finished app.',
+    conversation: {
+      steps: [{ said: 'Bana kendi verimi tutan bir pano yap.', toolResult: buildFailed }],
+      judge: (turns) => {
+        const answer = lastOf(turns);
+        // Folded spellings, because that is what these are matched against.
+        if (
+          /hazir|yaptim|acildi|actim|olustur\w*dum|is (ready|open|done)|i (built|made) it/i.test(flatten(answer.reply))
+        )
+          return fail(`called a failed build finished: "${answer.reply.trim().slice(0, 80)}"`);
+        return pass('did not report an app it never built');
+      },
+    },
   },
 ];
 

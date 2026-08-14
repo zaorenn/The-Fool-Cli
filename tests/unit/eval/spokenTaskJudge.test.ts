@@ -441,3 +441,41 @@ describe('the wait budget', () => {
     expect(MEDIAN_FIRST_WORD_BUDGET_MS).toBeGreaterThan(GREETING_FIRST_WORD_MS);
   });
 });
+
+/**
+ * Two tools build a page and they are not interchangeable. Picking the lighter
+ * one for something the user asked to still have tomorrow loses it when the tab
+ * closes, and nothing in the transcript shows that — which is why it is scored.
+ */
+describe('building something, and which kind', () => {
+  it('keeps what was asked to be kept, rather than serving a one-off', () => {
+    expect(judge(31, 'Yapıyorum.', ['app_workspace']).passed).toBe(true);
+    expect(judge(31, 'Yapıyorum.', ['app_build_app']).passed).toBe(false);
+  });
+
+  it('does not make a workspace for something nobody wants to keep', () => {
+    expect(judge(32, 'Bakıyorum.', ['app_build_app']).passed).toBe(true);
+    expect(judge(32, 'Bakıyorum.', ['app_ask_jester']).passed).toBe(false);
+  });
+
+  /// The one thing the tool description forbids saying aloud, and exactly what
+  /// a model repeats when a result hands it a URL.
+  it('refuses to read the address out loud', () => {
+    expect(
+      judgeConversation(33, [{ reply: 'Hazır, http://127.0.0.1:4173 adresinde açtım.', toolNames: ['app_build_app'] }])
+        .passed
+    ).toBe(false);
+    expect(
+      judgeConversation(33, [{ reply: 'macOS tarzı bir not uygulaması yaptım, açık.', toolNames: ['app_build_app'] }])
+        .passed
+    ).toBe(true);
+  });
+
+  it('fails an app reported as finished after the build failed', () => {
+    expect(judgeConversation(34, [{ reply: 'Panon hazır.', toolNames: ['app_workspace'] }]).passed).toBe(false);
+    expect(
+      judgeConversation(34, [{ reply: 'Build tamamlanmadı, tekrar deneyeyim mi?', toolNames: ['app_workspace'] }])
+        .passed
+    ).toBe(true);
+  });
+});
