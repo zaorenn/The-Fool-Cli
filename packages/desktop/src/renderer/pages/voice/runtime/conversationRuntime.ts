@@ -37,7 +37,7 @@ import {
 } from '@renderer/services/voice/session/voiceMemoryStore';
 import { peekVoiceSettings, subscribeVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import { guardSpokenSentence } from '@renderer/services/voice/session/spokenOutput';
-import { showedTheScreen, startedPlayback } from '@/common/voice/actionClaims';
+import { appLaunchOutcome, showedTheScreen, startedPlayback } from '@/common/voice/actionClaims';
 import { continuityFor } from '@/common/voice/sessionSummary';
 import {
   CURIOSITY_REFUSALS_CONFIG_KEY,
@@ -427,6 +427,7 @@ class ConversationRuntime {
         remembered,
         lookedAtScreen: this.sawScreen,
         startedPlayback: this.playbackStarted,
+        appLaunchFailed: this.appLaunchFailed,
       }).speak === false
     );
   }
@@ -558,6 +559,8 @@ class ConversationRuntime {
     // with the address it opened instead when nothing is connected, and that
     // call ran just as successfully while nothing became audible.
     if (startedPlayback(invocation.name, result)) this.playbackStarted = true;
+    const launch = appLaunchOutcome(invocation.name, result);
+    if (launch !== 'none') this.appLaunchFailed = launch === 'failed';
     return result;
   };
 
@@ -579,6 +582,8 @@ class ConversationRuntime {
    * one that is on" is a report rather than a claim.
    */
   private playbackStarted = false;
+  /** Whether the last launch this turn failed. Cleared by one that succeeds. */
+  private appLaunchFailed = false;
 
   /**
    * Told to stop volunteering things, for the rest of this conversation.

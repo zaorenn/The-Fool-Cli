@@ -13,7 +13,7 @@ import {
   type SpokenVoice,
 } from '@/common/realtime';
 import { synthesisProviderFor, type FoolVoiceSettings, type VoiceModel } from '@/common/types/foolVoice';
-import { backsCompletedAction, showedTheScreen, startedPlayback } from '@/common/voice/actionClaims';
+import { appLaunchOutcome, backsCompletedAction, showedTheScreen, startedPlayback } from '@/common/voice/actionClaims';
 import {
   deliberationFor,
   mayAskForNoDeliberation,
@@ -1352,6 +1352,7 @@ export class LocalVoicePipeline {
       remembered,
       lookedAtScreen: this.sawScreen,
       startedPlayback: this.playbackStarted,
+      appLaunchFailed: this.appLaunchFailed,
     });
     return verdict.speak === false ? verdict.correction : null;
   }
@@ -1374,6 +1375,8 @@ export class LocalVoicePipeline {
    * answer rather than a refusal.
    */
   private playbackStarted = false;
+  /** Whether the last launch this turn failed. Cleared by one that succeeds. */
+  private appLaunchFailed = false;
 
   private async speakReply(
     readiness: Extract<LocalReadiness, { ok: true }>,
@@ -1665,6 +1668,8 @@ export class LocalVoicePipeline {
       // back just as successfully having opened a page instead, and a page is
       // not a sound.
       if (startedPlayback(call.function.name, result)) this.playbackStarted = true;
+      const launch = appLaunchOutcome(call.function.name, result);
+      if (launch !== 'none') this.appLaunchFailed = launch === 'failed';
       this.history.push({
         role: 'tool',
         tool_call_id: call.id,
@@ -1757,6 +1762,7 @@ export class LocalVoicePipeline {
         // result. Without it the gate simply refuses the claim, which is the
         // right way round: a sentence about sound nobody confirmed.
         startedPlayback: () => this.playbackStarted,
+        appLaunchFailed: () => this.appLaunchFailed,
         // What the turn is doing, in the agent's own words, so a filler can name
         // it instead of saying "still working on it" about nothing.
         currentStep: () => this.options.currentStep?.() ?? null,

@@ -8,6 +8,8 @@ import {
   emptyRecallCorrection,
   isEmptyRecall,
   isUnbackedClaim,
+  isContradictedAppOpenClaim,
+  contradictedAppOpenCorrection,
   isUnseenScreenClaim,
   isUnverifiedPlaybackClaim,
   unbackedClaimCorrection,
@@ -69,6 +71,19 @@ export type SpokenTurnEvidence = {
    * is on" is a correct answer rather than a claim. See `startedPlayback`.
    */
   startedPlayback: boolean;
+  /**
+   * Whether a launch was attempted in this turn and came back a failure.
+   *
+   * Deliberately not the mirror of the two above. Those ask whether the thing
+   * that could make a sentence true happened; this asks whether the opposite
+   * was reported, because written the other way round it refused "I opened it
+   * in your browser" and "Kod editörü açık" — a page that really did open, and
+   * something learned by looking. See `appLaunchOutcome`.
+   *
+   * Per turn rather than per conversation: a launch that failed ten minutes ago
+   * says nothing about what is running now.
+   */
+  appLaunchFailed: boolean;
 };
 
 export type SpokenSentenceVerdict =
@@ -111,6 +126,14 @@ export const guardSpokenSentence = (sentence: string, evidence: SpokenTurnEviden
   // satisfied — and not one of the four was a player.
   if (isUnverifiedPlaybackClaim(said, evidence.startedPlayback)) {
     return { speak: false, correction: unverifiedPlaybackCorrection(said) };
+  }
+
+  // The same question again, for launching. "Forza Horizon 6 açık" was said
+  // after app_open_app had come back a failure — so the count was satisfied by
+  // the failure itself, and the only sentence that could have been checked
+  // against it never was.
+  if (isContradictedAppOpenClaim(said, evidence.appLaunchFailed)) {
+    return { speak: false, correction: contradictedAppOpenCorrection(said) };
   }
 
   return SPEAK;
