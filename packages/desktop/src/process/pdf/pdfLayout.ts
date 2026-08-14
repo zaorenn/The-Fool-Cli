@@ -54,9 +54,14 @@ export const boxesOverlap = (a: Box, b: Box): boolean =>
  * and they would otherwise register as anchors that cannot be seen.
  */
 export const readPageText = async (data: Uint8Array): Promise<PageText[]> => {
+  // pdfjs takes ownership of the array it is handed and leaves it detached, so
+  // a caller that reads a document and then edits it with pdf-lib would find an
+  // empty buffer. Reading must not consume the caller's bytes.
+  const owned = data.slice();
+
   // The loading task owns the worker, so releasing it is what frees the
   // resources; the document proxy has no destroy of its own.
-  const task = getDocument({ data, useSystemFonts: true });
+  const task = getDocument({ data: owned, useSystemFonts: true });
   const doc = await task.promise;
   const pages: PageText[] = [];
 
@@ -120,8 +125,14 @@ export const freeBandBelow = (page: PageText, anchor: TextRun, bottomMargin = 40
   };
 };
 
-/** The gap to the right of a run, up to whatever is drawn beside it. */
-export const freeSpaceRightOf = (page: PageText, anchor: TextRun, rightMargin = 40): Box => {
+/**
+ * The gap to the right of a run, up to whatever is drawn beside it.
+ *
+ * A value is kept clear of the label by a small lead. Butted straight against
+ * the colon it reads as one word, and at that distance the two boxes touch,
+ * which any overlap check is entitled to call a collision.
+ */
+export const freeSpaceRightOf = (page: PageText, anchor: TextRun, rightMargin = 40, lead = 5): Box => {
   const anchorBox = runBox(anchor);
   const sharesBaseline = (run: TextRun): boolean => Math.abs(run.y - anchor.y) < anchor.height * 0.6;
 
@@ -133,6 +144,6 @@ export const freeSpaceRightOf = (page: PageText, anchor: TextRun, rightMargin = 
     right = Math.min(right, box.x);
   }
 
-  const left = anchorBox.x + anchorBox.width;
+  const left = anchorBox.x + anchorBox.width + lead;
   return { x: left, y: anchorBox.y, width: Math.max(0, right - left), height: anchorBox.height };
 };

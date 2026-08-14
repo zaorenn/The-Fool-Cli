@@ -67,7 +67,11 @@ export const layoutText = (
   // of the final line outside the space that was checked for collisions — which
   // is how an answer ends up sitting on the heading below it.
   const descender = style.size * DESCENDER_RATIO;
-  const maxLines = Math.max(0, Math.floor((box.height - descender) / step));
+  // A gap beside a label is exactly one line tall, and the line step is larger
+  // than the glyphs it separates, so counting by step alone reports no room on
+  // every inline field. One line fits whenever the glyphs themselves do.
+  const stepped = Math.floor((box.height - descender) / step);
+  const maxLines = Math.max(box.height >= style.size ? 1 : 0, stepped);
   const words = text.split(/\s+/).filter(Boolean);
 
   const lines: string[] = [];
@@ -115,9 +119,11 @@ export const drawLines = (
   lines.forEach((line, index) => {
     page.drawText(line, {
       x: box.x,
-      // The box's top, stepped down one line at a time. drawText takes a
-      // baseline, so the first line sits a full step below the top edge.
-      y: box.y + box.height - step * (index + 1),
+      // The first baseline hangs one glyph height below the top edge, not one
+      // line step: the step includes the leading that belongs *between* lines,
+      // and spending it before the first line drops a value a visible distance
+      // below the label it is meant to sit beside.
+      y: box.y + box.height - style.size - step * index,
       size: style.size,
       font,
       color: rgb(style.color.r, style.color.g, style.color.b),
