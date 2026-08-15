@@ -26,6 +26,7 @@ import { initializeProcess } from './process';
 import { startBackendOrExit } from './process/startup/backendStartup';
 import { assertStartupArchitectureCompatible } from './process/startup/architectureCompatibility';
 import { classifyBackendStartupFailure } from './process/startup/backendStartupFailure';
+import { closeAgentPage } from './process/browser/agentPage';
 import { installQuitCleanup } from './process/startup/quitCleanup';
 import { shouldRegisterBackendStartup } from './process/startup/singleInstanceGating';
 import { ProcessConfig } from './process/utils/initStorage';
@@ -623,32 +624,31 @@ const createWindow = ({ showOnReady = true }: { showOnReady?: boolean } = {}): v
     ipcBridge.application.devToolsStateChanged.emit({ isOpen: false });
   });
 
-  // 关闭拦截：当启用"关闭到托盘"时，隐藏窗口而非关闭
-  // Close interception: hide window instead of closing when "close to tray" is enabled.
-  // The first close has no answer to honour yet, so it asks and remembers.
+  /**
+   * Closing the window puts the app in the tray. Quitting is the tray's job.
+   *
+   * This used to be a choice, asked once on the first close and remembered for
+   * ever. Two things were wrong with deciding it that way. The question arrives
+   * at the worst possible moment — somebody is closing a window, not choosing a
+   * policy — and whichever answer they give is the one they are stuck with,
+   * because nothing ever asks again. Someone who answered "don't minimise" was
+   * left with a close button that was supposed to quit and an app that did not
+   * reliably manage it.
+   *
+   * So there is one behaviour now, and it is the one the rest of the desktop
+   * implies: the X puts it away, and Quit in the tray menu ends it. That path
+   * sets `isQuitting` and runs the teardown in `quitCleanup`, which is the only
+   * route that closes every window this process owns — the pet, and the agent's
+   * offscreen browsing page.
+   */
   mainWindow.on('close', (event) => {
     if (mainWindow.isDestroyed()) return;
+    // Set by the tray's Quit and by the updater. This is the real exit and it
+    // has to be let through, or the app could never close at all.
     if (getIsQuitting()) return;
 
-    if (getCloseToTrayPreference() === undefined) {
-      event.preventDefault();
-      void import('./process/utils/closeToTrayPrompt').then(async ({ promptForCloseToTray }) => {
-        const minimize = await promptForCloseToTray(mainWindow);
-        if (mainWindow.isDestroyed()) return;
-        if (minimize) {
-          mainWindow.hide();
-        } else {
-          setIsQuitting(true);
-          app.quit();
-        }
-      });
-      return;
-    }
-
-    if (getCloseToTrayEnabled()) {
-      event.preventDefault();
-      mainWindow.hide();
-    }
+    event.preventDefault();
+    mainWindow.hide();
   });
 };
 
@@ -893,16 +893,23 @@ const handleAppReady = async (): Promise<void> => {
       setCloseToTrayEnabled(false);
       destroyTray();
     } else {
+      // The tray is not optional any more, and that is the whole fix. Closing
+      // the window hides it, so the tray icon is the only way back — and it
+      // used to be created only when the close-to-tray preference was on. A
+      // user who had answered "don't minimise" therefore had no tray at all,
+      // which is exactly the state that made the app impossible to close
+      // properly and would now make it impossible to reopen.
+      //
+      // The stored preference is still read, because it decides whether an app
+      // launched at login starts with its window up. It no longer decides
+      // whether there is a tray, and it no longer decides what closing does.
       try {
-        // Keep `undefined` intact — it is what makes the first close ask.
-        const savedCloseToTray = await readCloseToTrayPreference();
-        setCloseToTrayEnabled(savedCloseToTray);
-        if (getCloseToTrayEnabled()) {
-          createOrUpdateTray();
-        }
+        setCloseToTrayEnabled(await readCloseToTrayPreference());
       } catch {
-        // Ignore storage read errors and ask on the next close
+        // A preference that cannot be read only costs the launch-at-login
+        // behaviour its default. The tray below is created either way.
       }
+      createOrUpdateTray();
     }
 
     const showMainWindowOnReady = !(wasLaunchedAtLogin() && getCloseToTrayEnabled());
@@ -1022,10 +1029,11 @@ if (shouldRegisterBackendStartup(gotTheLock)) {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-  // 当关闭到托盘启用时，不退出应用 / Don't quit when close-to-tray is enabled
-  if (getCloseToTrayEnabled()) {
-    return;
-  }
+  // No close-to-tray check here any more. Closing the main window hides it, so
+  // it still counts as a window and this does not fire — which means reaching
+  // here at all is the genuine article: every window this process owns is gone,
+  // and staying alive would leave a process nobody can see or reach.
+  //
   // In WebUI mode, don't quit when windows are closed since we're running a web server
   if (!isWebUIMode && process.platform !== 'darwin') {
     app.quit();
@@ -1058,6 +1066,7 @@ installQuitCleanup({
     isExplicitQuit = true;
   },
   destroyTray,
+  closeAgentPage,
   disposeCronResumeListener: () => {
     disposeCronResumeListener?.();
     disposeCronResumeListener = null;

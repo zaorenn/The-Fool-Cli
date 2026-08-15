@@ -2,6 +2,29 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.5.9
+
+A hotfix for closing the app, which three separate things conspired to break.
+
+**The close button now always puts the app in the tray, and the tray's Quit is
+what ends it.** It used to ask, once, on the very first close — and remember the
+answer for ever. That question arrives at the worst possible moment: somebody is
+closing a window, not choosing a policy. Whichever way they answered, they were
+stuck with it, because nothing ever asked again.
+
+**The tray icon is always there.** This is the part that trapped people. The
+icon was only created when the close-to-tray preference was on, so anybody who
+answered "don't minimise" had no tray at all — nothing to quit from, and nothing
+to bring a window back with.
+
+**Quitting now closes the agent's browsing page.** 2.5.8 gave the agent an
+offscreen page to browse in, and never closed it. A window is a window: once the
+agent had looked anything up, closing the main window left the process running
+with nothing on screen. That was a fault in 2.5.8 and this is its fix.
+
+The "Close to Tray" switch is gone from settings, because closing to the tray is
+no longer a choice and a switch that names it would be misleading either way.
+
 ## 2.5.8
 
 The release about what the assistant does when nobody is watching it.

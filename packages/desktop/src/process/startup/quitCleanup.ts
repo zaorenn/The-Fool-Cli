@@ -17,6 +17,8 @@ type QuitCleanupDeps = {
   disposeCronResumeListener: () => void;
   stopBackend: () => Promise<void>;
   destroyPetWindow: () => Promise<void> | void;
+  /** The agent's offscreen browsing page, if one was ever made. */
+  closeAgentPage: () => void;
   logInfo: (message: string) => void;
   logWarn: (message: string) => void;
   logError: (message: string, error: unknown) => void;
@@ -66,6 +68,17 @@ async function runQuitCleanup(deps: QuitCleanupDeps): Promise<void> {
     await deps.destroyPetWindow();
   } catch {
     /* pet not initialized */
+  }
+
+  // The same lesson as the pet, and a worse failure. The agent browses in an
+  // offscreen window, and a window is a window: `window-all-closed` counts it,
+  // so once the agent had looked anything up, closing the main window left the
+  // app running with nothing on screen and no way to reach it. Closed here,
+  // before anything is waited on, because it is a window this process owns.
+  try {
+    deps.closeAgentPage();
+  } catch {
+    /* never opened */
   }
 
   const cleanup = async () => {
