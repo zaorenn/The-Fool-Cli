@@ -76,7 +76,8 @@
       "installFailed": "Error al instalar officecli automáticamente. Revisa los registros del backend y reintenta.",
       "portTimeout": "El servicio de vista previa inició pero no estuvo listo a tiempo. Reintenta.",
       "startFailed": "Error al iniciar el servicio de vista previa de Office.",
-      "outsideSandbox": "Este archivo está fuera del sandbox del proyecto actual."
+      "outsideSandbox": "Este archivo está fuera del sandbox del proyecto actual.",
+      "officecliMissingFromInstall": "Falta la copia de officecli que se incluye con The Fool, por lo que esta instalación está incompleta. Reinstalar la aplicación la restaurará."
     },
     "serverInstall": {
       "hint": "The Fool se está ejecutando en un servidor. Instala el componente de vista previa en ese servidor y reintenta:",

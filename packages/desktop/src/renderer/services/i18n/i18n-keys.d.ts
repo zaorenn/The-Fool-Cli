@@ -1224,6 +1224,7 @@ export type I18nKey =
   | 'preview.noHistory'
   | 'preview.noTabs'
   | 'preview.office.errors.installFailed'
+  | 'preview.office.errors.officecliMissingFromInstall'
   | 'preview.office.errors.officecliNotFound'
   | 'preview.office.errors.outsideSandbox'
   | 'preview.office.errors.portTimeout'

@@ -76,7 +76,8 @@
       "installFailed": "Échec de l'installation automatique d'officecli. Vérifiez les journaux backend et réessayez.",
       "portTimeout": "Le service de prévisualisation a démarré mais n’est pas prêt à temps. Réessayez.",
       "startFailed": "Échec du démarrage du service de prévisualisation d'Office.",
-      "outsideSandbox": "Ce fichier se trouve en dehors du bac à sable du projet actuel."
+      "outsideSandbox": "Ce fichier se trouve en dehors du bac à sable du projet actuel.",
+      "officecliMissingFromInstall": "La copie d'officecli fournie avec The Fool est absente : cette installation est incomplète. Réinstaller l'application la restaurera."
     },
     "serverInstall": {
       "hint": "The Fool fonctionne sur un serveur. Installez le composant d'aperçu sur ce serveur, puis réessayez :",

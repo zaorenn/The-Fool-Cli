@@ -76,7 +76,8 @@
       "installFailed": "officecli 자동 설치에 실패했습니다. 백엔드 로그를 확인한 뒤 다시 시도하세요.",
       "portTimeout": "미리보기 서비스가 시작되었지만 제시간에 준비되지 않았습니다. 다시 시도하세요.",
       "startFailed": "Office 미리보기 서비스 시작에 실패했습니다.",
-      "outsideSandbox": "이 파일은 현재 프로젝트 샌드박스 범위 밖에 있습니다."
+      "outsideSandbox": "이 파일은 현재 프로젝트 샌드박스 범위 밖에 있습니다.",
+      "officecliMissingFromInstall": "The Fool과 함께 제공되는 officecli 사본이 없습니다. 설치가 완전하지 않다는 뜻이며, 앱을 다시 설치하면 복구됩니다."
     },
     "serverInstall": {
       "hint": "The Fool가 서버에서 실행 중입니다. 미리보기 구성 요소는 해당 서버에 설치해야 합니다. 서버에서 다음 명령을 실행한 후 다시 시도하세요:",

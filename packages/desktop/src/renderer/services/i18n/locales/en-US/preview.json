@@ -76,7 +76,8 @@
       "installFailed": "Failed to install officecli automatically. Check backend logs and retry.",
       "portTimeout": "Preview service started but did not become ready in time. Retry.",
       "startFailed": "Failed to start the Office preview service.",
-      "outsideSandbox": "This file is outside the current project sandbox."
+      "outsideSandbox": "This file is outside the current project sandbox.",
+      "officecliMissingFromInstall": "The copy of officecli that ships with The Fool is missing, so this install is incomplete. Reinstalling the app will restore it."
     },
     "serverInstall": {
       "hint": "The Fool is running on a server. Install the preview component on that server, then retry:",
