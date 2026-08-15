@@ -185,7 +185,7 @@ describe('growPageBottom', () => {
 
     // Embedding a page twice with crop boxes duplicates the text layer while
     // looking correct on screen. This is the assertion that catches it.
-    expect(after.runs.map((r) => r.text).sort()).toEqual(before.runs.map((r) => r.text).sort());
+    expect(after.runs.map((r) => r.text).toSorted()).toEqual(before.runs.map((r) => r.text).toSorted());
   });
 });
 

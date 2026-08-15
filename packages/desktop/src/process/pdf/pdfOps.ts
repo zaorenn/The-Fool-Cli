@@ -255,7 +255,7 @@ export const pdfRemovePages = async (
     pages.map((page) => ({ from: page, to: page })),
     pageCount
   );
-  const unique = [...new Set(indices)].sort((left, right) => right - left);
+  const unique = [...new Set(indices)].toSorted((left, right) => right - left);
 
   if (unique.length >= pageCount) {
     throw new PdfOpError('range', 'That would remove every page; a document with no pages is not a document.');
