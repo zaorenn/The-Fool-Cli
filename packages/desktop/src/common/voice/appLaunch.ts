@@ -287,3 +287,29 @@ export const isSearchableAppName = (name: string): boolean => {
   const wanted = name.trim();
   return wanted.length > 0 && wanted.length <= 80 && !/[\r\n\t]/.test(wanted);
 };
+
+/**
+ * A Start-menu id that is already a path to a program.
+ *
+ * `Get-StartApps` returns two shapes of `AppID` and only one of them is an
+ * AppUserModelID. Half the menu is a path, and games installed outside a store
+ * are almost all of it: `Marvels Spider-Man 2` is listed as
+ * `C:\Games\Marvels Spider-Man 2\Spider-Man2.exe`. Handing that to
+ * `shell:AppsFolder\…` opens nothing at all, so an installed game sitting in
+ * the user's own Start menu was unopenable by name — found by the user, not by
+ * a test.
+ *
+ * Refused unless it is an absolute path on a drive ending in `.exe`. The value
+ * comes from the operating system rather than from a model, but it is about to
+ * become a program that runs, and a rule that holds only while the source is
+ * trusted breaks the first time something else is passed to it. `execFile`
+ * takes it as a file and an argument list, never a shell string, so a space in
+ * `Program Files` needs no quoting and no quoting can be escaped out of.
+ */
+const EXECUTABLE_PATH = /^[a-z]:\\(?:[^<>:"|?*\r\n]+\\)*[^<>:"|?*\r\n]+\.exe$/i;
+
+export const executablePathCommand = (launchId: string): AppLaunchCommand | null => {
+  const wanted = launchId.trim();
+  if (!EXECUTABLE_PATH.test(wanted)) return null;
+  return { file: wanted, args: [] };
+};

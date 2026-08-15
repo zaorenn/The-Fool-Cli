@@ -13,7 +13,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { lmStudioModelsUrl, pickLoadedContext } from '@/common/voice/contextWindow';
+import { USABLE_CONTEXT_CAP_TOKENS, lmStudioModelsUrl, pickLoadedContext } from '@/common/voice/contextWindow';
 import { historyBudgetTokens } from '@/common/voice/contextBudget';
 
 /** `GET /api/v0/models`, as recorded. */
@@ -78,5 +78,34 @@ describe('what reading it buys', () => {
 
     expect(assumed).toBe(0);
     expect(measured).toBeGreaterThan(30_000);
+  });
+});
+
+/**
+ * Read from the running server: the 8B is loaded at 131,072 tokens and the 14B
+ * supports 32,768, which is why the larger model is the faster one. Planning a
+ * prompt around the larger window pays prefill per token for history nobody
+ * asked to keep.
+ */
+describe('the cap on what is planned for', () => {
+  const listed = (id: string, loaded: number) => ({
+    data: [{ id, state: 'loaded', loaded_context_length: loaded }],
+  });
+
+  it('cuts a window nobody would have chosen down to the cap', () => {
+    expect(
+      pickLoadedContext(listed('deepseek/deepseek-r1-0528-qwen3-8b', 131_072), 'deepseek/deepseek-r1-0528-qwen3-8b')
+    ).toBe(USABLE_CONTEXT_CAP_TOKENS);
+  });
+
+  it('leaves a window already under the cap alone', () => {
+    expect(pickLoadedContext(listed('qwen/qwen3-14b', 8_192), 'qwen/qwen3-14b')).toBe(8_192);
+  });
+
+  /// Not tighter: the budget arithmetic was calibrated against the 64,256 this
+  /// machine reports, and 32,768 would leave about 12,000 tokens for the
+  /// conversation where 65,536 leaves about 37,000.
+  it('leaves the measured window of this machine untouched', () => {
+    expect(pickLoadedContext(listed('qwen/qwen3.5-9b', 64_256), 'qwen/qwen3.5-9b')).toBe(64_256);
   });
 });

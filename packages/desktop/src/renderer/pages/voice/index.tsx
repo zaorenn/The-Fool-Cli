@@ -17,6 +17,7 @@ import ShimmerText from '@renderer/components/ShimmerText';
 import TextToSpeechSection from '@renderer/components/settings/SettingsModal/contents/voice/tts/TextToSpeechSection';
 import ConversationHistory from './ConversationHistory';
 import ConversationSettings from './ConversationSettings';
+import FoundDocuments from '@renderer/components/documents/FoundDocuments';
 import VoiceHudBody from './hud/VoiceHudBody';
 import { conversationRuntime } from './runtime/conversationRuntime';
 import { useConversation } from './runtime/useConversation';
@@ -148,6 +149,11 @@ const VoiceConversationPage: React.FC = () => {
             </div>
           </div>
           <div className='flex items-center gap-8px'>
+            {/* Always present, including before a conversation starts: the
+                moment somebody reaches for this is after something did not
+                appear, and a control that showed up only while connected
+                would be missing then. */}
+            <FoundDocuments />
             {active && conversation.providerName ? <Tag size='small'>{conversation.providerName}</Tag> : null}
             <Tag icon={<Link size={13} />} color={active ? 'green' : 'gray'}>
               {phaseLabel}

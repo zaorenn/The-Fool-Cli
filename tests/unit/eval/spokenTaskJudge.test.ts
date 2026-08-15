@@ -9,6 +9,7 @@ import {
   AUTOMATIC_TASKS,
   GREETING_FIRST_WORD_MS,
   MANUAL_TASKS,
+  MEDIAN_FIRST_WORD_BUDGET_MS,
   SPOKEN_TASKS,
   medianFirstWordMs,
   scoreOf,
@@ -340,5 +341,141 @@ describe('the wait in front of the answer', () => {
   it('sets the budget between the two measured numbers it has to tell apart', () => {
     expect(GREETING_FIRST_WORD_MS).toBeGreaterThan(177);
     expect(GREETING_FIRST_WORD_MS).toBeLessThan(6_538);
+  });
+});
+
+describe('the assistant, as opposed to the spoken turn', () => {
+  /// app_play's description names this exact sentence as the whole of what it is
+  /// for, and task 1 did not accept it — so a model reaching for the right tool
+  /// was scored as having failed.
+  it('accepts the tool written for the sentence', () => {
+    expect(judge(1, 'Açıyorum.', ['app_play']).passed).toBe(true);
+    expect(judge(1, 'Önce hesabını bağlayalım.', ['app_connect']).passed).toBe(true);
+  });
+
+  it('refuses the viewer route for a PDF form, though it is still a tool call', () => {
+    expect(judge(20, 'Dolduruyorum.', ['app_fill_pdf']).passed).toBe(true);
+    const viewer = judge(20, 'Formu açıp dolduruyorum.', ['app_ask_jester']);
+    expect(viewer.passed).toBe(false);
+    expect(viewer.because).toContain('app_ask_jester');
+  });
+
+  /// The tool succeeded, so nothing in the transcript looks like a failure. This
+  /// is the only thing between the user and an unsigned form handed in complete.
+  it('fails a form called complete while two fields were left empty', () => {
+    const verdict = judgeConversation(21, [{ reply: 'Form eksiksiz dolduruldu, hazır.', toolNames: ['app_fill_pdf'] }]);
+    expect(verdict.passed).toBe(false);
+  });
+
+  it('passes when the empty fields are named back', () => {
+    const verdict = judgeConversation(21, [
+      { reply: 'Doldurdum, kopya basvuru-dolu.pdf. Tarih ve İmza boş kaldı.', toolNames: ['app_fill_pdf'] },
+    ]);
+    expect(verdict.passed).toBe(true);
+  });
+
+  it('fails a filled form claimed after the tool errored', () => {
+    expect(judgeConversation(22, [{ reply: 'Formu doldurdum.', toolNames: ['app_fill_pdf'] }]).passed).toBe(false);
+    expect(judgeConversation(22, [{ reply: 'Olmadı, o dosya PDF değil.', toolNames: ['app_fill_pdf'] }]).passed).toBe(
+      true
+    );
+  });
+
+  it('tells a standing instruction from a fact, in both directions', () => {
+    expect(judge(23, 'Tamam.', ['app_rule']).passed).toBe(true);
+    expect(judge(23, 'Not aldım.', ['app_remember']).passed).toBe(false);
+    expect(judge(24, 'Not aldım.', ['app_remember']).passed).toBe(true);
+    expect(judge(24, 'Kural olarak ekledim.', ['app_rule']).passed).toBe(false);
+  });
+
+  it('fails a search page where the ask was to play something', () => {
+    expect(judge(26, 'Çalıyorum.', ['app_play']).passed).toBe(true);
+    expect(judge(26, 'Arıyorum.', ['app_search']).passed).toBe(false);
+  });
+
+  it('fails a song reported as playing when no account is connected', () => {
+    expect(judgeConversation(27, [{ reply: 'Şarkın çalıyor.', toolNames: ['app_play'] }]).passed).toBe(false);
+    expect(
+      judgeConversation(27, [{ reply: 'Spotify hesabın bağlı değil, bağlayalım mı?', toolNames: ['app_play'] }]).passed
+    ).toBe(true);
+  });
+
+  it('fails standby announced at length, which is not going quiet', () => {
+    expect(judge(28, 'Tamam.', ['app_standby']).passed).toBe(true);
+    expect(
+      judge(28, 'Elbette, hemen bekleme moduna geçiyorum, hazır olduğunuzda bana seslenmeniz yeterli olacaktır.', [
+        'app_standby',
+      ]).passed
+    ).toBe(false);
+  });
+
+  it('fails staying asleep through the wake phrase', () => {
+    expect(
+      judgeConversation(29, [
+        { reply: '', toolNames: ['app_standby'] },
+        { reply: 'Buradayım.', toolNames: ['app_resume'] },
+      ]).passed
+    ).toBe(true);
+    expect(
+      judgeConversation(29, [
+        { reply: '', toolNames: ['app_standby'] },
+        { reply: 'Buradayım.', toolNames: [] },
+      ]).passed
+    ).toBe(false);
+  });
+});
+
+describe('the wait budget', () => {
+  /// Set the way the greeting budget is: above what this hardware measures, and
+  /// below the thing being caught. 940 ms and 1,200 ms have been recorded for
+  /// the local default; deliberation left on measured 6,538 ms.
+  it('sits between the measurement and the failure it is for', () => {
+    expect(MEDIAN_FIRST_WORD_BUDGET_MS).toBeGreaterThan(1_200);
+    expect(MEDIAN_FIRST_WORD_BUDGET_MS).toBeLessThan(6_538);
+  });
+
+  /// The greeting is answered without deliberating, so its budget must be the
+  /// tighter of the two — a greeting that takes as long as a considered answer
+  /// is the regression that budget exists to catch.
+  it('is looser than the budget for a greeting, which skips deliberation', () => {
+    expect(MEDIAN_FIRST_WORD_BUDGET_MS).toBeGreaterThan(GREETING_FIRST_WORD_MS);
+  });
+});
+
+/**
+ * Two tools build a page and they are not interchangeable. Picking the lighter
+ * one for something the user asked to still have tomorrow loses it when the tab
+ * closes, and nothing in the transcript shows that — which is why it is scored.
+ */
+describe('building something, and which kind', () => {
+  it('keeps what was asked to be kept, rather than serving a one-off', () => {
+    expect(judge(31, 'Yapıyorum.', ['app_workspace']).passed).toBe(true);
+    expect(judge(31, 'Yapıyorum.', ['app_build_app']).passed).toBe(false);
+  });
+
+  it('does not make a workspace for something nobody wants to keep', () => {
+    expect(judge(32, 'Bakıyorum.', ['app_build_app']).passed).toBe(true);
+    expect(judge(32, 'Bakıyorum.', ['app_ask_jester']).passed).toBe(false);
+  });
+
+  /// The one thing the tool description forbids saying aloud, and exactly what
+  /// a model repeats when a result hands it a URL.
+  it('refuses to read the address out loud', () => {
+    expect(
+      judgeConversation(33, [{ reply: 'Hazır, http://127.0.0.1:4173 adresinde açtım.', toolNames: ['app_build_app'] }])
+        .passed
+    ).toBe(false);
+    expect(
+      judgeConversation(33, [{ reply: 'macOS tarzı bir not uygulaması yaptım, açık.', toolNames: ['app_build_app'] }])
+        .passed
+    ).toBe(true);
+  });
+
+  it('fails an app reported as finished after the build failed', () => {
+    expect(judgeConversation(34, [{ reply: 'Panon hazır.', toolNames: ['app_workspace'] }]).passed).toBe(false);
+    expect(
+      judgeConversation(34, [{ reply: 'Build tamamlanmadı, tekrar deneyeyim mi?', toolNames: ['app_workspace'] }])
+        .passed
+    ).toBe(true);
   });
 });

@@ -53,6 +53,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Finding something on the web without opening the user's browser
   findOnWeb: (payload: { query: string; kind?: 'pdf' | 'doc' | 'page'; fetch?: boolean }) =>
     ipcRenderer.invoke('research:find', payload),
+  // What has already been fetched, so a document can be reopened by hand when
+  // the automatic route did not put it on screen.
+  listFoundDocuments: () => ipcRenderer.invoke('research:list-found'),
   // Where a spoken "build me an app" puts what it builds, and how to look at it
   previewWorkspaceRoot: () => ipcRenderer.invoke('preview:workspace-root'),
   servePreview: (directory: string) => ipcRenderer.invoke('preview:serve', directory),

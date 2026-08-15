@@ -56,6 +56,37 @@ const asPositiveInteger = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : null;
 
 /**
+ * The most of a window this application will plan a prompt around.
+ *
+ * A local server loads a model at its *maximum* window unless told otherwise,
+ * and the maxima are not what anybody would choose. Read from the running
+ * server on this machine: `deepseek-r1-0528-qwen3-8b` is loaded at 131,072
+ * tokens while `qwen3-14b` supports 32,768, and one 12B variant reports
+ * 262,144. The 8B therefore carries four times the key-value cache of the 14B,
+ * which is why the larger model is the faster one — and why "an 8B is slow but
+ * a 14B is quick" is a sentence about windows rather than about parameters.
+ *
+ * **This does not free any memory.** The cache was allocated when the model was
+ * loaded; shrinking it means loading the model with a smaller window in the
+ * server's own settings, which is not something this side can reach. What this
+ * does is stop the application planning around a window that large, because
+ * prefill is paid per token of prompt and carrying a hundred thousand tokens of
+ * history nobody asked to keep is a slow first word.
+ *
+ * 65,536 rather than something tighter, and the existing tests are why. The
+ * budget arithmetic beside this was calibrated against the 64,256 this machine
+ * actually reports for the spoken model: at that window the fixed overhead and
+ * the reply reserve leave about 37,000 tokens for the conversation, and at
+ * 32,768 they leave about 12,000. Capping to the smaller number would have cut
+ * what the assistant can remember of a conversation to a third to solve a
+ * problem that belongs to a 131,072-token outlier.
+ *
+ * A model loaded with less than this reports less and is used as it is, so the
+ * cap only ever bites where the window was absurd to begin with.
+ */
+export const USABLE_CONTEXT_CAP_TOKENS = 65_536;
+
+/**
  * The window the named model is loaded with, from a model list.
  *
  * `loaded_context_length` first and `max_context_length` never: the second is
@@ -76,7 +107,8 @@ export const pickLoadedContext = (payload: unknown, modelId: string): number | n
   if (!named) return null;
   if (named.state !== 'loaded') return null;
 
-  return asPositiveInteger(named.loaded_context_length);
+  const loaded = asPositiveInteger(named.loaded_context_length);
+  return loaded === null ? null : Math.min(loaded, USABLE_CONTEXT_CAP_TOKENS);
 };
 
 /**

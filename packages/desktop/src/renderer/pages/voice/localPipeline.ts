@@ -13,7 +13,8 @@ import {
   type SpokenVoice,
 } from '@/common/realtime';
 import { synthesisProviderFor, type FoolVoiceSettings, type VoiceModel } from '@/common/types/foolVoice';
-import { backsCompletedAction, showedTheScreen, startedPlayback } from '@/common/voice/actionClaims';
+import { backsCompletedAction } from '@/common/voice/actionClaims';
+import { createTurnEvidence } from '@/common/voice/turnEvidence';
 import {
   deliberationFor,
   mayAskForNoDeliberation,
@@ -1399,8 +1400,9 @@ export class LocalVoicePipeline {
     const verdict = guardSpokenSentence(sentence, {
       toolsRan,
       remembered,
-      lookedAtScreen: this.sawScreen,
-      startedPlayback: this.playbackStarted,
+      lookedAtScreen: this.evidence.lookedAtScreen,
+      startedPlayback: this.evidence.startedPlayback,
+      appLaunchFailed: this.evidence.appLaunchFailed,
     });
     return verdict.speak === false ? verdict.correction : null;
   }
@@ -1413,7 +1415,8 @@ export class LocalVoicePipeline {
    * that really happened, and the answer thrown away is a correct one drawn from
    * a screenshot that is still in the history.
    */
-  private sawScreen = false;
+  /** The three facts the gates need, derived in one place for both runtimes. */
+  private readonly evidence = createTurnEvidence();
 
   /**
    * Whether a player has reported, this conversation, that something is on.
@@ -1423,6 +1426,8 @@ export class LocalVoicePipeline {
    * answer rather than a refusal.
    */
   private playbackStarted = false;
+  /** Whether the last launch this turn failed. Cleared by one that succeeds. */
+  private appLaunchFailed = false;
 
   private async speakReply(
     readiness: Extract<LocalReadiness, { ok: true }>,
@@ -1709,11 +1714,10 @@ export class LocalVoicePipeline {
       // else "a tool came back" is evidence enough; a look that came back with
       // an error is the case where the call exists and the screen does not, and
       // it is the case the model was watched exploiting.
-      if (showedTheScreen(call.function.name, result)) this.sawScreen = true;
+      this.evidence.observe(call.function.name, result);
       // The second result that is weighed rather than counted. `app_play` comes
       // back just as successfully having opened a page instead, and a page is
       // not a sound.
-      if (startedPlayback(call.function.name, result)) this.playbackStarted = true;
       this.history.push({
         role: 'tool',
         tool_call_id: call.id,
@@ -1797,15 +1801,16 @@ export class LocalVoicePipeline {
         speakerBusy: () => this.pending.length > 0 || this.renders.length > 0,
         // What the gate weighs for a claim about the screen, read per sentence:
         // a look that comes back mid-turn must license the sentence after it.
-        lookedAtScreen: () => this.sawScreen,
-        onLookedAtScreen: () => (this.sawScreen = true),
+        lookedAtScreen: () => this.evidence.lookedAtScreen,
+        onLookedAtScreen: () => this.evidence.markLookedAtScreen(),
         // Read, never written from here. The agent's stream reports which tools
         // ran and not what they answered, and `app_play` answers just as
         // successfully having opened a page as having started a song — so the
         // only thing that may set this is the tool loop below, which sees the
         // result. Without it the gate simply refuses the claim, which is the
         // right way round: a sentence about sound nobody confirmed.
-        startedPlayback: () => this.playbackStarted,
+        startedPlayback: () => this.evidence.startedPlayback,
+        appLaunchFailed: () => this.evidence.appLaunchFailed,
         // What the turn is doing, in the agent's own words, so a filler can name
         // it instead of saying "still working on it" about nothing.
         currentStep: () => this.options.currentStep?.() ?? null,

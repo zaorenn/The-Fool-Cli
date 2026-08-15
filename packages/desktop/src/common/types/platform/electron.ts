@@ -70,6 +70,14 @@ export interface ElectronBridgeAPI {
       }
     | { status: 'failed'; reason: string; detail?: string }
   >;
+  /**
+   * The documents already fetched on the user's behalf, newest first.
+   *
+   * The way back when the automatic open did not happen. It reads the folder
+   * rather than the conversation, so a document is still reachable after the
+   * transcript it was mentioned in has gone.
+   */
+  listFoundDocuments?: () => Promise<{ path: string; name: string; bytes: number; at: number }[]>;
   // Forward feedback diagnostics logs to the main process console / 转发反馈诊断日志到主进程控制台
   logFeedbackEvent?: (payload: { details?: unknown; level: 'info' | 'warn' | 'error'; message: string }) => void;
   recoverCorruptedDatabase?: () => Promise<void>;

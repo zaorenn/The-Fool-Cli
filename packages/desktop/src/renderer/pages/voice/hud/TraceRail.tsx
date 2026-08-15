@@ -5,8 +5,9 @@
  */
 
 import React from 'react';
-import { Typography } from '@arco-design/web-react';
+import { Button, Typography } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
+import { openDocument } from '@renderer/services/documents/documentViewer';
 import type { ConversationActivity } from '../runtime/types';
 import styles from './VoiceHud.module.css';
 
@@ -49,6 +50,23 @@ const TraceRail: React.FC<TraceRailProps> = ({ activities }) => {
                   itself in two weights is noise wearing a hierarchy. */}
               {activity.detail && activity.detail !== activity.label ? (
                 <Typography.Text className={styles.detail}>{activity.detail}</Typography.Text>
+              ) : null}
+              {/* The way back from an auto-open that did not happen. It calls
+                  exactly what the tool calls, so the document arrives in the
+                  same panel by the same route — a second button with its own
+                  idea of how to show a PDF would be a second thing to break. */}
+              {activity.document ? (
+                <Button
+                  size='mini'
+                  type='text'
+                  className={styles.openDocument}
+                  data-testid='voice-trace-open-document'
+                  onClick={() => {
+                    void openDocument(activity.document.path);
+                  }}
+                >
+                  {t('settings.voice.conversationOpenDocument', { name: activity.document.name })}
+                </Button>
               ) : null}
             </li>
           ))}

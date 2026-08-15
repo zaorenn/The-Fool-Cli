@@ -27,6 +27,18 @@ export type ConversationActivity = {
   label: string;
   detail: string;
   state: 'running' | 'completed' | 'failed';
+  /**
+   * The file this step put on disk, when it put one there.
+   *
+   * Carried so the trace can offer to open it again. Auto-opening is the
+   * intended path and it is not the only one that may run: the document is
+   * fetched by the main process and shown by the renderer, and the second half
+   * has failed on its own before — silently, while the assistant reported
+   * success. A row the user can click is the way back from that, which is why
+   * it is set whenever a file was saved rather than only when showing it
+   * worked.
+   */
+  document?: { path: string; name: string };
 };
 
 /**

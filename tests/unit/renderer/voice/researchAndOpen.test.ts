@@ -36,7 +36,7 @@ vi.mock('@/renderer/utils/emitter', () => ({
 }));
 
 const { readKind, runResearchTool } = await import('@renderer/pages/voice/runtime/researchTool');
-const { documentName, openDocument, viewerFor } = await import('@renderer/pages/voice/runtime/documentTool');
+const { documentName, openDocument, viewerFor } = await import('@renderer/services/documents/documentViewer');
 
 const host = () => ({
   t: (key: string, values?: Record<string, unknown>) => (values ? `${key}:${JSON.stringify(values)}` : key),

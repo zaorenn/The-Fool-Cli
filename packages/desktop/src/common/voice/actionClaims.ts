@@ -730,3 +730,138 @@ export const unbackedClaimCorrection = (reply: string): string =>
     'If no specific tool fits, hand the whole request to `app_ask_jester`, which can do anything on this computer.',
     'Only say you cannot do something after a tool has come back and told you it failed.',
   ].join(' ');
+
+/**
+ * Saying an application is open when nothing started one.
+ *
+ * The third gate of this shape, and the clearest argument for why the count of
+ * tools cannot be the evidence. Reported from a live session: asked to open
+ * Forza Horizon 6, `app_open_app` ran and came back a failure — the game is not
+ * installed and the Windows launcher could not have started it if it were — and
+ * the assistant then read the game's title off the screen and said it was open.
+ *
+ * Every count-based check passed, because a tool really had run. The one thing
+ * that could have made the sentence true reported the opposite, and nothing was
+ * asking it. An invented launch is worse than an invented song for the same
+ * reason an invented screen is: the user goes and looks, finds the title
+ * somewhere, and is confirmed in believing it.
+ */
+const ASSERTS_APP_OPEN: readonly RegExp[] = [
+  // ── Turkish, folded ──────────────────────────────────────────────────────
+  edged('(acik|acildi|actim|acti)'),
+  edged('(calisiyor|calismakta|calisir durumda)'),
+  edged('(baslatildi|baslattim|baslatmis oldum)'),
+  edged('(su anda|simdi) (acik|calisiyor)'),
+  // ── English ──────────────────────────────────────────────────────────────
+  edged("(is|are|'?s|'?re)\\s+(now\\s+)?(open|running|up and running)"),
+  edged('i (opened|launched|started) it'),
+  edged('(opened|launched|started) (it|the (app|game|application|program))'),
+  edged('(the )?(app|game|application|program) (is|has) (open|running|started|launched)'),
+];
+
+/**
+ * Saying plainly that it did not open, which is the sentence this wants more of.
+ *
+ * Checked first and wins outright, exactly like {@link NOT_PLAYING}. "Açamadım"
+ * is the honest answer to the Forza turn and must never be scored as a claim.
+ */
+const NOT_OPENED: readonly RegExp[] = [
+  edged('(acamadim|acilamadi|baslatamadim|bulunamadi|bulamadim|yuklu degil|kurulu degil)'),
+  edged("(i )?(can'?t|cannot|could not|couldn'?t|was not able to) (open|start|launch|find)"),
+  edged("(is|'?s|are) not (open|running|installed)"),
+  edged("(don'?t|do not|didn'?t|did not) (see|find|have) (it|that|the (app|game))"),
+];
+
+/**
+ * About to open it, rather than reporting that it opened.
+ *
+ * The same exemption the other three gates give. Checked before the assertions
+ * so that "açmaya çalışıyorum" is not read as the "çalışıyor" that means
+ * something is running.
+ */
+const ABOUT_TO_OPEN: readonly RegExp[] = [
+  edged('(aciyorum|baslatiyorum|calistiriyorum)'),
+  edged('(acmaya|baslatmaya) (calisiyorum|gidiyorum)'),
+  edged("i'?m (opening|starting|launching)"),
+  edged('let me (open|start|launch)'),
+  edged("i'?ll (open|start|launch)"),
+];
+
+/**
+ * Whether this reply asserts that an application is running.
+ *
+ * Consulted only when nothing has reported a launch, so the question it answers
+ * is never "is this true" but "could it be, given that no launcher said so".
+ */
+export const claimsAppOpen = (reply: string): boolean => {
+  const text = reply.trim();
+  if (text.length === 0) return false;
+  if (ASKING.test(text)) return false;
+
+  const folded = fold(text);
+  if (NOT_OPENED.some((pattern) => pattern.test(folded))) return false;
+  if (ABOUT_TO_OPEN.some((pattern) => pattern.test(folded))) return false;
+
+  return ASSERTS_APP_OPEN.some((pattern) => pattern.test(folded));
+};
+
+/**
+ * The only tools through which this assistant can know an application started.
+ *
+ * `app_ask_jester` is deliberately not in it. The agent may well have opened
+ * something, but it reports in prose rather than in a field, and a gate that
+ * accepted prose as evidence would be accepting the model's own account of its
+ * work — which is the thing being checked.
+ */
+export const APP_LAUNCH_TOOLS: ReadonlySet<string> = new Set(['app_open_app']);
+
+/** What a turn's launch attempt came to, if it made one at all. */
+export type AppLaunchOutcome = 'none' | 'opened' | 'failed';
+
+/**
+ * What `app_open_app` actually did, read from its result rather than its call.
+ *
+ * Three states rather than a boolean, because the gate below turns on the
+ * difference between "no launch was attempted" and "one was attempted and
+ * failed". Only the second contradicts a sentence saying something is open;
+ * the first is an ordinary turn in which the assistant may well have learned
+ * from somewhere else that an application is running.
+ *
+ * Closing something answers `opened: false`, so quitting Discord is never
+ * evidence that a game is up.
+ */
+export const appLaunchOutcome = (name: string, result: unknown): AppLaunchOutcome => {
+  if (!APP_LAUNCH_TOOLS.has(name)) return 'none';
+  if (result === null || typeof result !== 'object') return 'none';
+
+  const record = result as { ok?: unknown; opened?: unknown };
+  if (record.ok === false) return 'failed';
+  return record.opened === true ? 'opened' : 'none';
+};
+
+/**
+ * Whether this sentence says an application is open that has just failed to open.
+ *
+ * Narrow on purpose, and narrower than it first was. Written to fire whenever
+ * nothing had confirmed a launch, it refused "I opened it in your browser" and
+ * "Kod editörü açık" — a page that really did open, and an observation made by
+ * looking. Both are honest reports, and a judge whose failures are the correct
+ * behaviour is worse than no judge, because it is read as evidence.
+ *
+ * So the question it asks is not "was this confirmed" but "was this
+ * contradicted": a launch was attempted in this turn, it came back a failure,
+ * and the assistant is nonetheless saying the thing is running. That is the
+ * reported turn exactly — `app_open_app` failed on a game that is not even
+ * installed, and the title was then read off the screen and announced as a
+ * running game.
+ */
+export const isContradictedAppOpenClaim = (reply: string, launchFailed: boolean): boolean =>
+  launchFailed && claimsAppOpen(reply);
+
+export const contradictedAppOpenCorrection = (reply: string): string =>
+  [
+    `You just said: "${reply.trim()}"`,
+    'That says an application is open, and nothing has reported that one started. Seeing its name on the screen is not evidence it is running — a title in a store page, a shortcut, or this conversation all put that text there.',
+    'Do not soften it into "it should be open now" — a guess about the machine is the same mistake said less clearly.',
+    'Say what actually happened, including plainly that you could not open it, or call `app_open_app`, which answers with the launch when the system really accepted it.',
+  ].join(' ');

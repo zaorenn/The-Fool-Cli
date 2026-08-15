@@ -61,6 +61,47 @@ const VoiceDial: React.FC<VoiceDialProps> = ({ phase, level, motion, label }) =>
     let frame = 0;
     const started = performance.now();
 
+    /**
+     * The half of every bar that cannot move, done once.
+     *
+     * `x1`/`y1` are the inner end of the spoke: centre plus a fixed radius at a
+     * fixed angle. Nothing in the animation reaches them — not the level, not
+     * the phase, not the clock — and they were being recomputed and rewritten
+     * on every frame anyway. That is 152 of the 304 attribute writes this ring
+     * was doing sixty times a second, in a window that is always on top and
+     * therefore composited every frame, for a value that is the same as it was
+     * the frame before.
+     */
+    const cosines = new Float32Array(BARS);
+    const sines = new Float32Array(BARS);
+    const envelopes = new Float32Array(BARS);
+    /** What was last written, so a bar that has not moved is not written again. */
+    const drawn = new Float32Array(BARS).fill(Number.NaN);
+
+    for (let index = 0; index < BARS; index += 1) {
+      const position = index / BARS;
+      const angle = position * Math.PI * 2 - Math.PI / 2;
+      cosines[index] = Math.cos(angle);
+      sines[index] = Math.sin(angle);
+      // A voice is loudest in the middle of its range, not evenly across it —
+      // a ring of equal bars reads as a progress indicator rather than sound.
+      envelopes[index] = 0.55 + 0.45 * Math.sin(position * Math.PI * 4 + index * 0.7);
+      bars[index].setAttribute('x1', (CENTRE + cosines[index] * INNER).toFixed(2));
+      bars[index].setAttribute('y1', (CENTRE + sines[index] * INNER).toFixed(2));
+    }
+
+    /**
+     * How far a spoke must move before it is worth touching the DOM.
+     *
+     * The ring is drawn in a 320-unit box, so a twentieth of a unit is well
+     * under a pixel at any size this window is ever given. Below it the write
+     * changes nothing anybody can see and still costs an attribute parse and a
+     * paint invalidation — which is the whole cost of `standby`, a phase whose
+     * entire brief is to sit still and stay out of the way, and which is the
+     * phase the assistant spends most of its life in.
+     */
+    const MOVED = 0.05;
+
     const paint = (now: number): void => {
       const seconds = (now - started) / 1000;
       const setting: MotionSetting = reduced ? 'none' : motionRef.current;
@@ -68,24 +109,22 @@ const VoiceDial: React.FC<VoiceDialProps> = ({ phase, level, motion, label }) =>
       const heard = level.current ?? 0;
 
       for (let index = 0; index < BARS; index += 1) {
-        const position = index / BARS;
-        // A voice is loudest in the middle of its range, not evenly across it —
-        // a ring of equal bars reads as a progress indicator rather than sound.
-        const envelope = 0.55 + 0.45 * Math.sin(position * Math.PI * 4 + index * 0.7);
-        const target = barHeight(shape, { position, seconds, level: heard, shape: envelope });
+        const target = barHeight(shape, {
+          position: index / BARS,
+          seconds,
+          level: heard,
+          shape: envelopes[index],
+        });
 
         heights[index] += (target - heights[index]) * EASING;
 
         const length = 3 + heights[index] * REACH;
-        const angle = position * Math.PI * 2 - Math.PI / 2;
-        const cos = Math.cos(angle);
-        const sin = Math.sin(angle);
+        if (Math.abs(length - drawn[index]) < MOVED) continue;
+        drawn[index] = length;
 
         const bar = bars[index];
-        bar.setAttribute('x1', (CENTRE + cos * INNER).toFixed(2));
-        bar.setAttribute('y1', (CENTRE + sin * INNER).toFixed(2));
-        bar.setAttribute('x2', (CENTRE + cos * (INNER + length)).toFixed(2));
-        bar.setAttribute('y2', (CENTRE + sin * (INNER + length)).toFixed(2));
+        bar.setAttribute('x2', (CENTRE + cosines[index] * (INNER + length)).toFixed(2));
+        bar.setAttribute('y2', (CENTRE + sines[index] * (INNER + length)).toFixed(2));
       }
 
       frame = window.requestAnimationFrame(paint);

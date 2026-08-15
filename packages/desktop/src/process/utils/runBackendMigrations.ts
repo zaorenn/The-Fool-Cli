@@ -210,9 +210,21 @@ function buildDefaultMcpServers(): McpImportServer[] {
   };
 
   // The in-app browser, as tools. Unlike chrome-devtools this needs nothing
-  // installed — the script ships with the app and the browser it drives is the
-  // panel already in the window. Off until the user turns it on, because it
-  // acts inside a browser that holds their logins.
+  // installed — the script ships with the app.
+  //
+  // **On by default since 2.5.10.** It was off, and the comment here gave the
+  // reason: it "acts inside a browser that holds their logins". That was true
+  // when the thing being driven was the user's visible panel. Since 2.5.8 it
+  // drives the agent's own offscreen page (`process/browser/agentPage.ts`) —
+  // nothing it opens, clicks or scrolls appears in front of the user. What it
+  // still shares is the `persist:fool-browser` partition, so it acts as the
+  // user on sites they are signed into; that is the actual trade-off, and it
+  // is the point of the feature rather than an accident of it.
+  //
+  // The cost of leaving it off was not a missing tool but a false sentence:
+  // the assistant told the user it had no browser, which is what an empty tool
+  // list looks like from the inside. A capability the app ships and hides is
+  // worse than one it does not have.
   const handshake = browserControlHandshakePath();
   const browserScript = getBuiltinMcpScriptPath('builtin-mcp-browser');
   const browserEnv = { FOOL_BROWSER_HANDSHAKE: handshake };
@@ -225,8 +237,9 @@ function buildDefaultMcpServers(): McpImportServer[] {
     ? [
         {
           name: BUILTIN_BROWSER_NAME,
-          description: "Drive The Fool's own browser panel: open pages, read them, click and type.",
-          enabled: false,
+          description:
+            "Drive The Fool's own background browser: open pages, read them, click and type. Runs offscreen, so nothing appears in front of the user.",
+          enabled: true,
           builtin: true,
           transport: { type: 'stdio', command: 'node', args: [browserScript], env: browserEnv },
           original_json: JSON.stringify({ mcpServers: { [BUILTIN_BROWSER_NAME]: browserConfig } }, null, 2),
@@ -435,6 +448,50 @@ async function removeRetiredBuiltinServers(existing: readonly IMcpServer[]): Pro
   }
 }
 
+/**
+ * Switches the builtin browser on for an installation that predates the change.
+ *
+ * The bootstrap below only ever adds — `missing` is the defaults the database
+ * does not have, and nothing walks the other way. So flipping `enabled` in
+ * {@link buildDefaultMcpServers} reaches a fresh install and nobody else, which
+ * is the shape of change that looks done and does nothing. This is the other
+ * half.
+ *
+ * Run once and recorded, so a user who turns it back off is not overruled on
+ * the next launch. The flag is written even when there is nothing to change,
+ * because "already on" and "switched on" are the same state afterwards and
+ * neither should be revisited.
+ */
+async function enableBuiltinBrowserOnce(configFile: ConfigFile, existing: readonly IMcpServer[]): Promise<void> {
+  const done = await configFile.get('migration.browserEnabledByDefault_v1').catch((): undefined => undefined);
+  if (done) return;
+
+  const browser = existing.find((server) => server.name === BUILTIN_BROWSER_NAME);
+  // Nothing to migrate: a fresh install gets it enabled from the defaults, and
+  // the flag would be recorded against a decision never taken.
+  if (!browser) return;
+
+  // `toggleServer` flips, it does not set — so the check above is what keeps
+  // this from switching off a browser that is already on. There is no
+  // set-enabled route: `updateServer` takes name, transport, description,
+  // original_json and builtin, and nothing else.
+  if (browser.enabled !== true) {
+    try {
+      await mcpService.toggleServer.invoke({ id: browser.id });
+      console.log(`[Migration] enabled builtin MCP server: ${BUILTIN_BROWSER_NAME}`);
+    } catch (error) {
+      // Left unflagged so the next launch tries again, which is the same
+      // guarantee the rest of this bootstrap gives.
+      console.warn(`[Migration] could not enable ${BUILTIN_BROWSER_NAME}:`, error);
+      return;
+    }
+  }
+
+  await configFile.set('migration.browserEnabledByDefault_v1', true).catch((error: unknown) => {
+    console.warn('[Migration] could not record the browser migration flag:', error);
+  });
+}
+
 async function ensureBootstrapMcpServersInDb(configFile: ConfigFile): Promise<void> {
   const [backendPrefs, fileImageConfig, providers] = await Promise.all([
     fetchBackendClientPreferences(),
@@ -460,6 +517,7 @@ async function ensureBootstrapMcpServersInDb(configFile: ConfigFile): Promise<vo
   }
 
   await removeRetiredBuiltinServers(existing ?? []);
+  await enableBuiltinBrowserOnce(configFile, existing ?? []);
 
   const existingChromeDevtools = existingByName.get(BUILTIN_CHROME_DEVTOOLS_NAME);
   if (

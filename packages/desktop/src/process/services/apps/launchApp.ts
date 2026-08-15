@@ -5,7 +5,13 @@
  */
 
 import { execFile } from 'node:child_process';
-import { findApp, isSearchableAppName, launchCommandFor, type IndexedApp } from '@/common/voice/appLaunch';
+import {
+  executablePathCommand,
+  findApp,
+  isSearchableAppName,
+  launchCommandFor,
+  type IndexedApp,
+} from '@/common/voice/appLaunch';
 import { installedApps } from './appIndex';
 
 /**
@@ -61,6 +67,12 @@ const exec = (file: string, args: readonly string[]): Promise<{ ok: boolean }> =
  */
 const startIndexed = async (app: IndexedApp): Promise<boolean> => {
   if (process.platform === 'win32') {
+    const direct = executablePathCommand(app.launchId);
+    if (direct) return (await exec(direct.file, direct.args)).ok;
+
+    // Not every `AppID` is an AppUserModelID — see {@link executablePathCommand}.
+    // A path handed to `shell:AppsFolder\…` opens nothing, silently, so the
+    // shape is checked before the folder is used rather than after.
     await exec('explorer.exe', [`shell:AppsFolder\\${app.launchId}`]);
     return true;
   }

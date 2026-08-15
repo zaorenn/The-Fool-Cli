@@ -41,7 +41,7 @@ import { defaultSurfaceChoice, type SurfaceStyleChoice } from '@/common/theme/su
 import { peekSurfaceChoice, SURFACE_STYLE_CONFIG_KEY } from '@renderer/hooks/config/useSurfaceStyle';
 import { normalizeEndpoint } from '../localPipeline';
 import { buildAndPreview } from './buildTool';
-import { documentName, openDocument } from './documentTool';
+import { documentName, openDocument } from '@renderer/services/documents/documentViewer';
 import { runResearchTool } from './researchTool';
 import { fillPdfWithQuestions, type KnownValue, type PdfFillOutcome } from './pdfTool';
 import { applySpokenSetting } from './settingsTool';
@@ -547,7 +547,12 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
           : t('settings.voice.conversationAppOpened', { name });
       host.updateActivity(invocation.callId, { detail, state: 'completed' });
       host.backToListening();
-      return { ok: true, detail };
+      // `opened` is what the honesty gate reads, and it is deliberately not the
+      // same thing as `ok`. Closing something succeeds too, and a turn that
+      // closed Discord must not leave the assistant free to say a game is
+      // running. `action` is carried so the evidence can tell the two apart
+      // without inferring it from the wording.
+      return { ok: true, opened: action === 'open', action, name, detail };
     }
 
     if (invocation.name === 'app_fill_pdf') {

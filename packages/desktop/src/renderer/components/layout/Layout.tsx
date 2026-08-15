@@ -227,7 +227,17 @@ const Layout: React.FC<{
   // P4 (②B): hoist the preview region to the Layout host for project
   // conversations so it is structurally persistent (no remount on same-project
   // switches). ChatLayout renders chat only in that case (previewHosted).
-  const previewRegionActive = Boolean(currentProject) && !isMobile && isPreviewOpen;
+  // Who renders the panel, and the case that used to fall between them.
+  //
+  // A conversation *with* a project is hosted here, so the region survives a
+  // same-project switch. A conversation *without* one is hosted by ChatLayout
+  // (`previewHosted`). Every other route was hosted by nobody — and `/voice` is
+  // every other route. So a document opened by the voice assistant reached
+  // `PreviewContext`, opened a tab in its state, and had no panel on screen to
+  // appear in: fetched, recorded, invisible. Hosting it here whenever no
+  // ChatLayout is mounted closes that gap without giving either conversation
+  // case a second panel.
+  const previewRegionActive = !isMobile && isPreviewOpen && (Boolean(currentProject) || !workspaceAvailable);
   const { widthPx: previewWidthPx, createDragHandle: createPreviewRegionDragHandle } = useProjectPreviewRegionWidth(
     mainRowWidth,
     explorerCollapsed ? 0 : explorerWidthPx,

@@ -19,6 +19,10 @@
  *   bun scripts/eval/run.ts --repeat 3           # a flaky task is not a passing one
  *   bun scripts/eval/run.ts --json               # one object, for a chart later
  *
+ * It exits non-zero on two things: a score below `--min-score`, and a median
+ * wait past `MEDIAN_FIRST_WORD_BUDGET_MS`. The second is new, and it is the
+ * half that used to be measured, printed, and never checked.
+ *
  * It needs a model endpoint. Without one it says so and exits non-zero rather
  * than reporting a score of zero, which would look like a regression.
  *
@@ -41,6 +45,7 @@ import { deliberationFor, noDeliberation } from '../../packages/desktop/src/comm
 import {
   AUTOMATIC_TASKS,
   MANUAL_TASKS,
+  MEDIAN_FIRST_WORD_BUDGET_MS,
   medianFirstWordMs,
   scriptOf,
   scoreOf,
@@ -324,6 +329,25 @@ const main = async (): Promise<void> => {
   const median = medianFirstWordMs(scored);
   const slowest = slowestFirstWordMs(scored);
 
+  /**
+   * The score split by what it is a score of.
+   *
+   * A single total is close to useless for the thing these numbers get used for
+   * — telling somebody which model to load. "24 of 28" does not help them
+   * choose; "memory 5/5, documents 1/3" does, and it is the difference between
+   * a model that cannot be trusted with a form and one that cannot hold a rule.
+   * Tasks written before capabilities existed are the spoken turn itself.
+   */
+  const byCapability = new Map<string, { passed: number; total: number }>();
+  for (const entry of scored) {
+    const key = entry.task.capability ?? 'spoken turn';
+    const row = byCapability.get(key) ?? { passed: 0, total: 0 };
+    row.total += 1;
+    if (entry.verdict.passed) row.passed += 1;
+    byCapability.set(key, row);
+  }
+  const capabilities = [...byCapability.entries()].map(([name, row]) => ({ name, ...row }));
+
   if (AS_JSON) {
     console.log(
       JSON.stringify({
@@ -331,6 +355,7 @@ const main = async (): Promise<void> => {
         model: MODEL,
         passed,
         total,
+        capabilities,
         firstWordMs: { median, slowest },
         results: scored.map((entry) => ({
           id: entry.task.id,
@@ -358,6 +383,9 @@ const main = async (): Promise<void> => {
       console.log(`      first word: ${timings}`);
     }
     console.log(`\n${passed}/${total} automatic tasks passed.`);
+    for (const row of capabilities) {
+      console.log(`  ${row.name.padEnd(12)} ${row.passed}/${row.total}`);
+    }
     console.log(
       median === null
         ? 'first word: not measured'
@@ -370,6 +398,14 @@ const main = async (): Promise<void> => {
 
   if (MIN_SCORE > 0 && passed < MIN_SCORE) {
     console.error(`\nBelow the floor: ${passed} < ${MIN_SCORE}.`);
+    process.exit(1);
+  }
+
+  // Measured, printed, and until now never checked — so a change that doubled
+  // the wait exited zero, while one that lost a single tool call failed loudly.
+  // A model that answers correctly after nine seconds has not answered.
+  if (median !== null && median > MEDIAN_FIRST_WORD_BUDGET_MS) {
+    console.error(`\nOver the wait budget: ${median} ms median to the first word > ${MEDIAN_FIRST_WORD_BUDGET_MS} ms.`);
     process.exit(1);
   }
 };

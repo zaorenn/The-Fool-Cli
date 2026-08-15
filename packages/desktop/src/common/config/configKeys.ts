@@ -185,6 +185,14 @@ export type ConfigKeyMap = {
   // `migrateProviders` / `migrateAssistantsToBackend` (ELECTRON-1KT).
   'migration.providersMigrated_v1': boolean | undefined;
   'migration.assistantsMigrated_v1': boolean | undefined;
+  /**
+   * Set once the builtin browser has been switched on for an install that
+   * predates it being on by default. One-shot on purpose: the bootstrap only
+   * ever *adds* servers, so a changed default reaches new installations only —
+   * and a migration that enabled it on every launch would overrule a user who
+   * had deliberately turned it back off.
+   */
+  'migration.browserEnabledByDefault_v1': boolean | undefined;
 };
 
 export type ConfigKey = keyof ConfigKeyMap;

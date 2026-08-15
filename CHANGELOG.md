@@ -2,6 +2,39 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.5.10
+
+The release where the documents it finds actually appear, and the browser it
+has stops being a secret.
+
+**A found document now opens somewhere you can see it.** 2.5.9 fixed the
+message that opens the viewer; it did not fix the fact that on the voice screen
+there was no viewer to open into. The panel was only ever hosted inside a
+conversation, so a PDF the assistant fetched was downloaded, recorded and
+invisible — while it told you it had opened the document. It is hosted
+everywhere now.
+
+**There is a Documents button.** It lists what has been fetched, newest first,
+and opens any of it in the panel — on the voice screen and in an ordinary chat,
+because a document found by one assistant is read by whichever you happen to be
+talking to. It reads the folder rather than the conversation, so the file is
+still there tomorrow when the transcript is not. The step in the voice trace
+that saved a file will also reopen it, and it offers to whether or not the
+automatic open worked — which is exactly the case worth having a way back from.
+
+**The built-in browser is on.** It was switched off for a reason that stopped
+being true in 2.5.8: it used to drive the browser panel you can see, and it now
+drives a page of its own, offscreen. Left off, the assistant told you it had no
+browser — which was true from where it was standing, and the worst kind of
+false. It shares the browser panel's session, so it acts as you on sites you are
+signed into; that is the point of it, and you can switch it off again in
+Settings → MCP. If you do, it stays off.
+
+**Also:** opening a game the Start menu lists as a path works again. Windows
+returns two different kinds of entry there and only one of them goes through the
+applications folder — the other is a path to an executable, which is nearly
+every game installed outside a store.
+
 ## 2.5.9
 
 A hotfix for closing the app, which three separate things conspired to break.

@@ -72,6 +72,7 @@ export type SpokenTurnInput = {
    * knows a song started is whoever read the result; this only asks them.
    */
   startedPlayback?: () => boolean;
+  appLaunchFailed?: () => boolean;
   /**
    * Called with a sentence that was refused before it could be spoken.
    *
@@ -262,6 +263,7 @@ export const runSpokenTurn = async (input: SpokenTurnInput): Promise<SpokenTurnR
       remembered,
       lookedAtScreen: input.lookedAtScreen?.() ?? false,
       startedPlayback: input.startedPlayback?.() ?? false,
+      appLaunchFailed: input.appLaunchFailed?.() ?? false,
     });
     if (verdict.speak === false) {
       refuse(trimmed, verdict.correction);

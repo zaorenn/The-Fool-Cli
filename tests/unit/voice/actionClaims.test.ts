@@ -18,6 +18,9 @@ import {
   isUnseenScreenClaim,
   isUnverifiedPlaybackClaim,
   startedPlayback,
+  appLaunchOutcome,
+  isContradictedAppOpenClaim,
+  contradictedAppOpenCorrection,
   unbackedClaimCorrection,
   unseenScreenCorrection,
   unverifiedPlaybackCorrection,
@@ -532,5 +535,80 @@ describe('isUnverifiedPlaybackClaim', () => {
     expect(correction).toContain('It should now be playing.');
     expect(correction).toContain('opened');
     expect(correction).toContain('app_play');
+  });
+});
+
+/**
+ * The third time this shape has been needed, and the reason it is written as
+ * evidence rather than as a count: `toolsRan` is satisfied by the very call
+ * that failed. Reported from a live session — asked to open Forza Horizon 6,
+ * the launch failed, and the assistant then read the game's title off the
+ * screen and said it was open.
+ */
+describe('appLaunchOutcome', () => {
+  it('reads the launch off the result, never off the call', () => {
+    expect(appLaunchOutcome('app_open_app', { ok: true, opened: true, name: 'Spotify' })).toBe('opened');
+  });
+
+  /// The Forza turn exactly: the tool ran, so every count-based check passed,
+  /// and what it returned was the opposite of a running game.
+  it('reports a launch that came back a failure', () => {
+    expect(appLaunchOutcome('app_open_app', { ok: false, error: 'could-not-open' })).toBe('failed');
+  });
+
+  it('does not treat closing something as a launch', () => {
+    expect(appLaunchOutcome('app_open_app', { ok: true, opened: false, action: 'close' })).toBe('none');
+  });
+
+  it('says nothing happened for tools that cannot start an application', () => {
+    for (const name of ['app_look_at_screen', 'app_search', 'app_open_url', 'app_ask_jester']) {
+      expect(appLaunchOutcome(name, { ok: false, error: 'x' }), name).toBe('none');
+    }
+  });
+
+  it('says nothing happened for a result that is not an object', () => {
+    expect(appLaunchOutcome('app_open_app', null)).toBe('none');
+    expect(appLaunchOutcome('app_open_app', 'opened')).toBe('none');
+  });
+});
+
+describe('claiming an application is open after a launch failed', () => {
+  it('refuses the claim the failed launch contradicts', () => {
+    for (const said of [
+      'Forza Horizon 6 açık.',
+      'Forza Horizon 6 şu anda çalışıyor.',
+      'Oyunu açtım.',
+      'The game is running.',
+    ]) {
+      expect(isContradictedAppOpenClaim(said, true), said).toBe(true);
+    }
+  });
+
+  /// The narrowing this gate needed. Written to fire whenever nothing had
+  /// confirmed a launch, it refused a page that really did open and an
+  /// observation made by looking — both honest reports.
+  it('leaves every sentence alone when no launch failed', () => {
+    for (const said of ['I opened it in your browser.', 'Kod editörü açık.', 'Spotify is now open.']) {
+      expect(isContradictedAppOpenClaim(said, false), said).toBe(false);
+    }
+  });
+
+  it('does not punish saying it is about to open something', () => {
+    for (const said of ['Açıyorum.', 'Şimdi başlatıyorum.', "I'm opening it now.", 'Let me open it.']) {
+      expect(isContradictedAppOpenClaim(said, true), said).toBe(false);
+    }
+  });
+
+  it('does not punish saying plainly that it could not open it', () => {
+    for (const said of ['Açamadım.', 'Forza Horizon 6 bulunamadı.', 'I could not open it.']) {
+      expect(isContradictedAppOpenClaim(said, true), said).toBe(false);
+    }
+  });
+
+  it('names the honest sentence in the correction', () => {
+    const correction = contradictedAppOpenCorrection('Forza Horizon 6 açık.');
+
+    expect(correction).toContain('Forza Horizon 6 açık.');
+    expect(correction).toContain('app_open_app');
   });
 });

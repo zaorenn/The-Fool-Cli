@@ -32,6 +32,9 @@ export type ResearchOutcome =
   | { status: 'found'; results: WebResult[]; chosen?: WebResult; saved?: { path: string; bytes: number } }
   | { status: 'failed'; reason: string; detail?: string };
 
+/** One file that was fetched on the user's behalf and is still on disk. */
+export type FoundDocument = { path: string; name: string; bytes: number; at: number };
+
 let registered = false;
 
 export function initResearchBridge(): void {
@@ -63,4 +66,44 @@ export function initResearchBridge(): void {
       }
     }
   );
+
+  /**
+   * What has been fetched and is still there, newest first.
+   *
+   * Read off the disk rather than out of the conversation, and that is the
+   * point of it. Auto-opening a document is one call in the renderer and it
+   * has failed on its own — silently, while the tool reported success — which
+   * left the user with a file they had been told about and no way to reach.
+   * The transcript is not that way back: it is gone at the next launch, and
+   * the document is not.
+   */
+  ipcMain.handle('research:list-found', async (): Promise<FoundDocument[]> => {
+    const { researchFolder } = await import('./researchStore');
+    const folder = researchFolder();
+    if (folder.length === 0) return [];
+
+    const { promises: fs } = await import('node:fs');
+    const path = await import('node:path');
+
+    // A folder that does not exist yet is "nothing found so far", which is a
+    // true answer on a fresh install and not a failure to report.
+    //
+    // Annotated because the bare `[]` in the catch infers as an empty tuple,
+    // and without `strictNullChecks` the union with it collapses to `never`.
+    type DirEntry = { name: string; isFile: () => boolean };
+    const entries = await fs.readdir(folder, { withFileTypes: true }).catch((): DirEntry[] => []);
+
+    const documents = await Promise.all(
+      entries
+        .filter((entry) => entry.isFile())
+        .map(async (entry): Promise<FoundDocument | null> => {
+          const full = path.join(folder, entry.name);
+          const stat = await fs.stat(full).catch((): null => null);
+          if (!stat) return null;
+          return { path: full, name: entry.name, bytes: stat.size, at: stat.mtimeMs };
+        })
+    );
+
+    return documents.filter((document): document is FoundDocument => document !== null).toSorted((a, b) => b.at - a.at);
+  });
 }
