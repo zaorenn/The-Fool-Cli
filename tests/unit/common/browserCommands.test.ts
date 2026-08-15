@@ -29,7 +29,15 @@ describe('commandActsOnPage', () => {
   it('does not treat an unknown command as safe', () => {
     // An unrecognised name is not an act command, but it is also never executed
     // — parse refuses it first. This pins that it cannot slip through as a read.
-    expect(parseBrowserCommand({ name: 'evaluate' })).toEqual({ ok: false, error: 'unknown command "evaluate"' });
+    expect(parseBrowserCommand({ name: 'telepathy' })).toEqual({ ok: false, error: 'unknown command "telepathy"' });
+  });
+
+  it('treats evaluating a script as acting, not as reading', () => {
+    // `evaluate` is named for what the caller wants — a value back — but the
+    // expression runs with the page's own authority on a site the user is
+    // signed into. Classifying it by intent rather than by power is how a
+    // "read-only" script ends up submitting a form.
+    expect(commandActsOnPage('evaluate')).toBe(true);
   });
 });
 

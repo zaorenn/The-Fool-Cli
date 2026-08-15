@@ -87,8 +87,24 @@ export const estimateHistoryTokens = (history: readonly BudgetedMessage[]): numb
  * What has not changed is what the marker is for. Twelve thousand tokens on
  * every turn is still a cost somebody should have to justify, and raising this
  * again should mean showing the window it is being justified against.
+ *
+ * **Re-based again on 15 Aug 2026, from 12,100 to 12,750.** Two tools arrived —
+ * `app_research` (451 tokens) and `app_open_document` (187) — and the union
+ * measured 12,634, after `app_theme`'s prose was trimmed back by 59 to pay for
+ * part of it. What the pair buys is the request this application answered
+ * worst: "find me a PDF about X" could previously only be served by opening the
+ * user's own browser and driving it, which put a tab in front of somebody who
+ * had asked for a document, not for a search. They search, download and open
+ * in-app without the user's browser being touched — so deleting them to hold a
+ * marker would trade the fix away to preserve the measurement of the fix.
+ *
+ * Justified against the same window as before: `GET /api/v0/models` reports
+ * 64,256 for `qwen/qwen3.5-9b` on this machine, and 12,634 leaves about 51,000
+ * tokens for the conversation. That is what the second test in
+ * `contextBudget.test.ts` asserts directly, and it is the one that matters —
+ * this marker is the ratchet, that one is the requirement.
  */
-export const FIXED_OVERHEAD_BUDGET_TOKENS = 12_100;
+export const FIXED_OVERHEAD_BUDGET_TOKENS = 12_750;
 
 /**
  * The window assumed when the provider does not say.

@@ -121,25 +121,24 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
         action: {
           type: 'string',
           enum: ['palette', 'style', 'dial', 'reset'],
-          description:
-            "'palette' changes the colour, 'style' changes what the app is made of, 'dial' moves one aspect of it, 'reset' returns to the app's own.",
+          description: "'reset' returns to the app's own look. The other three take the field of the same name.",
         },
         palette: {
           type: 'string',
           enum: ['ember', 'amber', 'wheat', 'moss', 'lagoon', 'indigo', 'orchid', 'rose', 'slate'],
           description:
-            "For 'palette'. ember is red, amber orange, wheat yellow, moss green, lagoon teal, indigo blue, orchid purple, rose pink, slate grey. Pick the nearest one to what they described; a colour word on its own works too.",
+            'ember red, amber orange, wheat yellow, moss green, lagoon teal, indigo blue, orchid purple, rose pink, slate grey. Pick the nearest to what they described.',
         },
         color: {
           type: 'string',
           description:
-            "For 'palette', when they named an exact colour such as #1f6f8b. It is matched to the nearest palette above rather than used as given, because only those nine are checked for readability.",
+            "For 'palette', when they named an exact colour such as #1f6f8b. Matched to the nearest palette above, since only those nine are checked for readability.",
         },
         material: {
           type: 'string',
           enum: ['neu', 'glass', 'liquid', 'clay', 'aurora', 'brutal', 'minimal'],
           description:
-            "For 'style'. neu is raised, glass is a lit pane, liquid bends, clay is thick and soft, aurora is dark and moving, brutal is hard-shadowed, minimal is a line.",
+            'neu raised, glass a lit pane, liquid bends, clay thick and soft, aurora dark and moving, brutal hard-shadowed, minimal a line.',
         },
         dial: {
           type: 'string',
@@ -164,14 +163,14 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
             'tint',
           ],
           description:
-            "For 'dial'. radius is corner roundness, depth is shadow, alpha is transparency, lift is hover rise, ambient is background movement, gap is spacing, weight is heading thickness.",
+            'radius is corner roundness, depth shadow, alpha transparency, lift hover rise, ambient background movement, gap spacing, weight heading thickness.',
         },
         direction: {
           type: 'string',
           enum: ['more', 'less'],
-          description: 'Which way to move the dial. Use this rather than a number unless they named one.',
+          description: 'Which way to move the dial. Prefer this over a number unless they named one.',
         },
-        amount: { type: 'number', description: 'An exact value for the dial, when the user named one.' },
+        amount: { type: 'number', description: 'An exact dial value, when the user named one.' },
       },
       required: ['action'],
     },
