@@ -1491,6 +1491,15 @@ export const preview = {
     metadata?: {
       title?: string;
       file_name?: string;
+      /**
+       * Where the file is on disk.
+       *
+       * The viewers that render a real file rather than a string — PDF, Word,
+       * Excel — read this and ignore `content`. Without it a spoken "open that
+       * paper" reached the panel with a path in the content field and rendered
+       * the path as if it were the document.
+       */
+      file_path?: string;
     };
   }>('preview.open'),
 };

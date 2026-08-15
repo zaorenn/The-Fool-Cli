@@ -41,6 +41,8 @@ import { defaultSurfaceChoice, type SurfaceStyleChoice } from '@/common/theme/su
 import { peekSurfaceChoice, SURFACE_STYLE_CONFIG_KEY } from '@renderer/hooks/config/useSurfaceStyle';
 import { normalizeEndpoint } from '../localPipeline';
 import { buildAndPreview } from './buildTool';
+import { documentName, openDocument } from './documentTool';
+import { runResearchTool } from './researchTool';
 import { fillPdfWithQuestions, type KnownValue, type PdfFillOutcome } from './pdfTool';
 import { applySpokenSetting } from './settingsTool';
 import { runSkillTool } from './skillTool';
@@ -580,6 +582,48 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
         filled: outcome.filled,
         stillEmpty: outcome.unfilled,
       };
+    }
+
+    if (invocation.name === 'app_research') {
+      // The request this application answered worst: "find me a PDF about X".
+      // Nothing here opens the user's browser — the search is fetched, the file
+      // is saved, and the viewer is the one beside the conversation.
+      const found = await runResearchTool(host, invocation.callId, {
+        query: text('query'),
+        kind: text('kind'),
+        // Models send the word as often as the boolean, and both mean the same
+        // thing. `open` absent on a request that plainly wanted the document
+        // would report a list of links and call it done.
+        open: flag('open'),
+      });
+      if (found.ok === false) return { ok: false, error: found.error };
+      return {
+        ok: true,
+        results: found.found.map((result) => ({ title: result.title, summary: result.snippet })),
+        ...(found.opened ? { opened: found.opened.name, showing: true } : { showing: false }),
+      };
+    }
+
+    if (invocation.name === 'app_open_document') {
+      const path = text('path').trim();
+      if (path.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));
+
+      const opened = await openDocument(path);
+      // Null is "there is no viewer for this", which is a true sentence and a
+      // different one from "it failed". It is deliberately not answered by
+      // handing the file to the operating system: a document opened in some
+      // other program is one this assistant cannot see or talk about.
+      if (!opened) {
+        const detail = t('settings.voice.conversationDocumentNoViewer', { name: documentName(path) });
+        host.updateActivity(invocation.callId, { detail, state: 'completed' });
+        host.backToListening();
+        return { ok: true, showing: false, detail };
+      }
+
+      const detail = t('settings.voice.conversationDocumentOpened', { name: opened.name });
+      host.updateActivity(invocation.callId, { detail, state: 'completed' });
+      host.backToListening();
+      return { ok: true, showing: true, opened: opened.name, viewer: opened.viewer };
     }
 
     if (invocation.name === 'app_search') {

@@ -54,7 +54,19 @@ const SPOKEN_ONLY: ReadonlySet<string> = new Set(['app_standby', 'app_resume', '
  * that is *faster* was not settled by the sample taken; that it is smaller was.
  */
 export const CORE_APP_TOOLS: readonly string[] = [
-  'app_look_at_screen',
+  // Finding something, and opening what was found. These are the two halves of
+  // the request this application is asked for most often and answered worst:
+  // until they existed, "find me a PDF about X" could only be done by opening
+  // the user's browser and driving it.
+  //
+  // `app_look_at_screen` is deliberately *not* here any more. Looking at
+  // somebody's screen was the first entry in this list, which made it the
+  // cheapest thing the model could reach for — a reflex rather than a decision.
+  // It is still offered, through the deferred half, where reaching for it costs
+  // the model a moment's thought about whether the question is really about
+  // something it cannot see.
+  'app_research',
+  'app_open_document',
   'app_search',
   'app_open_url',
   // Playing something, and starting or stopping a program, are the two requests

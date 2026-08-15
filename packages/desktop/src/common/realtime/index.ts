@@ -296,9 +296,44 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_research',
+    description:
+      "Find something on the web yourself, and open it, without ever touching the user's browser. This is the whole of 'find me a PDF about X', 'look up the manual for this', 'get me that paper': it searches, picks the address that actually serves the file rather than a page about it, saves it, and opens it in this app's own viewer. Nothing appears in their browser, no tab opens, and their pointer is never taken. Use it for every request to find, look up or fetch a document or a fact. app_search is the other thing entirely — it puts a results page in front of them — so use that only when being shown the search itself is what they asked for. Call this first and speak afterwards, naming what you found rather than reading its address out. If it comes back saying the results page could not be read, say exactly that: it is a fault in the search, not a statement that nothing exists.",
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: "What to find, in the user's own words." },
+        kind: {
+          type: 'string',
+          enum: ['pdf', 'doc', 'page'],
+          description:
+            "'pdf' when they asked for a PDF or a paper, 'doc' for a Word or Excel file, 'page' for an ordinary web page or a fact. Defaults to 'page'. Getting this right is what decides whether you come back with the document or with a page about it.",
+        },
+        open: {
+          type: 'boolean',
+          description:
+            'True to save the best result and open it, which is what "find me a PDF and open it" means. False to only report what you found, for when they asked what is out there rather than for the thing itself.',
+        },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'app_open_document',
+    description:
+      "Open a document that is already on this machine, in this app's own viewer. A PDF, a Word file, a spreadsheet, a page of text, an image. Use it after app_research has saved something, or when the user names a file they want to see. It shows the document beside the conversation rather than handing it to another program, so nothing takes over their screen and they keep talking to you while they read. Say what you opened in a few words; never read the path out.",
+    parameters: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'The full path of the file, exactly as it was given to you.' },
+      },
+      required: ['path'],
+    },
+  },
+  {
     name: 'app_search',
     description:
-      "Search inside a site and put the results in front of the user, in one step. This is the whole of 'open YouTube and find that song', 'search GitHub for it', 'look it up on Wikipedia' — it goes straight to the site's own results page, so it happens instantly instead of taking the agent minutes of clicking. Use it for every request that ends in a search on a named site, and for a plain web search when no site was named. Search first and then say what you looked for and where, in a few words; do not read the address out. Playing one of the results is app_play, not a search followed by clicking; buying or replying is app_ask_jester.",
+      "Put a site's own results page in front of the user, in their browser. This is 'open YouTube and find that song', 'show me the GitHub results', 'search Wikipedia for it' — a tab opens on the results and they take it from there. Use it only when being shown the search is the request. When they want the *answer* or the *document* rather than the search — 'find me a PDF about X', 'look up when this was released' — use app_research instead: it searches without opening anything and comes back with what it found. Search first and then say what you looked for and where, in a few words; do not read the address out. Playing one of the results is app_play; buying or replying is app_ask_jester.",
     parameters: {
       type: 'object',
       properties: {

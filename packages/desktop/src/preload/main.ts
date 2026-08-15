@@ -50,6 +50,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   captureScreenRegion: () => ipcRenderer.invoke('voice:capture-screen-region'),
   captureWindow: (match: string) => ipcRenderer.invoke('voice:capture-window', { match }),
   resolveWindow: (match: string) => ipcRenderer.invoke('voice:resolve-window', { match }),
+  // Finding something on the web without opening the user's browser
+  findOnWeb: (payload: { query: string; kind?: 'pdf' | 'doc' | 'page'; fetch?: boolean }) =>
+    ipcRenderer.invoke('research:find', payload),
   // Where a spoken "build me an app" puts what it builds, and how to look at it
   previewWorkspaceRoot: () => ipcRenderer.invoke('preview:workspace-root'),
   servePreview: (directory: string) => ipcRenderer.invoke('preview:serve', directory),

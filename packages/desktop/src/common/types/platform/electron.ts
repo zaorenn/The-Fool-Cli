@@ -47,6 +47,29 @@ export interface ElectronBridgeAPI {
    * costs a rendered thumbnail of every window the user has open.
    */
   resolveWindow?: (match: string) => Promise<{ id: string; name: string } | null>;
+  /**
+   * Finds something on the web, and optionally saves it, without opening the
+   * user's browser.
+   *
+   * The route "find me a PDF about X" was missing entirely: every path to the
+   * web went through `shell.openExternal`, so a request about a document could
+   * only be answered by taking over the user's screen. This fetches the results
+   * page, picks the address that actually serves the file, saves it into a
+   * folder this app owns, and answers with the path.
+   */
+  findOnWeb?: (payload: { query: string; kind?: 'pdf' | 'doc' | 'page'; fetch?: boolean }) => Promise<
+    | {
+        // Discriminated by a string rather than by `ok: true/false`. This
+        // project builds without `strictNullChecks`, and a boolean literal does
+        // not narrow a union under it — the compiler keeps both arms alive and
+        // every field access on either is an error.
+        status: 'found';
+        results: { title: string; url: string; snippet: string }[];
+        chosen?: { title: string; url: string; snippet: string };
+        saved?: { path: string; bytes: number };
+      }
+    | { status: 'failed'; reason: string; detail?: string }
+  >;
   // Forward feedback diagnostics logs to the main process console / 转发反馈诊断日志到主进程控制台
   logFeedbackEvent?: (payload: { details?: unknown; level: 'info' | 'warn' | 'error'; message: string }) => void;
   recoverCorruptedDatabase?: () => Promise<void>;
