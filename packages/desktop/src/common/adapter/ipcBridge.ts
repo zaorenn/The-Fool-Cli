@@ -129,6 +129,30 @@ import type {
 } from '../update/updateTypes';
 import type { ReleaseNotesResult } from '../update/releaseNotes';
 import type { FoundVideo } from '../voice/videoSearch';
+
+/**
+ * What a lookup on the web hands back.
+ *
+ * Declared here rather than beside the service, because the renderer names it
+ * and importing the service would pull `fetch`-over-origins main-process code
+ * into the window. The digest is the evidence the model answers from; the list
+ * is what the assistant may say it read.
+ */
+/**
+ * Where a written document ended up.
+ *
+ * `complete` is false when a PDF had to fall back to a face with no Turkish in
+ * it — reported rather than swallowed, because a document with the wrong
+ * letters in somebody's name is worse than one that was not written, and only
+ * the person reading it can decide that.
+ */
+export type WrittenDocument = { path: string; format: string; complete: boolean };
+
+export type ResearchAnswer = {
+  /** The sources' text, numbered and addressed. Empty when nothing was found. */
+  digest: string;
+  sources: { title: string; url: string }[];
+};
 import type { AgentMetadata } from '@/renderer/utils/model/agentTypes';
 import type { Theme } from '@/common/theme/types';
 import type { AttachFolderRequest, ProjectDetailDto, ProjectEntryDto } from '@/common/types/project';
@@ -334,26 +358,6 @@ export const foolVoice = {
    * asked to, not by a key being released.
    */
   startConversation: bridge.buildEmitter<void>('fool.voice.start-conversation'),
-};
-
-// ---------------------------------------------------------------------------
-// The in-app browser, as something an agent can drive
-// ---------------------------------------------------------------------------
-
-/**
- * One command, run against the browser panel the user can see.
- *
- * The webview lives in the renderer and the agent's request arrives in the main
- * process, so this is the crossing between them — and unusually for this app,
- * the renderer is the provider and the main process invokes. The payload is
- * validated on both sides against `common/browser/browserCommands` rather than
- * trusted across the boundary.
- */
-export const agentBrowser = {
-  run: bridge.buildProvider<
-    { ok: true; data: Record<string, unknown> } | { ok: false; error: string },
-    { command: unknown }
-  >('fool.browser.run'),
 };
 
 // ---------------------------------------------------------------------------
@@ -842,15 +846,46 @@ export const application = {
    */
   findVideo: bridge.buildProvider<IBridgeResponse<FoundVideo | null>, { query: string }>('app.find-video'),
   /**
+   * Reads the web, rather than opening it.
+   *
+   * `app_search` builds an address and hands it to the browser, which is the
+   * whole of what this app could do about the web — so every question about
+   * something current, specific, or newer than the model was answered from
+   * weights, with no way for the user to tell knowledge from the shape of it.
+   * This searches, opens the best few results and hands back their text with
+   * their addresses attached. See `process/services/research`.
+   *
+   * In the main process because a renderer cannot fetch across origins.
+   */
+  research: bridge.buildProvider<IBridgeResponse<ResearchAnswer>, { question: string }>('app.research'),
+  /**
+   * Writes a real .pdf, .docx or .xlsx from markdown the assistant produced.
+   *
+   * The model chooses a name and never a path — see `process/pdf/writeDocument`
+   * — because a tool that took a destination could be talked into writing
+   * anywhere on the machine, and "make me a report" is not a request that
+   * should be able to overwrite a system file.
+   */
+  writeDocument: bridge.buildProvider<
+    IBridgeResponse<WrittenDocument>,
+    { markdown: string; format: string; name?: string }
+  >('app.write-document'),
+  /**
    * Starts or stops an application, through the operating system.
    *
    * Here because the alternative was the agent doing it with the pointer: find
    * the taskbar, find the icon, click, screenshot, find the close button, click
    * again — minutes of the user's own cursor being borrowed for something every
-   * platform does in one call. The name is validated before it becomes a
-   * command; see `common/voice/appLaunch.ts`.
+   * platform does in one call.
+   *
+   * The name is resolved against what is actually installed before anything
+   * runs — see `process/services/apps` — and the application's *own* name comes
+   * back, so the assistant reports "Visual Studio Code" for "open vs code"
+   * rather than repeating the words it was given. A name the index does not
+   * have falls back to the command path in `common/voice/appLaunch.ts`, which
+   * validates it before it becomes an argument.
    */
-  controlApp: bridge.buildProvider<IBridgeResponse<void>, { name: string; action: 'open' | 'close' }>(
+  controlApp: bridge.buildProvider<IBridgeResponse<{ name: string }>, { name: string; action: 'open' | 'close' }>(
     'app.control-app'
   ),
   /**
@@ -1491,6 +1526,15 @@ export const preview = {
     metadata?: {
       title?: string;
       file_name?: string;
+      /**
+       * Where the file is on disk.
+       *
+       * The viewers that render a real file rather than a string — PDF, Word,
+       * Excel — read this and ignore `content`. Without it a spoken "open that
+       * paper" reached the panel with a path in the content field and rendered
+       * the path as if it were the document.
+       */
+      file_path?: string;
     };
   }>('preview.open'),
 };

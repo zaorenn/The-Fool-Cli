@@ -66,7 +66,7 @@ impl ProcessSpawner for HttpMockSpawner {
         Ok(Box::new(MockProcessHandle::new()))
     }
 
-    async fn install_officecli(&self) -> Result<(), OfficeError> {
+    async fn ensure_available(&self) -> Result<(), OfficeError> {
         Ok(())
     }
 
@@ -95,7 +95,7 @@ impl ProcessSpawner for TcpOnlySpawner {
         Ok(Box::new(MockProcessHandle::new()))
     }
 
-    async fn install_officecli(&self) -> Result<(), OfficeError> {
+    async fn ensure_available(&self) -> Result<(), OfficeError> {
         Ok(())
     }
 

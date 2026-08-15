@@ -71,6 +71,13 @@ async fn bootstrap_registers_all_expected_tools() {
         names.iter().any(|n| n == "ToolSearch"),
         "ToolSearchTool should be registered"
     );
+    // A tool the model cannot reach is a tool that does not exist. This one
+    // holds the plan for a long task, and a long task is not lost all at once
+    // — it is lost a step at a time, with nothing erroring on the way.
+    assert!(
+        names.iter().any(|n| n == "TodoWrite"),
+        "TodoTool should be registered"
+    );
 }
 
 #[tokio::test]

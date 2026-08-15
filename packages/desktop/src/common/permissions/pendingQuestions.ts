@@ -248,7 +248,7 @@ export class PendingQuestions {
 
   /** What is waiting, oldest first, for whatever is drawing the cards. */
   outstanding(): OutstandingQuestion[] {
-    return [...this.waiting.values()].map((entry) => entry.question).sort((a, b) => a.askedAt - b.askedAt);
+    return [...this.waiting.values()].map((entry) => entry.question).toSorted((a, b) => a.askedAt - b.askedAt);
   }
 
   /**

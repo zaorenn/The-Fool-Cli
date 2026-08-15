@@ -21,12 +21,7 @@ import {
   refusedTheField,
   rememberRefusal,
 } from '@/common/realtime/reasoning';
-import {
-  beginScreenLook,
-  dropPreloadedCapture,
-  forgetScreenLook,
-  preloadScreenCapture,
-} from '@renderer/services/voice/screenSight';
+import { beginScreenLook, forgetScreenLook, type ScreenSightRequest } from '@renderer/services/voice/screenSight';
 import { fitHistoryToBudget, historyBudgetTokens } from '@/common/voice/contextBudget';
 import { readContextWindow } from '@/common/voice/contextWindow';
 import { MEMORY_REVIEW_PROMPT, readProposals } from '@/common/voice/memoryProposal';
@@ -396,6 +391,34 @@ type RenderedSpeech = { pcm16Base64: string; sampleRate: number };
 const LOOK_FIRST = `The user just referred to something they can see and you cannot. Call \`app_look_at_screen\` now, before saying anything about it, and answer from what comes back. Do not describe anything until it has.`;
 
 /**
+ * The look started because a keyword matched, and how far it may reach.
+ *
+ * `refersToScreen` is a guess. It is a good guess — a pointing word standing
+ * next to something only a screen has — but nobody asked for a look, so the
+ * picture it takes is the narrowest one that could answer: the window in front
+ * of the user, not every display they own. A guess that turns out wrong then
+ * costs one window nobody needed rather than a photograph of the whole desk.
+ *
+ * The whole display is still reachable, from `app_look_at_screen`, where the
+ * user has actually said "look at my screen". That is the difference this
+ * function exists to hold: an inference gets the narrow picture, a request gets
+ * the one it asked for.
+ *
+ * Pure, and exported, because the scope of an unrequested capture is the part
+ * worth pinning down in a test — the rest of this file is audio.
+ */
+export const screenLookRequestFor = (
+  question: string,
+  realtime: FoolVoiceSettings['realtime']
+): ScreenSightRequest => ({
+  question,
+  endpoint: normalizeEndpoint(realtime.localEndpoint),
+  model: realtime.visionModel.trim() || realtime.model.trim(),
+  language: realtime.language,
+  source: 'window',
+});
+
+/**
  * How long the closing summary may take.
  *
  * Short: the user has already ended the conversation and is walking away, and a
@@ -753,8 +776,14 @@ export class LocalVoicePipeline {
 
     if (event === 'speech-started') {
       this.utterance = [];
-      // Start capturing the screen in the background the moment they start speaking
-      if (this.options.runTool) preloadScreenCapture('screen');
+      // Nothing is photographed here, and that is deliberate. This fires on the
+      // first block of audio the detector calls speech — before a word has been
+      // transcribed, so before anybody can know whether the screen has anything
+      // to do with what is being said. It used to take a picture of the whole
+      // display on the theory that a look might be asked for and the head start
+      // was free. It was not free: it was a full-resolution photograph of the
+      // user's desktop for every sentence they spoke, thrown away unread in
+      // almost all of them. A capture belongs to a question that exists.
     }
 
     if (event === 'speech-started' || event === 'speech') {
@@ -968,16 +997,7 @@ export class LocalVoicePipeline {
    * comes back answers what was asked rather than what was inferred.
    */
   private beginLookingAtScreen(question: string): void {
-    const realtime = this.options.settings.realtime;
-    beginScreenLook({
-      question,
-      endpoint: normalizeEndpoint(realtime.localEndpoint),
-      model: realtime.visionModel.trim() || realtime.model.trim(),
-      language: realtime.language,
-      // The display, not this window: they said "look at my screen", and a
-      // photograph of the app they are talking to answers nobody's question.
-      source: 'screen',
-    });
+    beginScreenLook(screenLookRequestFor(question, this.options.settings.realtime));
   }
 
   /**
@@ -1170,6 +1190,40 @@ export class LocalVoicePipeline {
     if (next !== undefined) void this.answer([], next);
   }
 
+  /**
+   * A turn that was typed rather than spoken.
+   *
+   * There are things nobody wants to say out loud to a microphone: a path, a
+   * licence key, a name that the transcriber will get wrong every time, a
+   * question asked while somebody else is in the room. A spoken conversation
+   * that cannot be handed one of those is a conversation you have to end and
+   * restart somewhere else.
+   *
+   * It joins the conversation as an ordinary user turn — same history, same
+   * tools, same spoken reply — because it *is* one. The only thing it skips is
+   * the transcriber, which is the one part of the loop that has nothing to do:
+   * `answer` already takes what was heard when it has been worked out
+   * elsewhere, and this is the second caller of that.
+   *
+   * Queued behind a reply in progress rather than cutting it off, exactly as a
+   * spoken interjection is. Typing while it talks is not the same gesture as
+   * reaching for the key, and guessing that it was would throw away an answer
+   * the user was still listening to.
+   */
+  say(text: string): void {
+    const said = text.trim();
+    if (this.closed || said.length === 0) return;
+
+    if (this.inFlight !== null) {
+      this.options.onEvent({ kind: 'user-transcript', text: said, final: true });
+      this.waiting.push(said);
+      if (this.waiting.length > MAX_WAITING) this.waiting.shift();
+      return;
+    }
+
+    void this.answer([], said);
+  }
+
   /** Transcribe, think, and speak — each stage feeding the next as it arrives. */
   private async answer(captured: readonly Uint8Array[], alreadyHeard?: string): Promise<void> {
     const readiness = this.ready;
@@ -1201,11 +1255,6 @@ export class LocalVoicePipeline {
       }
 
       this.options.onEvent({ kind: 'user-transcript', text: heard, final: true });
-
-      // The user finished their turn. If they didn't ask about the screen, we drop the background capture.
-      if (!this.options.runTool || !refersToScreen(heard)) {
-        dropPreloadedCapture();
-      }
 
       this.history.push({ role: 'user', content: heard });
 

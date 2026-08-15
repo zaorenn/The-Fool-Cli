@@ -76,7 +76,8 @@
       "installFailed": "自动安装 officecli 失败，请检查后端日志后重试。",
       "portTimeout": "预览服务启动后未在预期时间内就绪，请重试。",
       "startFailed": "启动 Office 预览服务失败。",
-      "outsideSandbox": "该文件不在当前项目沙箱范围内。"
+      "outsideSandbox": "该文件不在当前项目沙箱范围内。",
+      "officecliMissingFromInstall": "随 The Fool 一同发布的 officecli 副本缺失，说明本次安装不完整。重新安装应用即可恢复。"
     },
     "serverInstall": {
       "hint": "The Fool 运行在服务器上，预览组件需要安装在该服务器上。请在服务器执行以下命令后重试：",

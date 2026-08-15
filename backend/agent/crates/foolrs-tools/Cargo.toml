@@ -10,6 +10,9 @@ repository.workspace = true
 foolrs-types.workspace = true
 foolrs-protocol.workspace = true
 foolrs-config.workspace = true
+# The store behind Remember/Recall. foolrs-memory depends only on
+# foolrs-config, so this adds no cycle.
+foolrs-memory.workspace = true
 foolrs-process.workspace = true
 
 tracing.workspace = true

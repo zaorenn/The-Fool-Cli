@@ -24,13 +24,25 @@ import {
   sanitizeMaterialTokens,
   surfaceVariables,
   type MaterialTokens,
+  type Palette,
   type SurfaceStyleId,
 } from '@/common/theme/surfaceStyle';
+import { applyShades, sanitizePaletteShades, type PaletteShades } from '@/common/theme/paletteShades';
 
 export type SurfaceStyleChoice = {
   style: SurfaceStyleId;
   /** The one colour everything else is derived from. */
   accent: string;
+  /**
+   * Named adjustments to the four colours the accent derives.
+   *
+   * Absent for almost everybody, which is the point: the palette is still one
+   * seed and everything computed from it. These are the small, closed set of
+   * moves a person actually asks for — a darker ground, red text — each of
+   * which is re-measured against the ground afterwards, so the readability the
+   * derivation guarantees survives the adjustment. See `paletteShades.ts`.
+   */
+  shades?: PaletteShades;
   /**
    * Only what was moved away from the material's own defaults.
    *
@@ -60,7 +72,11 @@ export const sanitizeSurfaceChoice = (value: unknown): SurfaceStyleChoice => {
   const style = isSurfaceStyleId(record.style) ? record.style : DEFAULT_SURFACE_STYLE;
   const accent = sanitizeAccent(record.accent);
 
-  if (typeof record.tokens !== 'object' || record.tokens === null) return { style, accent };
+  const shades = sanitizePaletteShades(record.shades);
+  const withShades = <T extends { style: SurfaceStyleId; accent: string }>(base: T): T & { shades?: PaletteShades } =>
+    shades ? { ...base, shades } : base;
+
+  if (typeof record.tokens !== 'object' || record.tokens === null) return withShades({ style, accent });
 
   // Sanitised against the material being worn, then reduced back to only what
   // actually differs — so the stored shape stays a list of deliberate changes.
@@ -71,7 +87,7 @@ export const sanitizeSurfaceChoice = (value: unknown): SurfaceStyleChoice => {
     if (full[key] !== base[key]) moved[key] = full[key];
   }
 
-  return Object.keys(moved).length > 0 ? { style, accent, tokens: moved } : { style, accent };
+  return withShades(Object.keys(moved).length > 0 ? { style, accent, tokens: moved } : { style, accent });
 };
 
 /** The numbers this choice actually resolves to. */
@@ -89,8 +105,14 @@ export const surfaceChoiceVariables = (
   choice: SurfaceStyleChoice,
   prefersDark: boolean
 ): readonly (readonly [string, string])[] =>
-  surfaceVariables(
-    choice.style,
-    resolveTokens(choice),
-    derivePalette(choice.accent, choice.style, prefersDark, resolveTokens(choice).tint)
-  );
+  surfaceVariables(choice.style, resolveTokens(choice), resolvePalette(choice, prefersDark));
+
+/**
+ * The colours this choice actually paints with, adjustments included.
+ *
+ * One place, so the stylesheet, the preview and anything else that draws a swatch
+ * cannot disagree about what the user chose — which is how a settings panel comes
+ * to preview a palette the application does not then wear.
+ */
+export const resolvePalette = (choice: SurfaceStyleChoice, prefersDark: boolean): Palette =>
+  applyShades(derivePalette(choice.accent, choice.style, prefersDark, resolveTokens(choice).tint), choice.shades);

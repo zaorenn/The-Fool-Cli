@@ -32,6 +32,7 @@ import {
   type SurfaceBackground,
 } from '@/common/theme/surfaceBackground';
 import { SURFACE_STYLES, type MaterialTokens, type SurfaceStyleId } from '@/common/theme/surfaceStyle';
+import type { PaletteShades } from '@/common/theme/paletteShades';
 
 export const SURFACE_STYLE_CONFIG_KEY = 'ui.surfaceStyle' as const;
 
@@ -148,6 +149,14 @@ export const useSurfaceStyle = (): {
   setStyle: (style: SurfaceStyleId) => Promise<void>;
   setAccent: (accent: string) => Promise<void>;
   setToken: (key: keyof MaterialTokens, value: number) => Promise<void>;
+  /**
+   * Moves one of the four colours, or puts it back.
+   *
+   * Passing `undefined` clears that slot rather than storing a "default" value,
+   * so a choice nobody made stays absent — which is what lets the derivation
+   * keep improving underneath somebody who never touched this.
+   */
+  setShade: <K extends keyof PaletteShades>(slot: K, value: PaletteShades[K] | undefined) => Promise<void>;
   reset: () => Promise<void>;
 } => {
   const [choice, setChoice] = useState<SurfaceStyleChoice>(peekSurfaceChoice);
@@ -188,6 +197,11 @@ export const useSurfaceStyle = (): {
     setAccent: (accent: string) => write({ ...choice, accent }),
     setToken: (key: keyof MaterialTokens, value: number) =>
       write({ ...choice, tokens: { ...choice.tokens, [key]: value } }),
+    setShade: (slot, value) => {
+      const shades = { ...choice.shades, [slot]: value };
+      if (value === undefined) delete shades[slot];
+      return write({ ...choice, shades: Object.keys(shades).length > 0 ? shades : undefined });
+    },
     reset: () => write(defaultSurfaceChoice()),
   };
 };

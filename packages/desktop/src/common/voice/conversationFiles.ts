@@ -69,6 +69,46 @@ export const sanitizeConversationFiles = (value: unknown): ConversationFile[] =>
 };
 
 /**
+ * The one property of a dropped file this cares about, and how to get it.
+ *
+ * Electron used to hang a `path` on the web `File` object and it was removed in
+ * Electron 32, in favour of `webUtils.getPathForFile`. The voice page never
+ * moved: it read `file.path`, got an empty string on every drop, filtered the
+ * whole list away and returned before it could even say so. Dropping a document
+ * on the conversation did nothing at all, silently, for every user on a build
+ * newer than that.
+ *
+ * So the resolver is a parameter. The renderer has one thing that can answer
+ * this and the browser build has another, and neither of them belongs in a
+ * module shared with the main process — which is also what makes the shaping
+ * below testable without a window.
+ */
+export type DroppedFile = { name: string; type: string; size: number };
+
+/**
+ * Turns a drop into the records a conversation holds.
+ *
+ * Anything the resolver cannot place is dropped rather than kept with an empty
+ * path: a record naming nothing is exactly the thing {@link
+ * sanitizeConversationFiles} exists to refuse, and it would have the assistant
+ * confidently discussing a file it can never open.
+ */
+export const filesFromDrop = <T extends DroppedFile>(
+  dropped: readonly T[],
+  resolvePath: (file: T) => string
+): ConversationFile[] =>
+  sanitizeConversationFiles(
+    dropped.map((file) => ({
+      path: resolvePath(file),
+      name: file.name,
+      // A folder arrives with an empty type and no size; that is the only
+      // signal available here, and getting it wrong only changes a word in the
+      // prompt rather than what can be done with it.
+      directory: file.type === '' && file.size === 0,
+    }))
+  );
+
+/**
  * What the model is told it is holding.
  *
  * Names first and the path after, because the name is what the person will say

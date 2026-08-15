@@ -42,6 +42,14 @@ async function main() {
       entryPoints: [path.join(ROOT, 'packages/desktop/src/process/resources/builtinMcp/appSettingsServer.ts')],
       outfile: path.join(ROOT, 'out/main/builtin-mcp-app-settings.js'),
     }),
+    // PDFs, on the pdf-lib this application already carries. Bundled like the
+    // rest so it needs nothing installed on the machine it runs on — which is
+    // the whole point of it existing beside a `pdf` skill written for Python.
+    esbuild.build({
+      ...SHARED_OPTIONS,
+      entryPoints: [path.join(ROOT, 'packages/desktop/src/process/resources/builtinMcp/pdfServer.ts')],
+      outfile: path.join(ROOT, 'out/main/builtin-mcp-pdf.js'),
+    }),
   ]);
 }
 

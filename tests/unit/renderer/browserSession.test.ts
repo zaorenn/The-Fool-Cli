@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { BROWSER_HOME_URL, BROWSER_PARTITION, resolveBrowserInput } from '@/renderer/components/browser/browserSession';
+import { BROWSER_HOME_URL, BROWSER_PARTITION, resolveBrowserInput } from '@/common/browser/browserSession';
 
 describe('in-app browser session', () => {
   it('runs in its own persisted partition, not the app default session', () => {

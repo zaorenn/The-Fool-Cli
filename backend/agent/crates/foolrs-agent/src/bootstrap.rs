@@ -15,13 +15,16 @@ use foolrs_skills::permissions::SkillPermissionChecker;
 use foolrs_skills::types::SkillMetadata;
 use foolrs_tools::checkpoint::CheckpointStore;
 use foolrs_tools::confinement::Confinement;
+use foolrs_tools::download::DownloadTool;
 use foolrs_tools::edit::EditTool;
 use foolrs_tools::exec_command::ExecCommandTool;
 use foolrs_tools::file_cache::FileStateCache;
 use foolrs_tools::glob::GlobTool;
 use foolrs_tools::grep::GrepTool;
+use foolrs_tools::knowledge::{RecallTool, RememberTool};
 use foolrs_tools::read::ReadTool;
 use foolrs_tools::registry::ToolRegistry;
+use foolrs_tools::todo::TodoTool;
 use foolrs_tools::tool_search::ToolSearchTool;
 use foolrs_tools::view_image::ViewImageTool;
 use foolrs_tools::web_fetch::WebFetchTool;
@@ -260,6 +263,7 @@ impl AgentBootstrap {
     }
 
     fn build_builtin_registry(&self, workspace_path: &Path) -> ToolRegistry {
+        let memory_dir = auto_memory_dir(workspace_path);
         let file_cache = self.build_file_cache();
         let mut registry = ToolRegistry::new();
 
@@ -288,10 +292,30 @@ impl AgentBootstrap {
         registry.register(Box::new(GrepTool::new(workspace_path.to_path_buf())));
         registry.register(Box::new(GlobTool::new(workspace_path.to_path_buf())));
         registry.register(Box::new(ViewImageTool::new()));
+        // Somewhere to keep the plan. A long task is not lost all at once — it
+        // is lost a step at a time, and the run then gets reported as finished
+        // with two pieces missing and nothing having errored on the way.
+        registry.register(Box::new(TodoTool::new()));
         // Reading a public page. Nothing inside this machine or this network —
         // see `web_fetch::check_url`, which refuses before a request is made.
         registry.register(Box::new(WebFetchTool::new()));
         registry.register(Box::new(WebSearchTool::new()));
+        // Saving what the other two found. Without it the agent could
+        // locate a document and then had no way to obtain one: a PDF read
+        // through WebFetch arrives as the result of a lossy UTF-8
+        // conversion, which the model reports as the paper's contents.
+        registry.register(Box::new(DownloadTool::new(workspace_path.to_path_buf())));
+
+        // The other half of the memory system. `foolrs-memory` could read,
+        // write, scan and delete, the context builder read it on every turn,
+        // and `write_memory` was called from nowhere but tests — so the agent
+        // started each session knowing whatever a human had typed into those
+        // files, learned things over the course of the work, and forgot all of
+        // it. Registered only when there is a directory to write into.
+        if let Some(memory_dir) = memory_dir {
+            registry.register(Box::new(RememberTool::new(memory_dir.clone())));
+            registry.register(Box::new(RecallTool::new(memory_dir)));
+        }
 
         registry
     }

@@ -216,7 +216,7 @@ initVoiceStageHub();
 // handshake file exists before any agent spawns that server, and torn down on
 // quit so a stale token cannot be reused. Failure is logged, never thrown: the
 // browser tools going missing must not stop the app from starting.
-void import('../voice/browserControlServer').then(async ({ startBrowserControlServer, stopBrowserControlServer }) => {
+void import('../browser/browserControlServer').then(async ({ startBrowserControlServer, stopBrowserControlServer }) => {
   await startBrowserControlServer();
   app.on('will-quit', stopBrowserControlServer);
 });

@@ -30,6 +30,8 @@ declare global {
   interface Window {
     foolsControlAPI: {
       onStage: (callback: (event: FoolsControlPayload) => void) => () => void;
+      onPointer: (callback: (over: boolean) => void) => () => void;
+      reportBounds: (bounds: { x: number; y: number; width: number; height: number }) => void;
     };
   }
 }
@@ -290,24 +292,55 @@ window.addEventListener('resize', resize);
 resize();
 
 /**
- * Fades the notch while the pointer is over it.
+ * Gets out of the way of the pointer.
  *
- * The window ignores the mouse, so nothing here can be clicked and no ordinary
- * hover fires — the events arrive only because the window forwards them while
- * staying click-through. That is the whole point: the notch covers the top of
- * the screen, and the moment the user reaches for what is underneath it is
- * exactly the moment it should stop being in the way.
+ * The notch sits over the top of whatever is underneath it, and the one moment
+ * the user needs to see through it is the moment they move the cursor there — a
+ * tab strip, a menu bar, a close button. It cannot be clicked through to, so
+ * fading is the whole of the interaction.
  *
- * `mouseout` to a null relatedTarget is the pointer leaving the window
- * altogether, which `mouseleave` does not reliably report for a forwarded
- * stream.
+ * **The decision is not made here.** It used to be, from mouse events the window
+ * forwards while ignoring the mouse, and that was wrong twice over. The
+ * listener was on the window, which is a fixed 680×280 box sized for the widest
+ * state the notch ever reaches — so moving the cursor anywhere in that region
+ * faded a pill it was nowhere near. And the forwarded stream simply stops when
+ * the pointer leaves, with no closing event to match the opening one, so a notch
+ * that had faded could stay faded for good with nothing able to bring it back.
+ *
+ * The main process reads the system cursor instead, which is true wherever the
+ * pointer is and cannot stop arriving. All this window has to do is say where it
+ * drew itself.
  */
-const setUnderPointer = (under: boolean): void => {
-  notch.classList.toggle('under-pointer', under);
+window.foolsControlAPI.onPointer((over) => {
+  notch.classList.toggle('under-pointer', over);
+});
+
+/**
+ * Tells the main process where the notch actually is.
+ *
+ * Only on a change, and there are few: the notch has two widths and moves
+ * between them when the turn produces something to read. Measured after a frame
+ * so the transition has a layout to report rather than the one it started from.
+ */
+let reportedBounds = '';
+const reportBounds = (): void => {
+  const box = notch.getBoundingClientRect();
+  const bounds = { x: box.left, y: box.top, width: box.width, height: box.height };
+  const signature = `${bounds.x}|${bounds.y}|${bounds.width}|${bounds.height}`;
+  if (signature === reportedBounds) return;
+  reportedBounds = signature;
+  window.foolsControlAPI.reportBounds(bounds);
 };
 
-window.addEventListener('mousemove', () => setUnderPointer(true));
-window.addEventListener('mouseout', (event) => {
-  if (!event.relatedTarget) setUnderPointer(false);
-});
-window.addEventListener('blur', () => setUnderPointer(false));
+/**
+ * Watched rather than reported once per event.
+ *
+ * The width is a 340 ms CSS transition, so the size at the moment the event
+ * arrives is the size it is leaving — and a rectangle that is wrong for a third
+ * of a second is a notch that fades in the wrong place for a third of a second.
+ * A resize observer sees every intermediate layout, which is exactly the set of
+ * moments this has to be right at.
+ */
+new ResizeObserver(reportBounds).observe(notch);
+window.addEventListener('resize', reportBounds);
+requestAnimationFrame(reportBounds);

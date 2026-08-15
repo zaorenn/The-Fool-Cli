@@ -139,7 +139,13 @@ export function resolveOfficeErrorActions(
     // A desktop install link would point web users at the wrong machine —
     // give them the server-side command instead.
     showServerInstallGuide: !isElectron && officecliMissing,
-    showInstallLink: isElectron && code === 'OFFICECLI_NOT_FOUND',
+    // Never on the desktop any more. officecli is packaged inside the
+    // application, so there is nothing for the user to go and install — this
+    // link sent them to a releases page to download by hand the very copy the
+    // installer was supposed to have placed, and opened a browser tab to do
+    // it. A missing copy means the install is damaged, which is what
+    // `officecliMissingFromInstall` says instead.
+    showInstallLink: false,
     showRetry: officecliMissing || code === 'OFFICECLI_PORT_TIMEOUT',
   };
 }
@@ -255,15 +261,18 @@ const OfficeWatchViewer: React.FC<OfficeWatchViewerProps> = ({ docType, file_pat
   }
 
   if (error) {
-    const { showServerInstallGuide, showInstallLink, showRetry } = resolveOfficeErrorActions(
-      error.code,
-      isElectronDesktop()
-    );
+    const onDesktop = isElectronDesktop();
+    const { showServerInstallGuide, showInstallLink, showRetry } = resolveOfficeErrorActions(error.code, onDesktop);
+    // On the desktop a missing officecli is a damaged install rather than
+    // something the user forgot to do, so say that instead of "not installed".
+    const bundledCopyMissing = onDesktop && error.code === 'OFFICECLI_NOT_FOUND';
 
     return (
       <div className='h-full w-full flex items-center justify-center bg-bg-1'>
         <div className='text-center max-w-400px'>
-          <div className='text-16px text-danger mb-8px'>{error.message}</div>
+          <div className='text-16px text-danger mb-8px'>
+            {bundledCopyMissing ? t('preview.office.errors.officecliMissingFromInstall') : error.message}
+          </div>
           {!error.code && <div className='text-12px text-t-secondary mb-12px'>{t(keys.installHint)}</div>}
           {showServerInstallGuide && (
             <div className='text-left mb-12px'>

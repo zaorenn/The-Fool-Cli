@@ -14,6 +14,7 @@ import AccentPicker from './AccentPicker';
 import BackgroundPicker from './BackgroundPicker';
 import DialGroups from './DialGroups';
 import MaterialCards from './MaterialCards';
+import ShadePicker from './ShadePicker';
 import { offeredDials, type DialKey } from './dials';
 import styles from './MaterialStudio.module.css';
 
@@ -36,7 +37,7 @@ import styles from './MaterialStudio.module.css';
 
 const MaterialStudio: React.FC = () => {
   const { t } = useTranslation();
-  const { choice, tokens, setStyle, setAccent, setToken, reset } = useSurfaceStyle();
+  const { choice, tokens, setStyle, setAccent, setShade, setToken, reset } = useSurfaceStyle();
 
   const prefersDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
   const dark = isDark(choice.style, prefersDark);
@@ -92,6 +93,13 @@ const MaterialStudio: React.FC = () => {
         tint={tokens.tint}
         onChange={(accent) => void setAccent(accent)}
       />
+
+      {/* Directly under the seed, because these are adjustments *to it*: the
+          nine palettes decide the whole scheme and this decides how it lands —
+          a darker ground, red text, flatter cards. Each move is re-measured
+          against the ground, so nothing here can produce a palette the picker
+          above would have refused to offer. */}
+      <ShadePicker choice={choice} dark={dark} onChange={(slot, value) => void setShade(slot, value)} />
 
       {/* Under the colour, because it answers the same question with a picture
           instead of a swatch — and choosing one answers the colour too. */}

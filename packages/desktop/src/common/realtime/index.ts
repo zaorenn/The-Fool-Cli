@@ -121,25 +121,24 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
         action: {
           type: 'string',
           enum: ['palette', 'style', 'dial', 'reset'],
-          description:
-            "'palette' changes the colour, 'style' changes what the app is made of, 'dial' moves one aspect of it, 'reset' returns to the app's own.",
+          description: "'reset' returns to the app's own look. The other three take the field of the same name.",
         },
         palette: {
           type: 'string',
           enum: ['ember', 'amber', 'wheat', 'moss', 'lagoon', 'indigo', 'orchid', 'rose', 'slate'],
           description:
-            "For 'palette'. ember is red, amber orange, wheat yellow, moss green, lagoon teal, indigo blue, orchid purple, rose pink, slate grey. Pick the nearest one to what they described; a colour word on its own works too.",
+            'ember red, amber orange, wheat yellow, moss green, lagoon teal, indigo blue, orchid purple, rose pink, slate grey. Pick the nearest to what they described.',
         },
         color: {
           type: 'string',
           description:
-            "For 'palette', when they named an exact colour such as #1f6f8b. It is matched to the nearest palette above rather than used as given, because only those nine are checked for readability.",
+            "For 'palette', when they named an exact colour such as #1f6f8b. Matched to the nearest palette above, since only those nine are checked for readability.",
         },
         material: {
           type: 'string',
           enum: ['neu', 'glass', 'liquid', 'clay', 'aurora', 'brutal', 'minimal'],
           description:
-            "For 'style'. neu is raised, glass is a lit pane, liquid bends, clay is thick and soft, aurora is dark and moving, brutal is hard-shadowed, minimal is a line.",
+            'neu raised, glass a lit pane, liquid bends, clay thick and soft, aurora dark and moving, brutal hard-shadowed, minimal a line.',
         },
         dial: {
           type: 'string',
@@ -164,14 +163,14 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
             'tint',
           ],
           description:
-            "For 'dial'. radius is corner roundness, depth is shadow, alpha is transparency, lift is hover rise, ambient is background movement, gap is spacing, weight is heading thickness.",
+            'radius is corner roundness, depth shadow, alpha transparency, lift hover rise, ambient background movement, gap spacing, weight heading thickness.',
         },
         direction: {
           type: 'string',
           enum: ['more', 'less'],
-          description: 'Which way to move the dial. Use this rather than a number unless they named one.',
+          description: 'Which way to move the dial. Prefer this over a number unless they named one.',
         },
-        amount: { type: 'number', description: 'An exact value for the dial, when the user named one.' },
+        amount: { type: 'number', description: 'An exact dial value, when the user named one.' },
       },
       required: ['action'],
     },
@@ -190,7 +189,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
         window: {
           type: 'string',
           description:
-            "The application whose window to look at — 'Spotify', 'Chrome', 'Visual Studio Code'. Give it whenever the question is about one program, which is nearly always: a picture of one window is the answer to what was asked, where a picture of the whole desktop is four things it might be about. Leave it out only when they genuinely mean the whole screen. A name that matches no open window falls back to the whole display.",
+            "The application whose window to look at — 'Spotify', 'Chrome', 'Visual Studio Code'. Give it whenever the question is about one program, which is nearly always: a picture of one window is the answer to what was asked, where a picture of the whole desktop is four things it might be about and more of the user's private screen than the question needed. Leave it out only when they genuinely mean the whole screen. A name that matches no open window comes back saying so — say that, and do not describe a screen you were not shown.",
         },
       },
       required: [],
@@ -296,9 +295,77 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_write_document',
+    description:
+      "Write a real PDF, Word file or spreadsheet into the user's Documents. Use it for any document, report, letter, CV, table or summary they want as a file. You write the content as markdown — headings, lists, tables, code — and it is typeset properly; for a spreadsheet each markdown table becomes a sheet. Say what you made and that it is in their Documents; never read the path out.",
+    parameters: {
+      type: 'object',
+      properties: {
+        markdown: {
+          type: 'string',
+          description: 'The whole document in markdown — the document itself, not a description of one.',
+        },
+        format: { type: 'string', enum: ['pdf', 'docx', 'xlsx'], description: 'docx is Word, xlsx is Excel.' },
+        name: { type: 'string', description: "What to call it. Omit to use the document's first heading." },
+      },
+      required: ['markdown', 'format'],
+    },
+  },
+  {
+    name: 'app_research',
+    description:
+      'Search the web and read the best few pages, so you answer from a source instead of from memory. Use it for anything current or specific — news, prices, versions, dates, who holds a post, what an error means — for a proper research request, and when you need to learn something before doing it. Answer only from what comes back. app_find_document is the neighbouring tool for when they want the file itself rather than the answer, and app_search is the different thing of putting a results page in front of the user.',
+    parameters: {
+      type: 'object',
+      properties: {
+        question: {
+          type: 'string',
+          description:
+            'What to find out, written as a search: the subject and the specifics, with a year or version when it matters.',
+        },
+      },
+      required: ['question'],
+    },
+  },
+  {
+    name: 'app_find_document',
+    description:
+      "Find a document on the web and open it, without ever touching the user's browser. This is the whole of 'find me a PDF about X', 'get me the manual for this', 'download that paper': it searches, picks the address that actually serves the file rather than a page about it, saves it, and opens it in this app's own viewer. Nothing appears in their browser, no tab opens, and their pointer is never taken. Use it when the thing they want is the file. When they want an answer rather than a file — 'what version is out', 'when was this released' — that is app_research, which reads pages instead of downloading them. Call this first and speak afterwards, naming what you found rather than reading its address out. If it comes back saying the results page could not be read, say exactly that: it is a fault in the search, not a statement that nothing exists.",
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: "What to find, in the user's own words." },
+        kind: {
+          type: 'string',
+          enum: ['pdf', 'doc', 'page'],
+          description:
+            "'pdf' when they asked for a PDF or a paper, 'doc' for a Word or Excel file, 'page' for an ordinary web page saved as a file. Defaults to 'page'. Getting this right is what decides whether you come back with the document or with a page about it.",
+        },
+        open: {
+          type: 'boolean',
+          description:
+            'True to save the best result and open it, which is what "find me a PDF and open it" means. False to only report what you found, for when they asked what is out there rather than for the thing itself.',
+        },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'app_open_document',
+    description:
+      "Open a document that is already on this machine, in this app's own viewer. A PDF, a Word file, a spreadsheet, a page of text, an image. Use it after app_find_document or app_write_document has produced something, or when the user names a file they want to see. It shows the document beside the conversation rather than handing it to another program, so nothing takes over their screen and they keep talking to you while they read. Say what you opened in a few words; never read the path out.",
+    parameters: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'The full path of the file, exactly as it was given to you.' },
+      },
+      required: ['path'],
+    },
+  },
+  {
     name: 'app_search',
     description:
-      "Search inside a site and put the results in front of the user, in one step. This is the whole of 'open YouTube and find that song', 'search GitHub for it', 'look it up on Wikipedia' — it goes straight to the site's own results page, so it happens instantly instead of taking the agent minutes of clicking. Use it for every request that ends in a search on a named site, and for a plain web search when no site was named. Search first and then say what you looked for and where, in a few words; do not read the address out. Playing one of the results is app_play, not a search followed by clicking; buying or replying is app_ask_jester.",
+      "Put a site's own results page in front of the user, in their browser. This is 'open YouTube and find that song', 'show me the GitHub results', 'search Wikipedia for it' — a tab opens on the results and they take it from there. Use it only when being shown the search is the request. When they want the *answer* or the *document* rather than the search — 'find me a PDF about X', 'look up when this was released' — use app_research instead: it searches without opening anything and comes back with what it found. Search first and then say what you looked for and where, in a few words; do not read the address out. Playing one of the results is app_play; buying or replying is app_ask_jester.",
     parameters: {
       type: 'object',
       properties: {

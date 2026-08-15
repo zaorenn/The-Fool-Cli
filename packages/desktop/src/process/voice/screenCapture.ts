@@ -96,42 +96,73 @@ export const captureScreen = async (): Promise<ScreenCapture | null> => {
 };
 
 /**
+ * The open windows, by title, without photographing any of them.
+ *
+ * `thumbnailSize: {0, 0}` is the entire point of this function. `getSources`
+ * renders a thumbnail for *every* source it returns, at whatever size it was
+ * asked for — so the old way of finding one window by title, which asked at
+ * display resolution, quietly photographed the user's mail, their messages and
+ * every other open window in order to keep one and discard the rest. It was
+ * more of their screen than a full-display capture, because it reached
+ * minimised windows too.
+ *
+ * Asking which windows exist is a question about titles. It must not cost
+ * pixels.
+ */
+export const listWindows = async (): Promise<{ id: string; name: string }[]> => {
+  const sources = await withTimeout(
+    desktopCapturer.getSources({ types: ['window'], thumbnailSize: { width: 0, height: 0 } }),
+    (): Electron.DesktopCapturerSource[] => []
+  );
+  return sources.map((source) => ({ id: source.id, name: source.name }));
+};
+
+/**
+ * Which window a name refers to, or nothing when none of them is it.
+ *
+ * `null` is an answer, not a failure, and the caller must report it as one.
+ * This used to fall back to the whole display: a look at Spotify with Spotify
+ * closed came back as a description of everything else the user had open, and
+ * the assistant said it had looked at Spotify. A wider picture is not a worse
+ * answer to the question — it is an answer to a different one.
+ *
+ * Our own windows are excluded by title rather than by handle: the sources
+ * carry a name and an id and nothing that ties one back to a BrowserWindow.
+ */
+export const resolveWindowSource = async (match: string): Promise<{ id: string; name: string } | null> =>
+  chooseWindowSource(await listWindows(), match, ['The Fool']);
+
+/**
  * One application's window, rather than everything on the display.
  *
- * The narrower picture, and the one nearly every question wants. "What does
- * that error say" is about a window; a photograph of three monitors gives the
- * model four things it might be reading and no way to choose, which is how a
- * look turns into another look. It is also less of the user's screen handed to
- * a model than the question required.
+ * Kept for callers that want the bytes in the main process. The renderer has a
+ * better route — `captureWindowFrame` opens a stream carrying only the chosen
+ * window — and should prefer it; this one has to ask `getSources` for pixels
+ * again, which is the expensive path described on {@link listWindows}.
  *
- * Falls back to the whole display when nothing matches the name. A wider picture
- * is a worse answer; no picture at all is the assistant saying it cannot see,
- * which for a window that is genuinely open would simply be wrong.
+ * Returns null when the window is not open. There is no fallback.
  */
 export const captureWindow = async (match: string): Promise<ScreenCapture | null> => {
   try {
-    const display = activeDisplay();
-    const width = Math.round(display.size.width * display.scaleFactor);
-    const height = Math.round(display.size.height * display.scaleFactor);
+    const chosen = await resolveWindowSource(match);
+    if (!chosen) return null;
 
+    const display = activeDisplay();
     const sources = await withTimeout(
-      desktopCapturer.getSources({ types: ['window'], thumbnailSize: { width, height } }),
+      desktopCapturer.getSources({
+        types: ['window'],
+        thumbnailSize: {
+          width: Math.round(display.size.width * display.scaleFactor),
+          height: Math.round(display.size.height * display.scaleFactor),
+        },
+      }),
       (): Electron.DesktopCapturerSource[] => []
     );
-    // Our own windows are excluded by title rather than by handle: the sources
-    // carry a name and an id and nothing that ties one back to a BrowserWindow.
-    const chosen = chooseWindowSource(
-      sources.map((source) => ({ id: source.id, name: source.name })),
-      match,
-      ['The Fool']
-    );
+
+    const found = sources.find((source) => source.id === chosen.id);
+    if (!found || found.thumbnail.isEmpty()) return null;
 
     flashScreenEdges();
-    const found = chosen ? sources.find((source) => source.id === chosen.id) : undefined;
-    if (!found || found.thumbnail.isEmpty()) {
-      const whole = await captureDisplayImage(display);
-      return whole ? toCapture(whole, 'screen') : null;
-    }
     return toCapture(found.thumbnail, 'window');
   } catch (error) {
     console.error('[ScreenCapture] the window could not be captured:', error instanceof Error ? error.message : error);

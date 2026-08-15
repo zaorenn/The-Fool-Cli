@@ -128,11 +128,15 @@ describe('resolveOfficeErrorActions', () => {
     });
   });
 
-  it('electron mode keeps the local install link and never shows the server guide', async () => {
+  it('electron mode offers no install link, because officecli ships inside the app', async () => {
     const resolveOfficeErrorActions = await load();
+    // This used to send the user to a releases page to download by hand the
+    // very copy the installer was supposed to have placed — opening a browser
+    // tab to do it. officecli is vendored now, so a missing binary means the
+    // install is damaged and there is nothing for them to go and fetch.
     expect(resolveOfficeErrorActions('OFFICECLI_NOT_FOUND', true)).toEqual({
       showServerInstallGuide: false,
-      showInstallLink: true,
+      showInstallLink: false,
       showRetry: true,
     });
   });

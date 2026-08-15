@@ -87,8 +87,28 @@ export const estimateHistoryTokens = (history: readonly BudgetedMessage[]): numb
  * What has not changed is what the marker is for. Twelve thousand tokens on
  * every turn is still a cost somebody should have to justify, and raising this
  * again should mean showing the window it is being justified against.
+ *
+ * **Re-based on 15 Aug 2026, from 12,100 to 13,150,** once — for a
+ * merge that brought two branches' worth of tools together. Each had raised
+ * this line on its own (to 12,400 and to 12,750) for tools the other could not
+ * see, so neither number described the union and the two paragraphs saying so
+ * are replaced by this one.
+ *
+ * What arrived: `app_research` reads the web so an answer comes from a page
+ * rather than from memory; `app_find_document` fetches the file itself and
+ * `app_open_document` shows it, which together are "find me a PDF about X"
+ * without a tab opening in the user's browser; `app_write_document` produces a
+ * real PDF, Word file or spreadsheet. Four capabilities that this application
+ * was previously answering by driving somebody's browser or by guessing.
+ *
+ * The union measures 13,045. Justified against the same window as
+ * before, and still measured rather than assumed: `GET /api/v0/models` reports
+ * 64,256 for `qwen/qwen3.5-9b` on this machine, which leaves about
+ * 35,100 tokens for the conversation. That headroom is what the
+ * second test in `contextBudget.test.ts` asserts directly, and it is the one
+ * that matters — this marker is only the ratchet.
  */
-export const FIXED_OVERHEAD_BUDGET_TOKENS = 12_100;
+export const FIXED_OVERHEAD_BUDGET_TOKENS = 13_150;
 
 /**
  * The window assumed when the provider does not say.

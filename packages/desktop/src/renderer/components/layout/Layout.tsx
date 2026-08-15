@@ -574,7 +574,7 @@ const Layout: React.FC<{
               </ArcoLayout.Content>
               {/* The in-app browser sits beside the route content rather than
                   over it, so a page can be read while the conversation stays
-                  visible. It keeps its own session — see browserSession.ts. */}
+                  visible. It keeps its own session — see common/browser/browserSession.ts. */}
               <div
                 className='browser-panel-region flex-shrink-0 border-l border-[var(--border-base)]'
                 style={{ width: browserOpen ? 'clamp(360px, 42%, 900px)' : 0, display: browserOpen ? 'block' : 'none' }}

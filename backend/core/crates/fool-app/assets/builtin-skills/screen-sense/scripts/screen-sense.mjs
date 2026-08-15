@@ -82,13 +82,15 @@ const isUseful = (element) =>
  */
 const describe = (snapshot, { withText }) => {
   const lines = [];
-  lines.push(`Foreground window: ${snapshot.foreground || '(none)'}`);
-  lines.push(`Screen: ${snapshot.screenshot.width}x${snapshot.screenshot.height}`);
-  lines.push(`Screenshot saved to: ${snapshot.screenshot.path}`);
+  lines.push(`Window: ${snapshot.foreground || '(none)'}`);
+  lines.push(`Size: ${snapshot.screenshot.width}x${snapshot.screenshot.height}`);
+  lines.push(`Picture of that window saved to: ${snapshot.screenshot.path}`);
 
   const windows = asList(snapshot.windows);
   if (windows.length > 0) {
-    lines.push('', 'Open windows:');
+    // Titles only. Nothing here is a picture of these — knowing what else is
+    // open is how you aim the next `look`, not a reason to photograph it.
+    lines.push('', 'Other windows open (titles only, not captured):');
     for (const window of windows) lines.push(`  - ${window.title}`);
   }
 
@@ -116,20 +118,48 @@ const describe = (snapshot, { withText }) => {
   return lines.join('\n');
 };
 
+/**
+ * The window a command was aimed at, from `--window="…"` or bare.
+ *
+ * Empty means the one in front of the user. It never means all of them: there
+ * is no command here that photographs more than a single window, and adding one
+ * would put the rest of somebody's desktop into a model's context to answer a
+ * question about one application.
+ */
+const windowFrom = (args) => {
+  const flag = args.find((arg) => arg.startsWith('--window='));
+  return flag ? flag.slice('--window='.length).replace(/^["']|["']$/g, '') : '';
+};
+
 const commands = {
   async look(args) {
     const withText = args.includes('--text');
     const limitFlag = args.find((arg) => arg.startsWith('--limit='));
     const limit = limitFlag ? Number(limitFlag.split('=')[1]) : 200;
-    const snapshot = await runPowerShell(['look', String(limit), withText ? 'text' : 'no-text']);
+    const snapshot = await runPowerShell(['look', String(limit), withText ? 'text' : 'no-text', windowFrom(args)]);
+    if (snapshot.error) {
+      // Said as a fact rather than as a failure. "That window is not open" is
+      // the answer; a picture of everything else would be an answer to a
+      // question nobody asked.
+      console.log(
+        `${snapshot.error}\n\nOpen windows:\n${asList(snapshot.windows)
+          .map((t) => `  - ${t}`)
+          .join('\n')}`
+      );
+      return;
+    }
     console.log(args.includes('--json') ? JSON.stringify(snapshot) : describe(snapshot, { withText }));
   },
 
-  async read() {
-    const result = await runPowerShell(['read']);
+  async read(args) {
+    const result = await runPowerShell(['read', windowFrom(args)]);
+    if (result.error) {
+      console.log(result.error);
+      return;
+    }
     const text = asList(result.text);
     if (text.length === 0) {
-      console.log('No text could be read from the screen.');
+      console.log(`No text could be read from ${result.window || 'that window'}.`);
       return;
     }
     console.log(text.map((line) => `(${line.x},${line.y}) ${line.text}`).join('\n'));
@@ -184,7 +214,8 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replaceAll('\\',
   const handler = commands[command];
   if (!handler) {
     console.error(
-      'Commands: look [--text] [--limit=N] [--json], read, click <x> <y>, type, keys <combo>, focus <title>'
+      'Commands: look [--window="title"] [--text] [--limit=N] [--json], read [--window="title"], ' +
+        'click <x> <y>, type, keys <combo>, focus <title>'
     );
     process.exit(1);
   }

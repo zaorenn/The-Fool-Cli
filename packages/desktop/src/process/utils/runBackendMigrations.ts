@@ -19,8 +19,14 @@ import {
 } from '@/common/config/imageGenerationMcpEnv';
 import { BUILTIN_IMAGE_GEN_NAME, type IMcpServer, type IProvider } from '@/common/config/storage';
 import { getBuiltinMcpScriptPath, type ProcessConfig as ProcessConfigType } from './initStorage';
-import { BUILTIN_BROWSER_NAME, BUILTIN_APP_SETTINGS_NAME } from '../resources/builtinMcp/constants';
-import { browserControlHandshakePath } from '../voice/browserControlServer';
+import {
+  BUILTIN_BROWSER_NAME,
+  BUILTIN_APP_SETTINGS_NAME,
+  BUILTIN_OFFICE_NAME,
+  BUILTIN_PDF_NAME,
+} from '../resources/builtinMcp/constants';
+import { officeServerCommand } from '../resources/builtinMcp/officeServerCommand';
+import { browserControlHandshakePath } from '../browser/browserControlServer';
 import { migrateAssistantsToBackend } from './migrateAssistants';
 
 type ConfigFile = typeof ProcessConfigType;
@@ -246,6 +252,43 @@ function buildDefaultMcpServers(): McpImportServer[] {
       ]
     : [];
 
+  // PDFs, through the pdf-lib this application already carries. Nothing to
+  // install and nothing to detect, so it is always registered and on: the
+  // builtin `pdf` skill it supersedes was written against Python and pypdf,
+  // whose presence nothing ever checked.
+  const pdfScript = getBuiltinMcpScriptPath('builtin-mcp-pdf');
+  const pdfConfig = { command: 'node', args: [pdfScript] };
+  const pdfServers: McpImportServer[] = [
+    {
+      name: BUILTIN_PDF_NAME,
+      description: 'Read, merge, split, rotate and trim PDFs. The original document is never written over.',
+      enabled: true,
+      builtin: true,
+      transport: { type: 'stdio', command: 'node', args: [pdfScript] },
+      original_json: JSON.stringify({ mcpServers: { [BUILTIN_PDF_NAME]: pdfConfig } }, null, 2),
+    },
+  ];
+
+  // Word, Excel and PowerPoint, through the officecli binary this build ships.
+  // Registered **only** when that binary is actually on disk. A server in the
+  // user's list that cannot start is a tool list the model reads and believes,
+  // and a failure it discovers in the middle of somebody's work — which is
+  // exactly what the previous arrangement produced, because officecli was
+  // fetched from the internet on first use and might never arrive.
+  const office = officeServerCommand();
+  const officeServers: McpImportServer[] = office
+    ? [
+        {
+          name: BUILTIN_OFFICE_NAME,
+          description: 'Create and edit Word, Excel and PowerPoint documents. Ships with the app; nothing to install.',
+          enabled: true,
+          builtin: true,
+          transport: { type: 'stdio', command: office.command, args: office.args },
+          original_json: JSON.stringify({ mcpServers: { [BUILTIN_OFFICE_NAME]: office } }, null, 2),
+        },
+      ]
+    : [];
+
   const computerUseConfig = {
     command: 'npx',
     args: ['-y', '@betrayzl/windows-computer-use-mcp@latest'],
@@ -254,6 +297,8 @@ function buildDefaultMcpServers(): McpImportServer[] {
   return [
     ...browserServers,
     ...settingsServers,
+    ...pdfServers,
+    ...officeServers,
     {
       name: BUILTIN_CHROME_DEVTOOLS_NAME,
       description: 'Default MCP server: chrome-devtools',
@@ -366,7 +411,7 @@ function buildOriginalJsonFromTransport(server: Pick<IMcpServer, 'name' | 'descr
  * capability itself to go, not to be switched off. Work on the computer belongs
  * to the tools that do it in the background.
  */
-const RETIRED_BUILTIN_MCP_SERVERS: readonly string[] = ['uacc-computer-control'];
+const RETIRED_BUILTIN_MCP_SERVERS: ReadonlySet<string> = new Set(['uacc-computer-control']);
 
 /**
  * Deletes them, once, and never resurrects them.
@@ -377,7 +422,7 @@ const RETIRED_BUILTIN_MCP_SERVERS: readonly string[] = ['uacc-computer-control']
  * bootstrap gives.
  */
 async function removeRetiredBuiltinServers(existing: readonly IMcpServer[]): Promise<void> {
-  const retired = existing.filter((server) => RETIRED_BUILTIN_MCP_SERVERS.includes(server.name));
+  const retired = existing.filter((server) => RETIRED_BUILTIN_MCP_SERVERS.has(server.name));
   if (retired.length === 0) return;
 
   for (const server of retired) {

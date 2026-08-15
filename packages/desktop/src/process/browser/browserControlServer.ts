@@ -9,16 +9,16 @@ import { randomBytes } from 'node:crypto';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { app } from 'electron';
-import { ipcBridge } from '@/common';
 import { parseBrowserCommand, parseFailed } from '@/common/browser/browserCommands';
+import { runAgentPageCommand } from './agentPage';
 
 /**
  * How the browser MCP server reaches the browser.
  *
  * The MCP server is a separate `node` process, spawned by the agent runtime; the
- * webview it needs to drive is in this app's renderer. Nothing connects those
- * two, so this opens the smallest thing that can: one loopback endpoint, one
- * command per request.
+ * page it needs to drive lives in this process. Nothing connects those two, so
+ * this opens the smallest thing that can: one loopback endpoint, one command
+ * per request.
  *
  * Three deliberate constraints, because this is a hole in the app that runs
  * JavaScript inside pages the user is logged into:
@@ -117,9 +117,13 @@ export async function startBrowserControlServer(): Promise<void> {
         const parsed = parseBrowserCommand((payload as { command?: unknown })?.command);
         if (parseFailed(parsed)) return reply(400, { ok: false, error: parsed.error });
 
-        // Across to the renderer, which owns the webview and validates the
-        // command a second time before anything reaches a page.
-        const result = await ipcBridge.agentBrowser.run.invoke({ command: parsed.command });
+        // Onto the agent's own offscreen page, made on first use and never
+        // shown. This used to hop across to the renderer and run against the
+        // webview inside the browser panel, which meant every command sent
+        // while that panel was closed came back as "the in-app browser is not
+        // open, ask the user to open it" — so an agent could not look anything
+        // up unless a window was opened in front of somebody first.
+        const result = await runAgentPageCommand(parsed.command);
         return reply(200, result);
       } catch (error) {
         return reply(500, { ok: false, error: error instanceof Error ? error.message : String(error) });

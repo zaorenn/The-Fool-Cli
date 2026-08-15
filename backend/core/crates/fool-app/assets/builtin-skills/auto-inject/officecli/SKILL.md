@@ -3,39 +3,21 @@ name: officecli
 description: Create, analyze, proofread, and modify Office documents (.docx, .xlsx, .pptx) using the officecli CLI tool. Use when the user wants to create, inspect, check formatting, find issues, add charts, or modify Office documents.
 ---
 
-> **⚠️ Platform note — read before running any command.** The shell snippets in this skill are written for **macOS / Linux** (bash/zsh). Always check which OS you are on first. On **Windows** do **not** run them verbatim — the underlying tool/CLI commands are usually cross-platform, but the surrounding shell syntax is not. Translate it to PowerShell before running:
+> **This skill does not need a shell.** officecli ships with The Fool and is reachable as the **`fool-office-cli` MCP server** — call its tools directly. Every command below has a tool of the same shape: `{"command":"set","path":"/Sheet1/A1","props":{"value":"Name"}}` is the tool call for `officecli set data.xlsx /Sheet1/A1 --prop value=Name`.
 >
-> | bash (macOS / Linux)              | PowerShell (Windows)                                                                |
-> | --------------------------------- | ----------------------------------------------------------------------------------- |
-> | `a && b`                          | run as two steps, or `a; if ($?) { b }`                                             |
-> | `cat <<'EOF' \| tool …` (heredoc) | write the text to a temp file, then pipe/pass that file to the tool                 |
-> | `VAR=$(cmd)` … `$VAR`             | `$VAR = cmd` … `$VAR`                                                               |
-> | `cmd > /dev/null`                 | `cmd > $null`                                                                       |
-> | `… \| grep PAT`                   | `… \| Select-String PAT`                                                            |
-> | `… \| jq …`                       | `… \| ConvertFrom-Json`, then read the fields                                       |
-> | `python3 x.py`                    | `python x.py` (or `py x.py`)                                                        |
-> | `~/dir`, `/tmp`                   | `$env:USERPROFILE\dir`, `$env:TEMP`                                                 |
-> | `cp` / `mkdir -p` / `rm -rf`      | `Copy-Item` / `New-Item -ItemType Directory -Force` / `Remove-Item -Recurse -Force` |
->
-> If a command has no obvious Windows equivalent, prefer the built-in file/HTTP tools over raw shell.
+> The shell forms are kept as documentation of what each operation _is_. Prefer the MCP tool: it is identical on every platform, where a shell command is not, and it does not depend on a model correctly translating a heredoc into PowerShell.
 
 # officecli
 
-AI-friendly CLI for .docx, .xlsx, .pptx. Single binary, no dependencies, no Office installation needed.
+AI-friendly tooling for .docx, .xlsx, .pptx. No Microsoft Office installation needed.
 
-## Install
+## It is already here
 
-If `officecli` is not installed:
+officecli ships **inside The Fool**. There is nothing to install, nothing to download, and no version to check — a pinned, checksummed binary is packaged with the application, and it is exposed as the **`fool-office-cli` MCP server**.
 
-```bash
-# macOS / Linux
-curl -fsSL https://d.officecli.ai/install.sh | bash
+This used to say something else. The application downloaded an installer script from the internet and executed it the first time anybody previewed a Word document — so whether this skill's instructions worked depended on a network fetch nobody could see, and the honest answer to "can you edit my spreadsheet" was "possibly".
 
-# Windows (PowerShell)
-irm https://d.officecli.ai/install.ps1 | iex
-```
-
-Verify with `officecli --version`. If still not found after install, open a new terminal.
+**If the `fool-office-cli` tools are not in your tool list**, the binary is missing from this build. Say so and stop. Do not attempt to install it, and do not fall back to driving Excel with the pointer: that takes minutes of the user's own screen to do badly what a tool call does in a second.
 
 ---
 
