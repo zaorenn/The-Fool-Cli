@@ -26,7 +26,7 @@ import {
   BUILTIN_PDF_NAME,
 } from '../resources/builtinMcp/constants';
 import { officeServerCommand } from '../resources/builtinMcp/officeServerCommand';
-import { browserControlHandshakePath } from '../voice/browserControlServer';
+import { browserControlHandshakePath } from '../browser/browserControlServer';
 import { migrateAssistantsToBackend } from './migrateAssistants';
 
 type ConfigFile = typeof ProcessConfigType;
@@ -411,7 +411,7 @@ function buildOriginalJsonFromTransport(server: Pick<IMcpServer, 'name' | 'descr
  * capability itself to go, not to be switched off. Work on the computer belongs
  * to the tools that do it in the background.
  */
-const RETIRED_BUILTIN_MCP_SERVERS: readonly string[] = ['uacc-computer-control'];
+const RETIRED_BUILTIN_MCP_SERVERS: readonly string[] = new Set(['uacc-computer-control']);
 
 /**
  * Deletes them, once, and never resurrects them.
@@ -422,7 +422,7 @@ const RETIRED_BUILTIN_MCP_SERVERS: readonly string[] = ['uacc-computer-control']
  * bootstrap gives.
  */
 async function removeRetiredBuiltinServers(existing: readonly IMcpServer[]): Promise<void> {
-  const retired = existing.filter((server) => RETIRED_BUILTIN_MCP_SERVERS.includes(server.name));
+  const retired = existing.filter((server) => RETIRED_BUILTIN_MCP_SERVERS.has(server.name));
   if (retired.length === 0) return;
 
   for (const server of retired) {

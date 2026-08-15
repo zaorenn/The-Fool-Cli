@@ -337,26 +337,6 @@ export const foolVoice = {
 };
 
 // ---------------------------------------------------------------------------
-// The in-app browser, as something an agent can drive
-// ---------------------------------------------------------------------------
-
-/**
- * One command, run against the browser panel the user can see.
- *
- * The webview lives in the renderer and the agent's request arrives in the main
- * process, so this is the crossing between them — and unusually for this app,
- * the renderer is the provider and the main process invokes. The payload is
- * validated on both sides against `common/browser/browserCommands` rather than
- * trusted across the boundary.
- */
-export const agentBrowser = {
-  run: bridge.buildProvider<
-    { ok: true; data: Record<string, unknown> } | { ok: false; error: string },
-    { command: unknown }
-  >('fool.browser.run'),
-};
-
-// ---------------------------------------------------------------------------
 // Local models — main-process discovery of locally installed inference models
 // ---------------------------------------------------------------------------
 
