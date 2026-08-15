@@ -102,3 +102,188 @@ export const launchCommandFor = (
 
   return null;
 };
+
+/* -------------------------------------------------------------- discovery -- */
+
+/**
+ * Finding the application somebody named, rather than hoping the name is a
+ * command.
+ *
+ * The commands above are the whole of what "open Spotify" used to do, and on
+ * Windows that is `start "" Spotify` — which only resolves a name the system
+ * already knows as a command, through `App Paths` or `PATH`. Measured on a real
+ * machine: Spotify and notepad opened, **Discord and Steam did not**, because
+ * both install per-user and neither registers a command. There was no second
+ * attempt and no lookup; the request simply failed, and the assistant said so
+ * about an application sitting in the user's own Start menu.
+ *
+ * Every desktop already keeps a list of its installed applications — the Start
+ * menu, `/Applications`, the `.desktop` files. What was missing was reading it.
+ * So the launch is now: resolve the spoken name against that list, and launch
+ * the entry it identifies. The command path above stays as the fallback for a
+ * name the list does not have.
+ *
+ * This half is the resolution, kept pure. It is the part with the interesting
+ * failure — a person says "spotifayı aç", and the model hands over `Spotify'ı`.
+ */
+
+/** One application the operating system says is installed. */
+export type IndexedApp = {
+  /** What the list calls it, which is what will be said back to the user. */
+  name: string;
+  /**
+   * What to hand the platform to start it.
+   *
+   * Opaque on purpose and never parsed here: on Windows it is a Start-menu
+   * AppID, on macOS a bundle path, on Linux a `.desktop` id. What builds it
+   * knows what it means; this file only carries it.
+   */
+  launchId: string;
+};
+
+/**
+ * Letters that mean the same thing to a person and different things to a
+ * comparison.
+ *
+ * Turkish first because that is the language this is used in most: `İ`
+ * lowercases to a dotted i with a combining mark, `ı` is a distinct letter from
+ * `i`, and the ordinary `toLowerCase` gets both wrong in a way that makes
+ * `IŞIK` and `ışık` unequal. The rest are the accents that appear in
+ * application names in the other languages the app ships in.
+ */
+const FOLDED: Readonly<Record<string, string>> = {
+  ı: 'i',
+  İ: 'i',
+  I: 'i',
+  ş: 's',
+  Ş: 's',
+  ğ: 'g',
+  Ğ: 'g',
+  ü: 'u',
+  Ü: 'u',
+  ö: 'o',
+  Ö: 'o',
+  ç: 'c',
+  Ç: 'c',
+};
+
+/**
+ * The suffix a Turkish speaker puts on the name of the thing they are acting on.
+ *
+ * "Spotify'ı aç", "Discord'u kapat", "Steam'i başlat". The transcript keeps the
+ * apostrophe, the model passes the whole word through as the name, and a
+ * comparison against `Spotify` then fails on a word that is unmistakably
+ * Spotify. Only what follows an apostrophe is removed, and only when it is short
+ * — so `Assassin's Creed` keeps its `s`.
+ */
+const TURKISH_SUFFIX = /['’](?:y?[ıiuü]|[ıiuü]?n[ıiuü]?|[dt][aeıi]|l[ae]r?[ıi]?)$/;
+
+/**
+ * A name reduced to what two people would agree it is.
+ *
+ * Everything that is punctuation, spacing or case disappears; what is left is
+ * letters and digits separated by single spaces.
+ */
+export const foldAppName = (name: string): string =>
+  name
+    .trim()
+    .replace(TURKISH_SUFFIX, '')
+    .replace(/[ıİIşŞğĞüÜöÖçÇ]/g, (character) => FOLDED[character] ?? character)
+    .toLowerCase()
+    // Everything else with an accent on it, via the decomposition.
+    .normalize('NFD')
+    .replace(/\p{M}+/gu, '')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
+
+/** The words of a folded name, for the partial comparisons. */
+const wordsOf = (folded: string): string[] => (folded.length === 0 ? [] : folded.split(' '));
+
+/**
+ * How well an entry answers what was said, from 0 to 1.
+ *
+ * Ordered by how sure each kind of agreement makes us, rather than by a single
+ * distance: "steam" against `Steam` and against `Steam Support Center` are both
+ * prefix matches, and the only thing that separates them is that one of them is
+ * the whole name. Which is exactly the judgement a person makes.
+ */
+export const scoreAppMatch = (spoken: string, appName: string): number => {
+  const query = foldAppName(spoken);
+  const name = foldAppName(appName);
+  if (query.length === 0 || name.length === 0) return 0;
+
+  if (query === name) return 1;
+
+  // The name begins with what was said. The rest of it counts against the
+  // score, so the shortest name that starts this way wins — `Steam` over
+  // `Steam Support Center`.
+  if (name.startsWith(query)) return 0.9 - Math.min(0.25, (name.length - query.length) / 100);
+
+  // Said more than the name has: "visual studio code editor" against
+  // `Visual Studio Code`. Still that application, said generously.
+  if (query.startsWith(name)) return 0.82;
+
+  const queryWords = wordsOf(query);
+  const nameWords = new Set(wordsOf(name));
+
+  // Every word said appears in the name: "code visual studio", or a name whose
+  // words the speaker reordered.
+  if (queryWords.length > 0 && queryWords.every((word) => nameWords.has(word))) return 0.74;
+
+  if (name.includes(query)) return 0.66;
+
+  // Whatever the two have in common, which is the only thing left that can
+  // separate a near miss from a wrong answer.
+  const shared = queryWords.filter((word) => nameWords.has(word)).length;
+  if (shared === 0) return 0;
+  return 0.6 * (shared / Math.max(queryWords.length, nameWords.size));
+};
+
+/**
+ * How sure the match has to be before the application is opened.
+ *
+ * This decides something on the user's own machine, so the failure to avoid is
+ * opening the wrong program rather than opening nothing: "I could not find it"
+ * is a recoverable sentence and a stranger's window appearing is not. Set just
+ * below the whole-word agreements above, so a partial word overlap alone is
+ * never enough.
+ */
+export const APP_MATCH_FLOOR = 0.62;
+
+/**
+ * The entry somebody meant, or nothing when the list does not obviously have it.
+ *
+ * Ties break towards the shorter name for the reason given on the prefix rule,
+ * and towards the first listed after that so the answer does not depend on the
+ * order the platform happened to enumerate in.
+ */
+export const findApp = (spoken: string, apps: readonly IndexedApp[]): IndexedApp | null => {
+  let best: IndexedApp | null = null;
+  let bestScore = 0;
+
+  for (const app of apps) {
+    const score = scoreAppMatch(spoken, app.name);
+    if (score < APP_MATCH_FLOOR) continue;
+    if (score > bestScore || (score === bestScore && best !== null && app.name.length < best.name.length)) {
+      best = app;
+      bestScore = score;
+    }
+  }
+
+  return best;
+};
+
+/**
+ * Whether a name may be looked up in the index.
+ *
+ * Deliberately wider than {@link isLaunchableAppName}, and safely so: that one
+ * guards a string that becomes an argument to a program the system will run,
+ * where a closed character set is the whole defence. Nothing here reaches a
+ * command — a name is compared against a list the operating system wrote, and
+ * what gets launched is the list's own id. So the apostrophe in `Spotify'ı` and
+ * the `+` in `Notepad++` are allowed here and still refused there.
+ */
+export const isSearchableAppName = (name: string): boolean => {
+  const wanted = name.trim();
+  return wanted.length > 0 && wanted.length <= 80 && !/[\r\n\t]/.test(wanted);
+};

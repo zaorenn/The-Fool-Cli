@@ -295,9 +295,42 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
     },
   },
   {
+    name: 'app_write_document',
+    description:
+      "Write a real PDF, Word file or spreadsheet into the user's Documents. Use it for any document, report, letter, CV, table or summary they want as a file. You write the content as markdown — headings, lists, tables, code — and it is typeset properly; for a spreadsheet each markdown table becomes a sheet. Say what you made and that it is in their Documents; never read the path out.",
+    parameters: {
+      type: 'object',
+      properties: {
+        markdown: {
+          type: 'string',
+          description: 'The whole document in markdown — the document itself, not a description of one.',
+        },
+        format: { type: 'string', enum: ['pdf', 'docx', 'xlsx'], description: 'docx is Word, xlsx is Excel.' },
+        name: { type: 'string', description: "What to call it. Omit to use the document's first heading." },
+      },
+      required: ['markdown', 'format'],
+    },
+  },
+  {
     name: 'app_research',
     description:
-      "Find something on the web yourself, and open it, without ever touching the user's browser. This is the whole of 'find me a PDF about X', 'look up the manual for this', 'get me that paper': it searches, picks the address that actually serves the file rather than a page about it, saves it, and opens it in this app's own viewer. Nothing appears in their browser, no tab opens, and their pointer is never taken. Use it for every request to find, look up or fetch a document or a fact. app_search is the other thing entirely — it puts a results page in front of them — so use that only when being shown the search itself is what they asked for. Call this first and speak afterwards, naming what you found rather than reading its address out. If it comes back saying the results page could not be read, say exactly that: it is a fault in the search, not a statement that nothing exists.",
+      'Search the web and read the best few pages, so you answer from a source instead of from memory. Use it for anything current or specific — news, prices, versions, dates, who holds a post, what an error means — for a proper research request, and when you need to learn something before doing it. Answer only from what comes back. app_find_document is the neighbouring tool for when they want the file itself rather than the answer, and app_search is the different thing of putting a results page in front of the user.',
+    parameters: {
+      type: 'object',
+      properties: {
+        question: {
+          type: 'string',
+          description:
+            'What to find out, written as a search: the subject and the specifics, with a year or version when it matters.',
+        },
+      },
+      required: ['question'],
+    },
+  },
+  {
+    name: 'app_find_document',
+    description:
+      "Find a document on the web and open it, without ever touching the user's browser. This is the whole of 'find me a PDF about X', 'get me the manual for this', 'download that paper': it searches, picks the address that actually serves the file rather than a page about it, saves it, and opens it in this app's own viewer. Nothing appears in their browser, no tab opens, and their pointer is never taken. Use it when the thing they want is the file. When they want an answer rather than a file — 'what version is out', 'when was this released' — that is app_research, which reads pages instead of downloading them. Call this first and speak afterwards, naming what you found rather than reading its address out. If it comes back saying the results page could not be read, say exactly that: it is a fault in the search, not a statement that nothing exists.",
     parameters: {
       type: 'object',
       properties: {
@@ -306,7 +339,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
           type: 'string',
           enum: ['pdf', 'doc', 'page'],
           description:
-            "'pdf' when they asked for a PDF or a paper, 'doc' for a Word or Excel file, 'page' for an ordinary web page or a fact. Defaults to 'page'. Getting this right is what decides whether you come back with the document or with a page about it.",
+            "'pdf' when they asked for a PDF or a paper, 'doc' for a Word or Excel file, 'page' for an ordinary web page saved as a file. Defaults to 'page'. Getting this right is what decides whether you come back with the document or with a page about it.",
         },
         open: {
           type: 'boolean',
@@ -320,7 +353,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
   {
     name: 'app_open_document',
     description:
-      "Open a document that is already on this machine, in this app's own viewer. A PDF, a Word file, a spreadsheet, a page of text, an image. Use it after app_research has saved something, or when the user names a file they want to see. It shows the document beside the conversation rather than handing it to another program, so nothing takes over their screen and they keep talking to you while they read. Say what you opened in a few words; never read the path out.",
+      "Open a document that is already on this machine, in this app's own viewer. A PDF, a Word file, a spreadsheet, a page of text, an image. Use it after app_find_document or app_write_document has produced something, or when the user names a file they want to see. It shows the document beside the conversation rather than handing it to another program, so nothing takes over their screen and they keep talking to you while they read. Say what you opened in a few words; never read the path out.",
     parameters: {
       type: 'object',
       properties: {

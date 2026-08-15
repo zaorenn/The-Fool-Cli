@@ -74,12 +74,21 @@
          is the whole of the interaction: the pointer arrives, the notch fades
          out of the way, and what it was covering is usable again.
 
-         Faint rather than gone, so it is clear the thing is still there and
-         still listening, and quick out but slow back so it does not flicker
-         while the cursor passes across it. */
+         Gone rather than faint. It was left at six percent so that it was
+         clear the thing was still there and still listening — but the pointer
+         arriving over the notch means the user wants to see what is *under* it,
+         and a ghost of a dark pill over a tab strip is still something to read
+         around. Nothing is hidden by this: the pill comes back the moment the
+         cursor moves off, and the conversation it is reporting on is unaffected.
+
+         Quick out and slower back, so it does not flicker while a cursor
+         crosses it on the way somewhere else. The main process decides when
+         this class is on — see `foolsControlWindow.ts`; the cursor is read from
+         the system rather than from a mouse event, because the events stop
+         arriving the moment the pointer leaves and this used to stick. */
       #notch.shown.under-pointer {
-        opacity: 0.06;
-        transition: opacity 120ms ease-out;
+        opacity: 0;
+        transition: opacity 110ms ease-out;
       }
 
       /* Expanded: room for the sentence and for what is being done about it. */

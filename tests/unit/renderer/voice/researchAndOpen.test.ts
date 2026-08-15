@@ -76,7 +76,7 @@ describe('readKind', () => {
   });
 });
 
-describe('app_research', () => {
+describe('app_find_document', () => {
   it('searches and opens without ever opening the user’s browser', async () => {
     const find = stubFindOnWeb({
       status: 'found',

@@ -78,13 +78,35 @@ const currentSentence = (flat: string): string => {
 };
 
 /**
+ * How much of a reply is looked at.
+ *
+ * This runs on every frame of a stream, against everything received so far —
+ * so the work per frame grows with the answer, and the work per answer grows
+ * with its square. On a reply of a few thousand characters that is a
+ * meaningful amount of regex over text the function is about to discard
+ * anyway, on the thread that is also drawing the meter.
+ *
+ * Only the tail can ever be the answer: what comes out is the sentence in
+ * progress, capped at {@link LIMIT}. This is generously more than a sentence,
+ * so the result is the same one the whole reply produced — with one exception,
+ * an unbroken block of prose longer than this with no sentence end in it, which
+ * is cut at a word either way.
+ */
+const TAIL = 600;
+
+/**
  * One line for the notch, following the reply as it is written.
  *
  * Cut at a word rather than mid-syllable, because this is read at a glance and
  * a truncated word reads as a glitch.
  */
 export const notchLine = (reply: string): string => {
-  const flat = flatten(reply);
+  // Taken before flattening rather than after: flattening is the expensive half
+  // and there is no reason to do it to a paragraph that cannot be shown. The
+  // extra character is what tells `currentSentence` the text was cut, so a
+  // truncated opening is not mistaken for a completed sentence.
+  const tail = reply.length > TAIL ? reply.slice(-TAIL) : reply;
+  const flat = flatten(tail);
   if (flat.length === 0) return '';
 
   const sentence = currentSentence(flat);

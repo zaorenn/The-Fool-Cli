@@ -15,7 +15,7 @@
  * here, it is giving the file to whatever program the operating system has
  * registered, in a window this application cannot see or talk about.
  *
- * This is the missing half of `app_research`. The file it found is shown in the
+ * This is the missing half of `app_find_document`. The file it found is shown in the
  * panel next to the conversation, so the user reads it while still talking.
  */
 

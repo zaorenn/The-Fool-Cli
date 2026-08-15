@@ -7,6 +7,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VOICE_STAGE_OFF, type VoiceStageEvent } from '@/common/types/voiceStage';
 
+/** What the notch told the main process about where it drew itself. */
+const reportedBounds: { x: number; y: number; width: number; height: number }[] = [];
+
+/** Pushes the main process's verdict about the cursor, as the preload would. */
+let pushPointer: ((over: boolean) => void) | undefined;
+
 /**
  * Fool's Control, the notch at the top of the screen.
  *
@@ -15,6 +21,18 @@ import { VOICE_STAGE_OFF, type VoiceStageEvent } from '@/common/types/voiceStage
  * callback the preload hands it.
  */
 const mountNotch = async (): Promise<(event: VoiceStageEvent) => void> => {
+  reportedBounds.length = 0;
+  pushPointer = undefined;
+  // jsdom has no layout and so no observer for it. The notch reports on every
+  // layout change, which in a test is only ever the one it is given.
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe(): void {}
+      disconnect(): void {}
+      unobserve(): void {}
+    }
+  );
   document.body.innerHTML = `
     <div id="notch">
       <div id="head">
@@ -43,6 +61,13 @@ const mountNotch = async (): Promise<(event: VoiceStageEvent) => void> => {
       onStage: (callback: (event: VoiceStageEvent) => void) => {
         handler = callback;
         return () => undefined;
+      },
+      onPointer: (callback: (over: boolean) => void) => {
+        pushPointer = callback;
+        return () => undefined;
+      },
+      reportBounds: (bounds: { x: number; y: number; width: number; height: number }) => {
+        reportedBounds.push(bounds);
       },
     },
   });
@@ -172,5 +197,60 @@ describe("Fool's Control", () => {
 
     const notch = document.getElementById('notch') as HTMLDivElement;
     expect(notch.classList.contains('shown')).toBe(false);
+  });
+
+  /**
+   * Getting out of the way of the cursor.
+   *
+   * This had no test at all, and it had two faults that a test would have
+   * caught. The listener was on the *window* — a fixed 680x280 box sized for
+   * the widest state the notch ever reaches — so the pill faded whenever the
+   * cursor entered that whole region, nowhere near the 190 pixels actually
+   * drawn. And the forwarded mouse stream stops when the pointer leaves, with
+   * no closing event to match the opening one, so a faded notch could stay
+   * faded for the rest of the session.
+   *
+   * Both are gone because the decision is no longer made here: the main process
+   * reads the system cursor against the rectangle this window reports.
+   */
+  describe('under the pointer', () => {
+    it('fades only when the main process says the cursor is over it', async () => {
+      const push = await mountNotch();
+      push(stage({ transcript: 'open my notes' }));
+      const notch = document.getElementById('notch') as HTMLDivElement;
+
+      expect(notch.classList.contains('under-pointer')).toBe(false);
+
+      pushPointer?.(true);
+      expect(notch.classList.contains('under-pointer')).toBe(true);
+
+      pushPointer?.(false);
+      expect(notch.classList.contains('under-pointer')).toBe(false);
+    });
+
+    /**
+     * The old implementation faded on any mouse event anywhere in the window,
+     * which is most of the top of the screen. Nothing in this window listens to
+     * the mouse any more, so moving over it changes nothing on its own.
+     */
+    it('ignores mouse events in the window, which is not the notch', async () => {
+      const push = await mountNotch();
+      push(stage({ transcript: 'open my notes' }));
+      const notch = document.getElementById('notch') as HTMLDivElement;
+
+      window.dispatchEvent(new MouseEvent('mousemove', { clientX: 640, clientY: 240 }));
+
+      expect(notch.classList.contains('under-pointer')).toBe(false);
+    });
+
+    it('tells the main process where it drew itself', async () => {
+      const push = await mountNotch();
+      push(stage({ transcript: 'open my notes' }));
+
+      window.dispatchEvent(new Event('resize'));
+
+      expect(reportedBounds.length).toBeGreaterThan(0);
+      expect(reportedBounds.at(-1)).toEqual({ x: 0, y: 0, width: 0, height: 0 });
+    });
   });
 });
