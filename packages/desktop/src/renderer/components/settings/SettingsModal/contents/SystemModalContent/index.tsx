@@ -53,7 +53,7 @@ const SystemModalContent: React.FC = () => {
   const [promptTimeout, setPromptTimeout] = useState<number>(300);
   const [agentIdleTimeout, setAgentIdleTimeout] = useState<number>(5);
   const [saveUploadToWorkspace, setSaveUploadToWorkspace] = useState(false);
-  const [autoPreviewOfficeFiles, setAutoPreviewOfficeFiles] = useState(true);
+  const [autoPreviewOfficeFiles, setAutoPreviewOfficeFiles] = useState(false);
 
   useEffect(() => {
     if (!isDesktop) {
@@ -93,7 +93,7 @@ const SystemModalContent: React.FC = () => {
     setNotificationEnabled(configService.get('system.notificationEnabled') ?? true);
     setCronNotificationEnabled(configService.get('system.cronNotificationEnabled') ?? false);
     setSaveUploadToWorkspace(configService.get('upload.saveToWorkspace') ?? false);
-    setAutoPreviewOfficeFiles(configService.get('system.autoPreviewOfficeFiles') ?? true);
+    setAutoPreviewOfficeFiles(configService.get('system.autoPreviewOfficeFiles') ?? false);
   }, [isDesktop]);
 
   useEffect(() => {
