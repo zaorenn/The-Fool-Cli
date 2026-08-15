@@ -1,6 +1,7 @@
 pub mod background;
 pub mod checkpoint;
 pub mod confinement;
+pub mod download;
 pub mod edit;
 pub mod exec_command;
 pub mod file_cache;

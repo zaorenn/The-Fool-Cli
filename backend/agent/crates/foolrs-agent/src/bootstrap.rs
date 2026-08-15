@@ -15,6 +15,7 @@ use foolrs_skills::permissions::SkillPermissionChecker;
 use foolrs_skills::types::SkillMetadata;
 use foolrs_tools::checkpoint::CheckpointStore;
 use foolrs_tools::confinement::Confinement;
+use foolrs_tools::download::DownloadTool;
 use foolrs_tools::edit::EditTool;
 use foolrs_tools::exec_command::ExecCommandTool;
 use foolrs_tools::file_cache::FileStateCache;
@@ -292,6 +293,11 @@ impl AgentBootstrap {
         // see `web_fetch::check_url`, which refuses before a request is made.
         registry.register(Box::new(WebFetchTool::new()));
         registry.register(Box::new(WebSearchTool::new()));
+        // Saving what the other two found. Without it the agent could
+        // locate a document and then had no way to obtain one: a PDF read
+        // through WebFetch arrives as the result of a lossy UTF-8
+        // conversion, which the model reports as the paper's contents.
+        registry.register(Box::new(DownloadTool::new(workspace_path.to_path_buf())));
 
         registry
     }
