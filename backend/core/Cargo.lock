@@ -2758,6 +2758,7 @@ dependencies = [
  "async-trait",
  "base64",
  "foolrs-config",
+ "foolrs-memory",
  "foolrs-process",
  "foolrs-protocol",
  "foolrs-types",
