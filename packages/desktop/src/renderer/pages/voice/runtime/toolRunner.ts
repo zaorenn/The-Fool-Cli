@@ -34,7 +34,7 @@ import {
   forgetVoiceRule,
   rememberVoiceRule,
 } from '@renderer/services/voice/session/voiceMemoryStore';
-import { describeScreen, takeScreenLook } from '@renderer/services/voice/screenSight';
+import { describeScreen, ScreenSightError, takeScreenLook } from '@renderer/services/voice/screenSight';
 import { peekVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import { applySurfaceIntent, readSurfaceIntent, type SurfaceIntent } from '@/common/theme/surfaceIntent';
 import { defaultSurfaceChoice, type SurfaceStyleChoice } from '@/common/theme/surfaceChoice';
@@ -397,24 +397,34 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
     if (invocation.name === 'app_look_at_screen') {
       host.updateActivity(invocation.callId, { detail: t('settings.voice.conversationLooking'), state: 'running' });
       const wanted = text('window').trim();
-      const look = await lookAtScreen(text('question'), wanted);
+
+      let look: { text: string; scope: 'window' | 'display' };
+      try {
+        look = await lookAtScreen(text('question'), wanted);
+      } catch (error) {
+        // Not a failure, and it must not be reported as one. A window that is
+        // not open is the answer to the question, and it is the answer this
+        // application used to replace with a photograph of everything else the
+        // user had on screen — described confidently as the thing they asked
+        // about.
+        if (error instanceof ScreenSightError && error.reason === 'window-not-open') {
+          const detail = t('settings.voice.conversationWindowNotOpen', { name: wanted });
+          host.updateActivity(invocation.callId, { detail, state: 'completed' });
+          host.backToListening();
+          return { ok: true, windowNotOpen: wanted, detail };
+        }
+        throw error;
+      }
       host.updateActivity(invocation.callId, { detail: look.text.slice(0, 160), state: 'completed' });
       host.backToListening();
       // Handed back as the screen's own words rather than a summary of them: the
       // model is about to say this out loud in its own voice, and summarising it
       // here would be a second, worse rewrite.
       //
-      // `lookedAt` is the other half, and it is the honest half. A window that is
-      // not open falls back to the whole display, and until now that happened
-      // silently — so a look asked for on Spotify came back as an ordinary
-      // description and the assistant said it had looked at Spotify. It is told
-      // what it actually got, and which window it failed to find.
-      return {
-        ok: true,
-        screen: look.text,
-        lookedAt: look.scope,
-        ...(wanted.length > 0 && look.scope === 'display' ? { windowNotFound: wanted } : {}),
-      };
+      // `lookedAt` is the other half, and it is the honest half — what was
+      // actually photographed, so the model cannot report a look at one window
+      // when a display was captured.
+      return { ok: true, screen: look.text, lookedAt: look.scope };
     }
 
     if (invocation.name === 'app_open_url') {

@@ -1583,6 +1583,7 @@
     "conversationProviderMissing": "このプロバイダーのAPIキーがありません",
     "conversationProviderAddKey": "モデルサービスで追加",
     "conversationLooking": "画面を見ています…",
+    "conversationWindowNotOpen": "{{name}} のウィンドウは現在開いていません。",
     "conversationTaskDone": "完了しました。",
     "conversationVisionModel": "画面を見るモデル",
     "conversationVisionModelSame": "考えるモデルと同じ",

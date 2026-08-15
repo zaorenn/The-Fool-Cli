@@ -65,6 +65,15 @@ export type ScreenSightFailure =
   | 'capture-unavailable'
   /** The capture itself failed or came back empty. */
   | 'capture-failed'
+  /**
+   * A window was named and no window by that name is open.
+   *
+   * Separate from `capture-failed` because it is not a failure: it is the
+   * answer. Asked to look at Spotify with Spotify closed, the true sentence is
+   * "Spotify is not open", and the caller can only say that if it is told this
+   * rather than handed a description of everything else on the display.
+   */
+  | 'window-not-open'
   /** The endpoint refused the request; usually a text-only model. */
   | 'model-refused'
   /** The model answered, with nothing in it. */
@@ -115,21 +124,58 @@ const systemPrompt = (language: string): string =>
  */
 export type CaptureScope = 'window' | 'display';
 
+/**
+ * A picture of one named window, taken without photographing any other.
+ *
+ * Two calls rather than one, and the split is the point. The main process finds
+ * the window by title and returns an id — no pixels, because `getSources`
+ * renders a thumbnail for every open window when it is asked for one. The
+ * renderer then opens a stream carrying only that id and keeps a single frame.
+ *
+ * Throws `window-not-open` when nothing matches. It must not widen to the
+ * display: that is how a look at Spotify with Spotify closed came back as a
+ * confident description of the user's mail.
+ */
+const captureNamedWindow = async (match: string): Promise<{ url: string; scope: CaptureScope }> => {
+  const resolve = window.electronAPI?.resolveWindow;
+  if (typeof resolve !== 'function') throw new ScreenSightError('capture-unavailable');
+
+  const chosen = await resolve(match).catch((error: unknown) => {
+    throw new ScreenSightError('capture-failed', error instanceof Error ? error.message : undefined);
+  });
+  if (!chosen) throw new ScreenSightError('window-not-open', match);
+
+  const { captureWindowFrame } = await import('./windowFrame');
+  const shot = await captureWindowFrame(chosen.id).catch((error: unknown) => {
+    throw new ScreenSightError('capture-failed', error instanceof Error ? error.message : undefined);
+  });
+  // Resolved a moment ago and gone now: a window that closed between the two
+  // calls is ordinary, and it is still the case that it is not open.
+  if (!shot || shot.data.length === 0) throw new ScreenSightError('window-not-open', match);
+
+  return { url: toDataUrl(shot.data), scope: 'window' };
+};
+
+/** PNG bytes as a data URL, in blocks — a screenshot overflows one apply(). */
+const toDataUrl = (data: readonly number[]): string => {
+  const bytes = new Uint8Array(data);
+  let binary = '';
+  const BLOCK = 0x8000;
+  for (let offset = 0; offset < bytes.length; offset += BLOCK) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + BLOCK));
+  }
+  return `data:image/png;base64,${btoa(binary)}`;
+};
+
 /** PNG bytes of the requested surface, as a data URL, with what it turned out to be. */
 const capture = async (
   source: 'window' | 'screen',
   windowMatch: string
 ): Promise<{ url: string; scope: CaptureScope }> => {
-  const byWindow = window.electronAPI?.captureWindow;
-  // A named window first, and the wider picture only when there is no name or
-  // no way to take it. The narrow one answers the question that was asked and
-  // shows the model less of the user's screen than the question needed.
-  const grab =
-    windowMatch.trim().length > 0 && typeof byWindow === 'function'
-      ? () => byWindow(windowMatch.trim())
-      : source === 'screen'
-        ? window.electronAPI?.captureScreen
-        : window.electronAPI?.captureFeedbackScreenshot;
+  // A named window takes the narrow route, which cannot widen.
+  if (windowMatch.trim().length > 0) return captureNamedWindow(windowMatch.trim());
+
+  const grab = source === 'screen' ? window.electronAPI?.captureScreen : window.electronAPI?.captureFeedbackScreenshot;
   if (typeof grab !== 'function') throw new ScreenSightError('capture-unavailable');
 
   let shot: { filename: string; data: number[] } | null | undefined;
@@ -140,16 +186,8 @@ const capture = async (
   }
   if (!shot || shot.data.length === 0) throw new ScreenSightError('capture-failed');
 
-  const bytes = new Uint8Array(shot.data);
-  // In blocks, because a screenshot is megabytes and `fromCharCode` applied to
-  // the whole array at once overflows the argument list.
-  let binary = '';
-  const BLOCK = 0x8000;
-  for (let offset = 0; offset < bytes.length; offset += BLOCK) {
-    binary += String.fromCharCode(...bytes.subarray(offset, offset + BLOCK));
-  }
   return {
-    url: `data:image/png;base64,${btoa(binary)}`,
+    url: toDataUrl(shot.data),
     // The main process names what it took. A window was asked for and a screen
     // came back means the window was not open.
     scope: shot.filename.startsWith('window-') ? 'window' : 'display',

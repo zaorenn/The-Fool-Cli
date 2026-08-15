@@ -190,7 +190,7 @@ export const REALTIME_TOOLS: readonly RealtimeToolSchema[] = [
         window: {
           type: 'string',
           description:
-            "The application whose window to look at — 'Spotify', 'Chrome', 'Visual Studio Code'. Give it whenever the question is about one program, which is nearly always: a picture of one window is the answer to what was asked, where a picture of the whole desktop is four things it might be about. Leave it out only when they genuinely mean the whole screen. A name that matches no open window falls back to the whole display.",
+            "The application whose window to look at — 'Spotify', 'Chrome', 'Visual Studio Code'. Give it whenever the question is about one program, which is nearly always: a picture of one window is the answer to what was asked, where a picture of the whole desktop is four things it might be about and more of the user's private screen than the question needed. Leave it out only when they genuinely mean the whole screen. A name that matches no open window comes back saying so — say that, and do not describe a screen you were not shown.",
         },
       },
       required: [],

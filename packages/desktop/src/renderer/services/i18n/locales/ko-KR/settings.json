@@ -1583,6 +1583,7 @@
     "conversationProviderMissing": "이 공급자의 API 키가 없습니다",
     "conversationProviderAddKey": "모델 서비스에서 추가",
     "conversationLooking": "화면을 보고 있어요…",
+    "conversationWindowNotOpen": "{{name}} 창이 지금 열려 있지 않습니다.",
     "conversationTaskDone": "완료했어요.",
     "conversationVisionModel": "화면을 보는 모델",
     "conversationVisionModelSame": "생각하는 모델과 동일",

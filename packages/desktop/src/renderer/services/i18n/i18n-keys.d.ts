@@ -2949,6 +2949,7 @@ export type I18nKey =
   | 'settings.voice.conversationVoice'
   | 'settings.voice.conversationWelcomeSubtitle'
   | 'settings.voice.conversationWelcomeTitle'
+  | 'settings.voice.conversationWindowNotOpen'
   | 'settings.voice.conversationWorkspaceBuilding'
   | 'settings.voice.conversationWorkspaceBuilt'
   | 'settings.voice.conversationWorkspaceIncomplete'

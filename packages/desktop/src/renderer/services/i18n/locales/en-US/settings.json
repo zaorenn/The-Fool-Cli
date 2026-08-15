@@ -1581,6 +1581,7 @@
     "conversationProviderMissing": "No API key for this provider",
     "conversationProviderAddKey": "Add one in Model Services",
     "conversationLooking": "Looking at the screen…",
+    "conversationWindowNotOpen": "{{name}} does not have a window open right now.",
     "conversationTaskDone": "Done.",
     "conversationVisionModel": "Model that sees",
     "conversationVisionModelSame": "Same as the model that thinks",

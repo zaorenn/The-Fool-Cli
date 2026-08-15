@@ -1581,6 +1581,7 @@
     "conversationProviderMissing": "برای این ارائه‌دهنده کلید API نیست",
     "conversationProviderAddKey": "در سرویس‌های مدل اضافه کنید",
     "conversationLooking": "به صفحه نگاه می‌کنم…",
+    "conversationWindowNotOpen": "در حال حاضر پنجره‌ای از {{name}} باز نیست.",
     "conversationTaskDone": "انجام شد.",
     "conversationVisionModel": "مدلی که می‌بیند",
     "conversationVisionModelSame": "همان مدلی که فکر می‌کند",

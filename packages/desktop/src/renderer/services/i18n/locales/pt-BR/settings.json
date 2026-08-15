@@ -1584,6 +1584,7 @@
     "conversationProviderMissing": "Sem chave de API para este provedor",
     "conversationProviderAddKey": "Adicionar em Serviços de modelo",
     "conversationLooking": "Olhando a tela…",
+    "conversationWindowNotOpen": "{{name}} não tem nenhuma janela aberta no momento.",
     "conversationTaskDone": "Pronto.",
     "conversationVisionModel": "Modelo que vê",
     "conversationVisionModelSame": "O mesmo do modelo que pensa",

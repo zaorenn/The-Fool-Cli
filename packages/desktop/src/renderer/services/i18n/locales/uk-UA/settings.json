@@ -1582,6 +1582,7 @@
     "conversationProviderMissing": "Немає API-ключа для цього провайдера",
     "conversationProviderAddKey": "Додати в Сервісах моделей",
     "conversationLooking": "Дивлюся на екран…",
+    "conversationWindowNotOpen": "Зараз немає відкритого вікна {{name}}.",
     "conversationTaskDone": "Готово.",
     "conversationVisionModel": "Модель, яка бачить",
     "conversationVisionModelSame": "Та сама, що й модель для мислення",

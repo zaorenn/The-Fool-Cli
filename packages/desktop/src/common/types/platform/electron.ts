@@ -33,10 +33,20 @@ export interface ElectronBridgeAPI {
    * One named application's window, rather than the whole display.
    *
    * The picture nearly every spoken question actually wants, and less of the
-   * user's screen than the whole of it. A name that matches nothing falls back
-   * to the display, so this can only ever narrow what is captured.
+   * user's screen than the whole of it. Null when no window matches the name —
+   * there is no fallback to the display, because "that is not open" is the
+   * honest answer and a wider photograph answers a different question.
    */
   captureWindow?: (match: string) => Promise<{ filename: string; data: number[] } | null>;
+  /**
+   * Which window a name refers to, as a title and a capture id, without
+   * photographing anything.
+   *
+   * Paired with `captureWindowFrame` in the renderer, which opens a stream
+   * carrying only that window. Asking the main process for the picture instead
+   * costs a rendered thumbnail of every window the user has open.
+   */
+  resolveWindow?: (match: string) => Promise<{ id: string; name: string } | null>;
   // Forward feedback diagnostics logs to the main process console / 转发反馈诊断日志到主进程控制台
   logFeedbackEvent?: (payload: { details?: unknown; level: 'info' | 'warn' | 'error'; message: string }) => void;
   recoverCorruptedDatabase?: () => Promise<void>;

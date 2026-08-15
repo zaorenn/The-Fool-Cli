@@ -1582,6 +1582,7 @@
     "conversationProviderMissing": "该提供商没有 API 密钥",
     "conversationProviderAddKey": "在模型服务中添加",
     "conversationLooking": "正在查看屏幕…",
+    "conversationWindowNotOpen": "{{name}} 当前没有打开的窗口。",
     "conversationTaskDone": "完成。",
     "conversationVisionModel": "负责看的模型",
     "conversationVisionModelSame": "与思考模型相同",

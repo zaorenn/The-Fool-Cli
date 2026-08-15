@@ -42,6 +42,25 @@ export function initScreenCaptureBridge(): void {
     return captureWindow(typeof payload?.match === 'string' ? payload.match : '');
   });
 
+  /**
+   * Which window a name refers to — a title and an id, and no pixels.
+   *
+   * The renderer takes the picture itself from the id, through a stream that
+   * carries only that window. Doing it here instead would mean asking
+   * `getSources` for thumbnails, and it renders one for every open window
+   * whether or not anybody wanted it.
+   *
+   * Null means no window matches, which is an answer the caller must report as
+   * one rather than widening to the display.
+   */
+  ipcMain.handle(
+    'voice:resolve-window',
+    async (_event, payload: { match?: string }): Promise<{ id: string; name: string } | null> => {
+      const { resolveWindowSource } = await import('./screenCapture');
+      return resolveWindowSource(typeof payload?.match === 'string' ? payload.match : '');
+    }
+  );
+
   ipcMain.handle('voice:capture-screen-region', async (): Promise<ScreenCapture | null> => {
     const [{ captureSelection }, { selectRegion }] = await Promise.all([
       import('./screenCapture'),

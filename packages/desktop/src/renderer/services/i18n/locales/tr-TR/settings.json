@@ -1581,6 +1581,7 @@
     "conversationProviderMissing": "Bu sağlayıcı için API anahtarı yok",
     "conversationProviderAddKey": "Model Servisleri'nden ekle",
     "conversationLooking": "Ekrana bakıyor…",
+    "conversationWindowNotOpen": "{{name}} şu anda açık değil.",
     "conversationTaskDone": "Bitti.",
     "conversationVisionModel": "Gören model",
     "conversationVisionModelSame": "Düşünen modelin aynısı",
