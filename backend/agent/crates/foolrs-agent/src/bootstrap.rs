@@ -24,6 +24,7 @@ use foolrs_tools::grep::GrepTool;
 use foolrs_tools::knowledge::{RecallTool, RememberTool};
 use foolrs_tools::read::ReadTool;
 use foolrs_tools::registry::ToolRegistry;
+use foolrs_tools::todo::TodoTool;
 use foolrs_tools::tool_search::ToolSearchTool;
 use foolrs_tools::view_image::ViewImageTool;
 use foolrs_tools::web_fetch::WebFetchTool;
@@ -291,6 +292,10 @@ impl AgentBootstrap {
         registry.register(Box::new(GrepTool::new(workspace_path.to_path_buf())));
         registry.register(Box::new(GlobTool::new(workspace_path.to_path_buf())));
         registry.register(Box::new(ViewImageTool::new()));
+        // Somewhere to keep the plan. A long task is not lost all at once — it
+        // is lost a step at a time, and the run then gets reported as finished
+        // with two pieces missing and nothing having errored on the way.
+        registry.register(Box::new(TodoTool::new()));
         // Reading a public page. Nothing inside this machine or this network —
         // see `web_fetch::check_url`, which refuses before a request is made.
         registry.register(Box::new(WebFetchTool::new()));
