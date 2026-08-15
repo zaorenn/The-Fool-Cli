@@ -64,7 +64,7 @@ const RUNNERS: &[&str] = &[
 /// the whole of what makes `curl … | sh` different from `curl …`.
 fn segments(command: &str) -> Vec<&str> {
     command
-        .split(|c| c == ';' || c == '\n' || c == '&' || c == '|')
+        .split([';', '\n', '&', '|'])
         .map(str::trim)
         .filter(|segment| !segment.is_empty())
         .collect()

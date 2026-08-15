@@ -46,14 +46,13 @@ const SystemModalContent: React.FC = () => {
     isPackaged: false,
     platform: 'web',
   });
-  const [closeToTray, setCloseToTray] = useState(false);
   const [gpuStatus, setGpuStatus] = useState<IGpuStatus | null>(null);
   const [notificationEnabled, setNotificationEnabled] = useState(true);
   const [cronNotificationEnabled, setCronNotificationEnabled] = useState(false);
   const [promptTimeout, setPromptTimeout] = useState<number>(300);
   const [agentIdleTimeout, setAgentIdleTimeout] = useState<number>(5);
   const [saveUploadToWorkspace, setSaveUploadToWorkspace] = useState(false);
-  const [autoPreviewOfficeFiles, setAutoPreviewOfficeFiles] = useState(true);
+  const [autoPreviewOfficeFiles, setAutoPreviewOfficeFiles] = useState(false);
 
   useEffect(() => {
     if (!isDesktop) {
@@ -80,20 +79,10 @@ const SystemModalContent: React.FC = () => {
   }, [isDesktop]);
 
   useEffect(() => {
-    setCloseToTray(configService.get('system.closeToTray') ?? false);
-    if (isDesktop) {
-      ipcBridge.systemSettings.getCloseToTray
-        .invoke()
-        .then((enabled) => {
-          setCloseToTray(enabled);
-          configService.setLocal('system.closeToTray', enabled);
-        })
-        .catch((e: unknown) => console.warn('Unhandled promise rejection:', e));
-    }
     setNotificationEnabled(configService.get('system.notificationEnabled') ?? true);
     setCronNotificationEnabled(configService.get('system.cronNotificationEnabled') ?? false);
     setSaveUploadToWorkspace(configService.get('upload.saveToWorkspace') ?? false);
-    setAutoPreviewOfficeFiles(configService.get('system.autoPreviewOfficeFiles') ?? true);
+    setAutoPreviewOfficeFiles(configService.get('system.autoPreviewOfficeFiles') ?? false);
   }, [isDesktop]);
 
   useEffect(() => {
@@ -126,28 +115,6 @@ const SystemModalContent: React.FC = () => {
       cancelled = true;
     };
   }, []);
-
-  const handleCloseToTrayChange = useCallback(
-    (checked: boolean) => {
-      const previous = closeToTray;
-      setCloseToTray(checked);
-      configService.setLocal('system.closeToTray', checked);
-
-      if (!isDesktop) {
-        configService.set('system.closeToTray', checked).catch(() => {
-          setCloseToTray(previous);
-          configService.setLocal('system.closeToTray', previous);
-        });
-        return;
-      }
-
-      ipcBridge.systemSettings.setCloseToTray.invoke({ enabled: checked }).catch(() => {
-        setCloseToTray(previous);
-        configService.setLocal('system.closeToTray', previous);
-      });
-    },
-    [closeToTray, isDesktop]
-  );
 
   const handleHardwareAccelerationChange = useCallback(
     (checked: boolean) => {
@@ -294,11 +261,6 @@ const SystemModalContent: React.FC = () => {
       component: (
         <Switch checked={startOnBoot.enabled} onChange={handleStartOnBootChange} disabled={!startOnBoot.supported} />
       ),
-    },
-    {
-      key: 'closeToTray',
-      label: t('settings.closeToTray'),
-      component: <Switch checked={closeToTray} onChange={handleCloseToTrayChange} />,
     },
     ...(isDesktop && gpuStatus
       ? [

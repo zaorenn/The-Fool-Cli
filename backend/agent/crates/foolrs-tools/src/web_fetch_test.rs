@@ -97,3 +97,74 @@ fn whitespace_is_collapsed_so_a_page_is_readable() {
     let text = to_text("<div>\n\n  <p>one</p>\n\n\n  <p>two</p>\n\n</div>");
     assert_eq!(text, "one\n\ntwo");
 }
+
+/// Where a redirect actually points.
+///
+/// Servers answer `Location` with all three shapes and the difference matters:
+/// a path-relative hop resolved as absolute silently changes host, which is the
+/// exact move an SSRF check exists to catch.
+#[test]
+fn a_redirect_target_is_resolved_against_the_page_it_came_from() {
+    assert_eq!(
+        resolve_relative("https://arxiv.org/abs/1706.03762", "https://arxiv.org/pdf/1706.03762v7"),
+        Ok("https://arxiv.org/pdf/1706.03762v7".to_string())
+    );
+    assert_eq!(
+        resolve_relative("https://arxiv.org/abs/1706.03762", "/pdf/1706.03762v7"),
+        Ok("https://arxiv.org/pdf/1706.03762v7".to_string())
+    );
+    assert_eq!(
+        resolve_relative("https://arxiv.org/abs/1706.03762", "1706.03762v7.pdf"),
+        Ok("https://arxiv.org/abs/1706.03762v7.pdf".to_string())
+    );
+}
+
+#[test]
+fn a_redirect_with_nowhere_to_go_is_refused_rather_than_guessed() {
+    assert!(resolve_relative("not a url", "/somewhere").is_err());
+    assert!(resolve_relative("https://example.com/a", "").is_err());
+}
+
+/// A redirect that leaves the public web is still refused.
+///
+/// The check is per hop rather than on the address the model supplied, because
+/// somebody else's server chooses the second one. `https://example.com/go`
+/// answering `Location: http://169.254.169.254/latest/meta-data/` is the whole
+/// attack, and following redirects at all is only safe because of this.
+#[test]
+fn every_hop_is_checked_not_only_the_first() {
+    assert_eq!(
+        check_url(&resolve_relative("https://example.com/go", "http://169.254.169.254/latest/").unwrap()),
+        Err(UrlRefusal::Private)
+    );
+    // A hop into a scheme that is not the web is refused before it resolves —
+    // there is nowhere to follow it to.
+    assert_eq!(
+        resolve_relative("https://example.com/go", "file:///etc/passwd"),
+        Err(UrlRefusal::NotWeb)
+    );
+}
+
+/// What may be read as text, and what must not be.
+///
+/// `response.text()` runs any body through a lossy UTF-8 conversion, so a PDF
+/// arrives as mojibake and the model reports it as the document's contents.
+/// That is worse than a refusal: it is a confident answer about a file nobody
+/// read.
+#[test]
+fn only_text_shaped_bodies_are_read_as_text() {
+    assert!(is_readable_text("text/html; charset=utf-8"));
+    assert!(is_readable_text("text/plain"));
+    assert!(is_readable_text("application/json"));
+    assert!(is_readable_text("application/xhtml+xml"));
+    // Absent is treated as readable: plenty of plain pages send no type at all,
+    // and refusing them would break the ordinary case to guard the rare one.
+    assert!(is_readable_text(""));
+
+    assert!(!is_readable_text("application/pdf"));
+    assert!(!is_readable_text("application/octet-stream"));
+    assert!(!is_readable_text("image/png"));
+    assert!(!is_readable_text(
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ));
+}

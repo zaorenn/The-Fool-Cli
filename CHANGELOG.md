@@ -2,6 +2,73 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.5.9
+
+A hotfix for closing the app, which three separate things conspired to break.
+
+**The close button now always puts the app in the tray, and the tray's Quit is
+what ends it.** It used to ask, once, on the very first close — and remember the
+answer for ever. That question arrives at the worst possible moment: somebody is
+closing a window, not choosing a policy. Whichever way they answered, they were
+stuck with it, because nothing ever asked again.
+
+**The tray icon is always there.** This is the part that trapped people. The
+icon was only created when the close-to-tray preference was on, so anybody who
+answered "don't minimise" had no tray at all — nothing to quit from, and nothing
+to bring a window back with.
+
+**Quitting now closes the agent's browsing page.** 2.5.8 gave the agent an
+offscreen page to browse in, and never closed it. A window is a window: once the
+agent had looked anything up, closing the main window left the process running
+with nothing on screen. That was a fault in 2.5.8 and this is its fix.
+
+The "Close to Tray" switch is gone from settings, because closing to the tray is
+no longer a choice and a switch that names it would be misleading either way.
+
+## 2.5.8
+
+The release about what the assistant does when nobody is watching it.
+
+**The agent browses in the background.** Every browser command used to run
+against the webview inside the browser panel, which meant that with that panel
+closed — most sessions — the answer was "the in-app browser is not open, ask
+the user to open it". Nothing could be looked up without a window opening in
+front of somebody first. The agent now has its own page, rendered offscreen and
+never shown, on the same session partition as the visible browser: it carries
+the user's logins and no longer carries their window, so following six pages
+does not navigate away from what they were reading. Rounded out to what
+verifying a page actually takes — scrolling, selecting, pressing keys,
+hovering, resizing the viewport, evaluating an expression, and reading what the
+page asked the network for.
+
+**Nothing opens itself any more.** Newly written Word, Excel and PowerPoint
+files used to open a preview a second after they appeared, and it was on by
+default, so a task producing four spreadsheets took the screen four times from
+somebody who had asked for the spreadsheets and not for a slideshow of them
+being made. The switch is still there; the assumption is gone. Documents still
+open the moment they are asked for.
+
+**Four document verbs instead of two tools with one name.** This release merges
+two lines of work that had each grown a tool called `app_research`, doing
+different jobs. They are now `app_research` (read the web, answer from what it
+says), `app_find_document` (fetch the file itself and open it),
+`app_open_document` (show a file already on this machine) and
+`app_write_document` (produce a real PDF, Word file or spreadsheet).
+
+**Somewhere to keep the plan.** `TodoWrite` — a long task is not lost all at
+once, it is lost a step at a time, and the run then gets reported as finished
+with two pieces missing and nothing having errored on the way.
+
+**Officecli ships inside the installer.** The desktop build no longer tells
+anybody to go and download it: when the bundled copy is missing that is a
+damaged install, and it now says so rather than opening a browser tab to a
+releases page.
+
+It also carries everything from 2.5.7, which was tagged from a branch that
+never reached the trunk: per-colour theme shades, writing real documents,
+reading the web instead of answering from memory, taking a typed turn inside a
+spoken conversation, and the file-drop and barge-in fixes.
+
 ## 2.5.6
 
 The first release since the packaging work in 2.5.4, and the one that carries

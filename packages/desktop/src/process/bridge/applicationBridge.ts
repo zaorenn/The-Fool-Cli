@@ -17,13 +17,6 @@ import { initApplicationBridgeCore } from './applicationBridgeCore';
 import type { IStartOnBootStatus } from '@/common/adapter/ipcBridge';
 import { restartApplication } from './restartApplication';
 import { parseFirstVideo, youtubeSearchUrl } from '@/common/voice/videoSearch';
-import {
-  appsFolderCommand,
-  bestStartMenuMatch,
-  executablePathCommand,
-  launchCommandFor,
-} from '@/common/voice/appLaunch';
-import { listStartMenuApps } from '../voice/startMenuApps';
 
 let mainWindowRef: BrowserWindow | null = null;
 
@@ -104,6 +97,14 @@ export function setStartOnBootEnabled(enabled: boolean): IStartOnBootStatus {
 export function setApplicationMainWindow(win: BrowserWindow): void {
   mainWindowRef = win;
 }
+
+/**
+ * How long after startup the application index is built.
+ *
+ * Past the window appearing and past the first agent connecting, because it is
+ * the least urgent thing this process does and the most obviously deferrable.
+ */
+const WARM_APP_INDEX_AFTER_MS = 8_000;
 
 export function initApplicationBridge(): void {
   // Platform-agnostic handlers: systemInfo, updateSystemInfo, getPath
@@ -220,6 +221,42 @@ export function initApplicationBridge(): void {
   });
 
   /**
+   * Writes a document the user can open, from markdown the assistant produced.
+   *
+   * The failure worth reporting is not "it did not write" but "it wrote the
+   * wrong letters": a PDF on a machine with no Unicode face loses every ı, ş
+   * and ğ, and a Turkish name silently mangled in a document that then gets
+   * filed is the outcome this whole path is built to avoid.
+   */
+  ipcBridge.application.writeDocument.provider(async ({ markdown, format, name }) => {
+    const { writeDocument } = await import('@process/pdf/writeDocument');
+    const outcome = await writeDocument(markdown ?? '', format ?? '', name ?? '');
+
+    if (outcome.status === 'written') {
+      return { success: true, data: { path: outcome.path, format: outcome.format, complete: outcome.complete } };
+    }
+    return { success: false, msg: outcome.reason };
+  });
+
+  /**
+   * Reads the web and hands back what it says, with addresses attached.
+   *
+   * The one tool whose whole purpose is to stop the assistant answering from
+   * memory. `null`-shaped failures are reported as an empty digest rather than
+   * as an error: "the sources did not say" is an answer the assistant can give,
+   * and a thrown error is one it will paper over.
+   */
+  ipcBridge.application.research.provider(async ({ question }) => {
+    const { research } = await import('@process/services/research/webResearch');
+    const outcome = await research(question ?? '');
+
+    if (outcome.status === 'found') {
+      return { success: true, data: { digest: outcome.digest, sources: outcome.sources } };
+    }
+    return { success: true, data: { digest: '', sources: [] } };
+  });
+
+  /**
    * Starts or stops an application, through the operating system.
    *
    * The reason this exists is a transcript: asked to open something, the agent
@@ -227,52 +264,27 @@ export function initApplicationBridge(): void {
    * loading. Every platform this runs on opens and closes an application from a
    * single call, in the background, and the user keeps their cursor.
    *
-   * Two things make it safe to hand to a model. The name is validated against a
-   * closed character set before it becomes anything — see `appLaunch.ts` — and
-   * it is run through `execFile` with the arguments already separated, so there
-   * is no shell to talk into a second command.
+   * What the name becomes is decided in `process/services/apps`: it is resolved
+   * against the list of installed applications first, and only a name that list
+   * does not have falls through to being built into a command. Both halves are
+   * safe to hand a model. The index compares against a list the operating system
+   * wrote and launches that list's own id, so nothing the model said reaches a
+   * command at all; the fallback validates against a closed character set — see
+   * `appLaunch.ts` — and runs through `execFile` with the arguments already
+   * separated, so there is no shell to talk into a second command.
    */
   ipcBridge.application.controlApp.provider(async ({ name, action }) => {
-    const command = launchCommandFor(process.platform, action, name ?? '');
-    if (!command) return { success: false, msg: 'unsupported-app-name' };
+    const { controlApp } = await import('@process/services/apps/launchApp');
+    const outcome = await controlApp(name ?? '', action);
 
-    // A Store application — every Xbox game, and a good share of what people
-    // have installed — is reachable through neither PATH nor App Paths, so the
-    // `start` below cannot open it and does not fail quickly either: measured
-    // on Windows 11, `start "" "XBOX"` with the Xbox app installed launched
-    // nothing and had not returned two minutes later. The Start menu is asked
-    // first, and only what it does not know falls through to `start`.
-    if (process.platform === 'win32' && action === 'open') {
-      const match = bestStartMenuMatch(name ?? '', await listStartMenuApps());
-      // Two shapes come back from the Start menu: an AppUserModelID for a
-      // Store application, and a path for everything else. Games installed
-      // outside a store are the second kind, and had no route at all before.
-      const resolved = match ? (appsFolderCommand(match.appId) ?? executablePathCommand(match.appId)) : null;
-      if (resolved) {
-        return new Promise((resolve) => {
-          execFile(resolved.file, [...resolved.args], { timeout: 15_000, windowsHide: true }, (error) => {
-            // Explorer returns at once whatever happens, so its exit code says
-            // nothing about the application. What is being reported is what is
-            // actually known: the name resolved to something installed, and the
-            // shell accepted the request to start it. A failure here is the
-            // request being refused, which is worth telling apart from a name
-            // nobody could resolve.
-            resolve(error ? { success: false, msg: 'could-not-open' } : { success: true });
-          });
-        });
-      }
+    // The application's own name comes back, not the one that was said. "open vs
+    // code" should be reported as Visual Studio Code, and the only place that
+    // knows the difference is the index the name was resolved against.
+    if (outcome.status === 'opened' || outcome.status === 'closed') {
+      return { success: true, data: { name: outcome.name } };
     }
-
-    return new Promise((resolve) => {
-      execFile(command.file, [...command.args], { timeout: 15_000, windowsHide: true }, (error) => {
-        // `taskkill` and `pkill` both exit non-zero when nothing matched, which
-        // is "that application was not running" rather than a fault — but the
-        // caller still has to hear it, because the assistant must not say it
-        // closed something that was never open.
-        if (error) resolve({ success: false, msg: action === 'open' ? 'could-not-open' : 'not-running' });
-        else resolve({ success: true });
-      });
-    });
+    if (outcome.status === 'not-running') return { success: false, msg: 'not-running' };
+    return { success: false, msg: 'could-not-open' };
   });
 
   // CDP status and configuration
@@ -368,4 +380,21 @@ export function initApplicationBridge(): void {
       return { success: false, msg: e.message || e.toString() };
     }
   });
+
+  /**
+   * Reads the list of installed applications, once the app has settled.
+   *
+   * Deferred rather than run here: this file is loaded before Electron is ready
+   * and the scan spawns a PowerShell, which at that moment is competing with the
+   * window the user is waiting for. Late is fine — what it must not be is *in
+   * the middle of a spoken turn*, which is where the cold 422 ms measured on the
+   * machine this was written on would otherwise land.
+   *
+   * Unreferenced so it cannot hold the process open, and unawaited because
+   * nothing is waiting: a scan that never finishes leaves the index empty, and
+   * an empty index falls back to the command path.
+   */
+  setTimeout(() => {
+    void import('@process/services/apps/appIndex').then(({ warmAppIndex }) => warmAppIndex());
+  }, WARM_APP_INDEX_AFTER_MS).unref?.();
 }

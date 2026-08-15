@@ -98,8 +98,8 @@ describe('the older shared-memory skill', () => {
  */
 describe('the skill is shaped the way the loader expects', () => {
   it('sits in the auto-inject pool beside the ones already there', () => {
-    const screenSense = resolve('backend/core/crates/fool-app/assets/builtin-skills/auto-inject/screen-sense/SKILL.md');
-    expect(readFileSync(screenSense, 'utf8').startsWith('---')).toBe(true);
+    const cron = resolve('backend/core/crates/fool-app/assets/builtin-skills/auto-inject/cron/SKILL.md');
+    expect(readFileSync(cron, 'utf8').startsWith('---')).toBe(true);
     expect(body.startsWith('---')).toBe(true);
   });
 

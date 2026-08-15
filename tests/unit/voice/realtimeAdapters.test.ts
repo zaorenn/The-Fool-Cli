@@ -214,7 +214,13 @@ describe('realtime tool schemas', () => {
     // and refusing it would send a perfectly ordinary request to the agent.
     expect(search?.parameters.properties).toHaveProperty('site');
     expect(search?.description).toMatch(/youtube/i);
-    expect(search?.description).toMatch(/instantly/i);
+    // The line that keeps the two search tools apart. `app_search` puts a
+    // results page in front of the user; `app_research` finds the answer
+    // without opening anything. A description that does not name its sibling
+    // is how "find me a PDF about X" becomes a tab nobody asked for — which
+    // is the whole reason `app_research` exists.
+    expect(search?.description).toMatch(/app_research/);
+    expect(search?.description).toMatch(/in front of the user/i);
   });
 
   it('offers one tool for being taught, covering both a lesson and a way of working', () => {

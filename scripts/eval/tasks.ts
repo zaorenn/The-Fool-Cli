@@ -238,6 +238,37 @@ const appBuilt = (): string =>
 
 const buildFailed = (): string => JSON.stringify({ ok: false, error: 'the build did not finish' });
 
+/** A PDF already open, with the page count a measuring question needs. */
+const pdfMeasured = (name: string): string =>
+  name === 'app_open_document' || name === 'app_find_document'
+    ? JSON.stringify({ ok: true, opened: 'rapor.pdf', viewer: 'pdf', pageCount: 14, words: 5312 })
+    : JSON.stringify({ ok: true });
+
+/** What the web said, as `app_research` hands it back. */
+const readTheWeb = (name: string): string =>
+  name === 'app_research'
+    ? JSON.stringify({
+        ok: true,
+        found: true,
+        sources: ['nodejs.org/en/blog'],
+        evidence: 'Answer only from this: Node.js 24.4.0 is the current release, published 9 August 2026.',
+      })
+    : JSON.stringify({ ok: true });
+
+/** A named window that is open, so a look at one application has something to report. */
+const spotifyWindow = (name: string): string =>
+  name === 'app_look_at_screen'
+    ? JSON.stringify({
+        ok: true,
+        scope: 'window',
+        screen: 'The Spotify window. "Bir Derdim Var" by Mor ve Ötesi is paused at 1:12.',
+      })
+    : JSON.stringify({ ok: true });
+
+/** A program that was asked to close, and did. */
+const appClosed = (name: string): string =>
+  name === 'app_open_app' ? JSON.stringify({ ok: true, closed: 'Spotify' }) : JSON.stringify({ ok: true });
+
 /**
  * How long a greeting may take to its first spoken word.
  *
@@ -791,6 +822,129 @@ export const SPOKEN_TASKS: readonly SpokenTask[] = [
         )
           return fail(`called a failed build finished: "${answer.reply.trim().slice(0, 80)}"`);
         return pass('did not report an app it never built');
+      },
+    },
+  },
+
+  // ── Documents and the background ──────────────────────────────────────────
+  // Written against the find/open/research vocabulary that replaced the two
+  // colliding `app_research` tools. These score the half the user reported
+  // broken by hand: a document that is fetched and shown, and work that
+  // happens without taking the screen.
+
+  {
+    id: 35,
+    capability: 'documents',
+    said: 'Difüzyon modelleri hakkında bir PDF bul ve aç.',
+    done: "The document is found and opened here, with nothing appearing in the user's own browser.",
+    judge: (turn) => {
+      // The request this application answered worst, and the one the whole
+      // find/open pair was built for. `app_search` is the wrong answer even
+      // though it looks like progress: it puts a results page in front of
+      // somebody who asked for a document, which is the interruption the
+      // background tools exist to avoid.
+      if (called(turn, 'app_search') && !called(turn, 'app_find_document')) {
+        return fail('opened a results page instead of fetching the document');
+      }
+      return mustAct(turn, ['app_find_document', 'app_research'], 'finds the document');
+    },
+  },
+  {
+    id: 36,
+    capability: 'documents',
+    said: 'Şu raporu aç. → Kaç sayfa?',
+    done: 'A question about the document is answered from the document, not guessed.',
+    conversation: {
+      steps: [{ said: 'rapor.pdf dosyasını aç.', toolResult: pdfMeasured }, { said: 'Kaç sayfa?' }],
+      judge: (turns) => {
+        const answer = lastOf(turns);
+        // The number was in the tool result. A model that answers "birkaç
+        // sayfa" or invents a different figure has stopped reading what it was
+        // given, which is the same unbacked-claim failure as describing a
+        // screen it never looked at.
+        if (/\b14\b/.test(answer.reply)) return pass('read the page count out of the result it was given');
+        return fail(`did not answer with the 14 pages it was told: "${answer.reply.trim().slice(0, 80)}"`);
+      },
+    },
+  },
+  {
+    id: 37,
+    capability: 'documents',
+    said: 'Node.js’in son sürümü ne?',
+    done: 'It looks the answer up rather than reciting a version from training.',
+    conversation: {
+      // Two turns, because one is not how this works: the model calls the tool
+      // and the turn ends there, with the answer still to be spoken once the
+      // result comes back. A single-step version of this scores the empty
+      // string and reads as a failure that is really the harness's.
+      steps: [{ said: 'Node.js’in son sürümü ne?', toolResult: readTheWeb }, { said: 'Peki, hangi sürüm?' }],
+      judge: (turns) => {
+        const answer = lastOf(turns);
+        const looked = turns.some((turn) => called(turn, 'app_research', 'app_find_document'));
+        // Being fluently wrong about a version is the failure here, and it is
+        // invisible without a tool call: a confident "22.x" reads exactly like
+        // a checked answer. So the call is the test, and the number second.
+        if (!looked) return fail(`answered from memory: "${answer.reply.trim().slice(0, 80)}"`);
+        if (/24\.4/.test(answer.reply)) return pass('looked it up and answered from what came back');
+        return fail(`looked it up and then ignored it: "${answer.reply.trim().slice(0, 80)}"`);
+      },
+    },
+  },
+  {
+    id: 38,
+    capability: 'screen',
+    said: 'Spotify’da ne çalıyor?',
+    done: 'It looks at that one window, and says what was in it.',
+    conversation: {
+      steps: [{ said: 'Spotify’da ne çalıyor?', toolResult: spotifyWindow }, { said: 'Ne çalıyormuş?' }],
+      judge: (turns) => {
+        const answer = lastOf(turns);
+        const looked = turns.some((turn) => called(turn, 'app_look_at_screen'));
+        if (!looked) return fail(`did not look: "${answer.reply.trim().slice(0, 80)}"`);
+        // What came back named a paused track. Reporting it as playing is the
+        // same shape of error as claiming a song started — the result is the
+        // evidence, and it said 1:12 and paused.
+        if (/derdim/i.test(flatten(answer.reply))) return pass('answered from the window it was shown');
+        return fail(`looked and then did not say what was there: "${answer.reply.trim().slice(0, 80)}"`);
+      },
+    },
+  },
+  {
+    id: 39,
+    capability: 'apps',
+    said: 'Spotify’ı aç. → Tamam, şimdi kapat.',
+    done: 'Closing is as available as opening. An assistant that can only start things is half a tool.',
+    conversation: {
+      steps: [{ said: 'Spotify’ı aç.' }, { said: 'Tamam, şimdi kapat.', toolResult: appClosed }],
+      judge: (turns) => {
+        const answer = lastOf(turns);
+        // The asymmetry worth catching: opening is the demo and closing is the
+        // half people discover missing. A model that answers "kapatabilirsin"
+        // has handed the job back to the user.
+        if (called(answer, 'app_open_app', 'app_ask_jester'))
+          return pass(`acted on the close: ${answer.toolNames.join(', ')}`);
+        if (answer.toolNames.length > 0) return fail(`called ${answer.toolNames.join(', ')}, none of which closes it`);
+        return fail(`explained instead of closing it: "${answer.reply.trim().slice(0, 80)}"`);
+      },
+    },
+  },
+  {
+    id: 40,
+    capability: 'documents',
+    said: 'Arka planda difüzyon modelleri hakkında bir makale bul, ben çalışırken bir şey açma.',
+    done: 'The work happens with nothing taking the screen, and the result is reported afterwards.',
+    conversation: {
+      steps: [{ said: 'Arka planda difüzyon modelleri hakkında bir makale bul, ben çalışırken bir şey açma.' }],
+      judge: (turns) => {
+        const answer = lastOf(turns);
+        // The instruction was explicit, so this is not about defaults: asked
+        // not to open anything, the tools that put something on screen are
+        // wrong however useful they would otherwise be. `app_search` opens a
+        // results page and `app_open_url` opens a tab.
+        const interrupted = answer.toolNames.filter((name) => name === 'app_search' || name === 'app_open_url');
+        if (interrupted.length > 0)
+          return fail(`put something on screen after being asked not to: ${interrupted.join(', ')}`);
+        return mustAct(answer, ['app_research', 'app_find_document'], 'finds it in the background');
       },
     },
   },

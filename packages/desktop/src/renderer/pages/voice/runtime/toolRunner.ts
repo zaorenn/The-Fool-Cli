@@ -11,7 +11,7 @@ import { nearestPalette, paletteForRequest, PALETTES, type ThemePalette } from '
 import { parseOpenUrls } from '@/common/realtime/openUrls';
 import { buildSiteSearch } from '@/common/realtime/siteSearch';
 import { isGranted, sanitizeConnectorGrants, CONNECTOR_GRANTS_CONFIG_KEY } from '@/common/permissions/connectors';
-import { isLaunchableAppName } from '@/common/voice/appLaunch';
+import { isSearchableAppName } from '@/common/voice/appLaunch';
 import { choosePlayRoute, type PlayOutcome } from '@/common/voice/playRequest';
 import { findLocalSkill } from '@/common/voice/localSkills';
 import {
@@ -34,13 +34,15 @@ import {
   forgetVoiceRule,
   rememberVoiceRule,
 } from '@renderer/services/voice/session/voiceMemoryStore';
-import { describeScreen, takeScreenLook } from '@renderer/services/voice/screenSight';
+import { describeScreen, ScreenSightError, takeScreenLook } from '@renderer/services/voice/screenSight';
 import { peekVoiceSettings } from '@renderer/services/voice/voiceSettingsStore';
 import { applySurfaceIntent, readSurfaceIntent, type SurfaceIntent } from '@/common/theme/surfaceIntent';
 import { defaultSurfaceChoice, type SurfaceStyleChoice } from '@/common/theme/surfaceChoice';
 import { peekSurfaceChoice, SURFACE_STYLE_CONFIG_KEY } from '@renderer/hooks/config/useSurfaceStyle';
 import { normalizeEndpoint } from '../localPipeline';
 import { buildAndPreview } from './buildTool';
+import { documentName, openDocument } from './documentTool';
+import { runResearchTool } from './researchTool';
 import { fillPdfWithQuestions, type KnownValue, type PdfFillOutcome } from './pdfTool';
 import { applySpokenSetting } from './settingsTool';
 import { runSkillTool } from './skillTool';
@@ -397,24 +399,34 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
     if (invocation.name === 'app_look_at_screen') {
       host.updateActivity(invocation.callId, { detail: t('settings.voice.conversationLooking'), state: 'running' });
       const wanted = text('window').trim();
-      const look = await lookAtScreen(text('question'), wanted);
+
+      let look: { text: string; scope: 'window' | 'display' };
+      try {
+        look = await lookAtScreen(text('question'), wanted);
+      } catch (error) {
+        // Not a failure, and it must not be reported as one. A window that is
+        // not open is the answer to the question, and it is the answer this
+        // application used to replace with a photograph of everything else the
+        // user had on screen — described confidently as the thing they asked
+        // about.
+        if (error instanceof ScreenSightError && error.reason === 'window-not-open') {
+          const detail = t('settings.voice.conversationWindowNotOpen', { name: wanted });
+          host.updateActivity(invocation.callId, { detail, state: 'completed' });
+          host.backToListening();
+          return { ok: true, windowNotOpen: wanted, detail };
+        }
+        throw error;
+      }
       host.updateActivity(invocation.callId, { detail: look.text.slice(0, 160), state: 'completed' });
       host.backToListening();
       // Handed back as the screen's own words rather than a summary of them: the
       // model is about to say this out loud in its own voice, and summarising it
       // here would be a second, worse rewrite.
       //
-      // `lookedAt` is the other half, and it is the honest half. A window that is
-      // not open falls back to the whole display, and until now that happened
-      // silently — so a look asked for on Spotify came back as an ordinary
-      // description and the assistant said it had looked at Spotify. It is told
-      // what it actually got, and which window it failed to find.
-      return {
-        ok: true,
-        screen: look.text,
-        lookedAt: look.scope,
-        ...(wanted.length > 0 && look.scope === 'display' ? { windowNotFound: wanted } : {}),
-      };
+      // `lookedAt` is the other half, and it is the honest half — what was
+      // actually photographed, so the model cannot report a look at one window
+      // when a display was captured.
+      return { ok: true, screen: look.text, lookedAt: look.scope };
     }
 
     if (invocation.name === 'app_open_url') {
@@ -499,25 +511,36 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
     }
 
     if (invocation.name === 'app_open_app') {
-      const name = text('name').trim();
+      const spoken = text('name').trim();
       const action = text('action') === 'close' ? 'close' : 'open';
       // Refused here as well as in the main process, because here there is
-      // somebody to tell: a name with a slash or a quote in it is a request
-      // this tool does not take, not a launch that quietly did nothing.
-      if (!isLaunchableAppName(name)) throw new Error(t('settings.voice.conversationAppBadName'));
+      // somebody to tell: an empty or absurd name is a request this tool does
+      // not take, not a launch that quietly did nothing.
+      //
+      // The *searchable* rule, not the launchable one. The launchable set has no
+      // apostrophe in it, and a Turkish speaker saying "Spotify'ı aç" has the
+      // model hand over `Spotify'ı` — refused outright, for a word that is
+      // unmistakably Spotify. Nothing here reaches a command: the name is
+      // matched against a list the operating system wrote, and the strict set
+      // still guards the fallback that does build one.
+      if (!isSearchableAppName(spoken)) throw new Error(t('settings.voice.conversationAppBadName'));
 
-      const answer = await ipcBridge.application.controlApp.invoke({ name, action });
+      const answer = await ipcBridge.application.controlApp.invoke({ name: spoken, action });
       // Told apart rather than lumped together: "it was not running" is a true
       // and useful sentence, and reporting it as "I could not close it" would be
       // the assistant apologising for a thing that was already the case.
       if (!answer.success) {
         throw new Error(
           answer.msg === 'not-running'
-            ? t('settings.voice.conversationAppNotRunning', { name })
-            : t('settings.voice.conversationAppCouldNotOpen', { name })
+            ? t('settings.voice.conversationAppNotRunning', { name: spoken })
+            : t('settings.voice.conversationAppCouldNotOpen', { name: spoken })
         );
       }
 
+      // What the system calls it, when the index recognised it. "open vs code"
+      // is answered with "opened Visual Studio Code", which is a report; echoing
+      // `vs code` back would only prove the words were received.
+      const name = answer.data?.name || spoken;
       const detail =
         action === 'close'
           ? t('settings.voice.conversationAppClosed', { name })
@@ -575,6 +598,133 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
         filled: outcome.filled,
         stillEmpty: outcome.unfilled,
       };
+    }
+
+    if (invocation.name === 'app_write_document') {
+      const markdown = text('markdown').trim();
+      const format = text('format').trim();
+      if (markdown.length === 0 || format.length === 0) {
+        throw new Error(t('settings.voice.conversationActionUnsupported'));
+      }
+
+      host.updateActivity(invocation.callId, {
+        detail: t('settings.voice.conversationWritingDocument', { format }),
+        state: 'running',
+      });
+
+      const written = await ipcBridge.application.writeDocument.invoke({
+        markdown,
+        format,
+        name: text('name').trim(),
+      });
+      if (!written.success) throw new Error(t('settings.voice.conversationDocumentFailed'));
+
+      const file = written.data?.path ?? '';
+      const name = file.replace(/^.*[\\/]/, '');
+      host.updateActivity(invocation.callId, {
+        detail: t('settings.voice.conversationDocumentWritten', { name }),
+        state: 'completed',
+      });
+      host.backToListening();
+
+      // `complete` travels back so the assistant can say the one thing that
+      // matters and that only it knows: a PDF written without a Unicode face
+      // has lost every ı, ş and ğ, and a name mangled in a filed document is
+      // worse than a document that was never written.
+      return {
+        ok: true,
+        writtenTo: name,
+        lettersIntact: written.data?.complete !== false,
+        detail: t('settings.voice.conversationDocumentWritten', { name }),
+      };
+    }
+
+    if (invocation.name === 'app_research') {
+      const question = text('question').trim();
+      if (question.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));
+
+      // Named while it runs rather than after. Reading three pages is a couple
+      // of seconds of a spoken conversation, and a couple of seconds of nothing
+      // is how this application has learned a wait reads as a crash.
+      host.updateActivity(invocation.callId, {
+        label: question,
+        detail: t('settings.voice.conversationResearching', { question }),
+        state: 'running',
+      });
+
+      const answer = await ipcBridge.application.research.invoke({ question });
+      const digest = answer.success ? (answer.data?.digest ?? '') : '';
+      const sources = answer.success ? (answer.data?.sources ?? []) : [];
+
+      if (digest.length === 0) {
+        host.updateActivity(invocation.callId, {
+          detail: t('settings.voice.conversationResearchNothing'),
+          state: 'completed',
+        });
+        host.backToListening();
+        // Reported as a *result* and not as a failure, because it is one: the
+        // model has to be able to say "I looked and could not find it", and a
+        // thrown error is the shape it papers over with a guess.
+        return { ok: true, found: false, detail: t('settings.voice.conversationResearchNothing') };
+      }
+
+      host.updateActivity(invocation.callId, {
+        detail: t('settings.voice.conversationResearchRead', { count: sources.length }),
+        state: 'completed',
+      });
+      host.backToListening();
+
+      // The digest carries its own instruction to answer from it and nothing
+      // else — see `buildDigest`. It rides in the tool result rather than the
+      // system prompt because it is true of this text and no other.
+      return { ok: true, found: true, sources, evidence: digest };
+    }
+
+    if (invocation.name === 'app_find_document') {
+      // The request this application answered worst: "find me a PDF about X".
+      // Nothing here opens the user's browser — the search is fetched, the file
+      // is saved, and the viewer is the one beside the conversation.
+      const found = await runResearchTool(host, invocation.callId, {
+        query: text('query'),
+        kind: text('kind'),
+        // Models send the word as often as the boolean, and both mean the same
+        // thing. `open` absent on a request that plainly wanted the document
+        // would report a list of links and call it done.
+        open: flag('open'),
+      });
+      if (found.ok === false) return { ok: false, error: found.error };
+      return {
+        ok: true,
+        // The address travels with the result, and dropping it was a real
+        // failure rather than tidiness. A model handed a title and a summary
+        // and then asked to fetch the file has nothing to fetch it *with*, so
+        // it passes the title to Download, is told that is not a web address,
+        // and tries again — while telling the user it found the document.
+        results: found.found.map((result) => ({ title: result.title, url: result.url, summary: result.snippet })),
+        ...(found.opened ? { opened: found.opened.name, showing: true } : { showing: false }),
+      };
+    }
+
+    if (invocation.name === 'app_open_document') {
+      const path = text('path').trim();
+      if (path.length === 0) throw new Error(t('settings.voice.conversationActionUnsupported'));
+
+      const opened = await openDocument(path);
+      // Null is "there is no viewer for this", which is a true sentence and a
+      // different one from "it failed". It is deliberately not answered by
+      // handing the file to the operating system: a document opened in some
+      // other program is one this assistant cannot see or talk about.
+      if (!opened) {
+        const detail = t('settings.voice.conversationDocumentNoViewer', { name: documentName(path) });
+        host.updateActivity(invocation.callId, { detail, state: 'completed' });
+        host.backToListening();
+        return { ok: true, showing: false, detail };
+      }
+
+      const detail = t('settings.voice.conversationDocumentOpened', { name: opened.name });
+      host.updateActivity(invocation.callId, { detail, state: 'completed' });
+      host.backToListening();
+      return { ok: true, showing: true, opened: opened.name, viewer: opened.viewer };
     }
 
     if (invocation.name === 'app_search') {

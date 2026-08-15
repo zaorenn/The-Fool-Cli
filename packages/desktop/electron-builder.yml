@@ -126,6 +126,17 @@ extraResources:
   # foolcore binary (pre-compiled per platform/arch, ships its own bun runtime)
   - from: resources/bundled-foolcore
     to: bundled-foolcore
+  # officecli: a pinned, checksummed, self-contained binary (Apache-2.0, see
+  # NOTICE). Shipped rather than fetched, because the previous arrangement ran
+  # `irm https://…/install.ps1 | iex` the first time somebody previewed a Word
+  # document — unpinned, unverified, and useless offline, while ten builtin
+  # skills told the model Office editing was something it could do.
+  #
+  # `${os}-${arch}` so an installer carries one binary rather than six.
+  - from: resources/officecli/${os}-${arch}
+    to: officecli
+    filter:
+      - '**/*'
   - from: resources/hub
     to: hub
   # Apache-2.0 4(a) and 4(d): recipients of the binary get the License and the

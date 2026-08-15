@@ -8,7 +8,10 @@ import { describe, expect, it } from 'vitest';
 import {
   ACT_COMMANDS,
   commandActsOnPage,
+  MAX_NETWORK_ENTRIES,
   MAX_READ_CHARS,
+  MAX_VIEWPORT_PX,
+  MIN_VIEWPORT_PX,
   parseBrowserCommand,
   READ_COMMANDS,
 } from '@/common/browser/browserCommands';
@@ -29,7 +32,15 @@ describe('commandActsOnPage', () => {
   it('does not treat an unknown command as safe', () => {
     // An unrecognised name is not an act command, but it is also never executed
     // — parse refuses it first. This pins that it cannot slip through as a read.
-    expect(parseBrowserCommand({ name: 'evaluate' })).toEqual({ ok: false, error: 'unknown command "evaluate"' });
+    expect(parseBrowserCommand({ name: 'telepathy' })).toEqual({ ok: false, error: 'unknown command "telepathy"' });
+  });
+
+  it('treats evaluating a script as acting, not as reading', () => {
+    // `evaluate` is named for what the caller wants — a value back — but the
+    // expression runs with the page's own authority on a site the user is
+    // signed into. Classifying it by intent rather than by power is how a
+    // "read-only" script ends up submitting a form.
+    expect(commandActsOnPage('evaluate')).toBe(true);
   });
 });
 
@@ -128,6 +139,105 @@ describe('parseBrowserCommand', () => {
     it('refuses missing pieces', () => {
       expect(parseBrowserCommand({ name: 'type', selector: '#q' }).ok).toBe(false);
       expect(parseBrowserCommand({ name: 'type', text: 'hello' }).ok).toBe(false);
+    });
+  });
+
+  describe('scroll', () => {
+    it('scrolls down by default, because that is what reading a page means', () => {
+      expect(parseBrowserCommand({ name: 'scroll' })).toEqual({
+        ok: true,
+        command: { name: 'scroll', selector: undefined, direction: 'down', amount: undefined },
+      });
+    });
+
+    it('takes an element to scroll to', () => {
+      expect(parseBrowserCommand({ name: 'scroll', selector: 'footer' })).toMatchObject({
+        ok: true,
+        command: { selector: 'footer' },
+      });
+    });
+
+    it('refuses a direction that is neither way', () => {
+      expect(parseBrowserCommand({ name: 'scroll', direction: 'sideways' }).ok).toBe(false);
+    });
+  });
+
+  describe('select', () => {
+    it('needs both the field and the option', () => {
+      expect(parseBrowserCommand({ name: 'select', selector: '#country', value: 'TR' })).toEqual({
+        ok: true,
+        command: { name: 'select', selector: '#country', value: 'TR' },
+      });
+      expect(parseBrowserCommand({ name: 'select', selector: '#country' }).ok).toBe(false);
+    });
+  });
+
+  describe('press', () => {
+    it('needs a key and will take an element to press it at', () => {
+      expect(parseBrowserCommand({ name: 'press', key: 'Enter' })).toEqual({
+        ok: true,
+        command: { name: 'press', key: 'Enter', selector: undefined },
+      });
+      expect(parseBrowserCommand({ name: 'press', key: 'Enter', selector: '#q' })).toMatchObject({
+        ok: true,
+        command: { selector: '#q' },
+      });
+    });
+
+    it('refuses a key name long enough to be something else', () => {
+      expect(parseBrowserCommand({ name: 'press', key: 'a'.repeat(200) }).ok).toBe(false);
+    });
+  });
+
+  describe('resize', () => {
+    it('takes a viewport to check a layout at', () => {
+      expect(parseBrowserCommand({ name: 'resize', width: 375, height: 812 })).toEqual({
+        ok: true,
+        command: { name: 'resize', width: 375, height: 812 },
+      });
+    });
+
+    it('clamps rather than refuses, because the request was still understood', () => {
+      // "Check it on a big screen" with a number nobody measured is the same
+      // request as one with a number somebody did.
+      expect(parseBrowserCommand({ name: 'resize', width: 99_999, height: 10 })).toMatchObject({
+        ok: true,
+        command: { width: MAX_VIEWPORT_PX, height: MIN_VIEWPORT_PX },
+      });
+    });
+
+    it('refuses a viewport with a side missing', () => {
+      expect(parseBrowserCommand({ name: 'resize', width: 800 }).ok).toBe(false);
+    });
+  });
+
+  describe('network', () => {
+    it('defaults to the whole log, capped', () => {
+      expect(parseBrowserCommand({ name: 'network' })).toEqual({
+        ok: true,
+        command: { name: 'network', urlPattern: undefined, limit: MAX_NETWORK_ENTRIES },
+      });
+    });
+
+    it('caps a request for more than the maximum', () => {
+      expect(parseBrowserCommand({ name: 'network', limit: 10_000 })).toMatchObject({
+        ok: true,
+        command: { limit: MAX_NETWORK_ENTRIES },
+      });
+    });
+  });
+
+  describe('evaluate', () => {
+    it('needs an expression', () => {
+      expect(parseBrowserCommand({ name: 'evaluate', expression: 'document.title' })).toEqual({
+        ok: true,
+        command: { name: 'evaluate', expression: 'document.title' },
+      });
+      expect(parseBrowserCommand({ name: 'evaluate' }).ok).toBe(false);
+    });
+
+    it('refuses an expression long enough to be a program', () => {
+      expect(parseBrowserCommand({ name: 'evaluate', expression: 'x'.repeat(9000) }).ok).toBe(false);
     });
   });
 });

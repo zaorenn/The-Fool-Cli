@@ -6,11 +6,12 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-  appsFolderCommand,
-  bestStartMenuMatch,
-  executablePathCommand,
+  findApp,
+  foldAppName,
   isLaunchableAppName,
+  isSearchableAppName,
   launchCommandFor,
+  type IndexedApp,
 } from '@/common/voice/appLaunch';
 
 /**
@@ -140,92 +141,104 @@ describe('launchCommandFor', () => {
 });
 
 /**
- * Measured on Windows 11 before this existed: `cmd /c start "" "XBOX"` — the
- * command this module produced for an *installed* Store app — launched nothing
- * and never returned, while `explorer.exe shell:AppsFolder\<AUMID>` opened it
- * at once. `start` resolves through PATH and App Paths, and a Store app is in
- * neither.
+ * Finding the application somebody named.
+ *
+ * The command path above only ever resolved a name the system already knew as a
+ * command. Measured on a real Windows machine: `start "" Spotify` and
+ * `start "" notepad` opened; **`start "" Discord` and `start "" Steam` did
+ * not**, because both install per-user and neither registers one. Both are in
+ * that machine's Start menu, which nothing was reading.
+ *
+ * These are the cases that decide whether reading it helps.
  */
-describe('finding a Store application by the name a person says', () => {
-  const installed = [
-    { name: 'XBOX', appId: 'Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App' },
-    { name: 'Forza Horizon 6 Standard Edition', appId: 'Microsoft.SunriseBaseGame_8wekyb3d8bbwe!Game' },
-    { name: 'Spotify', appId: 'SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify' },
+describe('findApp', () => {
+  const installed: IndexedApp[] = [
+    { name: 'Discord', launchId: 'com.squirrel.Discord.Discord' },
+    { name: 'Steam', launchId: String.raw`{7C5A40EF}\Steam\Steam.exe` },
+    { name: 'Steam Support Center', launchId: 'http://support.steampowered.com/' },
+    { name: 'Spotify', launchId: 'SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify' },
+    { name: 'Visual Studio Code', launchId: 'VSCode' },
+    { name: 'Google Chrome', launchId: 'Chrome' },
+    { name: 'Windows Terminal', launchId: 'Microsoft.WindowsTerminal_8wekyb3d8bbwe!App' },
   ];
 
-  it('matches the name exactly, whatever the casing', () => {
-    expect(bestStartMenuMatch('xbox', installed)?.appId).toContain('GamingApp');
-    expect(bestStartMenuMatch('XBOX', installed)?.appId).toContain('GamingApp');
+  it('finds the two the command path could not open', () => {
+    expect(findApp('Discord', installed)?.launchId).toBe('com.squirrel.Discord.Discord');
+    expect(findApp('Steam', installed)?.name).toBe('Steam');
   });
 
-  /// The reported sentence. Nobody says "Standard Edition" out loud.
-  it('matches a game whose entry carries an edition after it', () => {
-    expect(bestStartMenuMatch('Forza Horizon 6', installed)?.appId).toContain('SunriseBaseGame');
+  /**
+   * The whole name beats a longer name that merely starts the same way. Without
+   * this, "open Steam" is as good a match for `Steam Support Center` — and
+   * opening a support page instead of the game library is exactly the kind of
+   * near miss that reads as the assistant not listening.
+   */
+  it('prefers the whole name over a longer one that starts with it', () => {
+    expect(findApp('steam', installed)?.name).toBe('Steam');
   });
 
-  it('does not guess when nothing resembles the name', () => {
-    expect(bestStartMenuMatch('Photoshop', installed)).toBeNull();
+  it('matches how people actually say a name', () => {
+    expect(findApp('vs code', installed)).toBeNull();
+    expect(findApp('visual studio code', installed)?.name).toBe('Visual Studio Code');
+    expect(findApp('chrome', installed)?.name).toBe('Google Chrome');
+    expect(findApp('terminal', installed)?.name).toBe('Windows Terminal');
   });
 
-  /// A prefix of a word is not a word. "Forza" alone would be a reasonable
-  /// match; "For" must not silently start a game.
-  it('does not match a fragment of a word', () => {
-    expect(bestStartMenuMatch('For', installed)).toBeNull();
+  /**
+   * A Turkish speaker says "Spotify'ı aç", and the transcript keeps the suffix.
+   * The old rule refused the name outright — `isLaunchableAppName` has no
+   * apostrophe in its set — so the request failed on a word that is
+   * unmistakably Spotify.
+   */
+  it('reads a Turkish accusative as the name it is attached to', () => {
+    expect(findApp("Spotify'ı", installed)?.name).toBe('Spotify');
+    expect(findApp("Discord'u", installed)?.name).toBe('Discord');
+    expect(findApp("Steam'i", installed)?.name).toBe('Steam');
   });
 
-  it('prefers the exact entry over the longer one that contains it', () => {
-    const both = [{ name: 'Spotify Premium Trial', appId: 'trial!App' }, ...installed];
-    expect(bestStartMenuMatch('Spotify', both)?.appId).toBe('SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify');
-  });
-});
-
-describe('the command for a Store application', () => {
-  it('goes through AppsFolder, which is the only route that starts one', () => {
-    expect(appsFolderCommand('Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App')).toEqual({
-      file: 'explorer.exe',
-      args: ['shell:AppsFolder\\Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App'],
-    });
+  it('folds the letters that only look different', () => {
+    expect(foldAppName('İŞIK')).toBe('isik');
+    expect(foldAppName('Ünlü Öğe')).toBe('unlu oge');
+    // Not a suffix: the `s` belongs to the name.
+    expect(foldAppName("Assassin's Creed")).toBe('assassin s creed');
   });
 
-  /// The id comes from the operating system rather than from the model, but it
-  /// still lands in a command line, so the same closed-set rule applies.
-  it('refuses an id with anything a shell would find interesting in it', () => {
-    expect(appsFolderCommand('Evil" & calc.exe')).toBeNull();
-    expect(appsFolderCommand('')).toBeNull();
+  /**
+   * Opening the wrong program is worse than opening nothing: "I could not find
+   * it" is a sentence the user can recover from, and a stranger's window
+   * appearing on their screen is not.
+   */
+  it('answers with nothing rather than the nearest thing', () => {
+    expect(findApp('Photoshop', installed)).toBeNull();
+    expect(findApp('Blender', installed)).toBeNull();
+    expect(findApp('', installed)).toBeNull();
+  });
+
+  it('answers with nothing when the index could not be built', () => {
+    expect(findApp('Discord', [])).toBeNull();
   });
 });
 
 /**
- * Half the Start menu lists a path rather than an AppUserModelID, and games
- * installed outside a store are almost all of it. Read off this machine:
- * `Marvels Spider-Man 2` is `C:\Games\Marvels Spider-Man 2\Spider-Man2.exe`.
- * `start` cannot resolve the display name and AppsFolder does not take a path,
- * so before this an installed game in the user's own Start menu had no route.
+ * Two rules, deliberately different widths.
+ *
+ * The strict one guards a string that becomes an argument to a program the
+ * system will run. The wide one guards a string that is compared against a list
+ * the operating system itself wrote — where what gets launched is the list's own
+ * id, and nothing the model said reaches a command at all.
  */
-describe('a Start menu entry that is already a path', () => {
-  it('runs the executable the Start menu points at', () => {
-    expect(executablePathCommand('C:\\Games\\Marvels Spider-Man 2\\Spider-Man2.exe')).toEqual({
-      file: 'C:\\Games\\Marvels Spider-Man 2\\Spider-Man2.exe',
-      args: [],
-    });
+describe('isSearchableAppName', () => {
+  it('takes the names the strict rule has to refuse', () => {
+    for (const name of ["Spotify'ı", 'Notepad++', 'Slack (work)']) {
+      expect(isSearchableAppName(name), name).toBe(true);
+      expect(isLaunchableAppName(name), name).toBe(false);
+    }
   });
 
-  /// Spaces are the normal case here, and they need no quoting: execFile takes
-  /// a file and an argument list rather than a shell string.
-  it('does not quote or escape a path with spaces in it', () => {
-    const command = executablePathCommand('C:\\Program Files\\Thing\\thing.exe');
-    expect(command?.file).toBe('C:\\Program Files\\Thing\\thing.exe');
-    expect(command?.args).toEqual([]);
-  });
-
-  it('refuses an AppUserModelID, which is the other route', () => {
-    expect(executablePathCommand('Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App')).toBeNull();
-  });
-
-  it('refuses anything that is not an absolute path to an executable', () => {
-    expect(executablePathCommand('Spider-Man2.exe')).toBeNull();
-    expect(executablePathCommand('C:\\Games\\readme.txt')).toBeNull();
-    expect(executablePathCommand('C:\\Games\\a"b\\x.exe')).toBeNull();
-    expect(executablePathCommand('')).toBeNull();
+  it('still refuses what is not a name at all', () => {
+    expect(isSearchableAppName('')).toBe(false);
+    expect(isSearchableAppName('   ')).toBe(false);
+    expect(isSearchableAppName('Spotify\nrm -rf /')).toBe(false);
+    expect(isSearchableAppName('x'.repeat(200))).toBe(false);
   });
 });

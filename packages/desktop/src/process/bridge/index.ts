@@ -15,6 +15,7 @@ import { initThemeBridge } from './themeBridge';
 import { initFoolVoiceBridge, type FoolVoiceBridgeHandlers } from './foolVoiceBridge';
 import { initScreenCaptureBridge } from '@process/voice/screenCaptureBridge';
 import { initPreviewBridge } from '@process/preview/previewBridge';
+import { initResearchBridge } from '@process/research/researchBridge';
 import { initSkillRecorderBridge } from '@process/voice/skillRecorderBridge';
 import { initWorkspaceAppBridge } from '@process/workspace/workspaceAppBridge';
 import { initSpotifyBridge } from '@process/spotify/spotifyBridge';
@@ -36,6 +37,7 @@ export function initAllBridges(deps: BridgeDependencies = {}): void {
   initFoolVoiceBridge(deps.foolVoice);
   initScreenCaptureBridge();
   initPreviewBridge();
+  initResearchBridge();
   initSkillRecorderBridge();
   initWorkspaceAppBridge();
   initSpotifyBridge();

@@ -36,7 +36,11 @@ describe('uacc is gone', () => {
   });
 
   it('is listed for removal from installations that already have it', () => {
-    expect(source).toMatch(/RETIRED_BUILTIN_MCP_SERVERS[^=]*=\s*\[[^\]]*'uacc-computer-control'/s);
+    // Accepts a bare array or a Set of one. The container is not the point —
+    // the name being in the list is — and pinning the literal shape made this
+    // fail the day the linter's own autofix rewrote `.includes` into `.has`,
+    // which is a test failing for something nobody reading it would call a bug.
+    expect(source).toMatch(/RETIRED_BUILTIN_MCP_SERVERS[^=]*=[^;]*'uacc-computer-control'/s);
   });
 
   it('the removal actually runs during the bootstrap', () => {

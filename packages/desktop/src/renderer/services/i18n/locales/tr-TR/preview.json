@@ -76,7 +76,8 @@
       "installFailed": "officecli otomatik olarak yüklenemedi. Arka uç günlüklerini kontrol edip yeniden deneyin.",
       "portTimeout": "Önizleme servisi başladı ancak zamanında hazır olmadı. Yeniden deneyin.",
       "startFailed": "Office önizleme servisi başlatılamadı.",
-      "outsideSandbox": "Bu dosya geçerli çalışma alanı sandbox'ının dışında."
+      "outsideSandbox": "Bu dosya geçerli çalışma alanı sandbox'ının dışında.",
+      "officecliMissingFromInstall": "The Fool ile birlikte gelen officecli kopyası eksik, yani bu kurulum tamamlanmamış. Uygulamayı yeniden kurmak onu geri getirir."
     },
     "serverInstall": {
       "hint": "The Fool bir sunucuda çalışıyor. Önizleme bileşeni o sunucuya kurulmalıdır. Aşağıdaki komutu sunucuda çalıştırıp yeniden deneyin:",

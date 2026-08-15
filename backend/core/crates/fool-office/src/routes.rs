@@ -466,7 +466,7 @@ mod tests {
             ) -> Result<Box<dyn ProcessHandle>, OfficeError> {
                 Err(OfficeError::OfficecliNotFound)
             }
-            async fn install_officecli(&self) -> Result<(), OfficeError> {
+            async fn ensure_available(&self) -> Result<(), OfficeError> {
                 Err(OfficeError::InstallFailed("noop".into()))
             }
             async fn is_officecli_installed(&self) -> bool {

@@ -53,14 +53,14 @@ describe('the material paints what the application reads', () => {
    */
   it('leaves no colour variable unpainted', () => {
     const paints = written(true);
-    const unpainted = [...variablesTheAppReads()].filter((name) => !paints.has(name)).sort();
+    const unpainted = [...variablesTheAppReads()].filter((name) => !paints.has(name)).toSorted();
 
     expect(unpainted, `unpainted colour variables: ${unpainted.join(' ')}`).toEqual([]);
   });
 
   it('paints them in light as well as dark', () => {
     const paints = written(false);
-    const unpainted = [...variablesTheAppReads()].filter((name) => !paints.has(name)).sort();
+    const unpainted = [...variablesTheAppReads()].filter((name) => !paints.has(name)).toSorted();
 
     expect(unpainted, `unpainted in light: ${unpainted.join(' ')}`).toEqual([]);
   });

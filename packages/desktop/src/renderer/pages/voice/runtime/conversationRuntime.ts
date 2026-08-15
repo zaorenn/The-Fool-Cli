@@ -47,7 +47,7 @@ import {
 } from '@/common/voice/memoryProposal';
 import { asksForQuiet, asksToResume, isStillTyping, maySpeakUnprompted } from '@/common/voice/thinkingAloud';
 import { configService } from '@/common/config/configService';
-import type { ConversationFile } from '@/common/voice/conversationFiles';
+import { sanitizeConversationFiles, type ConversationFile } from '@/common/voice/conversationFiles';
 import { LocalVoicePipeline } from '../localPipeline';
 import { PcmAudioOutput, PcmMicrophone } from '../pcmAudio';
 import { RealtimeVoiceClient } from '../RealtimeVoiceClient';
@@ -165,6 +165,14 @@ export type ConversationSnapshot = {
   error: string;
   providerName: string;
   activities: readonly ConversationActivity[];
+  /**
+   * The documents handed over, which is what "this" and "the file" mean.
+   *
+   * In the snapshot rather than read on demand, because the page has to draw
+   * them: a file the assistant is holding that the user cannot see is a file
+   * they cannot tell has been lost.
+   */
+  held: readonly ConversationFile[];
 };
 
 const IDLE_SNAPSHOT: ConversationSnapshot = {
@@ -174,6 +182,7 @@ const IDLE_SNAPSHOT: ConversationSnapshot = {
   error: '',
   providerName: '',
   activities: [],
+  held: [],
 };
 
 /** Until the page lends its own, keys pass through unchanged. */
@@ -272,6 +281,20 @@ class ConversationRuntime {
 
   /** What a resumed conversation carries in, until the session opens. */
   private carried: SpokenTurn[] = [];
+
+  /**
+   * Documents handed over, whether or not anything is running yet.
+   *
+   * Kept here rather than only in the pipeline, because the order people
+   * actually do this in is the opposite of the one the code assumed: they drop
+   * the thing they want to talk about and *then* press start. `hold` answered
+   * that with `false` and the page said "I cannot take this", which is a refusal
+   * for no reason — nothing about a file needs a microphone to be open.
+   *
+   * The list is also what the page draws, so the user can see what the
+   * assistant thinks "this" means before they say the word.
+   */
+  private held: ConversationFile[] = [];
 
   constructor() {
     this.listenForHoldKey();
@@ -768,6 +791,12 @@ class ConversationRuntime {
     await pipeline.connect();
     this.local = pipeline;
 
+    // Whatever was dropped before anybody pressed start. This is the ordinary
+    // order — the document comes first, the conversation about it second — and
+    // without this the pipeline opens with an empty list and "summarise this"
+    // has no referent.
+    if (this.held.length > 0) pipeline.holdFiles(this.held);
+
     // Which brain actually answered, rather than which class holds the
     // microphone. This said "local pipeline" whatever happened — when every
     // word came from the same agent as typed chat, and when it had quietly
@@ -913,16 +942,65 @@ class ConversationRuntime {
   /**
    * Takes what was dropped on the window into the conversation.
    *
-   * Only the local pipeline holds a prompt this app owns; a socket provider
-   * keeps its own on the far side and cannot be told mid-call. Answering `false`
-   * rather than pretending, so the page can say so instead of leaving somebody
-   * waiting for an assistant that never received the file.
+   * Accepted whether or not one is running. It used to refuse unless the local
+   * pipeline was already up, which is backwards: people drop the document and
+   * then press start, and being told "I cannot take this" by an idle page is a
+   * refusal with nothing behind it. What is held is a path and a name — the
+   * conversation reads it when it opens.
+   *
+   * A socket provider still cannot be told mid-call, because its prompt lives on
+   * the far side of a socket. That is reported by {@link heldFilesReachTheModel}
+   * rather than by refusing the file, so the user is told the truth about *this
+   * turn* instead of losing what they handed over.
    */
   hold = (files: readonly ConversationFile[]): boolean => {
-    if (!this.local || files.length === 0) return false;
-    this.local.holdFiles(files);
+    if (files.length === 0) return false;
+    this.held = sanitizeConversationFiles([...this.held, ...files]);
+    this.local?.holdFiles(files);
+    this.emit({ held: this.held });
     return true;
   };
+
+  /** Lets go of one, by path, because the user changed their mind about it. */
+  release = (path: string): void => {
+    this.held = this.held.filter((file) => file.path !== path);
+    // Replaced whole rather than removed from: the pipeline's list is built by
+    // appending, so there is no way to take one out of it except to start again.
+    this.local?.releaseFiles();
+    if (this.held.length > 0) this.local?.holdFiles(this.held);
+    this.emit({ held: this.held });
+  };
+
+  /**
+   * Whether what is held can actually reach the model right now.
+   *
+   * False on a socket provider mid-call, and the page says so — the alternative
+   * was silently keeping a file the assistant would never be told about.
+   */
+  heldFilesReachTheModel = (): boolean => this.phase === 'idle' || this.local !== null;
+
+  /**
+   * A turn typed into a spoken conversation.
+   *
+   * There was no way to do this at all: the voice page took speech and nothing
+   * else. But there are things nobody says out loud to a microphone — a path, a
+   * licence key, a name the transcriber mangles every time, a question asked
+   * with somebody else in the room — and each of them meant ending the
+   * conversation and starting again in the chat.
+   *
+   * Answers whether it was taken. A socket provider holds its conversation on
+   * the far side of a socket and this app has no way to add a turn to it, so
+   * the page says so rather than swallowing what was typed.
+   */
+  say = (text: string): boolean => {
+    const said = text.trim();
+    if (said.length === 0 || !this.local) return false;
+    this.local.say(said);
+    return true;
+  };
+
+  /** Whether a typed turn would reach the model on the transport in use. */
+  acceptsTyping = (): boolean => this.local !== null;
 
   start = async (): Promise<void> => {
     if (this.phase !== 'idle') return;
@@ -1258,11 +1336,14 @@ class ConversationRuntime {
       // opens the microphone either way, and without this the reply carries on
       // underneath — the user talks over a voice that is still going, and both
       // end up in the recording.
-      if (holding && this.phase === 'speaking') {
-        this.local?.interrupt();
-        this.output?.flush();
-        this.enter('listening');
-      }
+      //
+      // Through the one method that knows how to stop *every* transport. This
+      // used to silence `local` and flush the speaker, and say nothing to a
+      // socket provider — so on OpenAI Realtime and Gemini Live the buffer went
+      // quiet, the server kept generating, and the voice came back a moment
+      // later over the top of the person who had just cut in. The manual button
+      // had always called `client.interrupt()`; the key had not.
+      if (holding && this.phase === 'speaking') this.interrupt();
     });
   }
 
@@ -1275,6 +1356,7 @@ class ConversationRuntime {
     this.releaseTyping = null;
     this.listeners.clear();
     this.snapshot = IDLE_SNAPSHOT;
+    this.held = [];
     this.translate = passthrough;
   }
 }

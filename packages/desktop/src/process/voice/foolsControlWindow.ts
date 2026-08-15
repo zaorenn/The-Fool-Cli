@@ -5,7 +5,7 @@
  */
 
 import path from 'node:path';
-import { app, BrowserWindow, screen } from 'electron';
+import { app, BrowserWindow, ipcMain, screen } from 'electron';
 import {
   shouldShowCaption,
   VOICE_STAGE_OFF,
@@ -52,13 +52,58 @@ const RENDERER_DIR = path.join(__dirname, '..', 'renderer', 'voice');
 const WIDTH = 680;
 const HEIGHT = 280;
 
+/**
+ * How often the cursor is checked while the notch is on screen.
+ *
+ * The pointer used to be read from mouse events the window forwards while it
+ * ignores the mouse, and two things were wrong with that. The listener was on
+ * the *window*, which is a fixed 680×280 box — so the notch faded whenever the
+ * cursor entered that whole region, metres of screen away from the 190-pixel
+ * pill actually drawn in it. And the forwarded stream simply stops when the
+ * pointer leaves, with no matching event, so a notch that had faded could stay
+ * faded for the rest of the session with nothing able to bring it back.
+ *
+ * Reading the system cursor answers both. It is true wherever the pointer is,
+ * it cannot stop arriving, and at this interval it costs a struct copy.
+ */
+const POINTER_POLL_MS = 60;
+
+/**
+ * How long the notch stays built after it is no longer wanted.
+ *
+ * It used to be destroyed 2.6 seconds after every turn, which meant the next
+ * turn paid for a `BrowserWindow`, a page load and a `did-finish-load` round
+ * trip before it could show anything — on top of its own 320 ms entry
+ * transition. For a surface whose entire job is to keep up with what is
+ * happening right now, that is the wrong thing to economise on.
+ *
+ * So it is hidden instead, and only really taken down after a long idle. A
+ * hidden transparent window with a stopped animation loop costs nothing worth
+ * measuring; being late costs the whole feature.
+ */
+const TEARDOWN_AFTER_MS = 5 * 60 * 1000;
+
 let controlWindow: BrowserWindow | null = null;
 let ready = false;
 let pending: VoiceStageEvent = VOICE_STAGE_OFF;
 /** The request the app is waiting on, drawn under the turn. Null when none. */
 let pendingPermission: VoicePermissionRequest | null = null;
 let hideTimer: NodeJS.Timeout | null = null;
+let teardownTimer: NodeJS.Timeout | null = null;
 let watchingDisplays = false;
+
+/**
+ * Where the notch is drawn inside the window, as the renderer last measured it.
+ *
+ * Null until it reports, which is one frame after the first event. Until then
+ * the pointer is treated as being nowhere near it — the safe answer, because it
+ * leaves the notch visible.
+ */
+let notchBounds: { x: number; y: number; width: number; height: number } | null = null;
+let pointerTimer: NodeJS.Timeout | null = null;
+/** Last answer sent, so a still cursor is not re-reported thirty times a second. */
+let pointerOver = false;
+let listeningForBounds = false;
 
 const payload = (): FoolsControlPayload => ({ ...pending, permission: pendingPermission });
 
@@ -159,6 +204,96 @@ const clearHideTimer = (): void => {
   }
 };
 
+/* ---------------------------------------------------------------- pointer -- */
+
+/**
+ * Whether the cursor is over the notch itself, rather than over the window.
+ *
+ * The window is a fixed box sized for the widest state the notch ever reaches;
+ * the notch is a pill inside it, centred, and between 190 and 560 CSS pixels
+ * wide. Comparing against the window is what made the notch fade while the user
+ * reached for a browser tab it was nowhere near.
+ *
+ * A margin, because this decides whether something gets out of the way: a
+ * cursor a few pixels off the edge is on its way there, and fading a moment
+ * early is invisible where fading a moment late is the whole complaint.
+ */
+const POINTER_MARGIN = 8;
+
+const cursorIsOverNotch = (): boolean => {
+  if (!controlWindow || controlWindow.isDestroyed() || !controlWindow.isVisible()) return false;
+  const box = notchBounds;
+  if (!box || box.width <= 0 || box.height <= 0) return false;
+
+  const window = controlWindow.getBounds();
+  const point = screen.getCursorScreenPoint();
+  const scale = screen.getDisplayNearestPoint(point).scaleFactor || 1;
+
+  // The renderer measures in CSS pixels and the cursor arrives in the DIP space
+  // Electron reports window bounds in — the same space on every platform this
+  // runs on except where a display is scaled, which is why the factor is asked
+  // for rather than assumed.
+  const left = window.x + box.x / scale;
+  const top = window.y + box.y / scale;
+  const right = left + box.width / scale;
+  const bottom = top + box.height / scale;
+
+  return (
+    point.x >= left - POINTER_MARGIN &&
+    point.x <= right + POINTER_MARGIN &&
+    point.y >= top - POINTER_MARGIN &&
+    point.y <= bottom + POINTER_MARGIN
+  );
+};
+
+const sendPointer = (over: boolean): void => {
+  if (over === pointerOver) return;
+  pointerOver = over;
+  if (controlWindow && !controlWindow.isDestroyed() && ready) {
+    controlWindow.webContents.send('voice:fools-control-pointer', over);
+  }
+};
+
+const stopWatchingPointer = (): void => {
+  if (pointerTimer) {
+    clearInterval(pointerTimer);
+    pointerTimer = null;
+  }
+  // So the notch is never left faded by a watcher that stopped while the cursor
+  // happened to be over it — the exact stuck state this replaced.
+  sendPointer(false);
+};
+
+const startWatchingPointer = (): void => {
+  if (pointerTimer) return;
+  pointerTimer = setInterval(() => sendPointer(cursorIsOverNotch()), POINTER_POLL_MS);
+  pointerTimer.unref?.();
+};
+
+/**
+ * Listens for the notch's own measurement of itself.
+ *
+ * Registered once and never removed: `ipcMain` is process-wide, and a handler
+ * added per window would stack up one per conversation.
+ */
+const listenForBounds = (): void => {
+  if (listeningForBounds) return;
+  listeningForBounds = true;
+  ipcMain.on('voice:fools-control-bounds', (_event, bounds: unknown) => {
+    if (typeof bounds !== 'object' || bounds === null) return;
+    const { x, y, width, height } = bounds as Record<string, unknown>;
+    if ([x, y, width, height].some((value) => typeof value !== 'number' || !Number.isFinite(value))) return;
+    notchBounds = { x: x as number, y: y as number, width: width as number, height: height as number };
+  });
+};
+
+const clearTeardownTimer = (): void => {
+  if (teardownTimer) {
+    clearTimeout(teardownTimer);
+    teardownTimer = null;
+  }
+};
+
 /**
  * Puts the current state on screen, and decides whether the notch belongs there.
  *
@@ -177,9 +312,12 @@ const clearHideTimer = (): void => {
 const render = (): void => {
   if (shouldShowCaption(pending) || pendingPermission) {
     clearHideTimer();
+    clearTeardownTimer();
+    listenForBounds();
     controlWindow ??= create();
     if (!controlWindow.isVisible()) controlWindow.showInactive();
     if (ready) controlWindow.webContents.send('voice:fools-control', payload());
+    startWatchingPointer();
     return;
   }
 
@@ -189,8 +327,32 @@ const render = (): void => {
   clearHideTimer();
   hideTimer = setTimeout(() => {
     hideTimer = null;
-    destroyFoolsControl();
+    hideFoolsControl();
   }, 2600);
+};
+
+/**
+ * Takes the notch off screen without taking it down.
+ *
+ * It used to be destroyed here, and the next turn rebuilt the whole window: a
+ * `BrowserWindow`, a page load, and the `did-finish-load` round trip before the
+ * first frame — all of it in front of a user who has just started talking. The
+ * window is transparent, unfocusable and has a stopped animation loop while
+ * hidden, so keeping it costs nothing that shows up anywhere.
+ *
+ * The teardown still happens, after long enough that nobody is in a
+ * conversation any more.
+ */
+const hideFoolsControl = (): void => {
+  stopWatchingPointer();
+  if (controlWindow && !controlWindow.isDestroyed() && controlWindow.isVisible()) controlWindow.hide();
+
+  clearTeardownTimer();
+  teardownTimer = setTimeout(() => {
+    teardownTimer = null;
+    destroyFoolsControl();
+  }, TEARDOWN_AFTER_MS);
+  teardownTimer.unref?.();
 };
 
 /** Shows the notch while voice is live and takes it away shortly after. */
@@ -215,11 +377,15 @@ export function setFoolsControlPermission(request: VoicePermissionRequest | null
 
 export function destroyFoolsControl(): void {
   clearHideTimer();
+  clearTeardownTimer();
+  stopWatchingPointer();
   if (controlWindow && !controlWindow.isDestroyed()) controlWindow.destroy();
   controlWindow = null;
   ready = false;
   pending = VOICE_STAGE_OFF;
   pendingPermission = null;
+  notchBounds = null;
+  pointerOver = false;
 }
 
 /** Keeps the notch centred when the display layout changes. */

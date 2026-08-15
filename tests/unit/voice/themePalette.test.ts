@@ -81,8 +81,8 @@ describe('the theme tool offers only what it can do', () => {
 
   it('names every palette the resolver can return, so the model is asked for ids that exist', () => {
     const properties = schema!.parameters.properties as Record<string, { enum?: readonly string[] }>;
-    const offered = [...(properties.palette?.enum ?? [])].sort();
-    const real = PALETTES.map((palette) => palette.id).sort();
+    const offered = [...(properties.palette?.enum ?? [])].toSorted();
+    const real = PALETTES.map((palette) => palette.id).toSorted();
 
     expect(offered).toEqual(real);
   });

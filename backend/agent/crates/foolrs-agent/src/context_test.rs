@@ -704,8 +704,16 @@ mod tests {
         );
     }
 
+    /// The prompt names the dedicated tools and prefers them to the shell.
+    ///
+    /// This used to assert "Prefer Edit over Write", which the prompt has not
+    /// said since the guidance was compacted — that sentence moved into the
+    /// Edit and Write tools' own descriptions, where it is read by the model
+    /// at the moment it is choosing between them rather than paragraphs
+    /// earlier. Nothing runs `cargo test` in CI, so the assertion went on
+    /// failing quietly against an implementation that had moved on.
     #[test]
-    fn tool_guidance_contains_edit_over_write_preference() {
+    fn tool_guidance_prefers_the_dedicated_tools_to_the_shell() {
         let result = build_system_prompt(
             &mut SystemPromptCache::new(),
             None,
@@ -718,27 +726,29 @@ mod tests {
             false,
         );
         assert!(
-            result.contains("Prefer Edit over Write"),
-            "should contain Edit-over-Write preference"
+            result.contains("Glob, Grep, Read, Edit, Write"),
+            "should name the dedicated tools"
+        );
+        assert!(
+            result.contains("over ExecCommand"),
+            "should say to prefer them over the shell"
         );
     }
 
+    /// Read-before-edit is enforced rather than asked for.
+    ///
+    /// The prompt no longer carries the rule and does not need to: `EditTool`
+    /// refuses a file that is not in the read cache and says why. A sentence in
+    /// a prompt is advice a model can skip; this one is a guard it cannot.
     #[test]
-    fn tool_guidance_contains_read_before_edit_rule() {
-        let result = build_system_prompt(
-            &mut SystemPromptCache::new(),
-            None,
-            "/tmp",
-            "test-model",
-            &[],
-            None,
-            None,
-            false,
-            false,
-        );
+    fn read_before_edit_is_stated_by_the_tool_that_enforces_it() {
+        use foolrs_tools::Tool;
+
+        let description = foolrs_tools::edit::EditTool::new(None).description().to_string();
+
         assert!(
-            result.contains("Read a file before editing"),
-            "should contain Read-before-Edit rule"
+            description.contains("Read tool first before editing"),
+            "the Edit tool should state the rule it enforces: {description}"
         );
     }
 
@@ -844,10 +854,15 @@ mod tests {
             &policy,
         );
 
-        assert!(result.contains("File search: Glob"));
-        assert!(result.contains("Content search: Grep"));
-        assert!(result.contains("Read files: Read"));
-        for unavailable in ["ExecCommand", "Edit files", "Write files", "ToolSearch", "Skill tool"] {
+        // The guidance was compacted from one line per tool ("File search:
+        // Glob") into a single named list, so the shape asserted here changed
+        // even though the guarantee did not: a restricted agent is told about
+        // the tools it may call and about no others.
+        assert!(
+            result.contains("Available workspace tools: Glob, Grep, Read"),
+            "restricted prompt should name exactly the authorised tools: {result}"
+        );
+        for unavailable in ["ExecCommand", "Edit", "Write", "ToolSearch", "Skill tool"] {
             assert!(
                 !result.contains(unavailable),
                 "restricted prompt should not mention unavailable tool guidance: {unavailable}"
