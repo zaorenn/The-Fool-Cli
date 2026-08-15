@@ -70,6 +70,18 @@ const load = async () => {
   return import('@process/browser/agentPage');
 };
 
+/**
+ * The options the window was actually built with.
+ *
+ * Fails loudly when no window was made at all, rather than reaching through a
+ * null and reporting a TypeError as the assertion's result — which reads like
+ * the preference being wrong instead of the page never having been created.
+ */
+const webPreferences = (): Record<string, unknown> => {
+  expect(constructedWith, 'no page was constructed').not.toBeNull();
+  return (constructedWith as Record<string, unknown>).webPreferences as Record<string, unknown>;
+};
+
 describe('the page the agent browses', () => {
   it('answers a command with no browser panel open', async () => {
     const { runAgentPageCommand } = await load();
@@ -89,7 +101,7 @@ describe('the page the agent browses', () => {
     // Not merely hidden. A window that is only unshown is also unpainted, and
     // `capturePage` on one returns an empty image — which would make every
     // screenshot a blank page rather than an error.
-    expect((constructedWith?.webPreferences as Record<string, unknown>).offscreen).toBe(true);
+    expect(webPreferences().offscreen).toBe(true);
   });
 
   it('is never told to show itself or take focus', async () => {
@@ -117,7 +129,7 @@ describe('the page the agent browses', () => {
     // The same jar as the visible panel. Sessions belong to the partition, not
     // to the window, which is what makes a background page usable at all on a
     // site the user is signed into.
-    expect((constructedWith?.webPreferences as Record<string, unknown>).partition).toBe('persist:fool-browser');
+    expect(webPreferences().partition).toBe('persist:fool-browser');
   });
 
   it('exposes nothing of this application to a page it was told to open', async () => {
@@ -125,7 +137,7 @@ describe('the page the agent browses', () => {
 
     await runAgentPageCommand({ name: 'state' });
 
-    const prefs = constructedWith?.webPreferences as Record<string, unknown>;
+    const prefs = webPreferences();
     expect(prefs.nodeIntegration).toBe(false);
     expect(prefs.contextIsolation).toBe(true);
     expect(prefs.sandbox).toBe(true);
