@@ -21,6 +21,10 @@ Add-Type @'
 using System;
 using System.Text;
 using System.Runtime.InteropServices;
+
+[StructLayout(LayoutKind.Sequential)]
+public struct FoolRect { public int Left, Top, Right, Bottom; }
+
 public class FoolScreen {
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -30,9 +34,15 @@ public class FoolScreen {
   [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
   [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd);
   [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc proc, IntPtr param);
+  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out FoolRect rect);
+  [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr hWnd, IntPtr hdc, uint flags);
   public delegate bool EnumProc(IntPtr hWnd, IntPtr param);
 
   public const uint LEFTDOWN = 0x0002, LEFTUP = 0x0004, RIGHTDOWN = 0x0008, RIGHTUP = 0x0010;
+  // PW_RENDERFULLCONTENT. Without it a composited window — anything drawn
+  // through DirectComposition, which is most modern applications — comes back
+  // as a blank rectangle.
+  public const uint PW_RENDERFULLCONTENT = 0x00000002;
 
   public static string TitleOf(IntPtr hWnd) {
     int length = GetWindowTextLength(hWnd);
@@ -171,19 +181,62 @@ function Get-ScreenText {
   return $lines
 }
 
-function Save-Screenshot {
-  param([string] $Path)
-  $bounds = [System.Windows.Forms.SystemInformation]::VirtualScreen
-  $bitmap = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+# One window's pixels, and no others.
+#
+# This used to be `CopyFromScreen` over `SystemInformation.VirtualScreen` —
+# every monitor, composited, written to a file on every `look`. Asked what an
+# error message said, the skill photographed the user's mail, their messages and
+# whatever else was open across three displays, because one of the windows
+# happened to contain the answer.
+#
+# `PrintWindow` asks the window to draw itself into a bitmap we own. Anything
+# behind or beside it is not part of that drawing. A window that refuses — some
+# hardware-accelerated surfaces still do — comes back blank, and that is
+# reported as a failure to capture rather than papered over with a desktop shot.
+function Save-WindowShot {
+  param([IntPtr] $Handle, [string] $Path)
+
+  $rect = New-Object FoolRect
+  if (-not [FoolScreen]::GetWindowRect($Handle, [ref] $rect)) {
+    throw 'That window could not be measured; it may have closed.'
+  }
+
+  $width = $rect.Right - $rect.Left
+  $height = $rect.Bottom - $rect.Top
+  if ($width -le 0 -or $height -le 0) {
+    throw 'That window has no visible area to capture.'
+  }
+
+  $bitmap = New-Object System.Drawing.Bitmap $width, $height
   $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
   try {
-    $graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+    $hdc = $graphics.GetHdc()
+    try {
+      [void][FoolScreen]::PrintWindow($Handle, $hdc, [FoolScreen]::PW_RENDERFULLCONTENT)
+    } finally {
+      $graphics.ReleaseHdc($hdc)
+    }
     $bitmap.Save($Path, [System.Drawing.Imaging.ImageFormat]::Png)
   } finally {
     $graphics.Dispose()
     $bitmap.Dispose()
   }
-  return @{ path = $Path; width = $bounds.Width; height = $bounds.Height }
+  return @{ path = $Path; width = $width; height = $height }
+}
+
+# The window a title refers to, or nothing.
+#
+# Nothing is an answer: the caller says the window is not open rather than
+# widening to whatever else is on screen.
+function Find-WindowHandle {
+  param([string] $Match)
+  $wanted = $Match.Trim().ToLowerInvariant()
+  if ([string]::IsNullOrWhiteSpace($wanted)) { return [FoolScreen]::GetForegroundWindow() }
+
+  foreach ($window in Get-OpenWindows) {
+    if ($window.title.ToLowerInvariant().Contains($wanted)) { return [IntPtr] $window.handle }
+  }
+  return [IntPtr]::Zero
 }
 
 function Get-OpenWindows {
@@ -212,12 +265,19 @@ switch ($command) {
   'look' {
     $limit = if ($args[1]) { [int] $args[1] } else { 200 }
     $withText = $args[2] -eq 'text'
-    $shotPath = Join-Path $env:TEMP ("fool-screen-" + [guid]::NewGuid().ToString('N') + ".png")
+    $wanted = if ($args[3]) { [string] $args[3] } else { '' }
+    $shotPath = Join-Path $env:TEMP ("fool-window-" + [guid]::NewGuid().ToString('N') + ".png")
 
-    $handle = [FoolScreen]::GetForegroundWindow()
+    $handle = Find-WindowHandle -Match $wanted
+    if ($handle -eq [IntPtr]::Zero) {
+      @{ error = "no open window matches '$wanted'"; windows = @(Get-OpenWindows | ForEach-Object { $_.title }) } |
+        ConvertTo-Json -Depth 4 -Compress
+      exit 0
+    }
+
     $root = [System.Windows.Automation.AutomationElement]::FromHandle($handle)
     $elements = Get-ScreenElements -Root $root -Limit $limit
-    $shot = Save-Screenshot -Path $shotPath
+    $shot = Save-WindowShot -Handle $handle -Path $shotPath
 
     $payload = [ordered] @{
       foreground = [FoolScreen]::TitleOf($handle)
@@ -237,9 +297,18 @@ switch ($command) {
   }
 
   'read' {
-    $shotPath = Join-Path $env:TEMP ("fool-screen-" + [guid]::NewGuid().ToString('N') + ".png")
-    [void] (Save-Screenshot -Path $shotPath)
-    @{ text = Get-ScreenText -ImagePath $shotPath; screenshot = $shotPath } | ConvertTo-Json -Depth 5 -Compress
+    $wanted = if ($args[1]) { [string] $args[1] } else { '' }
+    $shotPath = Join-Path $env:TEMP ("fool-window-" + [guid]::NewGuid().ToString('N') + ".png")
+
+    $handle = Find-WindowHandle -Match $wanted
+    if ($handle -eq [IntPtr]::Zero) {
+      @{ error = "no open window matches '$wanted'" } | ConvertTo-Json -Compress
+      exit 0
+    }
+
+    [void] (Save-WindowShot -Handle $handle -Path $shotPath)
+    @{ text = @(Get-ScreenText -ImagePath $shotPath); screenshot = $shotPath; window = [FoolScreen]::TitleOf($handle) } |
+      ConvertTo-Json -Depth 5 -Compress
   }
 
   'click' {

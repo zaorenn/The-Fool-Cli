@@ -4,17 +4,50 @@ import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 
-const SKILL_ROOT = resolve('backend/core/crates/fool-app/assets/builtin-skills/auto-inject/screen-sense');
+const SKILL_ROOT = resolve('backend/core/crates/fool-app/assets/builtin-skills/screen-sense');
 const SCRIPT = join(SKILL_ROOT, 'scripts', 'screen-sense.mjs');
 
 const run = (args: string[], input?: string) =>
   spawnSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8', input });
 
 describe('screen-sense builtin skill', () => {
-  it('is auto-injected and says it needs no vision model or GPU', () => {
+  it('is opt-in rather than handed to every agent, and says why', () => {
     const body = readFileSync(join(SKILL_ROOT, 'SKILL.md'), 'utf8');
-    expect(body).toContain('shared with every agent');
+    // It reads pixels off somebody's computer and moves their pointer. Every
+    // agent starting with that in hand is a capability nobody chose.
+    expect(SKILL_ROOT.replaceAll('\\', '/')).not.toContain('/auto-inject/');
+    expect(body).toContain('This skill is **opt-in**');
     expect(body).toContain('without a vision model and without touching the GPU');
+  });
+
+  it('photographs one window and has no command that can photograph the desktop', () => {
+    const body = readFileSync(join(SKILL_ROOT, 'SKILL.md'), 'utf8');
+    const powershell = readFileSync(join(SKILL_ROOT, 'scripts', 'screen.ps1'), 'utf8');
+
+    expect(body).toContain('It does not photograph the display, and it has no command that can');
+
+    // Comments are stripped before asserting: the script explains what it used
+    // to do, and naming the old call in prose must not read as still making it.
+    const code = powershell
+      .split('\n')
+      .filter((line) => !line.trimStart().startsWith('#'))
+      .join('\n');
+
+    // The regression this holds. `CopyFromScreen` over `VirtualScreen`
+    // captured every monitor on every look and wrote it to disk — the user's
+    // mail and messages included — to answer a question about one error
+    // message.
+    expect(code).not.toContain('VirtualScreen');
+    expect(code).not.toContain('CopyFromScreen');
+    expect(code).toContain('PrintWindow');
+  });
+
+  it('answers a window that is not open as a fact rather than widening the picture', () => {
+    const script = readFileSync(join(SKILL_ROOT, 'scripts', 'screen-sense.mjs'), 'utf8');
+    const body = readFileSync(join(SKILL_ROOT, 'SKILL.md'), 'utf8');
+
+    expect(script).toContain('snapshot.error');
+    expect(body).toContain('**That is the answer**');
   });
 
   it('draws the line at anything irreversible or outward-facing', () => {
@@ -105,10 +138,13 @@ describe('screen-sense reading a screen with one control on it', () => {
       { withText: true }
     );
 
-    expect(rendered).toContain('Foreground window: Dome Keeper');
+    expect(rendered).toContain('Window: Dome Keeper');
     expect(rendered).toContain('- Dome Keeper');
     expect(rendered).toContain('click(1280,720)');
     expect(rendered).toContain('Kullan');
+    // The other windows are named and not captured, and the report has to say
+    // so — a list of titles beside a picture reads as a list of pictures.
+    expect(rendered).toContain('titles only, not captured');
   });
 
   it('describes an empty screen without inventing one', async () => {
