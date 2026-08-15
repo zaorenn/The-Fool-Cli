@@ -8,6 +8,7 @@ pub mod file_cache;
 pub mod glob;
 pub mod grep;
 pub mod irreversible;
+pub mod knowledge;
 pub mod read;
 pub mod registry;
 mod tool;

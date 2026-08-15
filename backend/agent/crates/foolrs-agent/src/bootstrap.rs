@@ -21,6 +21,7 @@ use foolrs_tools::exec_command::ExecCommandTool;
 use foolrs_tools::file_cache::FileStateCache;
 use foolrs_tools::glob::GlobTool;
 use foolrs_tools::grep::GrepTool;
+use foolrs_tools::knowledge::{RecallTool, RememberTool};
 use foolrs_tools::read::ReadTool;
 use foolrs_tools::registry::ToolRegistry;
 use foolrs_tools::tool_search::ToolSearchTool;
@@ -261,6 +262,7 @@ impl AgentBootstrap {
     }
 
     fn build_builtin_registry(&self, workspace_path: &Path) -> ToolRegistry {
+        let memory_dir = auto_memory_dir(workspace_path);
         let file_cache = self.build_file_cache();
         let mut registry = ToolRegistry::new();
 
@@ -298,6 +300,17 @@ impl AgentBootstrap {
         // through WebFetch arrives as the result of a lossy UTF-8
         // conversion, which the model reports as the paper's contents.
         registry.register(Box::new(DownloadTool::new(workspace_path.to_path_buf())));
+
+        // The other half of the memory system. `foolrs-memory` could read,
+        // write, scan and delete, the context builder read it on every turn,
+        // and `write_memory` was called from nowhere but tests — so the agent
+        // started each session knowing whatever a human had typed into those
+        // files, learned things over the course of the work, and forgot all of
+        // it. Registered only when there is a directory to write into.
+        if let Some(memory_dir) = memory_dir {
+            registry.register(Box::new(RememberTool::new(memory_dir.clone())));
+            registry.register(Box::new(RecallTool::new(memory_dir)));
+        }
 
         registry
     }
