@@ -69,10 +69,16 @@ impl ProcessSpawner for TestSpawner {
         Ok(Box::new(MockHandle::new()))
     }
 
-    async fn install_officecli(&self) -> Result<(), OfficeError> {
+    async fn ensure_available(&self) -> Result<(), OfficeError> {
+        // Reports; it does not install. Flipping `installed` here would be a
+        // double that behaves like the downloader this replaced, and the test
+        // would pass against behaviour the application no longer has.
         self.install_count.fetch_add(1, Ordering::SeqCst);
-        self.installed.store(true, Ordering::SeqCst);
-        Ok(())
+        if self.installed.load(Ordering::SeqCst) {
+            Ok(())
+        } else {
+            Err(OfficeError::OfficecliNotFound)
+        }
     }
 
     async fn is_officecli_installed(&self) -> bool {
@@ -171,7 +177,7 @@ async fn wp3_stop_terminates_session() {
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
-async fn wp4_auto_install_on_not_found() {
+async fn wp4_missing_officecli_is_reported_rather_than_downloaded() {
     let spawner = Arc::new(TestSpawner::new(false));
     let broadcaster = Arc::new(TestBroadcaster::new());
     let mgr = OfficecliWatchManager::new(spawner.clone(), broadcaster.clone());
@@ -179,14 +185,23 @@ async fn wp4_auto_install_on_not_found() {
     let dir = tempfile::tempdir().unwrap();
     let path = create_temp_file(&dir, "doc.docx");
 
-    let port = mgr.start(&path, DocType::Word).await.unwrap();
-    assert!(port > 0);
-    assert_eq!(spawner.install_count.load(Ordering::SeqCst), 1);
+    let started = mgr.start(&path, DocType::Word).await;
+
+    // This asserted the opposite until officecli was packaged with the
+    // application: a missing binary triggered an installer script fetched from
+    // the internet and executed, on the ordinary path of previewing a document.
+    assert!(
+        matches!(started, Err(OfficeError::OfficecliNotFound)),
+        "got {started:?}"
+    );
 
     let states = broadcaster.event_states();
-    assert!(states.contains(&"starting".to_string()));
-    assert!(states.contains(&"installing".to_string()));
-    assert!(states.contains(&"ready".to_string()));
+    assert!(states.contains(&"starting".to_string()), "got {states:?}");
+    assert!(states.contains(&"error".to_string()), "got {states:?}");
+    assert!(
+        !states.contains(&"installing".to_string()),
+        "nothing is installed, so nothing may say so"
+    );
 }
 
 // ---------------------------------------------------------------------------

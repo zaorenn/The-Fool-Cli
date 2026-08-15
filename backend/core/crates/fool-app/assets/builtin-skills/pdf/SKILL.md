@@ -4,13 +4,31 @@ description: Comprehensive PDF manipulation toolkit for extracting text and tabl
 license: Proprietary. LICENSE.txt has complete terms
 ---
 
-> **⚠️ Platform note — read before running any command.** The command examples here are written for **macOS / Linux**. On **Windows**: run `python` (or `py`) instead of `python3`, use `$env:USERPROFILE\…` and backslashes instead of `~/…`, and translate any shell pipes/redirects (`|`, `>`, `&&`) to their PowerShell equivalents before running. The scripts themselves are cross-platform; only the way you invoke them differs.
-
 # PDF Processing Guide
+
+## Try the built-in tools first
+
+The Fool ships PDF handling that needs nothing installed: the **`fool-pdf` MCP server** does `pdf_info`, `pdf_extract_text`, `pdf_merge`, `pdf_split`, `pdf_rotate` and `pdf_remove_pages`, and the `app_fill_pdf` tool fills forms. All of it runs wherever the app runs, and none of it writes over the user's original document.
+
+**Reach for those before anything below.** They cover most of what people ask for, and they cannot fail for a reason the user cannot see.
+
+## This file needs Python, and nothing guarantees it is here
+
+Everything past this point uses Python with `pypdf`, `pdfplumber` and friends. That is a real dependency on the user's machine and **this skill used to assume it silently** — a model would follow these instructions, run `python3`, and discover several commands later that there was no Python, having already told the user it was working on their document.
+
+Check before you start:
+
+```text
+python -c "import pypdf; print(pypdf.__version__)"
+```
+
+If that fails, say plainly that the advanced PDF toolkit is not available on this machine, do what you can with the `fool-pdf` tools, and stop. Do not install Python, and do not pretend the operation is running.
+
+> **Platform note.** The examples are written for macOS / Linux. On **Windows**: run `python` (or `py`) instead of `python3`, use `$env:USERPROFILE\…` instead of `~/…`, and translate shell pipes and redirects to their PowerShell equivalents.
 
 ## Overview
 
-This guide covers essential PDF processing operations using Python libraries and command-line tools. For advanced features, JavaScript libraries, and detailed examples, see reference.md. If you need to fill out a PDF form, read forms.md and follow its instructions.
+This guide covers PDF operations beyond the built-in tools — table extraction, OCR, form annotation, page-level image conversion — using Python libraries. For advanced features, JavaScript libraries, and detailed examples, see reference.md. If you need to fill out a PDF form, prefer `app_fill_pdf`; read forms.md when it cannot do what is needed.
 
 ## Quick Start
 

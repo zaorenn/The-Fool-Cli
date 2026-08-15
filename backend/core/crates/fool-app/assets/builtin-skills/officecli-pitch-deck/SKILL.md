@@ -3,21 +3,9 @@ name: officecli-pitch-deck
 description: "Use this skill when the user is building a fundraising / investor pitch deck — seed, Series A / B / C, convertible note, SAFE round, strategic raise. Trigger on: 'pitch deck', 'investor deck', 'Series A deck', 'Series B deck', 'Series C deck', 'fundraising deck', 'seed pitch', 'VC deck', 'raising capital', 'term sheet presentation'. Output is a single .pptx. This skill is a scene layer on top of officecli-pptx — inherits every pptx v2 rule (visual floor, grid, palettes, connector canon, Delivery Gate). DO NOT invoke for a generic board review, sales deck, all-hands, or product launch — route those to officecli-pptx base."
 ---
 
-> **⚠️ Platform note — read before running any command.** The shell snippets in this skill are written for **macOS / Linux** (bash/zsh). Always check which OS you are on first. On **Windows** do **not** run them verbatim — the underlying tool/CLI commands are usually cross-platform, but the surrounding shell syntax is not. Translate it to PowerShell before running:
+> **This skill does not need a shell.** officecli ships with The Fool and is reachable as the **`fool-office-cli` MCP server** — call its tools directly. Every command below has a tool of the same shape: `{"command":"set","path":"/Sheet1/A1","props":{"value":"Name"}}` is the tool call for `officecli set data.xlsx /Sheet1/A1 --prop value=Name`.
 >
-> | bash (macOS / Linux)              | PowerShell (Windows)                                                                |
-> | --------------------------------- | ----------------------------------------------------------------------------------- |
-> | `a && b`                          | run as two steps, or `a; if ($?) { b }`                                             |
-> | `cat <<'EOF' \| tool …` (heredoc) | write the text to a temp file, then pipe/pass that file to the tool                 |
-> | `VAR=$(cmd)` … `$VAR`             | `$VAR = cmd` … `$VAR`                                                               |
-> | `cmd > /dev/null`                 | `cmd > $null`                                                                       |
-> | `… \| grep PAT`                   | `… \| Select-String PAT`                                                            |
-> | `… \| jq …`                       | `… \| ConvertFrom-Json`, then read the fields                                       |
-> | `python3 x.py`                    | `python x.py` (or `py x.py`)                                                        |
-> | `~/dir`, `/tmp`                   | `$env:USERPROFILE\dir`, `$env:TEMP`                                                 |
-> | `cp` / `mkdir -p` / `rm -rf`      | `Copy-Item` / `New-Item -ItemType Directory -Force` / `Remove-Item -Recurse -Force` |
->
-> If a command has no obvious Windows equivalent, prefer the built-in file/HTTP tools over raw shell.
+> The shell forms are kept as documentation of what each operation _is_. Prefer the MCP tool: it is identical on every platform, where a shell command is not, and it does not depend on a model correctly translating a heredoc into PowerShell.
 
 # OfficeCLI Pitch Deck Skill
 

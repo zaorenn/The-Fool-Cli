@@ -72,8 +72,8 @@ fn build_test_office_state(data_dir: &std::path::Path, allowed_roots: Vec<std::p
         ) -> Result<Box<dyn ProcessHandle>, OfficeError> {
             Err(OfficeError::OfficecliNotFound)
         }
-        async fn install_officecli(&self) -> Result<(), OfficeError> {
-            Err(OfficeError::InstallFailed("not available in test".into()))
+        async fn ensure_available(&self) -> Result<(), OfficeError> {
+            Err(OfficeError::OfficecliNotFound)
         }
         async fn is_officecli_installed(&self) -> bool {
             false

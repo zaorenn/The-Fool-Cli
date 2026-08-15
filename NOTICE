@@ -44,10 +44,18 @@ https://github.com/zaorenn/The-Fool-Cli and summarised in CHANGELOG.md.
 
 THIRD-PARTY SERVICES
 
+This application redistributes the following binary, unmodified:
+
+  * OfficeCLI 1.0.144 — https://github.com/iOfficeAI/OfficeCli
+                        Copyright OfficeCLI (https://OfficeCLI.AI)
+                        Licensed under the Apache License, Version 2.0
+                        Used for Word, Excel and PowerPoint document editing.
+                        Shipped rather than installed on demand: the previous
+                        arrangement downloaded and executed an installer script
+                        at runtime, unpinned and unverified.
+
 This application can download content from projects it does not control:
 
-  * OfficeCLI — https://github.com/iOfficeAI/OfficeCli
-                installed on demand for document conversion features
   * AionHub   — https://github.com/iOfficeAI/AionHub
                 a catalogue of agent definitions fetched during packaging
 

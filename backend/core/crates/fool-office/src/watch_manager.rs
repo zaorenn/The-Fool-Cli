@@ -9,7 +9,7 @@ use fool_runtime::Builder as CmdBuilder;
 use tokio::sync::Mutex;
 
 use crate::error::OfficeError;
-use crate::officecli_runtime::{OFFICECLI_LATEST_RELEASE_URL, install_command, resolve_officecli_path};
+use crate::officecli_runtime::{OFFICECLI_LATEST_RELEASE_URL, resolve_officecli_path};
 use crate::port::{allocate_port, is_port_listening};
 use crate::types::DocType;
 
@@ -32,7 +32,12 @@ pub trait ProcessSpawner: Send + Sync {
         doc_type: DocType,
     ) -> Result<Box<dyn ProcessHandle>, OfficeError>;
 
-    async fn install_officecli(&self) -> Result<(), OfficeError>;
+    /// Confirms the binary is there, or says it is not.
+    ///
+    /// This was `install_officecli`, and it downloaded a script from the
+    /// internet and executed it. Nothing installs anything now: the binary
+    /// ships with the application, and missing is reported as missing.
+    async fn ensure_available(&self) -> Result<(), OfficeError>;
 
     async fn is_officecli_installed(&self) -> bool;
 
@@ -197,9 +202,15 @@ impl OfficecliWatchManager {
         match self.spawner.spawn_officecli(resolved, port, doc_type).await {
             Ok(process) => Ok(process),
             Err(OfficeError::OfficecliNotFound) => {
-                self.broadcast_status_for_user(user_id, doc_type, PreviewState::Installing, None);
-                self.spawner.install_officecli().await?;
-                self.spawner.spawn_officecli(resolved, port, doc_type).await
+                // This arm used to download an installer script and run it. It
+                // ran on the ordinary path of previewing a Word document, which
+                // meant opening a document could fetch and execute code from
+                // the internet. The binary is packaged with the application
+                // now, so its absence is a broken install rather than a step to
+                // perform.
+                self.spawner.ensure_available().await?;
+                self.broadcast_status_for_user(user_id, doc_type, PreviewState::Error, None);
+                Err(OfficeError::OfficecliNotFound)
             }
             Err(error) => Err(error),
         }
@@ -415,28 +426,22 @@ impl ProcessSpawner for DefaultProcessSpawner {
         }))
     }
 
-    async fn install_officecli(&self) -> Result<(), OfficeError> {
-        let command = install_command();
-        tracing::info!(
-            platform = std::env::consts::OS,
-            "installing officecli via official iOfficeAI/OfficeCli installer"
-        );
-
-        let mut builder = CmdBuilder::clean_cli(&command.program);
-        builder.args(command.args.iter());
-        let output = builder
-            .output()
-            .await
-            .map_err(|e| OfficeError::InstallFailed(e.to_string()))?;
-
-        if !output.status.success() {
-            tracing::warn!(
-                status = ?output.status.code(),
-                "officecli official installer failed"
-            );
-            return Err(OfficeError::InstallFailed("official OfficeCLI installer failed".into()));
+    async fn ensure_available(&self) -> Result<(), OfficeError> {
+        match resolve_officecli_path() {
+            Some(path) => {
+                tracing::debug!(path = %path.display(), "officecli resolved");
+                Ok(())
+            }
+            None => {
+                // Named as missing, and nothing is fetched. This used to run an
+                // unverified remote script, executed because somebody previewed
+                // a document.
+                tracing::warn!(
+                    "officecli is not present; the packaged binary is missing or FOOL_OFFICECLI_PATH is unset"
+                );
+                Err(OfficeError::OfficecliNotFound)
+            }
         }
-        Ok(())
     }
 
     async fn is_officecli_installed(&self) -> bool {
@@ -478,12 +483,14 @@ impl ProcessSpawner for DefaultProcessSpawner {
             .unwrap_or_default();
 
         if !remote_version.is_empty() && remote_version != local_version {
+            // Reported, not acted on. Updating means replacing a binary this
+            // application ships and pins; that belongs in a release, not in the
+            // middle of somebody opening a spreadsheet.
             tracing::info!(
                 local_version = %local_version,
                 remote_version = %remote_version,
-                "officecli update available, installing via official installer"
+                "a newer officecli exists upstream; the bundled one is pinned and was not replaced"
             );
-            self.install_officecli().await?;
         }
 
         Ok(())
@@ -637,10 +644,13 @@ mod tests {
             Ok(Box::new(MockProcessHandle::new()))
         }
 
-        async fn install_officecli(&self) -> Result<(), OfficeError> {
+        async fn ensure_available(&self) -> Result<(), OfficeError> {
             self.install_count.fetch_add(1, Ordering::SeqCst);
-            self.installed.store(true, Ordering::SeqCst);
-            Ok(())
+            if self.installed.load(Ordering::SeqCst) {
+                Ok(())
+            } else {
+                Err(OfficeError::OfficecliNotFound)
+            }
         }
 
         async fn is_officecli_installed(&self) -> bool {
@@ -955,8 +965,17 @@ mod tests {
         assert!(!mgr.is_active_watch_port(12345));
     }
 
+    /// A missing binary is reported, not fetched.
+    ///
+    /// This used to assert the opposite: the first spawn failed, an installer
+    /// script was downloaded from the internet and executed, and the second
+    /// spawn succeeded. That ran on the ordinary path of previewing a Word
+    /// document, so opening a document could fetch and run remote code.
+    ///
+    /// officecli is packaged with the application now. Its absence is a broken
+    /// install, and the honest thing to do about one is to say so.
     #[tokio::test]
-    async fn auto_install_when_not_found() {
+    async fn a_missing_officecli_is_reported_rather_than_downloaded() {
         let spawner = Arc::new(MockSpawner::new());
         spawner.installed.store(false, Ordering::SeqCst);
         let broadcaster = Arc::new(RecordingBroadcaster::new());
@@ -966,11 +985,14 @@ mod tests {
         let file = dir.path().join("test.docx");
         std::fs::write(&file, b"test").unwrap();
 
-        let port = mgr.start(file.to_str().unwrap(), DocType::Word).await.unwrap();
-        assert!(port > 0);
-        assert_eq!(spawner.install_count.load(Ordering::SeqCst), 1);
-        // First spawn fails (not installed), then install, then second spawn succeeds
-        assert_eq!(spawner.spawn_count.load(Ordering::SeqCst), 2);
+        let started = mgr.start(file.to_str().unwrap(), DocType::Word).await;
+
+        assert!(
+            matches!(started, Err(OfficeError::OfficecliNotFound)),
+            "a missing binary must surface as missing, got {started:?}"
+        );
+        // Tried once and not retried behind an install that no longer happens.
+        assert_eq!(spawner.spawn_count.load(Ordering::SeqCst), 1);
     }
 
     #[tokio::test]
@@ -993,8 +1015,13 @@ mod tests {
         assert_eq!(events[1].data["state"], "ready");
     }
 
+    /// The user is told it failed, and never told it is installing.
+    ///
+    /// "Installing…" was a true sentence when this downloaded an installer. It
+    /// would be a lie now, and a progress state that never completes is worse
+    /// than an error: the user waits.
     #[tokio::test]
-    async fn broadcasts_installing_on_auto_install() {
+    async fn a_missing_binary_reports_an_error_and_never_claims_to_be_installing() {
         let spawner = Arc::new(MockSpawner::new());
         spawner.installed.store(false, Ordering::SeqCst);
         let broadcaster = Arc::new(RecordingBroadcaster::new());
@@ -1004,13 +1031,13 @@ mod tests {
         let file = dir.path().join("test.docx");
         std::fs::write(&file, b"test").unwrap();
 
-        mgr.start(file.to_str().unwrap(), DocType::Word).await.unwrap();
+        let _ = mgr.start(file.to_str().unwrap(), DocType::Word).await;
 
         let events = broadcaster.events();
         let states: Vec<&str> = events.iter().filter_map(|e| e.data["state"].as_str()).collect();
-        assert!(states.contains(&"starting"));
-        assert!(states.contains(&"installing"));
-        assert!(states.contains(&"ready"));
+        assert!(states.contains(&"starting"), "got {states:?}");
+        assert!(states.contains(&"error"), "got {states:?}");
+        assert!(!states.contains(&"installing"), "nothing is installed, so nothing may say so");
     }
 
     #[tokio::test]

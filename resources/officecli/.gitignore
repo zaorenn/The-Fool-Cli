@@ -1,0 +1,6 @@
+# The binaries themselves are not committed — they are fetched at build time by
+# `scripts/fetch-officecli.mjs` and checked against SHA256SUMS. What *is*
+# committed is the pin and the checksums, which is what makes the fetch
+# reproducible and refusable.
+*/
+!.gitignore

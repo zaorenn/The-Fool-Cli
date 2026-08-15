@@ -12,6 +12,24 @@ export const BUILTIN_BROWSER_NAME = 'fool-browser';
 export const BUILTIN_IMAGE_GEN_ID = 'builtin-image-gen';
 export const BUILTIN_IMAGE_GEN_NAME = 'fool-image-generation';
 export const BUILTIN_APP_SETTINGS_NAME = 'fool-app-settings';
+
+/**
+ * PDFs, through the `pdf-lib` this application already carries.
+ *
+ * Nothing to install and nothing to detect: it runs wherever the app runs. The
+ * builtin `pdf` skill it replaces was written against Python and `pypdf`, whose
+ * presence nothing checked.
+ */
+export const BUILTIN_PDF_NAME = 'fool-pdf';
+
+/**
+ * Word, Excel and PowerPoint, through the officecli binary the app ships.
+ *
+ * Registered only when that binary is actually present — see
+ * `officeServerCommand`. A server in the user's list that cannot start is a
+ * tool list the model believes in and a failure it discovers mid-task.
+ */
+export const BUILTIN_OFFICE_NAME = 'fool-office-cli';
 export const BUILTIN_IMAGE_GEN_LEGACY_NAMES = [
   'fool-image-generation',
   'The Fool Image Generation',
