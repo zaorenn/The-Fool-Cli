@@ -22,8 +22,17 @@ const previewOpen = vi.fn();
 vi.mock('@/common', () => ({
   ipcBridge: {
     shell: { openExternal: { invoke: openExternal } },
-    preview: { open: { emit: previewOpen } },
   },
+}));
+
+// The renderer's own emitter, and getting this wrong is the bug this file
+// missed. `openDocument` runs in the renderer, so it has to publish on the
+// channel the renderer listens to — it used to publish on `ipcBridge.preview`,
+// which is how the *main* process reaches the panel, and this test mocked that
+// same wrong channel. Code and test shared one mistaken assumption, so a tool
+// that opened nothing passed.
+vi.mock('@/renderer/utils/emitter', () => ({
+  emitter: { emit: (event: string, payload: unknown) => previewOpen(event, payload) },
 }));
 
 const { readKind, runResearchTool } = await import('@renderer/pages/voice/runtime/researchTool');
@@ -96,8 +105,11 @@ describe('app_find_document', () => {
     // replaced, and it must not creep back in as a fallback.
     expect(openExternal).not.toHaveBeenCalled();
     expect(previewOpen).toHaveBeenCalledWith(
+      'preview.open',
       expect.objectContaining({
-        content_type: 'pdf',
+        contentType: 'pdf',
+        // What the PDF viewer actually reads. Without it the panel opens and
+        // renders the path as if it were the document.
         metadata: expect.objectContaining({ file_path: 'C:/found/2006.11239.pdf' }),
       })
     );

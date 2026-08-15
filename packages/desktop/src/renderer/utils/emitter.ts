@@ -38,7 +38,18 @@ interface EventTypes {
   'conversation.deleted': [string]; // conversation_id
   // 预览面板事件 / Preview panel events
   'preview.open': [
-    { content: string; contentType: PreviewContentType; metadata?: { title?: string; file_name?: string } },
+    {
+      content: string;
+      contentType: PreviewContentType;
+      /**
+       * `file_path` is not optional decoration. The viewers that render a real
+       * file — PDF, Word, Excel — read the disk and ignore `content`, so an
+       * event without it opens a panel that shows the path as if it were the
+       * document. The handler already forwards the whole object; only this
+       * type was too narrow to say so.
+       */
+      metadata?: { title?: string; file_name?: string; file_path?: string };
+    },
   ];
   // 填充输入框事件 / Fill sendbox input event
   'sendbox.fill': [string]; // prompt text to fill

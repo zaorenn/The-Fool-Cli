@@ -19,8 +19,8 @@
  * panel next to the conversation, so the user reads it while still talking.
  */
 
-import { ipcBridge } from '@/common';
 import type { PreviewContentType } from '@/common/types/office/preview';
+import { emitter } from '@/renderer/utils/emitter';
 
 export type OpenedDocument = { path: string; name: string; viewer: PreviewContentType };
 
@@ -98,15 +98,25 @@ export const openDocument = async (filePath: string): Promise<OpenedDocument | n
   if (!viewer) return null;
 
   const name = documentName(path);
-  await ipcBridge.preview.open.emit({
+  const opening = {
     // `file_path` is the field that matters: the viewers that render a real
     // file — PDF, Word, Excel — read the disk and ignore `content`. It is set
     // as well so a text-shaped viewer has something rather than nothing, but
     // the path is what opens the document.
     content: path,
-    content_type: viewer,
+    contentType: viewer,
     metadata: { title: name, file_name: name, file_path: path },
-  });
+  };
+
+  // The renderer's own emitter, because this code *is* the renderer.
+  //
+  // It used to go out on `ipcBridge.preview.open`, which is the channel the
+  // *main* process uses to reach the panel — so the message left this window
+  // for the main process and nothing ever brought it back. `PreviewContext`
+  // listens on both channels and only this one is reachable from here. The
+  // effect was the worst kind: the tool returned success, the assistant said
+  // it had opened the document, and no viewer appeared.
+  emitter.emit('preview.open', opening);
 
   return { path, name, viewer };
 };

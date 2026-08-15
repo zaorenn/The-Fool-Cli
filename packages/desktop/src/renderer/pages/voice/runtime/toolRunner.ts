@@ -690,7 +690,12 @@ export const runVoiceTool = async (host: ToolHost, invocation: ToolInvocation): 
       if (found.ok === false) return { ok: false, error: found.error };
       return {
         ok: true,
-        results: found.found.map((result) => ({ title: result.title, summary: result.snippet })),
+        // The address travels with the result, and dropping it was a real
+        // failure rather than tidiness. A model handed a title and a summary
+        // and then asked to fetch the file has nothing to fetch it *with*, so
+        // it passes the title to Download, is told that is not a web address,
+        // and tries again — while telling the user it found the document.
+        results: found.found.map((result) => ({ title: result.title, url: result.url, summary: result.snippet })),
         ...(found.opened ? { opened: found.opened.name, showing: true } : { showing: false }),
       };
     }
