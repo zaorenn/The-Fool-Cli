@@ -78,6 +78,14 @@ export interface IConfigStorageRefer {
    * still-on-disk legacy field.
    */
   'migration.assistantsMigrated_v1'?: boolean;
+  /**
+   * One-shot completion flag for switching the builtin browser on, in
+   * {@link enableBuiltinBrowserOnce}. The MCP bootstrap only ever *adds*
+   * servers, so changing the shipped default reaches new installations and
+   * nobody else; this is what carries it to an existing one. Recorded so a
+   * user who turns the browser back off is not overruled on the next launch.
+   */
+  'migration.browserEnabledByDefault_v1'?: boolean;
   // Desktop Pet: whether the desktop pet feature is enabled
   'pet.enabled'?: boolean;
   // Desktop Pet: size in pixels (200, 280, or 360)

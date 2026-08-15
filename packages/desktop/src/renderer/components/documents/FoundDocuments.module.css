@@ -1,0 +1,10 @@
+/* The fetched-documents list. The size sits after the name and stays quiet:
+   it is there to tell two downloads of the same paper apart, not to be read. */
+.documentName {
+  margin-right: 8px;
+}
+
+.documentSize {
+  font-size: 11px !important;
+  color: var(--color-text-3) !important;
+}

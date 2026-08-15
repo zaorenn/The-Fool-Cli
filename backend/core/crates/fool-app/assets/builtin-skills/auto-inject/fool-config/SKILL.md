@@ -544,7 +544,7 @@ Writing these by hand replaces the whole structure and loses whatever else it he
 `window.bounds`, `guid.lastAssistantId`, `system.firstRunGreeted`,
 `system.lastSeenVersion`, `voice.boundConversationId`, `voice.summaryModelId`,
 `migration.providersMigrated_v1`, `migration.assistantsMigrated_v1`,
-`fool.voice.conversations`.
+`migration.browserEnabledByDefault_v1`, `fool.voice.conversations`.
 
 `fool.voice.conversations` holds the transcripts of spoken conversations — one
 entry per conversation, with the turns as they were actually said. The runtime

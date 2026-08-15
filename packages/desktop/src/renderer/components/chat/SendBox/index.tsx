@@ -42,6 +42,7 @@ import { useUploadState } from '@renderer/hooks/file/useUploadState';
 import { useAbortUploadsOnConversationChange } from '@renderer/hooks/file/useAbortUploadsOnConversationChange';
 import UploadProgressBar from '@renderer/components/media/UploadProgressBar';
 import { allSupportedExts } from '@renderer/services/FileService';
+import FoundDocuments from '@/renderer/components/documents/FoundDocuments';
 import SpeechInputButton from '@/renderer/components/chat/SpeechInputButton';
 import AutoReadAloudButton from '@/renderer/components/chat/AutoReadAloudButton';
 import VoiceDictationButton from '@/renderer/components/chat/VoiceDictationButton';
@@ -1406,6 +1407,10 @@ const SendBox: React.FC<{
       />
       <AutoReadAloudButton disabled={disabled || isLoading || loading || isUploading} />
       <WakeListeningButton disabled={disabled || isLoading || loading || isUploading} />
+      {/* The same list the voice page carries. A document is fetched by one
+          assistant and read by whichever the user happens to be talking to,
+          so the way back to it cannot live on only one of the two screens. */}
+      <FoundDocuments />
     </>
   );
 

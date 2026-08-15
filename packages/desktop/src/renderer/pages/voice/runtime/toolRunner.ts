@@ -41,7 +41,7 @@ import { defaultSurfaceChoice, type SurfaceStyleChoice } from '@/common/theme/su
 import { peekSurfaceChoice, SURFACE_STYLE_CONFIG_KEY } from '@renderer/hooks/config/useSurfaceStyle';
 import { normalizeEndpoint } from '../localPipeline';
 import { buildAndPreview } from './buildTool';
-import { documentName, openDocument } from './documentTool';
+import { documentName, openDocument } from '@renderer/services/documents/documentViewer';
 import { runResearchTool } from './researchTool';
 import { fillPdfWithQuestions, type KnownValue, type PdfFillOutcome } from './pdfTool';
 import { applySpokenSetting } from './settingsTool';

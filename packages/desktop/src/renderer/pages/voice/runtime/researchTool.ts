@@ -19,7 +19,7 @@
  */
 
 import type { ResearchKind, WebResult } from '@/common/research/webResults';
-import { openDocument, type OpenedDocument } from './documentTool';
+import { documentName, openDocument, type OpenedDocument } from '@renderer/services/documents/documentViewer';
 import type { ToolHost } from './types';
 
 export type ResearchOutcome =
@@ -108,7 +108,16 @@ export const runResearchTool = async (
   const detail = opened
     ? t('settings.voice.conversationResearchOpened', { title: answer.chosen?.title ?? opened.name })
     : t('settings.voice.conversationResearchFound', { count: answer.results.length });
-  host.updateActivity(callId, { detail, state: 'completed' });
+  // Attached whenever a file was saved, not only when a viewer came up. The
+  // case worth being able to recover from is precisely the one where the
+  // document is on disk and the panel did not appear.
+  host.updateActivity(callId, {
+    detail,
+    state: 'completed',
+    ...(answer.saved
+      ? { document: { path: answer.saved.path, name: opened?.name ?? documentName(answer.saved.path) } }
+      : {}),
+  });
   host.backToListening();
 
   return {

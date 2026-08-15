@@ -359,6 +359,26 @@
   overflow-wrap: anywhere;
 }
 
+/* The way back to a document the panel did not show. Quiet by default — it is
+   a recovery, not the expected route — and it earns its colour on hover. */
+.openDocument {
+  display: block !important;
+  margin-top: 2px !important;
+  padding: 0 !important;
+  height: auto !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+  color: var(--color-text-3) !important;
+  text-align: left !important;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.openDocument:hover {
+  color: var(--color-text-1) !important;
+  background: transparent !important;
+}
+
 /* ── the settings drawer ───────────────────────────────────────────────────── */
 
 .opener {
