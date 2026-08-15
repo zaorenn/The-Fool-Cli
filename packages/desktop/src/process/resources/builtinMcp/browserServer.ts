@@ -116,6 +116,36 @@ async function main(): Promise<void> {
     content: [{ type: 'text' as const, text: await run({ name: 'forward' }) }],
   }));
 
+  // `screenshot` has been implemented in the command contract and in the
+  // renderer's controller since this server was written, and no tool ever
+  // advertised it — so the one capability that lets an agent check its own work
+  // was unreachable. The picture is of the page under test, not of the user's
+  // desktop; nothing here can see outside the panel.
+  server.tool(
+    'browser_screenshot',
+    "A picture of the page open in The Fool's built-in browser — the page under test, not the user's desktop. Use it to check that something you built or changed actually looks right, and to show the user what you saw. Prefer browser_read when you want the words: a picture costs far more to look at and cannot be searched.",
+    {},
+    async () => ({ content: [{ type: 'text' as const, text: await run({ name: 'screenshot' }) }] })
+  );
+
+  server.tool(
+    'browser_wait_for',
+    'Waits until something appears on the page before you carry on. Use it after every navigation and every click that loads something: without it you are guessing at timing, and you will read the page as it was a moment before it finished. If the thing never appears this says so — that is a fact about the page, so report it rather than describing what you expected to be there.',
+    { selector: z.string(), timeoutMs: z.number().optional() },
+    async ({ selector, timeoutMs }) => ({
+      content: [{ type: 'text' as const, text: await run({ name: 'waitFor', selector, timeoutMs }) }],
+    })
+  );
+
+  server.tool(
+    'browser_console',
+    'What the page has logged, including its errors, since the browser panel opened. The other half of checking that something works: a screenshot of a broken page looks like a screenshot of a working one, and the difference is usually sitting here. Pass onlyErrors to skip the noise.',
+    { onlyErrors: z.boolean().optional(), limit: z.number().optional() },
+    async ({ onlyErrors, limit }) => ({
+      content: [{ type: 'text' as const, text: await run({ name: 'console', onlyErrors, limit }) }],
+    })
+  );
+
   await server.connect(new StdioServerTransport());
 }
 

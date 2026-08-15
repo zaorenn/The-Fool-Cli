@@ -5,7 +5,7 @@
  */
 
 import type { BrowserCommand } from '@/common/browser/browserCommands';
-import { MAX_READ_CHARS } from '@/common/browser/browserCommands';
+import { DEFAULT_WAIT_MS, MAX_CONSOLE_LINES, MAX_READ_CHARS } from '@/common/browser/browserCommands';
 import { resolveBrowserInput } from './browserSession';
 
 /**
@@ -28,9 +28,41 @@ export type BrowserCommandResult = { ok: true; data: Record<string, unknown> } |
 /** The webview the panel is showing, or null when the panel has never opened. */
 let webview: Electron.WebviewTag | null = null;
 
+/**
+ * What the page has logged since the browser opened.
+ *
+ * Kept here rather than asked for on demand, because there is no asking: a
+ * console message exists at the moment it is emitted and nowhere afterwards.
+ * Collected from the moment the panel mounts so that a command run later can
+ * still report the error that broke the page before anyone looked.
+ *
+ * A ring rather than a list. A page in a render loop logs thousands of lines a
+ * minute, and the interesting ones are the last few.
+ */
+type ConsoleLine = { level: 'log' | 'warn' | 'error' | 'info'; text: string; at: number };
+const consoleLines: ConsoleLine[] = [];
+
+const LEVELS: Record<number, ConsoleLine['level']> = { 0: 'log', 1: 'info', 2: 'warn', 3: 'error' };
+
+const rememberConsole = (element: Electron.WebviewTag): void => {
+  element.addEventListener('console-message', (event) => {
+    const message = event as unknown as { level?: number; message?: string };
+    consoleLines.push({
+      level: LEVELS[message.level ?? 0] ?? 'log',
+      text: String(message.message ?? '').slice(0, 2000),
+      at: Date.now(),
+    });
+    // Bounded so a page that logs in a loop cannot grow this without limit.
+    if (consoleLines.length > MAX_CONSOLE_LINES * 4)
+      consoleLines.splice(0, consoleLines.length - MAX_CONSOLE_LINES * 4);
+  });
+};
+
 /** Called by the panel as its webview appears and disappears. */
 export function registerAgentBrowserWebview(element: Electron.WebviewTag | null): void {
   webview = element;
+  if (element) rememberConsole(element);
+  else consoleLines.length = 0;
 }
 
 /** Whether there is a browser to drive at all. */
@@ -106,6 +138,48 @@ export async function runAgentBrowserCommand(command: BrowserCommand): Promise<B
       case 'screenshot': {
         const image = await element.capturePage();
         return { ok: true, data: { pngBase64: image.toPNG().toString('base64') } };
+      }
+
+      case 'waitFor': {
+        const deadline = Date.now() + (command.timeoutMs ?? DEFAULT_WAIT_MS);
+        // Polled rather than observed: a MutationObserver would have to live
+        // inside the page and survive a navigation, and this runs for seconds
+        // at most. Every automation before this one guessed at timing — click,
+        // hope, read, and report whatever the page happened to be showing.
+        while (Date.now() < deadline) {
+          const there = (await element.executeJavaScript(
+            `document.querySelector(${literal(command.selector)}) !== null`
+          )) as boolean;
+          if (there) {
+            return { ok: true, data: { appeared: true, url: element.getURL(), title: element.getTitle() } };
+          }
+          await new Promise((resolve) => setTimeout(resolve, 150));
+        }
+        // A timeout is an answer about the page, not an empty result. Reported
+        // as a failure so a model cannot read it as "the element is there and
+        // says nothing".
+        return {
+          ok: false,
+          error: `${command.selector} did not appear within ${command.timeoutMs ?? DEFAULT_WAIT_MS}ms. The page is at ${element.getURL()}.`,
+        };
+      }
+
+      case 'console': {
+        const wanted = command.onlyErrors ? consoleLines.filter((line) => line.level === 'error') : consoleLines;
+        const lines = wanted.slice(-(command.limit ?? MAX_CONSOLE_LINES));
+        return {
+          ok: true,
+          data: {
+            lines: lines.map((line) => ({ level: line.level, text: line.text })),
+            // Said explicitly. An empty list means the page logged nothing,
+            // which is a different thing from the browser not having been open
+            // when it did.
+            note:
+              lines.length === 0
+                ? 'Nothing has been logged since the browser panel opened.'
+                : `${lines.length} of ${consoleLines.length} lines.`,
+          },
+        };
       }
 
       case 'navigate': {

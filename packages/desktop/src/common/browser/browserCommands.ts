@@ -23,7 +23,7 @@
  */
 
 /** Commands that only observe. They cannot change anything on the page. */
-export const READ_COMMANDS = ['state', 'read', 'screenshot'] as const;
+export const READ_COMMANDS = ['state', 'read', 'screenshot', 'waitFor', 'console'] as const;
 
 /** Commands that change what the page or the browser is doing. */
 export const ACT_COMMANDS = ['navigate', 'click', 'type', 'back', 'forward'] as const;
@@ -39,6 +39,23 @@ export type BrowserCommand =
   | { name: 'read'; selector?: string; maxChars?: number }
   /** A PNG of the visible page. */
   | { name: 'screenshot' }
+  /**
+   * Waits for something to appear before carrying on.
+   *
+   * Without this every automation is a guess about timing: click, hope, read,
+   * and report whatever the page happened to be showing. A timeout is answered
+   * as a timeout — "that never appeared" is a fact about the page, and it must
+   * not be reported as an empty result.
+   */
+  | { name: 'waitFor'; selector: string; timeoutMs?: number }
+  /**
+   * What the page logged, including its errors.
+   *
+   * The other half of verifying a page actually works: a screenshot of a broken
+   * app looks like a screenshot of a working one, and the difference is usually
+   * sitting in the console.
+   */
+  | { name: 'console'; onlyErrors?: boolean; limit?: number }
   /** Go to a page. The input is resolved the same way the address bar resolves it. */
   | { name: 'navigate'; url: string }
   | { name: 'click'; selector: string }
@@ -48,6 +65,12 @@ export type BrowserCommand =
 
 /** How much page text one `read` may return before it is truncated. */
 export const MAX_READ_CHARS = 40_000;
+/** How long a `waitFor` may hold a turn open. */
+export const MAX_WAIT_MS = 30_000;
+/** What a `waitFor` waits when nobody said. Long enough for a page load. */
+export const DEFAULT_WAIT_MS = 10_000;
+/** How many console lines one call may return. */
+export const MAX_CONSOLE_LINES = 200;
 /** A selector long enough to be a real one and short enough not to be a payload. */
 const MAX_SELECTOR_LENGTH = 512;
 /** Room for an address, a search phrase, or a form field's worth of text. */
@@ -124,6 +147,43 @@ export function parseBrowserCommand(payload: unknown): ParseResult {
     case 'back':
     case 'forward':
       return { ok: true, command: { name } };
+
+    case 'waitFor': {
+      const parsed = readString(payload.selector, 'selector', MAX_SELECTOR_LENGTH);
+      if (stringFailed(parsed)) return parsed;
+      const timeoutMs = payload.timeoutMs;
+      if (timeoutMs !== undefined && (typeof timeoutMs !== 'number' || !Number.isFinite(timeoutMs) || timeoutMs <= 0)) {
+        return { ok: false, error: '"timeoutMs" must be a positive number' };
+      }
+      return {
+        ok: true,
+        command: {
+          name,
+          selector: parsed.value,
+          // Capped rather than trusted: a model that asks to wait ten minutes
+          // has stopped the turn, and nobody watching can tell that from a hang.
+          timeoutMs: typeof timeoutMs === 'number' ? Math.min(timeoutMs, MAX_WAIT_MS) : DEFAULT_WAIT_MS,
+        },
+      };
+    }
+
+    case 'console': {
+      const limit = payload.limit;
+      if (limit !== undefined && (typeof limit !== 'number' || !Number.isFinite(limit) || limit <= 0)) {
+        return { ok: false, error: '"limit" must be a positive number' };
+      }
+      if (payload.onlyErrors !== undefined && typeof payload.onlyErrors !== 'boolean') {
+        return { ok: false, error: '"onlyErrors" must be a boolean' };
+      }
+      return {
+        ok: true,
+        command: {
+          name,
+          onlyErrors: payload.onlyErrors === true,
+          limit: typeof limit === 'number' ? Math.min(limit, MAX_CONSOLE_LINES) : MAX_CONSOLE_LINES,
+        },
+      };
+    }
 
     case 'read': {
       const selector = payload.selector;
