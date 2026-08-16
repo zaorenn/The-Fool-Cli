@@ -11,6 +11,7 @@ import { LOCAL_SKILLS_CONFIG_KEY } from '@/common/voice/localSkills';
 import { peekLocalSkills } from '@renderer/services/voice/session/localSkillStore';
 import { judge } from '@renderer/services/permissions/permissionStore';
 import { runVoiceTool } from '@renderer/pages/voice/runtime/toolRunner';
+import { peekVoiceStage, publishVoiceActivity } from '@renderer/services/voice/publishVoiceStage';
 import type { ToolHost } from '@renderer/pages/voice/runtime/types';
 import { CORE_APP_TOOLS, describeAppTools } from './toolDescriptors';
 
@@ -23,18 +24,47 @@ type AppToolRequest = {
 };
 
 /**
+ * Progress lines for the agent turn currently running, newest last.
+ *
+ * A spoken conversation keeps its own ordered list; an agent turn has none, so
+ * this holds just enough to redraw the notch when a second line arrives.
+ */
+const agentActivity = new Map<string, { text: string; done: boolean }>();
+
+/**
  * What a tool handler is lent when its caller is an agent rather than a spoken
  * conversation.
  *
- * Most of `ToolHost` is about a conversation happening out loud — the activity
- * list beside the microphone, giving the floor back, the "still on it"
- * heartbeat. None of that exists here, and pretending otherwise would put rows
- * on a panel nobody is looking at. What does carry over is `t`: a tool that
- * fails has to say so in the user's language wherever it was called from.
+ * Most of `ToolHost` is about a conversation happening out loud — giving the
+ * floor back, the "still on it" heartbeat. None of that exists here, and
+ * pretending otherwise would act on a conversation that is not happening. What
+ * does carry over is `t`: a tool that fails has to say so in the user's
+ * language wherever it was called from.
+ *
+ * `updateActivity` was stubbed out for the same reason — rows on a panel nobody
+ * is looking at. That holds only while nobody is looking. An agent turn can be
+ * started from inside a live spoken conversation, and then the notch is on
+ * screen reporting the assistant's phase while the work it is narrating happens
+ * somewhere this host could not report from — which is exactly the complaint
+ * that the notch does not say what is being done right now.
+ *
+ * So the rule is the stage rather than the caller: report when a conversation
+ * is up, stay silent when it is off.
  */
-const agentToolHost = (_conversationId: string): ToolHost => ({
+export const agentToolHost = (_conversationId: string): ToolHost => ({
   t: (key, values) => String(i18next.t(key, values as never)),
-  updateActivity: () => undefined,
+  updateActivity: (id, patch) => {
+    if (peekVoiceStage().stage === 'off') return;
+
+    // One line, because an agent turn keeps no ordered list of its own the way
+    // a spoken conversation does: what the notch needs is the thing happening
+    // now, not a transcript of everything that has.
+    const text = patch.detail || patch.label;
+    if (!text) return;
+
+    agentActivity.set(id, { text, done: patch.state !== undefined && patch.state !== 'running' });
+    publishVoiceActivity([...agentActivity.values()].toReversed());
+  },
   backToListening: () => undefined,
   flushOutput: () => undefined,
   setStandby: () => undefined,
