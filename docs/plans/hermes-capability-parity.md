@@ -203,6 +203,69 @@ nothing and is needed regardless.
    _ours_ / _delegate_ / _deliberately not_. A capability list nobody maintains
    is how we got here.
 
+## Measured: 81 is a catalogue, 26 is the reality
+
+Calling Hermes's own registry directly on this machine —
+
+```bash
+cd "$LOCALAPPDATA/hermes/hermes-agent" && ./venv/Scripts/python -c \
+ "import sys;sys.path.insert(0,'.');from model_tools import get_tool_definitions;\
+  print(len(get_tool_definitions(enabled_toolsets=['hermes-cli','video','spotify'],quiet_mode=True)))"
+```
+
+— returns **26**, not 54 and not 81, and prints why:
+
+```
+check_fn check_vision_requirements returned False; dependent tools will be unavailable this turn
+check_fn check_web_api_key returned False; dependent tools will be unavailable this turn
+```
+
+`video_analyze` and `spotify_playback` are **absent even with their toolsets
+explicitly requested**. Tool availability is gated per turn on credentials, not
+only on configuration. So the parity target is not "81 tools" — it is "26 today,
+and each further tool costs a credential someone has to supply".
+
+This reorders the whole plan. Widening the ACP surface (the `_make_agent` patch)
+buys far less than it appears to until the keys exist: a Gemini-class video
+model, Spotify OAuth, a web-search API key, an X account. **Get one credential
+and verify one tool end to end before patching anything.**
+
+Also observed in the same run: `openrouter.ai` failed with
+`CERTIFICATE_VERIFY_FAILED — unable to get local issuer certificate`. That is
+the same TLS-interception problem this machine has hit before with Java. Hermes
+will silently mark providers unhealthy and drop tools because of it, which looks
+identical to a missing feature.
+
+## Should Hermes replace the backend entirely?
+
+Raised 16 Aug: use Hermes as the agent rather than The Fool's own runtime,
+since its agentic infrastructure is stronger, and adapt it to voice mode.
+
+It is a serious option and the argument for it is real — Hermes has the loop,
+the skills, delegation, checkpoints, provider fallback and MoA that we would
+otherwise rebuild. But it must be settled by measurement rather than by
+preference, and there is exactly one number that decides it:
+
+**Time to the first spoken word.** The voice mode is built around it —
+`REALTIME_TOOLS` is deliberately short because "every entry is a pause in the
+conversation", the local model answers in ~0.6 s, and reasoning is switched off
+to reach 177 ms. Hermes is a Python agent with a cold start, a large tool prompt
+and its own provider resolution. If a spoken turn through Hermes cannot reach
+the first word in about a second, the trade is not worth making for voice
+however much capability it adds.
+
+The eval harness already times the first spoken word. So:
+
+1. Run the existing eval against the current path. Record first-word latency.
+2. Route one spoken turn through Hermes-over-ACP. Record the same number.
+3. Compare, then decide — and the answer may legitimately be **both**: Hermes
+   behind the chat agent where minutes are acceptable, the current runtime in
+   front of the microphone where they are not.
+
+What must not happen is switching the backend and discovering the latency
+afterwards. That is the same mistake as every fault in 2.5.9 and 2.6.0: a change
+that looks right and was never watched running.
+
 ## What will go wrong
 
 - **Token budget.** 54 tool schemas in a prompt is a large fixed cost every
