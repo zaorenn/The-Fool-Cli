@@ -77,6 +77,28 @@ export function initResearchBridge(): void {
    * The transcript is not that way back: it is gone at the next launch, and
    * the document is not.
    */
+  /**
+   * Whether a file is actually there, before a viewer claims to be showing it.
+   *
+   * `openDocument` checked that the path was non-empty and had an extension it
+   * recognised, and nothing else — so a model that said it had written a report
+   * and had not could hand over the path it imagined, get success back, and
+   * tell the user the PDF was open. Observed on 16 Aug 2026: the panel opened
+   * with the right filename in the tab and nothing in it, which reads as a
+   * broken viewer rather than as a file that was never written.
+   *
+   * In the main process because the renderer has no disk.
+   */
+  ipcMain.handle('document:exists', async (_event, filePath: unknown): Promise<boolean> => {
+    if (typeof filePath !== 'string' || filePath.trim().length === 0) return false;
+
+    const { promises: fs } = await import('node:fs');
+    const stat = await fs.stat(filePath.trim()).catch((): null => null);
+    // A directory is not a document. Opening one would put an empty viewer on
+    // screen for a path that does exist, which is the same lie by another route.
+    return stat !== null && stat.isFile();
+  });
+
   ipcMain.handle('research:list-found', async (): Promise<FoundDocument[]> => {
     const { researchFolder } = await import('./researchStore');
     const folder = researchFolder();

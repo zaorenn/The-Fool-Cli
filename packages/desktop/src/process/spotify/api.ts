@@ -4,7 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { choosePlaybackTarget, playBodyFor, toSpotifyUri, type SpotifyDevice } from '@/common/voice/spotifyPlayback';
+import {
+  choosePlaybackTarget,
+  playBodyFor,
+  toSpotifyUri,
+  type PlaybackTarget,
+  type SpotifyDevice,
+} from '@/common/voice/spotifyPlayback';
 import { freshAccessToken } from './connect';
 
 /**
@@ -85,6 +91,33 @@ const readDevices = async (token: string): Promise<SpotifyDevice[]> => {
 };
 
 /** What a play attempt answers with. Never optimistic. */
+/** How long a just-opened Spotify is given to register itself as a device. */
+const DEVICE_WAIT_MS = 12_000;
+/** How often it is asked. Spotify registers within a few seconds, not instantly. */
+const DEVICE_POLL_MS = 800;
+
+/**
+ * Waits for a device to appear after Spotify has been started.
+ *
+ * Bounded, and it gives up quietly: the caller's next line reports the same
+ * `no-device` it would have reported anyway, so the worst case is the old
+ * behaviour twelve seconds later rather than a new way to hang. Twelve seconds
+ * is measured against a cold start — an already-running Spotify answers on the
+ * first poll.
+ */
+const waitForDevice = async (token: string): Promise<PlaybackTarget> => {
+  const deadline = Date.now() + DEVICE_WAIT_MS;
+  let target: PlaybackTarget = { kind: 'no-device' };
+
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, DEVICE_POLL_MS));
+    target = choosePlaybackTarget(await readDevices(token));
+    if (target.kind === 'device') return target;
+  }
+
+  return target;
+};
+
 export type SpotifyPlayResult =
   | { ok: true; track: string; device: string }
   /**
@@ -111,7 +144,23 @@ export const playOnSpotify = async (input: { query: string; uri?: string | null 
   const found = direct ? { uri: direct, title: input.query.trim() } : await findTrack(token, input.query);
   if (!found) return { ok: false, reason: 'not-found' };
 
-  const target = choosePlaybackTarget(await readDevices(token));
+  let target = choosePlaybackTarget(await readDevices(token));
+
+  // Spotify is connected and asleep. Wake it here, in code.
+  //
+  // `no-device` does not mean "Spotify is not connected": the token worked and
+  // the track was found. It means the desktop app has registered no device,
+  // which is exactly what a freshly-started Spotify looks like until something
+  // plays. Handed back as a bare failure, this sent the model off guessing — it
+  // looked at the screen, opened applications, read the browser, and spent the
+  // better part of a minute rediscovering a fact this function already had. A
+  // 9B model improvising is not a substitute for the two calls below.
+  if (target.kind === 'no-device') {
+    const { controlApp } = await import('@process/services/apps/launchApp');
+    const opened = await controlApp('Spotify', 'open');
+    if (opened.status === 'opened') target = await waitForDevice(token);
+  }
+
   // Said plainly rather than played into the void. "Nothing is playing and you
   // were told it was" is the exact failure this whole change is about, and
   // Spotify answers a play with no device by accepting it and doing nothing.

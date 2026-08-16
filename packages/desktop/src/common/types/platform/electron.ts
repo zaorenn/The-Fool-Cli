@@ -78,6 +78,13 @@ export interface ElectronBridgeAPI {
    * transcript it was mentioned in has gone.
    */
   listFoundDocuments?: () => Promise<{ path: string; name: string; bytes: number; at: number }[]>;
+  /**
+   * Whether that path is really a file on disk.
+   *
+   * Asked before opening a viewer, because a model can name a document it never
+   * wrote and every layer below will happily carry the name.
+   */
+  documentExists?: (filePath: string) => Promise<boolean>;
   // Forward feedback diagnostics logs to the main process console / 转发反馈诊断日志到主进程控制台
   logFeedbackEvent?: (payload: { details?: unknown; level: 'info' | 'warn' | 'error'; message: string }) => void;
   recoverCorruptedDatabase?: () => Promise<void>;

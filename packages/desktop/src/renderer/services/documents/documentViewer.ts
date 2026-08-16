@@ -97,6 +97,25 @@ export const openDocument = async (filePath: string): Promise<OpenedDocument | n
   const viewer = viewerFor(path);
   if (!viewer) return null;
 
+  // The file has to be there. This checked the string and nothing else, so a
+  // model that said it had written a report and had not could pass the path it
+  // imagined, be told it worked, and announce the document was open — while the
+  // panel showed its name over an empty page. Seen on 16 Aug 2026 with a
+  // research report that was never written to disk.
+  //
+  // Absent bridge means an environment without the main process (a test, the
+  // web host), where refusing every document would be worse than trusting the
+  // caller. Present bridge and a missing file is a no.
+  //
+  // `typeof window` rather than a bare reference: this module is imported where
+  // there is no browser global at all, and naming `window` there is a
+  // ReferenceError rather than an undefined.
+  const exists = typeof window === 'undefined' ? undefined : window.electronAPI?.documentExists;
+  if (typeof exists === 'function') {
+    const there = await exists(path).catch((): boolean => false);
+    if (!there) return null;
+  }
+
   const name = documentName(path);
   const opening = {
     // `file_path` is the field that matters: the viewers that render a real

@@ -85,6 +85,28 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
       let content = '';
       const skipRead =
         contentType === 'pdf' || contentType === 'word' || contentType === 'excel' || contentType === 'ppt';
+
+      // Where the file actually is — which these four viewers need, and none of
+      // them was given.
+      //
+      // Skipping the content read for them is right: a PDF is not a string and
+      // the viewer reads the disk itself. But nothing then supplied the path, so
+      // the panel opened holding neither — no content and no `file_path` — which
+      // is a blank viewer every single time somebody clicked a PDF in their own
+      // workspace. The tree carries `{pe_id, relative_path}`, and the matching
+      // entry's `display_path` is the absolute root; the open-externally button
+      // further down already derives a path the same way.
+      const root = data?.explorer.entries.find((entry) => entry.pe_id === peId)?.display_path;
+      const absolutePath = root ? `${root.replace(/[\\/]+$/u, '')}/${relativePath}` : undefined;
+
+      // Refused rather than opened empty. A viewer with nothing in it looks
+      // exactly like a document that failed to render, and the user cannot tell
+      // those apart — so say the true thing instead of showing the ambiguous one.
+      if (skipRead && !absolutePath) {
+        Message.error(t('preview.errors.openWithoutPath'));
+        return;
+      }
+
       if (!skipRead) {
         const client = initExplorerRuntime();
         const encoding = contentType === 'image' ? 'base64' : 'utf-8';
@@ -102,6 +124,7 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId 
         {
           title: name,
           file_name: name,
+          ...(absolutePath ? { file_path: absolutePath } : {}),
           language: name.split('.').pop() || '',
           editable: contentType === 'markdown' || contentType === 'image' ? false : undefined,
         },

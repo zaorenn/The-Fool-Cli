@@ -2,6 +2,39 @@
 
 The Fool is a fork of [AionUi](https://github.com/iOfficeAI/AionUi) (Apache-2.0). Release history from before the fork lives in that project; this file records what has changed here.
 
+## 2.6.0
+
+Three faults that all had the same shape: something reported success, and the
+thing it reported had not happened. Fixed in code rather than by asking the
+model to be more careful.
+
+**Clicking a PDF in your own workspace opens it.** It never did. The explorer
+correctly skipped reading the bytes for PDF, Word, Excel and PowerPoint —
+those viewers read the disk themselves — and then handed the panel neither the
+bytes nor the path, so every one of those clicks opened a blank viewer. Only
+the assistant could open a document, which is backwards. Where the path cannot
+be worked out the panel now refuses instead of opening empty, because an empty
+viewer and a broken one look identical from the outside.
+
+**A document that was never written is no longer "opened".** Opening checked
+that the path was a non-empty string ending in a known extension, and nothing
+else. So an assistant that said it had written a report and had not could hand
+over the filename it had imagined, be told it worked, and announce the PDF was
+on screen — over an empty page with the right name in the tab. The file is now
+checked on disk first, and a missing one is a refusal.
+
+**Spotify is woken instead of guessed at.** Asked to play a song with Spotify
+connected but no device awake, the old code returned a bare failure — and the
+model went looking: it read the screen, opened applications, searched the
+browser, and spent the better part of a minute rediscovering something the
+playback code already knew. It now starts Spotify itself, waits up to twelve
+seconds for the device to register, and plays. If that does not work it says so,
+once.
+
+**Not in this release:** sub-chats, PDF form filling, and letting every model
+read an open document are planned and not built — see
+`docs/plans/2.6.0-sub-chats-and-document-awareness.md`.
+
 ## 2.5.10
 
 The release where the documents it finds actually appear, and the browser it
