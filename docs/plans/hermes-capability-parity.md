@@ -124,24 +124,62 @@ _expand_acp_enabled_toolsets(
 )
 ```
 
-Two levers, both configuration rather than a patch:
+### The config lever was tested and it does not exist
 
-1. **`enabled_toolsets` in Hermes's own config.** When set, it replaces the
-   `hermes-acp` default outright. `hermes tools enable <toolset>` is the
-   supported way to write it. This is the whole of Tier 1 and Tier 2, without
-   touching Hermes's source.
-2. **MCP servers registered with Hermes** are appended automatically as
-   `mcp-<name>` toolsets. Anything we already run as MCP can be handed to
-   Hermes rather than reimplemented.
+**Run 16 Aug 2026, and it falsified the first draft of this document.**
+`hermes tools enable video` succeeded and wrote `platform_toolsets.cli` in
+`%LOCALAPPDATA%\hermes\config.yaml`. It changed nothing for ACP, because
+`acp_adapter/session.py::_make_agent` builds the agent like this:
+
+```python
+kwargs = {
+    "platform": "acp",
+    "enabled_toolsets": _expand_acp_enabled_toolsets(
+        ["hermes-acp"],                      # ← a literal, not config
+        mcp_server_names=configured_mcp_servers,
+    ),
+    ...
+}
+```
+
+It reads `config.get("model")` and `config.get("mcp_servers")` from the same
+`load_config()` call and **never reads `platform_toolsets`** or any ACP toolset
+key. Nothing in `acp_adapter/` references `resolve_toolset` or
+`platform_toolsets` at all. So there is no configuration that widens the ACP
+surface, and `hermes tools enable` is a CLI-only switch.
+
+That leaves three real routes, in order of cost:
+
+1. **MCP, the one path that does work.** `configured_mcp_servers` is read from
+   config and each becomes an `mcp-<name>` toolset on the ACP session. So
+   anything exposed as an MCP server reaches Hermes-over-ACP with no patch. This
+   is how to give Hermes _our_ capabilities, and it is free.
+2. **A three-line patch to `_make_agent`**, reading `platform_toolsets.acp`
+   with `["hermes-acp"]` as the fallback. This install is already a git
+   checkout carrying one local commit (`local 01cb38e8 (+1 carried commit)`),
+   so carrying a second is an established practice here rather than a new one.
+   It unlocks all 81 tools and is worth proposing upstream, since the ACP
+   surface being narrower than the CLI's looks like an oversight rather than a
+   decision.
+3. **Call the `hermes` binary directly** for one capability at a time
+   (`hermes -t video -z "…"`). No patch, no ACP, but a separate process and a
+   separate session per call — worth it only for something rare and heavy.
+
+**Route 2 is the recommendation**, with route 1 done first because it costs
+nothing and is needed regardless.
 
 ## Steps
 
-1. **Prove the lever before building on it.** Set
-   `enabled_toolsets = ["hermes-acp", "spotify", "video"]` in Hermes's config,
-   start `hermes acp`, complete the ACP handshake, and read the advertised tool
-   list. Expect 29 → 37. **If the count does not change, everything below is
-   void** — the config may only be read on a path the ACP server does not take.
-   This is one experiment and it gates the rest.
+1. ~~**Prove the lever before building on it.**~~ **Done — it failed.** See
+   above: `_make_agent` hard-codes `["hermes-acp"]`. Kept here rather than
+   deleted, because the next person will otherwise have the same idea and spend
+   the same hour on it.
+
+   Replacement first step: **patch `_make_agent`** to read
+   `platform_toolsets.acp` from the config it already loads, defaulting to
+   `["hermes-acp"]`. Then re-run the count. The patch lives in the Hermes
+   checkout, not this repo, so record it in `docs/` here and keep it applied
+   across `hermes update`.
 
 2. **Decide the toolset per surface, deliberately.** Do not enable all 81.
    `REALTIME_TOOLS` is short on purpose — every entry is a pause in a spoken
